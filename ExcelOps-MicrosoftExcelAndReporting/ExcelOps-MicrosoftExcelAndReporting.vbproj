@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel</RootNamespace>
+    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <AssemblyName>CompuMaster.Excel.MicrosoftExcel</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>libs-NonWindowsPlatforms\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel">
+      <HintPath>libs-NonWindowsPlatforms\Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Vbe.Interop">
+      <HintPath>libs-NonWindowsPlatforms\Microsoft.Vbe.Interop.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="My Project\" />
+  </ItemGroup>
+
+</Project>

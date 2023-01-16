@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace></RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <AssemblyName>CompuMaster.Data.EpplusFreeFixCalcsEdition</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj" />
+  </ItemGroup>
+
+</Project>

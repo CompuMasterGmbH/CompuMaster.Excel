@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel</RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <AssemblyName>CompuMaster.Excel.EpplusFreeFixCalcsEdition</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
+    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj" />
+    <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+  </ItemGroup>
+
+</Project>

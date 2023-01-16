@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel</RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <AssemblyName>CompuMaster.Excel.FreeSpireXls</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FreeSpire.XLS" Version="12.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+  </ItemGroup>
+
+</Project>

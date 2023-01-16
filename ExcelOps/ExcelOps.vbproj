@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel</RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <OptionStrict>On</OptionStrict>
+    <AssemblyName>CompuMaster.Excel.ExcelOps</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CompuMaster.Data" Version="3.0.2023.103" />
+  </ItemGroup>
+
+</Project>

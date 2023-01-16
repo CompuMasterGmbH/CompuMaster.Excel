@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel.Test</RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <OptionStrict>On</OptionStrict>
+    <AssemblyName>CompuMaster.Excel.Test</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ExcelOpsEngineTests\ExcelDataOperationsTest.vb" />
+    <Compile Remove="ExcelOpsEngineTests\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\nunit.engine.api.dll" />
+    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\nunit.engine.core.dll" />
+    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\nunit.engine.dll" />
+    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\NUnit3.TestAdapter.dll" />
+    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\NUnit3.TestAdapter.pdb" />
+    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\testcentric.engine.metadata.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="ExcelOpsEngineTests\ExcelDataOperationsTest.vb" />
+    <None Include="ExcelOpsEngineTests\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
+    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj" />
+    <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
+    <ProjectReference Include="..\ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcelAndReporting.vbproj" />
+    <ProjectReference Include="..\ExcelOps-SpireXls\ExcelOps-SpireXls.vbproj" />
+    <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />
+    <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="My Project\" />
+  </ItemGroup>
+
+</Project>
