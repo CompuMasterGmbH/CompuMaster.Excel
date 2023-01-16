@@ -33,9 +33,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using OfficeOpenXml.ConditionalFormatting;
+using EpplusFreeOfficeOpenXml.ConditionalFormatting;
 
-namespace OfficeOpenXml.ConditionalFormatting.Contracts
+namespace EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts
 {
   /// <summary>
   /// IExcelConditionalFormattingUniqueValues

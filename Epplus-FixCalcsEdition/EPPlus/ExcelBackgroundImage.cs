@@ -36,12 +36,12 @@ using System.Text;
 using System.Xml;
 using System.Drawing;
 using System.IO;
-using OfficeOpenXml.Drawing;
-using OfficeOpenXml.Packaging;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Drawing;
+using EpplusFreeOfficeOpenXml.Packaging;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Compatibility;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// An image that fills the background of the worksheet.

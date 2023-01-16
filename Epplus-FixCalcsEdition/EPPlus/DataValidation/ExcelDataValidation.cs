@@ -34,13 +34,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 using System.Xml;
 using System.Text.RegularExpressions;
-using OfficeOpenXml.DataValidation.Formulas.Contracts;
-using OfficeOpenXml.DataValidation.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
 
-namespace OfficeOpenXml.DataValidation
+namespace EpplusFreeOfficeOpenXml.DataValidation
 {
     /// <summary>
     /// Excel datavalidation

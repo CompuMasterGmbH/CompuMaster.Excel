@@ -32,9 +32,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using OfficeOpenXml.Style;
+using EpplusFreeOfficeOpenXml.Style;
 using System.Data;
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// A range of cells. 

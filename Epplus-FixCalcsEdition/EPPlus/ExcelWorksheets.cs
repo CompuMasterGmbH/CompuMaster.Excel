@@ -37,18 +37,18 @@ using System.Text;
 using System.Xml;
 using System.IO;
 using System.Linq;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using OfficeOpenXml.Style;
-using OfficeOpenXml.Drawing;
-using OfficeOpenXml.Drawing.Chart;
-using OfficeOpenXml.Style.XmlAccess;
-using OfficeOpenXml.Drawing.Vml;
-using OfficeOpenXml.Packaging.Ionic.Zlib;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.VBA;
-using OfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
+using EpplusFreeOfficeOpenXml.Style;
+using EpplusFreeOfficeOpenXml.Drawing;
+using EpplusFreeOfficeOpenXml.Drawing.Chart;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Drawing.Vml;
+using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.VBA;
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
 	/// <summary>
 	/// The collection of worksheets for the workbook

@@ -34,7 +34,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace OfficeOpenXml.FormulaParsing.ExpressionGraph
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph
 {
     public class IntegerExpression : AtomicExpression
     {

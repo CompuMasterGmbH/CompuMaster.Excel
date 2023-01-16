@@ -26,10 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Exceptions;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
 {
     public class DecimalCompileResultValidator : CompileResultValidator
     {

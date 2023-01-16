@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.Finance
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Finance
 {
     public class Pmt : ExcelFunction
     {

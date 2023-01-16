@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 
-namespace OfficeOpenXml.Style
+namespace EpplusFreeOfficeOpenXml.Style
 {
     /// <summary>
     /// Handels paragraph text

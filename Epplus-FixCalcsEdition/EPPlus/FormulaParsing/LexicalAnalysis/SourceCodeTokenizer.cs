@@ -34,8 +34,8 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
-namespace OfficeOpenXml.FormulaParsing.LexicalAnalysis
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
 {
     public class SourceCodeTokenizer : ISourceCodeTokenizer
     {

@@ -35,7 +35,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// A serie for a surface chart

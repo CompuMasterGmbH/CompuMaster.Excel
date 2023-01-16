@@ -32,16 +32,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 
-namespace OfficeOpenXml.Style
+namespace EpplusFreeOfficeOpenXml.Style
 {
     /// <summary>
     /// Toplevel class for cell styling
     /// </summary>
     public sealed class ExcelStyle : StyleBase
     {
-        internal ExcelStyle(ExcelStyles styles, OfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int positionID, string Address, int xfsId) :
+        internal ExcelStyle(ExcelStyles styles, EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int positionID, string Address, int xfsId) :
             base(styles, ChangedEvent, positionID, Address)
         {
             Index = xfsId;

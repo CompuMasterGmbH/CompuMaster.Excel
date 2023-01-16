@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// Provides access to scatter chart specific properties

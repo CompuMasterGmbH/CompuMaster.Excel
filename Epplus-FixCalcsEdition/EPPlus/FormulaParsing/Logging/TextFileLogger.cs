@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 
-namespace OfficeOpenXml.FormulaParsing.Logging
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Logging
 {
     internal class TextFileLogger : IFormulaParserLogger
     {

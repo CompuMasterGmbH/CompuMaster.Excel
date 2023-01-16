@@ -35,7 +35,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     public class ExcelTableAddress
     {

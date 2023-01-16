@@ -28,10 +28,10 @@
  * ******************************************************************************
  * Mats Alm   		                Added       		        2015-12-28
  *******************************************************************************/
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis.TokenSeparatorHandlers;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis.TokenSeparatorHandlers;
 using System.Text.RegularExpressions;
 
-namespace OfficeOpenXml.FormulaParsing.LexicalAnalysis
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
 {
     public class TokenHandler : ITokenIndexProvider
     {

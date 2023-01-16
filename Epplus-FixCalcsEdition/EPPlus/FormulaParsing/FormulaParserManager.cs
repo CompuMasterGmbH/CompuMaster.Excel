@@ -33,10 +33,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
-using OfficeOpenXml.FormulaParsing.Logging;
-using OfficeOpenXml.FormulaParsing.Utilities;
-namespace OfficeOpenXml.FormulaParsing
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Logging;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
+namespace EpplusFreeOfficeOpenXml.FormulaParsing
 {
     /// <summary>
     /// Provides access to various functionality regarding 
@@ -131,7 +131,7 @@ namespace OfficeOpenXml.FormulaParsing
         /// Attaches a logger to the <see cref="FormulaParser"/>.
         /// </summary>
         /// <param name="logger">An instance of <see cref="IFormulaParserLogger"/></param>
-        /// <see cref="OfficeOpenXml.FormulaParsing.Logging.LoggerFactory"/>
+        /// <see cref="EpplusFreeOfficeOpenXml.FormulaParsing.Logging.LoggerFactory"/>
         public void AttachLogger(IFormulaParserLogger logger)
         {
             _parser.Configure(c => c.AttachLogger(logger));

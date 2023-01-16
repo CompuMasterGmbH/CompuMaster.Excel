@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Operators
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators
 {
     public interface IOperator
     {

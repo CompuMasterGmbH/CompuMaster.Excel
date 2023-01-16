@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
 
-namespace OfficeOpenXml.FormulaParsing.ExcelUtilities
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
 {
     public class FormulaDependency
     {

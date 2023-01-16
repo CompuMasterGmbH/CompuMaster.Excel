@@ -87,7 +87,7 @@ Namespace ExcelOpsEngineTests
             TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
-            CompuMaster.Excel.ExcelOps.Tools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
 
             'Update single cells in calculated workbook with Epplus
             Eppeo.ReloadFromFile()
@@ -129,7 +129,7 @@ Namespace ExcelOpsEngineTests
             Eppeo.Close()
 
             'Open and recalculate and save in MS Excel
-            Excel.ExcelOps.Tools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
 
             'Compare expected values
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
@@ -180,7 +180,7 @@ Namespace ExcelOpsEngineTests
             TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
-            Excel.ExcelOps.Tools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
 
             'Update single cells in calculated workbook with Epplus
             Eppeo.ReloadFromFile()

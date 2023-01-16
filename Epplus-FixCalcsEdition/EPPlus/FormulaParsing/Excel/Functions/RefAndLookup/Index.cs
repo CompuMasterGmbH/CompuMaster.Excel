@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Exceptions;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup
 {
     public class Index : ExcelFunction
     {

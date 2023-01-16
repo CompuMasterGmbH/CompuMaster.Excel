@@ -36,7 +36,7 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 
-namespace OfficeOpenXml.Table.PivotTable
+namespace EpplusFreeOfficeOpenXml.Table.PivotTable
 {
     /// <summary>
     /// Base class for pivot table field groups

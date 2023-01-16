@@ -32,12 +32,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using OfficeOpenXml.FormulaParsing.Exceptions;
-using OfficeOpenXml.FormulaParsing.Utilities;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
 
-namespace OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
 {
     /// <summary>
     /// Why do the If function require a compiler of its own you might ask;)
@@ -85,9 +85,9 @@ namespace OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
             }
             else if(!Utils.ConvertUtil.TryParseBooleanString(v, out boolVal))
             {
-                if(OfficeOpenXml.Utils.ConvertUtil.IsNumeric(v))
+                if(EpplusFreeOfficeOpenXml.Utils.ConvertUtil.IsNumeric(v))
                 {
-                    boolVal = OfficeOpenXml.Utils.ConvertUtil.GetValueDouble(v)!=0;
+                    boolVal = EpplusFreeOfficeOpenXml.Utils.ConvertUtil.GetValueDouble(v)!=0;
                 }
                 else
                 {

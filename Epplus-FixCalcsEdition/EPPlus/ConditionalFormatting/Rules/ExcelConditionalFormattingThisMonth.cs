@@ -34,9 +34,9 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Xml;
-using OfficeOpenXml.ConditionalFormatting.Contracts;
+using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
 
-namespace OfficeOpenXml.ConditionalFormatting
+namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
 {
   /// <summary>
   /// ExcelConditionalFormattingThisMonth

@@ -6,7 +6,7 @@ using System.Text;
 using System.Xml;
 using System.Drawing;
 
-namespace OfficeOpenXml.Style.Dxf
+namespace EpplusFreeOfficeOpenXml.Style.Dxf
 {
     public class ExcelDxfStyleConditionalFormatting : DxfStyleBase<ExcelDxfStyleConditionalFormatting>
     {

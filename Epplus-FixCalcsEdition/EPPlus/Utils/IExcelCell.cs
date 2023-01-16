@@ -33,7 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OfficeOpenXml.Style
+namespace EpplusFreeOfficeOpenXml.Style
 {
     internal interface IExcelCell
     {

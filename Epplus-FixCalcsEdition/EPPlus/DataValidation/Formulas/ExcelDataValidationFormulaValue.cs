@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 using System.Xml;
 
-namespace OfficeOpenXml.DataValidation.Formulas
+namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas
 {
 
     /// <summary>

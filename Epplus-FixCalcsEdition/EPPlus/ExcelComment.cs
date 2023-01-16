@@ -33,12 +33,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.Style;
+using EpplusFreeOfficeOpenXml.Style;
 using System.Xml;
-using OfficeOpenXml.Drawing;
-using OfficeOpenXml.Drawing.Vml;
+using EpplusFreeOfficeOpenXml.Drawing;
+using EpplusFreeOfficeOpenXml.Drawing.Vml;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// An Excel Cell Comment

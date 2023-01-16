@@ -29,7 +29,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace OfficeOpenXml.Packaging.Ionic.Zip
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
 {
 
     internal partial class ZipFile

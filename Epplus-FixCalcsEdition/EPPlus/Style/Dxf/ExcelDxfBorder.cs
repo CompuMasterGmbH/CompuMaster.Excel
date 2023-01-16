@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace OfficeOpenXml.Style.Dxf
+namespace EpplusFreeOfficeOpenXml.Style.Dxf
 {
     public class ExcelDxfBorderBase : DxfStyleBase<ExcelDxfBorderBase>
     {

@@ -33,13 +33,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
-using OfficeOpenXml.FormulaParsing.Exceptions;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.FormulaParsing.ExpressionGraph
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph
 {
     /// <summary>
     /// Expression that handles execution of a function.

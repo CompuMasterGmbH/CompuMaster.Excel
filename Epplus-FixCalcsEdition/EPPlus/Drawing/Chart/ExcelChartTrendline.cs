@@ -36,7 +36,7 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// A collection of trendlines.

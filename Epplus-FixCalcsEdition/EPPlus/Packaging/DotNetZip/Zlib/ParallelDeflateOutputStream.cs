@@ -30,7 +30,7 @@ using System.Threading;
 using System.IO;
 
 
-namespace OfficeOpenXml.Packaging.Ionic.Zlib
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
 {
     internal class WorkItem
     {

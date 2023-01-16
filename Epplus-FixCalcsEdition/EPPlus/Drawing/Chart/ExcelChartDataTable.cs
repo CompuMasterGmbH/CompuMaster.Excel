@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Style;
+using EpplusFreeOfficeOpenXml.Style;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// Datatable on chart level. 

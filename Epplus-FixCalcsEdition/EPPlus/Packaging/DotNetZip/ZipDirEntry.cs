@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OfficeOpenXml.Packaging.Ionic.Zip
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
 {
 
     partial class ZipEntry

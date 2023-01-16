@@ -31,6 +31,21 @@ Public NotInheritable Class TestEnvironment
         If System.IO.Directory.Exists(ParentDir) = False Then
             System.IO.Directory.CreateDirectory(ParentDir)
         End If
+        If System.IO.File.Exists(Result) Then
+            System.IO.File.Delete(Result)
+        End If
+        Return Result
+    End Function
+
+    Public Shared Function FullPathOfDynTestFile_KeepExistingFile(ParamArray subDirsAndFile As String()) As String
+        Dim Paths As New List(Of String)(subDirsAndFile)
+        Paths.Insert(0, DirectoryOfTestAssembly)
+        Paths.Insert(1, "temp")
+        Dim Result As String = System.IO.Path.Combine(Paths.ToArray)
+        Dim ParentDir As String = System.IO.Path.GetDirectoryName(Result)
+        If System.IO.Directory.Exists(ParentDir) = False Then
+            System.IO.Directory.CreateDirectory(ParentDir)
+        End If
         Return Result
     End Function
 

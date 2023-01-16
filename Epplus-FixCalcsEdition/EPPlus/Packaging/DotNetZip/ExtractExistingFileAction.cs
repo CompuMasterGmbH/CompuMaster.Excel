@@ -25,7 +25,7 @@
 // ------------------------------------------------------------------
 
 
-namespace OfficeOpenXml.Packaging.Ionic.Zip
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
 {
 
     /// <summary>

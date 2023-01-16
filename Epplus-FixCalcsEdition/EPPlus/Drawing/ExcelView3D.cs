@@ -35,7 +35,7 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 
-namespace OfficeOpenXml.Drawing
+namespace EpplusFreeOfficeOpenXml.Drawing
 {
     /// <summary>
     /// 3D settings

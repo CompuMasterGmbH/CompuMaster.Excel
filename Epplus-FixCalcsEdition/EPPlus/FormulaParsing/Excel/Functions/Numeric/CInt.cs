@@ -26,10 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 using System.Globalization;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.Numeric
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Numeric
 {
     public class CInt : ExcelFunction
     {

@@ -5,11 +5,11 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 using System.IO;
-using OfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Compatibility;
 
-namespace OfficeOpenXml.Utils
+namespace EpplusFreeOfficeOpenXml.Utils
 {
     internal static class ConvertUtil
     {

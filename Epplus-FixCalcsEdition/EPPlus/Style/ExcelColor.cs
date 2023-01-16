@@ -32,10 +32,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 using System.Drawing;
 
-namespace OfficeOpenXml.Style
+namespace EpplusFreeOfficeOpenXml.Style
 {
     /// <summary>
     /// Color for cellstyling
@@ -44,7 +44,7 @@ namespace OfficeOpenXml.Style
     {
         eStyleClass _cls;
         StyleBase _parent;
-        internal ExcelColor(ExcelStyles styles, OfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int worksheetID, string address, eStyleClass cls, StyleBase parent) : 
+        internal ExcelColor(ExcelStyles styles, EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int worksheetID, string address, eStyleClass cls, StyleBase parent) : 
             base(styles, ChangedEvent, worksheetID, address)
         {
             _parent = parent;

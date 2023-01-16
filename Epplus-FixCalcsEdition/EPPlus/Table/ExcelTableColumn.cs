@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.Table
+namespace EpplusFreeOfficeOpenXml.Table
 {
     /// <summary>
     /// Build-in table row functions

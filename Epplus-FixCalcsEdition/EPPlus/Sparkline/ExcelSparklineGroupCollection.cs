@@ -35,7 +35,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace OfficeOpenXml.Sparkline
+namespace EpplusFreeOfficeOpenXml.Sparkline
 {
     /// <summary>
     /// A collection of sparkline groups

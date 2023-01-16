@@ -32,16 +32,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 
-namespace OfficeOpenXml.Style
+namespace EpplusFreeOfficeOpenXml.Style
 {
     /// <summary>
     /// Cell Border style
     /// </summary>
     public sealed class Border : StyleBase
     {
-        internal Border(ExcelStyles styles, OfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string address, int index) :
+        internal Border(ExcelStyles styles, EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string address, int index) :
             base(styles, ChangedEvent, PositionID, address)
 	    {
             Index = index;

@@ -32,10 +32,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing;
-using OfficeOpenXml.FormulaParsing.Utilities;
+using EpplusFreeOfficeOpenXml.FormulaParsing;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
 
-namespace OfficeOpenXml.FormulaParsing.ExcelUtilities
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
 {
     public class IndexToAddressTranslator
     {

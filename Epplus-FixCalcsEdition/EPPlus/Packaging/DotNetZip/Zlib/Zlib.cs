@@ -91,7 +91,7 @@
 using System;
 using Interop=System.Runtime.InteropServices;
 
-namespace OfficeOpenXml.Packaging.Ionic.Zlib
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
 {
 
     /// <summary>

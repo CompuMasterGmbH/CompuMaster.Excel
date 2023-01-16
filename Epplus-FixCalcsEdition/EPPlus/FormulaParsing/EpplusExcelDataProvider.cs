@@ -20,14 +20,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing;
-using OfficeOpenXml.FormulaParsing.ExcelUtilities;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.FormulaParsing;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 
-namespace OfficeOpenXml.FormulaParsing
+namespace EpplusFreeOfficeOpenXml.FormulaParsing
 {
     public class EpplusExcelDataProvider : ExcelDataProvider
     {

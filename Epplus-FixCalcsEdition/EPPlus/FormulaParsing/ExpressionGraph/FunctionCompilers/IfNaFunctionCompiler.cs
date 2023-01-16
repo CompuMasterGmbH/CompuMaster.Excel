@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
-using OfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
 
-namespace OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
 {
     public class IfNaFunctionCompiler : FunctionCompiler
     {

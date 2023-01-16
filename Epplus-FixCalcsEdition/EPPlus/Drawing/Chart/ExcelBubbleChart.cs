@@ -1,13 +1,13 @@
 ﻿using System.Globalization;
-using OfficeOpenXml.Packaging;
-using OfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.Packaging;
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// Provides access to bubble chart specific properties

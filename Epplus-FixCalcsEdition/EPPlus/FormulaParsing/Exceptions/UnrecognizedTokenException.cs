@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
 
-namespace OfficeOpenXml.FormulaParsing.Exceptions
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions
 {
     public class UnrecognizedTokenException : Exception
     {

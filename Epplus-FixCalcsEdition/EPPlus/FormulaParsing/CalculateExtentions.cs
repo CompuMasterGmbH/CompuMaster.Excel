@@ -30,15 +30,15 @@
  *******************************************************************************/
 
 using System.Threading;
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing;
-using OfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     public static class CalculationExtension
     {

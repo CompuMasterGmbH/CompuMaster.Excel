@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OfficeOpenXml.FormulaParsing.Logging
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Logging
 {
     /// <summary>
     /// Used for logging during FormulaParsing

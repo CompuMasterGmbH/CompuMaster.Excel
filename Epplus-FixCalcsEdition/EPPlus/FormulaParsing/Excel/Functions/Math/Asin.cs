@@ -26,9 +26,9 @@ using System.Linq;
  * Mats Alm   		                Added		                2015-01-11
  *******************************************************************************/
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
 {
     public class Asin : ExcelFunction
     {

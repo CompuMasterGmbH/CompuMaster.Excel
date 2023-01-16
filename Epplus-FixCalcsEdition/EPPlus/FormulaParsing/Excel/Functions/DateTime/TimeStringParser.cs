@@ -28,7 +28,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime
 {
     public class TimeStringParser
     {

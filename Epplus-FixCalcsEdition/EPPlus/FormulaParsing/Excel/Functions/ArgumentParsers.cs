@@ -26,10 +26,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
-using OfficeOpenXml.FormulaParsing.Utilities;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
 {
     public class ArgumentParsers
     {

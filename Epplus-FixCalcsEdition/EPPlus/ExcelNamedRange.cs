@@ -33,7 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// A named range. 

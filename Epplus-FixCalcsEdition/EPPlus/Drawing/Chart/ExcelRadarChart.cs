@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// Provides access to line chart specific properties

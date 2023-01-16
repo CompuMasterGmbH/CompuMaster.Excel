@@ -20,9 +20,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing;
+using EpplusFreeOfficeOpenXml.FormulaParsing;
 
-namespace OfficeOpenXml.FormulaParsing
+namespace EpplusFreeOfficeOpenXml.FormulaParsing
 {
     public class EpplusNameValueProvider : INameValueProvider
     {

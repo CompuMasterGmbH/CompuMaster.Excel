@@ -28,13 +28,13 @@
  *******************************************************************************
  * Jan Källman		Added		12-APR-2012
  *******************************************************************************/
-using OfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Compatibility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace OfficeOpenXml.VBA
+namespace EpplusFreeOfficeOpenXml.VBA
 {
     /// <summary>
     /// Base class for VBA collections

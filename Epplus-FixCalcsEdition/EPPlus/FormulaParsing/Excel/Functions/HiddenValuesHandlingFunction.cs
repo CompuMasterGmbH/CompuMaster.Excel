@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
 {
     /// <summary>
     /// Base class for functions that needs to handle cells that is not visible.

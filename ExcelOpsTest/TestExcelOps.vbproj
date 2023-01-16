@@ -29,14 +29,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
+    <PackageReference Include="NUnit.Analyzers" Version="3.3.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CM.Data.EpplusPolyformEdition\CM.Data.EpplusPolyformEdition.vbproj" />
     <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj" />
     <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
+    <ProjectReference Include="..\ExcelOps-EpplusPolyform\ExcelOps-EpplusPolyformEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcelAndReporting.vbproj" />
     <ProjectReference Include="..\ExcelOps-SpireXls\ExcelOps-SpireXls.vbproj" />
     <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />

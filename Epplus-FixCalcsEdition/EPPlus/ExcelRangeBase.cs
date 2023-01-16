@@ -36,29 +36,29 @@ using System.ComponentModel;
 using System.Text;
 using System.Data;
 using System.Threading;
-using OfficeOpenXml.FormulaParsing;
-using OfficeOpenXml.Style;
+using EpplusFreeOfficeOpenXml.FormulaParsing;
+using EpplusFreeOfficeOpenXml.Style;
 using System.Xml;
 using System.Drawing;
 using System.Globalization;
 using System.Collections;
-using OfficeOpenXml.Table;
+using EpplusFreeOfficeOpenXml.Table;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
-using OfficeOpenXml.DataValidation;
-using OfficeOpenXml.DataValidation.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation;
+using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
 using System.Reflection;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 using System.Security;
-using OfficeOpenXml.ConditionalFormatting;
-using OfficeOpenXml.ConditionalFormatting.Contracts;
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using EpplusFreeOfficeOpenXml.ConditionalFormatting;
+using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using w = System.Windows;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Compatibility;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// A range of cells 
@@ -1420,7 +1420,7 @@ namespace OfficeOpenXml
                 }
                 else
                 {
-                    xml.LoadXml("<d:si xmlns:d=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" ><d:r><d:t>" + OfficeOpenXml.Utils.ConvertUtil.ExcelEscapeString(v.ToString()) + "</d:t></d:r></d:si>");
+                    xml.LoadXml("<d:si xmlns:d=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" ><d:r><d:t>" + EpplusFreeOfficeOpenXml.Utils.ConvertUtil.ExcelEscapeString(v.ToString()) + "</d:t></d:r></d:si>");
                 }
             }
             else

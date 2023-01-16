@@ -35,7 +35,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace OfficeOpenXml.Utils
+namespace EpplusFreeOfficeOpenXml.Utils
 {
     internal static class VBACompression
     {

@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Exceptions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
 
-namespace OfficeOpenXml.FormulaParsing.LexicalAnalysis
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
 {
     public class SyntacticAnalyzer : ISyntacticAnalyzer
     {

@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Drawing;
+using EpplusFreeOfficeOpenXml.Drawing;
 using System.Drawing;
 
-namespace OfficeOpenXml.Style
+namespace EpplusFreeOfficeOpenXml.Style
 {
     /// <summary>
     /// A collection of Paragraph objects

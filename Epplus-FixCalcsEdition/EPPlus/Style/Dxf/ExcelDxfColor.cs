@@ -5,7 +5,7 @@ using System.Text;
 using System.Drawing;
 using System.Xml;
 
-namespace OfficeOpenXml.Style.Dxf
+namespace EpplusFreeOfficeOpenXml.Style.Dxf
 {
     public class ExcelDxfColor : DxfStyleBase<ExcelDxfColor>
 

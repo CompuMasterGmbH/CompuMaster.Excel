@@ -35,9 +35,9 @@ using System;
 using System.Xml;
 using System.IO;
 using System.Globalization;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// Provides access to the properties bag of the package

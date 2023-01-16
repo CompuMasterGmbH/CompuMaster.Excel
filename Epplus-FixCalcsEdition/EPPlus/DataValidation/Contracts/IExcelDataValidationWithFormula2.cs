@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.DataValidation.Formulas.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
 
-namespace OfficeOpenXml.DataValidation.Contracts
+namespace EpplusFreeOfficeOpenXml.DataValidation.Contracts
 {
     /// <summary>
     /// Interface for a data validation with two formulas

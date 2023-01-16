@@ -26,7 +26,7 @@
 using System;
 using System.IO;
 
-namespace OfficeOpenXml.Packaging.Ionic.Zip
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
 {
     /// <summary>
     /// Collects general purpose utility methods.

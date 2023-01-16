@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime.Workdays;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime.Workdays;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime.Workdays
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime.Workdays
 {
     public class WorkdayCalculator
     {

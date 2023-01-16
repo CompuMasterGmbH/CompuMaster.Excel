@@ -25,7 +25,7 @@
 
 using System;
 
-namespace OfficeOpenXml.Packaging.Ionic.Zip
+namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
 {
   static class ZipConstants
   {      

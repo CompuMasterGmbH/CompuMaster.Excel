@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.DataValidation.Contracts;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
 
-namespace OfficeOpenXml.DataValidation
+namespace EpplusFreeOfficeOpenXml.DataValidation
 {
     internal class RangeDataValidation : IRangeDataValidation
     {

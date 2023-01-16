@@ -42,16 +42,16 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Globalization;
-using OfficeOpenXml.VBA;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.FormulaParsing;
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
-using OfficeOpenXml.Packaging.Ionic.Zip;
+using EpplusFreeOfficeOpenXml.VBA;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.FormulaParsing;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
 using System.Drawing;
-using OfficeOpenXml.Style;
-using OfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Style;
+using EpplusFreeOfficeOpenXml.Compatibility;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
 	#region Public Enum ExcelCalcMode
 	/// <summary>
@@ -908,7 +908,7 @@ namespace OfficeOpenXml
 
 			//StreamWriter sw = new StreamWriter(stringPart.GetStream(FileMode.Create, FileAccess.Write));
             //Init Zip
-            stream.CompressionLevel = (OfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
+            stream.CompressionLevel = (EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
             stream.PutNextEntry(fileName);
 
             var cache = new StringBuilder();            

@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Operators
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators
 {
     public enum Operators
     {

@@ -38,11 +38,11 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Globalization;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 using System.Xml;
-using OfficeOpenXml.DataValidation.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
 
-namespace OfficeOpenXml.DataValidation
+namespace EpplusFreeOfficeOpenXml.DataValidation
 {
     /// <summary>
     /// <para>

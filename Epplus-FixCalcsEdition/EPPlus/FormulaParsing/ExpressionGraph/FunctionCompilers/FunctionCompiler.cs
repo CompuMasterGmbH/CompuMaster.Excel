@@ -32,11 +32,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
 using System.Collections;
-using OfficeOpenXml.FormulaParsing.Utilities;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
 
-namespace OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
 {
     public abstract class FunctionCompiler
     {

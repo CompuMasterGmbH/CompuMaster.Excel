@@ -34,7 +34,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace OfficeOpenXml.Encryption
+namespace EpplusFreeOfficeOpenXml.Encryption
 {
     /// <summary>
     /// Encryption verifier inside the EncryptionInfo stream

@@ -36,7 +36,7 @@ using System.Text;
 using System.Xml;
 using System.Drawing;
 
-namespace OfficeOpenXml.Drawing
+namespace EpplusFreeOfficeOpenXml.Drawing
 {
     /// <summary>
     /// Type of Line cap

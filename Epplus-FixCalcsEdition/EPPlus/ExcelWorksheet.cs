@@ -40,23 +40,23 @@ using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
-using OfficeOpenXml.ConditionalFormatting;
-using OfficeOpenXml.DataValidation;
-using OfficeOpenXml.Drawing;
-using OfficeOpenXml.Drawing.Chart;
-using OfficeOpenXml.Drawing.Vml;
-using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
-using OfficeOpenXml.Packaging.Ionic.Zip;
-using OfficeOpenXml.Style.XmlAccess;
-using OfficeOpenXml.Table;
-using OfficeOpenXml.Table.PivotTable;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.ConditionalFormatting;
+using EpplusFreeOfficeOpenXml.DataValidation;
+using EpplusFreeOfficeOpenXml.Drawing;
+using EpplusFreeOfficeOpenXml.Drawing.Chart;
+using EpplusFreeOfficeOpenXml.Drawing.Vml;
+using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Table;
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.Utils;
 
 using System.Linq;
-using OfficeOpenXml.Compatibility;
-using OfficeOpenXml.Sparkline;
+using EpplusFreeOfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Sparkline;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {
   /// <summary>
   /// Worksheet hidden enumeration
@@ -2999,7 +2999,7 @@ namespace OfficeOpenXml
         {
                     //Init Zip
                     stream.CodecBufferSize = 8096;
-                    stream.CompressionLevel = (OfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
+                    stream.CompressionLevel = (EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
                     stream.PutNextEntry(fileName);
 
                     

@@ -35,9 +35,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.DataValidation
+namespace EpplusFreeOfficeOpenXml.DataValidation
 {
     /// <summary>
     /// Factory class for ExcelDataValidation.

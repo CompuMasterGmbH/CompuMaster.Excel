@@ -33,13 +33,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 using System.Xml;
-using OfficeOpenXml.ConditionalFormatting.Contracts;
+using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
 using System.Text.RegularExpressions;
 using System.Drawing;
 
-namespace OfficeOpenXml.ConditionalFormatting
+namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
 {
   /// <summary>
   /// Collection of <see cref="ExcelConditionalFormattingRule"/>.

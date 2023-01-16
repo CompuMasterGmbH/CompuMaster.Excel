@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Functions;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
 
-namespace OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers
 {
     public class LookupFunctionCompiler : FunctionCompiler
     {

@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 
-namespace OfficeOpenXml.Table.PivotTable
+namespace EpplusFreeOfficeOpenXml.Table.PivotTable
 {
     /// <summary>
     /// A pivo table data field

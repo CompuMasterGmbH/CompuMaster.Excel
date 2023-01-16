@@ -35,11 +35,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Drawing.Chart;
+using EpplusFreeOfficeOpenXml.Drawing.Chart;
 using System.Drawing;
-using OfficeOpenXml.Style.XmlAccess;
+using EpplusFreeOfficeOpenXml.Style.XmlAccess;
 
-namespace OfficeOpenXml.Drawing
+namespace EpplusFreeOfficeOpenXml.Drawing
 {
     /// <summary>
     /// Text anchoring

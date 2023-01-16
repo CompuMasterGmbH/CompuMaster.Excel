@@ -121,7 +121,7 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("outputPath", "The output filename is required")
             End If
 
-            Dim exportWorkbook As OfficeOpenXml.ExcelPackage
+            Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
             exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, New String() {}, SpecialSheet.FirstSheet)
             If exportWorkbook Is Nothing Then
                 Return
@@ -147,7 +147,7 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("outputPath", "The output filename is required")
             End If
 
-            Dim exportWorkbook As OfficeOpenXml.ExcelPackage
+            Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
             exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, New String() {}, SpecialSheet.CurrentSheet)
             If exportWorkbook Is Nothing Then
                 Return
@@ -209,7 +209,7 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("outputPath", "The output filename is required")
             End If
 
-            Dim exportWorkbook As OfficeOpenXml.ExcelPackage
+            Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
             exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
             If exportWorkbook Is Nothing Then
                 Return
@@ -223,7 +223,7 @@ Namespace CompuMaster.Data
         ''' <param name="exportWorkbook"></param>
         ''' <param name="outputPath"></param>
         ''' <remarks></remarks>
-        Private Shared Sub SaveWorkbook(ByVal exportWorkbook As OfficeOpenXml.ExcelPackage, ByVal outputPath As String)
+        Private Shared Sub SaveWorkbook(ByVal exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage, ByVal outputPath As String)
             If outputPath <> Nothing AndAlso outputPath.ToLower.EndsWith(".xlsb") Then
                 'Excel 2007 binary format
                 Throw New NotSupportedException("Excel2007 binary file format not supported yet")
@@ -255,7 +255,7 @@ Namespace CompuMaster.Data
         ''' <param name="specialSheet">A special sheet</param>
         ''' <returns>A Workbook object</returns>
         ''' <remarks></remarks>
-        Private Shared Function OpenAndWriteDataTableToXlsFile(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetnames As String(), ByVal specialSheet As SpecialSheet) As OfficeOpenXml.ExcelPackage
+        Private Shared Function OpenAndWriteDataTableToXlsFile(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetnames As String(), ByVal specialSheet As SpecialSheet) As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Some parameter validation, first
             If dataTables Is Nothing Then
@@ -264,13 +264,13 @@ Namespace CompuMaster.Data
                 Throw New ArgumentException("Arrays must have the same length", "sheetNames")
             End If
 
-            Dim exportWorkbook As OfficeOpenXml.ExcelPackage
+            Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Read existing file
             If inputPath <> Nothing Then
                 exportWorkbook = LoadWorkbookFile(inputPath)
             Else
-                exportWorkbook = New OfficeOpenXml.ExcelPackage
+                exportWorkbook = New EpplusFreeOfficeOpenXml.ExcelPackage
             End If
 
             For MyDataTableCounter As Integer = 0 To dataTables.Length - 1
@@ -293,7 +293,7 @@ Namespace CompuMaster.Data
                 'Find existing work sheet or add new one
                 Dim SheetIndex As Integer = ResolveWorksheetIndex(exportWorkbook, sheetName)
                 If SheetIndex = -1 Then
-                    Dim sheet As OfficeOpenXml.ExcelWorksheet
+                    Dim sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet
                     sheet = exportWorkbook.Workbook.Worksheets.Add(sheetName)
                     SheetIndex = sheet.Index - 1
                     If inputPath = Nothing AndAlso MyDataTableCounter = 0 Then
@@ -308,7 +308,7 @@ Namespace CompuMaster.Data
                     End If
                 End If
 
-                Dim WorkSheet As OfficeOpenXml.ExcelWorksheet = exportWorkbook.Workbook.Worksheets(SheetIndex + 1) 'CType(exportWorkbook.Workbook.Worksheets(SheetIndex), OfficeOpenXml.ExcelWorksheet)
+                Dim WorkSheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = exportWorkbook.Workbook.Worksheets(SheetIndex + 1) 'CType(exportWorkbook.Workbook.Worksheets(SheetIndex), EpplusFreeOfficeOpenXml.ExcelWorksheet)
                 'WorkSheet.Cells(1, 1).LoadFromDataTable(dataTable, True)
 
                 'Paste the column headers
@@ -316,7 +316,7 @@ Namespace CompuMaster.Data
                     Dim headline As String = dataTable.Columns(ColCounter).ColumnName
                     WorkSheet.Cells(1, ColCounter + 1).Value = headline
                     WorkSheet.Cells(1, ColCounter + 1).Style.Font.Bold = True
-                    WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Medium
+                    WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Style = EpplusFreeOfficeOpenXml.Style.ExcelBorderStyle.Medium
                     WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Color.SetColor(System.Drawing.Color.FromArgb(0, 0, 0))
                 Next
 
@@ -339,7 +339,7 @@ Namespace CompuMaster.Data
                             WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = Nothing
                         ElseIf value.GetType Is GetType(String) Then
                             'Excel requires line-breaks to be an LF character only, not a windows typical CR+LF
-                            Dim cell As OfficeOpenXml.ExcelRange = WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1)
+                            Dim cell As EpplusFreeOfficeOpenXml.ExcelRange = WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1)
                             If CType(value, String) <> "" Then
                                 value = Replace(CType(value, String), ControlChars.CrLf, ControlChars.Lf) 'Windows line breaks
                                 value = Replace(CType(value, String), ControlChars.Cr, ControlChars.Lf) 'Mac or Linux line break
@@ -376,14 +376,14 @@ Namespace CompuMaster.Data
                         ElseIf value.GetType Is GetType(Double) Then
                             Dim doubleValue As Double = CType(value, Double)
                             If doubleValue = Double.PositiveInfinity Then
-                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = OfficeOpenXml.ExcelErrorValue.Values.Num
+                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
                             ElseIf doubleValue = Double.NegativeInfinity Then
-                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = OfficeOpenXml.ExcelErrorValue.Values.Num
+                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
                             ElseIf Double.IsNaN(doubleValue) Then
-                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = OfficeOpenXml.ExcelErrorValue.Values.Div0
+                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Div0
                             ElseIf Double.Epsilon = doubleValue Then
                                 'too small number would be rounded to just 0
-                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = OfficeOpenXml.ExcelErrorValue.Values.Num
+                                WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
                             Else
                                 WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = CType(value, Double)
                             End If
@@ -430,7 +430,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
         ''' <remarks></remarks>
         Public Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
-            Dim exportWorkbook As OfficeOpenXml.ExcelPackage
+            Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
             exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
             If exportWorkbook Is Nothing Then
                 Return
@@ -458,7 +458,7 @@ Namespace CompuMaster.Data
         '        Throw New ArgumentNullException("dataTables")
         '    End If
 
-        '    Dim exportWorkbook As OfficeOpenXml.ExcelPackage
+        '    Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
         '    exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
         '    If exportWorkbook Is Nothing Then
         '        Throw New Exception("Workbook creation failed - missing workbook")
@@ -510,7 +510,7 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("inputPath", "The input filename is required")
             End If
 
-            Dim importWorkbook As OfficeOpenXml.ExcelPackage
+            Dim importWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Load the worksheet
             importWorkbook = LoadWorkbookFile(inputPath)
@@ -518,7 +518,7 @@ Namespace CompuMaster.Data
             Dim Result As New DataSet
 
             For sheetCounter As Integer = 1 To importWorkbook.Workbook.Worksheets.Count
-                Dim Sheet As OfficeOpenXml.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
+                Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
 
                 'Detect the column types which must be used
                 Dim sheetData As DataTable = ReadDataTableFromXlsFileCreateDataTableSuggestion(Sheet, Sheet.Name, 0, firstRowContainsColumnNames)
@@ -534,13 +534,13 @@ Namespace CompuMaster.Data
 
         End Function
 
-        Private Shared Function LoadWorkbookFile(inputPath As String) As OfficeOpenXml.ExcelPackage
+        Private Shared Function LoadWorkbookFile(inputPath As String) As EpplusFreeOfficeOpenXml.ExcelPackage
             'Load the changed worksheet
             Dim file As New System.IO.FileInfo(inputPath)
             If file.Exists = False Then
                 Throw New System.IO.FileNotFoundException("Missing file: " & file.ToString, file.ToString)
             End If
-            Dim importWorkbook As New OfficeOpenXml.ExcelPackage(file)
+            Dim importWorkbook As New EpplusFreeOfficeOpenXml.ExcelPackage(file)
             Return importWorkbook
         End Function
 
@@ -634,11 +634,11 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("inputPath", "The input filename is required")
             End If
 
-            Dim importWorkbook As OfficeOpenXml.ExcelPackage
+            Dim importWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Save the changed worksheet
             importWorkbook = LoadWorkbookFile(inputPath)
-            Dim Sheet As OfficeOpenXml.ExcelWorksheet = importWorkbook.Workbook.Worksheets(1)
+            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = importWorkbook.Workbook.Worksheets(1)
 
             'Detect the column types which must be used
             Dim Result As DataTable = ReadDataTableFromXlsFileCreateDataTableSuggestion(Sheet, Sheet.Name, startReadingAtRowIndex, firstRowContainsColumnNames)
@@ -737,14 +737,14 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("inputPath", "The input filename is required")
             End If
 
-            Dim importWorkbook As OfficeOpenXml.ExcelPackage
+            Dim importWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Save the changed worksheet
             importWorkbook = LoadWorkbookFile(inputPath)
             If sheetName = Nothing Then
                 sheetName = importWorkbook.Workbook.Worksheets.First.Name
             End If
-            Dim Sheet As OfficeOpenXml.ExcelWorksheet = LookupWorksheet(importWorkbook, sheetName)
+            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = LookupWorksheet(importWorkbook, sheetName)
 
             'Detect the column types which must be used
             Dim Result As DataTable = ReadDataTableFromXlsFileCreateDataTableSuggestion(Sheet, sheetName, startReadingAtRowIndex, firstRowContainsColumnNames)
@@ -850,14 +850,14 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("data", "A datatable must be predefined which shall hold all the data")
             End If
 
-            Dim importWorkbook As OfficeOpenXml.ExcelPackage
+            Dim importWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Save the changed worksheet
             importWorkbook = LoadWorkbookFile(inputPath)
             If sheetName = Nothing Then
                 sheetName = importWorkbook.Workbook.Worksheets.First.Name
             End If
-            Dim Sheet As OfficeOpenXml.ExcelWorksheet = LookupWorksheet(importWorkbook, sheetName)
+            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = LookupWorksheet(importWorkbook, sheetName)
 
             'Extend table's column set as long as columns count matches
             ReadDataTableFromXlsFileExtendDataTableColumns(data, Sheet, 0, firstRowContainsColumnNames)
@@ -885,7 +885,7 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException("inputPath", "The input filename is required")
             End If
 
-            Dim importWorkbook As OfficeOpenXml.ExcelPackage
+            Dim importWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
 
             'Save the changed worksheet
             importWorkbook = LoadWorkbookFile(inputPath)
@@ -893,7 +893,7 @@ Namespace CompuMaster.Data
             Dim Result As New ArrayList
 
             For sheetCounter As Integer = 1 To importWorkbook.Workbook.Worksheets.Count
-                Dim Sheet As OfficeOpenXml.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
+                Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
                 Result.Add(Sheet.Name)
             Next
 
@@ -910,7 +910,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheet"></param>
         ''' <returns></returns>
         ''' <remarks></remarks>
-        Private Shared Function LookupLastContentColumnIndex(ByVal sheet As OfficeOpenXml.ExcelWorksheet) As Integer
+        Private Shared Function LookupLastContentColumnIndex(ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet) As Integer
             If sheet.Dimension Is Nothing Then Return 0
             Dim autoSuggestionLastRowIndex As Integer = sheet.Dimension.End.Row - 1
             Dim autoSuggestedResult As Integer = sheet.Dimension.End.Column - 1
@@ -930,7 +930,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheet"></param>
         ''' <returns></returns>
         ''' <remarks></remarks>
-        Private Shared Function LookupLastContentRowIndex(ByVal sheet As OfficeOpenXml.ExcelWorksheet) As Integer
+        Private Shared Function LookupLastContentRowIndex(ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet) As Integer
             If sheet.Dimension Is Nothing Then Return 0
             Dim autoSuggestionLastColumnIndex As Integer = sheet.Dimension.End.Column - 1
             Dim autoSuggestedResult As Integer = sheet.Dimension.End.Row - 1
@@ -952,7 +952,7 @@ Namespace CompuMaster.Data
         ''' <param name="columnIndex">Zero-based index</param>
         ''' <returns></returns>
         ''' <remarks></remarks>
-        Private Shared Function IsEmptyCell(ByVal sheet As OfficeOpenXml.ExcelWorksheet, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
+        Private Shared Function IsEmptyCell(ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
             Dim value As Object = sheet.Cells(rowIndex + 1, columnIndex + 1).Value
             If value Is Nothing Then
                 Return True
@@ -988,7 +988,7 @@ Namespace CompuMaster.Data
         ''' 	[AdminSupport]	29.09.2005	Created
         ''' </history>
         ''' -----------------------------------------------------------------------------
-        Private Shared Sub ReadDataTableFromXlsFile(ByVal sheet As OfficeOpenXml.ExcelWorksheet, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
+        Private Shared Sub ReadDataTableFromXlsFile(ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
             'Read all data and put it into the datatable (pay attention to field with blank content, #DIV/0 and all the other error types
             Dim firstRowIndexWithContent As Integer
             If firstRowContainsColumnNames Then
@@ -1009,15 +1009,15 @@ Namespace CompuMaster.Data
                             value = CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, Boolean)
                         Case VariantType.Error
                             If data.Columns(colCounter).DataType Is GetType(Double) Then
-                                If CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, OfficeOpenXml.ExcelErrorValue).ToString = OfficeOpenXml.ExcelErrorValue.Values.Div0 Then
+                                If CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Div0 Then
                                     value = Double.NaN
-                                ElseIf CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, OfficeOpenXml.ExcelErrorValue).ToString = OfficeOpenXml.ExcelErrorValue.Values.Num Then
+                                ElseIf CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num Then
                                     value = Double.PositiveInfinity
                                 Else
                                     value = DBNull.Value
                                 End If
                             ElseIf data.Columns(colCounter).DataType Is GetType(String) Then
-                                value = CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, OfficeOpenXml.ExcelErrorValue).ToString
+                                value = CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString
                             Else
                                 value = DBNull.Value
                             End If
@@ -1091,7 +1091,7 @@ Namespace CompuMaster.Data
             Return DateTime.FromOADate(value)
         End Function
 
-        Private Shared Function LookupDotNetType(xlsCell As OfficeOpenXml.ExcelRange) As VariantType
+        Private Shared Function LookupDotNetType(xlsCell As EpplusFreeOfficeOpenXml.ExcelRange) As VariantType
             If xlsCell Is Nothing OrElse xlsCell.Value Is Nothing Then
                 Return VariantType.Empty
             Else
@@ -1108,7 +1108,7 @@ Namespace CompuMaster.Data
                         Return VariantType.Boolean
                     Case GetType(DateTime)
                         Return VariantType.Date
-                    Case GetType(OfficeOpenXml.ExcelErrorValue)
+                    Case GetType(EpplusFreeOfficeOpenXml.ExcelErrorValue)
                         Return VariantType.Error
                     Case Else
                         Return VariantType.Object
@@ -1141,7 +1141,7 @@ Namespace CompuMaster.Data
         ''' <returns>A data table with the suggested structure to be able to hold all the data of the sheet</returns>
         ''' <remarks>
         ''' </remarks>
-        Private Shared Function ReadDataTableFromXlsFileCreateDataTableSuggestion(ByVal sheet As OfficeOpenXml.ExcelWorksheet, ByVal tableName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
+        Private Shared Function ReadDataTableFromXlsFileCreateDataTableSuggestion(ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet, ByVal tableName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
             'Create a datatable which can hold all the data available in that sheet (pay attention to the automatic column type detection)
             Dim Result As New DataTable(tableName)
             ReadDataTableFromXlsFileExtendDataTableColumns(Result, sheet, startReadingAtRowIndex, firstRowContainsColumnNames)
@@ -1157,7 +1157,7 @@ Namespace CompuMaster.Data
         ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
         ''' <remarks>
         ''' </remarks>
-        Private Shared Sub ReadDataTableFromXlsFileExtendDataTableColumns(inputTable As System.Data.DataTable, ByVal sheet As OfficeOpenXml.ExcelWorksheet, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean)
+        Private Shared Sub ReadDataTableFromXlsFileExtendDataTableColumns(inputTable As System.Data.DataTable, ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean)
             'Add required amount of columns
             'sheet.CalcDimensions() 'Calculate the sheet end positions (to prevent bug that this information is 0, e. g. after saving and reloading with this component)
             Dim LastSheetContentRowIndex As Integer = LookupLastContentRowIndex(sheet)
@@ -1178,8 +1178,8 @@ Namespace CompuMaster.Data
                             'no decision here
                         Case VariantType.Error
                             'value forces string-type and breaks for loop
-                            Select Case CType(sheet.Cells(RowCounter + 1, colCounter + 1).Value, OfficeOpenXml.ExcelErrorValue).ToString
-                                Case OfficeOpenXml.ExcelErrorValue.Values.Div0, OfficeOpenXml.ExcelErrorValue.Values.Num
+                            Select Case CType(sheet.Cells(RowCounter + 1, colCounter + 1).Value, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString
+                                Case EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Div0, EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
                                     fieldType = GetType(Double)
                                 Case Else
                                     fieldType = Nothing
@@ -1252,7 +1252,7 @@ Namespace CompuMaster.Data
         ''' <param name="cell"></param>
         ''' <returns></returns>
         ''' <remarks></remarks>
-        Private Shared Function CellValueAsString(ByVal cell As OfficeOpenXml.ExcelRange) As String
+        Private Shared Function CellValueAsString(ByVal cell As EpplusFreeOfficeOpenXml.ExcelRange) As String
             Try
                 Return cell.Text
             Catch ex As Exception
@@ -1272,10 +1272,10 @@ Namespace CompuMaster.Data
         ''' 	[AdminSupport]	29.09.2005	Created
         ''' </history>
         ''' -----------------------------------------------------------------------------
-        Private Shared Function ResolveWorksheetIndex(ByVal workbook As OfficeOpenXml.ExcelPackage, ByVal worksheetName As String) As Integer
+        Private Shared Function ResolveWorksheetIndex(ByVal workbook As EpplusFreeOfficeOpenXml.ExcelPackage, ByVal worksheetName As String) As Integer
             Dim sheetIndex As Integer = -1
             For MyCounter As Integer = 0 To workbook.Workbook.Worksheets.Count - 1
-                Dim sheet As OfficeOpenXml.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter + 1)
+                Dim sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter + 1)
                 If sheet.Name.ToLower = worksheetName.ToLower Then
                     sheetIndex = MyCounter
                 End If
@@ -1296,7 +1296,7 @@ Namespace CompuMaster.Data
         ''' 	[adminwezel]	02.02.2007	Created
         ''' </history>
         ''' -----------------------------------------------------------------------------
-        Private Shared Function LookupWorksheet(ByVal workbook As OfficeOpenXml.ExcelPackage, ByVal sheetName As String) As OfficeOpenXml.ExcelWorksheet
+        Private Shared Function LookupWorksheet(ByVal workbook As EpplusFreeOfficeOpenXml.ExcelPackage, ByVal sheetName As String) As EpplusFreeOfficeOpenXml.ExcelWorksheet
             Dim resolvedIndex As Integer = ResolveWorksheetIndex(workbook, sheetName)
             If resolvedIndex = -1 Then
                 Throw New Exception("Worksheet """ & sheetName & """ hasn't been found")
@@ -1312,7 +1312,7 @@ Namespace CompuMaster.Data
         ''' <param name="cell"></param>
         ''' <returns>True for DateTime, False for Number(Double)</returns>
         ''' <remarks></remarks>
-        Private Shared Function IsDateTimeInsteadOfNumber(ByVal cell As OfficeOpenXml.ExcelRange) As Boolean
+        Private Shared Function IsDateTimeInsteadOfNumber(ByVal cell As EpplusFreeOfficeOpenXml.ExcelRange) As Boolean
             Dim numFormat As String = cell.Style.Numberformat.Format
             If numFormat.ToLower.IndexOf("y") > 0 OrElse numFormat.ToLower.IndexOf("m") > 0 OrElse numFormat.ToLower.IndexOf("d") > 0 OrElse numFormat.ToLower.IndexOf("h") > 0 Then
                 Try

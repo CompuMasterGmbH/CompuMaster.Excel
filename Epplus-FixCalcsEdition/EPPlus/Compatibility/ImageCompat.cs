@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace OfficeOpenXml.Compatibility
+namespace EpplusFreeOfficeOpenXml.Compatibility
 {
     internal class ImageCompat
     {

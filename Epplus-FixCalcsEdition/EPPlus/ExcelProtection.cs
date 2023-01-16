@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.Encryption;
-namespace OfficeOpenXml
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Encryption;
+namespace EpplusFreeOfficeOpenXml
 {
     /// <summary>
     /// Sets protection on the workbook level

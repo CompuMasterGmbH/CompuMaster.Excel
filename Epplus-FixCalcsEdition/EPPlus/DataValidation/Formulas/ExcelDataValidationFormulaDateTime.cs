@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.DataValidation.Formulas.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
 using System.Globalization;
-namespace OfficeOpenXml.DataValidation.Formulas
+namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas
 {
     internal class ExcelDataValidationFormulaDateTime : ExcelDataValidationFormulaValue<DateTime?>, IExcelDataValidationFormulaDateTime
     {

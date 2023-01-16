@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-namespace OfficeOpenXml.Style.XmlAccess
+namespace EpplusFreeOfficeOpenXml.Style.XmlAccess
 {
     /// <summary>
     /// Xml access class for fills

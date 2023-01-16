@@ -33,9 +33,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Style.Dxf;
+using EpplusFreeOfficeOpenXml.Style.Dxf;
 
-namespace OfficeOpenXml.ConditionalFormatting.Contracts
+namespace EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts
 {
 	/// <summary>
 	/// Interface for conditional formatting rule

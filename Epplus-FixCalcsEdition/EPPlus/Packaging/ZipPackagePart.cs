@@ -33,9 +33,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using OfficeOpenXml.Packaging.Ionic.Zip;
+using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
 
-namespace OfficeOpenXml.Packaging
+namespace EpplusFreeOfficeOpenXml.Packaging
 {
     internal class ZipPackagePart : ZipPackageRelationshipBase, IDisposable
     {
@@ -142,7 +142,7 @@ namespace OfficeOpenXml.Packaging
                 {
                     return;
                 }
-                os.CompressionLevel = (OfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)CompressionLevel;
+                os.CompressionLevel = (EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)CompressionLevel;
                 os.PutNextEntry(Uri.OriginalString);
                 os.Write(b, 0, b.Length);
             }

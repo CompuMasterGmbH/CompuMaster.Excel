@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace OfficeOpenXml.Sparkline
+namespace EpplusFreeOfficeOpenXml.Sparkline
 {
     /// <summary>
     /// Represents a group of sparklines

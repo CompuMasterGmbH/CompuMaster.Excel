@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.Excel.Operators;
+using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.Database
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Database
 {
     public class ExcelDatabaseRow
     {

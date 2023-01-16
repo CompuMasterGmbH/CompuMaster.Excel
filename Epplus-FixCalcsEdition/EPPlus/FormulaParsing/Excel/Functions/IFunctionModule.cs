@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
 {
     public interface IFunctionModule
     {

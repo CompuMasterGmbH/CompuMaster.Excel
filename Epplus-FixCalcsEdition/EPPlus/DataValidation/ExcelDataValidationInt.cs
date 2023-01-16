@@ -33,12 +33,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.DataValidation.Formulas;
-using OfficeOpenXml.DataValidation.Formulas.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Formulas;
+using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
 using System.Xml;
-using OfficeOpenXml.DataValidation.Contracts;
+using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
 
-namespace OfficeOpenXml.DataValidation
+namespace EpplusFreeOfficeOpenXml.DataValidation
 {
     /// <summary>
     /// Data validation for integer values.

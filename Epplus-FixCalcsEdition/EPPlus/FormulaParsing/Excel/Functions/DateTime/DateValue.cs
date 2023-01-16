@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime
 {
     /// <summary>
     /// Simple implementation of DateValue function, just using .NET built-in

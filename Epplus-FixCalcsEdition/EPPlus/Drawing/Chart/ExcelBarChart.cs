@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using OfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
 using System.Globalization;
 
-namespace OfficeOpenXml.Drawing.Chart
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     /// <summary>
     /// Bar chart

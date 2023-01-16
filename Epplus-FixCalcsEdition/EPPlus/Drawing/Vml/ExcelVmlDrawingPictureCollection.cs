@@ -35,9 +35,9 @@ using System.Text;
 using System.Xml;
 using System.Collections;
 using System.Globalization;
-using OfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Utils;
 
-namespace OfficeOpenXml.Drawing.Vml
+namespace EpplusFreeOfficeOpenXml.Drawing.Vml
 {
     public class ExcelVmlDrawingPictureCollection : ExcelVmlDrawingBaseCollection, IEnumerable
     {

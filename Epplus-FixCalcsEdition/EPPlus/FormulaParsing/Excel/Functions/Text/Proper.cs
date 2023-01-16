@@ -27,9 +27,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
 
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions.Text
+namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Text
 {
     public class Proper : ExcelFunction
     {

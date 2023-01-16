@@ -39,7 +39,7 @@ using comTypes = System.Runtime.InteropServices.ComTypes;
 using System.IO;
 using System.Security;
 
-namespace OfficeOpenXml.Utils.CompundDocument
+namespace EpplusFreeOfficeOpenXml.Utils.CompundDocument
 {
     internal class CompoundDocument
     {        

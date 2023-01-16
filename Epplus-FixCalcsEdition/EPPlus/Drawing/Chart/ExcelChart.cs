@@ -35,10 +35,10 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 using System.IO;
-using OfficeOpenXml.Table.PivotTable;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.Packaging;
-namespace OfficeOpenXml.Drawing.Chart
+using EpplusFreeOfficeOpenXml.Table.PivotTable;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Packaging;
+namespace EpplusFreeOfficeOpenXml.Drawing.Chart
 {
     #region "Chart Enums"
     /// <summary>

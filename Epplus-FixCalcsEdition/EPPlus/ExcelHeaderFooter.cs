@@ -35,13 +35,13 @@ using System.Xml;
 using System.Text.RegularExpressions;
 using System.Drawing;
 using System.Collections.Generic;
-using OfficeOpenXml.Drawing.Vml;
+using EpplusFreeOfficeOpenXml.Drawing.Vml;
 using System.IO;
-using OfficeOpenXml.Drawing;
-using OfficeOpenXml.Utils;
-using OfficeOpenXml.Compatibility;
+using EpplusFreeOfficeOpenXml.Drawing;
+using EpplusFreeOfficeOpenXml.Utils;
+using EpplusFreeOfficeOpenXml.Compatibility;
 
-namespace OfficeOpenXml
+namespace EpplusFreeOfficeOpenXml
 {    
     /// <summary>
     /// How a picture will be aligned in the header/footer
