@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel.MsExcelComInterop</RootNamespace>
+    <TargetFramework>net6.0</TargetFramework>
+    <Version>2023.01.27.100</Version>
+    <Title>CompuMaster.Excel.MsExcelComInterop</Title>
+    <OptionStrict>On</OptionStrict>
+    <ImportedNamespaces>CompuMaster.ComInterop=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,CompuMaster.MsExcelComInterop=True</ImportedNamespaces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Import Include="CompuMaster.ComInterop" />
+  </ItemGroup>
+
+</Project>
