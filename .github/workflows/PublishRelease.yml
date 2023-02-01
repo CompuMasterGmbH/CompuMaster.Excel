@@ -29,7 +29,7 @@ env:
   BUILD_PROJECT4: ExcelOps-EpplusPolyform/ExcelOps-EpplusPolyformEdition.vbproj
   BUILD_PROJECT5: ExcelOps-MicrosoftExcelAndReporting/ExcelOps-MicrosoftExcelAndReporting.vbproj
   BUILD_PROJECT6: ExcelOps-SpireXls/ExcelOps-SpireXls.vbproj
-  BUILD_PROJECT7: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/CompuMaster.Data.Controls.vbproj
+  BUILD_PROJECT7: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT8: CM.Data.EpplusFixCalcsEdition/CM.Data.EpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT9: CM.Data.EpplusPolyformEdition/CM.Data.EpplusPolyformEdition.vbproj
   # Name of directory (e.g. "bin") containing the subdirectory (e.g. "CI_CD") with all output files (*.dll)
