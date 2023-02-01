@@ -84,11 +84,11 @@ jobs:
               with:
                 dotnet-version: 7.0.x
 
-            - name: Setup assembly versions for all projects to $GITHUB_REF_NAME
+            - name: Setup assembly versions for all projects to ${{  github.ref_name }}
               uses: jacobtomlinson/gha-find-replace@v2
               with:
                 find: '\<Version\>.*?\</Version\>'
-                replace: "<Version>$GITHUB_REF_NAME</Version>"
+                replace: "<Version>${{  github.ref_name }}</Version>"
                 include: "**.??proj" 
 
             - name: Install dependencies
