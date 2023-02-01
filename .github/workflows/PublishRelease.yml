@@ -20,7 +20,7 @@ env:
 
   # Name of project configuration for build as well as name of the bin output subdirectory (both must match for "dotnet pack" to find compiled files!)
   BUILD_CONFIGURATION: CI_CD
-  BUILD_OUTPUT_SUBDIR: CI_CD
+  BUILD_OUTPUT_SUBDIR: Debug
   PACK_CONFIGURATION: CI_CD
   # Name of build project which creates required output for packaging/deployment
   BUILD_PROJECT1: Epplus-FixCalcsEdition/Epplus/EPPlus45-FixCalcsEdition.MultiTarget.csproj
