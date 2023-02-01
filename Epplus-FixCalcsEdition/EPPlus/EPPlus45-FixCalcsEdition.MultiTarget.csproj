@@ -4,15 +4,15 @@
     <TargetFrameworks>net48;net6</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/JanKallman/EPPlus</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <Authors>Jan Källman, Jochen Wezel</Authors>
     <Company></Company>
     <Product>EPPlus CompuMaster-Edition</Product>
     <Description>EPPlus CompuMaster-Edition, fork of EPPlus 4.5.3.3 with features for calculation cache reset</Description>
-    <AssemblyName>EPPlus.CompuMasterFixCalcsEdition</AssemblyName>
+    <AssemblyName>CompuMaster.EPPlus4.FixCalcsEdition</AssemblyName>
     <RootNamespace>EpplusFreeOfficeOpenXml</RootNamespace>
     <RepositoryUrl></RepositoryUrl>
-    <PackageTags>Excel ooxml</PackageTags>
+    <PackageTags>Excel Epplus</PackageTags>
     <Copyright>Jan Källman 2020, CompuMaster GmbH 2021-2023</Copyright>
     <PackageReleaseNotes>
 		# EpplusFreeOfficeOpenXml
@@ -240,7 +240,7 @@ Release Candidate changes
     <AssemblyOriginatorKeyFile>OpenOfficeXml.snk</AssemblyOriginatorKeyFile>
     <NeutralLanguage />
     <PackageLicenseFile>lgpl-3.0.txt</PackageLicenseFile>
-    <PackageId>$(AssemblyName)-CompuMaster-Edition</PackageId>
+    <PackageId>$(AssemblyName)</PackageId>
   </PropertyGroup>
  
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
