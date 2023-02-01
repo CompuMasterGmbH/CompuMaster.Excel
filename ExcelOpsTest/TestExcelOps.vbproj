@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>CompuMaster.Excel.Test</RootNamespace>
-    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <TargetFrameworks>net48;net7.0</TargetFrameworks>
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
     <OptionStrict>On</OptionStrict>
     <AssemblyName>CompuMaster.Excel.Test</AssemblyName>
