@@ -23,7 +23,7 @@
  * Mats Alm   		                Added		                2013-12-26
  *******************************************************************************/
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     public abstract class CompileResultValidator
     {

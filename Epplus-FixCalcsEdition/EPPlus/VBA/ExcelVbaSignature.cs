@@ -33,12 +33,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 using System.IO;
-using EpplusFreeOfficeOpenXml.Utils.CompundDocument;
+using CompuMaster.Epplus4.Utils.CompundDocument;
 using System.Security.Cryptography.Pkcs;
 
-namespace EpplusFreeOfficeOpenXml.VBA
+namespace CompuMaster.Epplus4.VBA
 {
     /// <summary>
     /// The code signature properties of the project

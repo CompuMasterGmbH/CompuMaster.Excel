@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Globalization;
-namespace EpplusFreeOfficeOpenXml.Style.XmlAccess
+namespace CompuMaster.Epplus4.Style.XmlAccess
 {
     /// <summary>
     /// Xml access class for color

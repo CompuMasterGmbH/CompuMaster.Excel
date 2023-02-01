@@ -33,10 +33,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using EpplusFreeOfficeOpenXml.ConditionalFormatting;
+using CompuMaster.Epplus4.ConditionalFormatting;
 using System.Drawing;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts
+namespace CompuMaster.Epplus4.ConditionalFormatting.Contracts
 {
 	/// <summary>
 	/// IExcelConditionalFormattingDataBar

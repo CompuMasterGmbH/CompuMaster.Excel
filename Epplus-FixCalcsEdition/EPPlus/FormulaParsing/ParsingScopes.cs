@@ -20,9 +20,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing
+namespace CompuMaster.Epplus4.FormulaParsing
 {
     /// <summary>
     /// This class implements a stack on which instances of <see cref="ParsingScope"/>

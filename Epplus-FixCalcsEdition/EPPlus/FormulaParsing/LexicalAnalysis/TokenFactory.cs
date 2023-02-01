@@ -35,13 +35,13 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml;
+using CompuMaster.Epplus4.FormulaParsing;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
+namespace CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis
 {
     public class TokenFactory : ITokenFactory
     {
@@ -152,7 +152,7 @@ namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
             {
                 return new Token(token, TokenType.Enumerable);
             }
-            var at = EpplusFreeOfficeOpenXml.ExcelAddressBase.IsValid(token, _r1c1);
+            var at = CompuMaster.Epplus4.ExcelAddressBase.IsValid(token, _r1c1);
             if (at==ExcelAddressBase.AddressType.InternalAddress)
             {
                 return new Token(token.ToUpper(CultureInfo.InvariantCulture), TokenType.ExcelAddress);

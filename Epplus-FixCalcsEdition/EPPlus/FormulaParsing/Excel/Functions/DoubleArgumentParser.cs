@@ -27,11 +27,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Globalization;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
-using util=EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
+using util=CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     public class DoubleArgumentParser : ArgumentParser
     {

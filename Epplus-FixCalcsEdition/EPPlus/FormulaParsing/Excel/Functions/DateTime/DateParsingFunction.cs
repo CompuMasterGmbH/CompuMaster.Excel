@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.DateTime
 {
     public abstract class DateParsingFunction : ExcelFunction
     {

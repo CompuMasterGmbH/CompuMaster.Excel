@@ -33,8 +33,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Collections;
-using EpplusFreeOfficeOpenXml.Utils;
-namespace EpplusFreeOfficeOpenXml
+using CompuMaster.Epplus4.Utils;
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Collection of Excelcomment objects

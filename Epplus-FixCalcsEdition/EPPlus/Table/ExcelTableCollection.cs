@@ -34,8 +34,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
-namespace EpplusFreeOfficeOpenXml.Table
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
+namespace CompuMaster.Epplus4.Table
 {
     /// <summary>
     /// A collection of table objects

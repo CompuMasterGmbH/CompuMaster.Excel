@@ -35,7 +35,7 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Table.PivotTable
+namespace CompuMaster.Epplus4.Table.PivotTable
 {
     
     /// <summary>

@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas
+namespace CompuMaster.Epplus4.DataValidation.Formulas
 {
     /// <summary>
     /// 

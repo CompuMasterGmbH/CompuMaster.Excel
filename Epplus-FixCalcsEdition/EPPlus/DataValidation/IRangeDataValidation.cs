@@ -31,9 +31,9 @@
  *******************************************************************************/
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
+using CompuMaster.Epplus4.DataValidation.Contracts;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation
+namespace CompuMaster.Epplus4.DataValidation
 {
     /// <summary>
     /// Provides functionality for adding datavalidation to a range (<see cref="ExcelRangeBase"/>). Each method will

@@ -35,7 +35,7 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Drawing
+namespace CompuMaster.Epplus4.Drawing
 {
     /// <summary>
     /// 3D settings

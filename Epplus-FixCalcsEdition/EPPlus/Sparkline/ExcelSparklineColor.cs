@@ -1,4 +1,4 @@
-﻿using EpplusFreeOfficeOpenXml.Style;
+﻿using CompuMaster.Epplus4.Style;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Xml;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Sparkline
+namespace CompuMaster.Epplus4.Sparkline
 {
     /// <summary>
     /// Sparkline colors

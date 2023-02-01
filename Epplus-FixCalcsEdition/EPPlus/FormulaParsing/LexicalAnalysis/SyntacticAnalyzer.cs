@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
+namespace CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis
 {
     public class SyntacticAnalyzer : ISyntacticAnalyzer
     {

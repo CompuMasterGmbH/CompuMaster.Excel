@@ -32,17 +32,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EpplusFreeOfficeOpenXml.Style.XmlAccess;
+using CompuMaster.Epplus4.Style.XmlAccess;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Style
+namespace CompuMaster.Epplus4.Style
 {
     /// <summary>
     /// The background fill of a cell
     /// </summary>
     public class ExcelGradientFill : StyleBase
     {
-        internal ExcelGradientFill(ExcelStyles styles, EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string address, int index) :
+        internal ExcelGradientFill(ExcelStyles styles, CompuMaster.Epplus4.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string address, int index) :
             base(styles, ChangedEvent, PositionID, address)
 
         {

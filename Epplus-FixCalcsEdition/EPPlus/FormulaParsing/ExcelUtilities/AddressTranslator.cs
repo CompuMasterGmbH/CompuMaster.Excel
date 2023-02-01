@@ -34,10 +34,10 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
+namespace CompuMaster.Epplus4.FormulaParsing.ExcelUtilities
 {
     /// <summary>
     /// Handles translations from Spreadsheet addresses to 0-based numeric index.

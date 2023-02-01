@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Packaging
+namespace CompuMaster.Epplus4.Packaging
 {
     public class ZipPackageRelationship
     {

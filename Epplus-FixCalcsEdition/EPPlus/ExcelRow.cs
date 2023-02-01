@@ -32,8 +32,8 @@
 
 using System;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Style;
-namespace EpplusFreeOfficeOpenXml
+using CompuMaster.Epplus4.Style;
+namespace CompuMaster.Epplus4
 {
 	internal class RowInternal
     {

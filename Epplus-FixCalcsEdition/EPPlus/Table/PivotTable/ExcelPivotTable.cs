@@ -34,10 +34,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.Table;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Table;
+using CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml.Table.PivotTable
+namespace CompuMaster.Epplus4.Table.PivotTable
 {
     /// <summary>
     /// An Excel Pivottable

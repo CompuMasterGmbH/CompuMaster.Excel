@@ -35,14 +35,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Style
+namespace CompuMaster.Epplus4.Style
 {
     /// <summary>
     /// The numberformat of the cell
     /// </summary>
     public sealed class ExcelNumberFormat : StyleBase
     {
-        internal ExcelNumberFormat(ExcelStyles styles, EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string Address, int index) :
+        internal ExcelNumberFormat(ExcelStyles styles, CompuMaster.Epplus4.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string Address, int index) :
             base(styles, ChangedEvent, PositionID, Address)
         {
             Index = index;

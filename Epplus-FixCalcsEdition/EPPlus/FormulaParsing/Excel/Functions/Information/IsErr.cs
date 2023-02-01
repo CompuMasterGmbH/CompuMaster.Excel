@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Information
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Information
 {
     public class IsErr : ErrorHandlingFunction
     {

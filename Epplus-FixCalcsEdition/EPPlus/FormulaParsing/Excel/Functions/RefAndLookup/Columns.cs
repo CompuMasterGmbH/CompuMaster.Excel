@@ -26,12 +26,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup
 {
     public class Columns : LookupFunction
     {

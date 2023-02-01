@@ -24,11 +24,11 @@
 //
 // ------------------------------------------------------------------
 
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Crc;
+using CompuMaster.Epplus4.Packaging.Ionic.Crc;
 using System;
 using System.IO;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zlib
 {
 
     internal enum ZlibStreamFlavor { ZLIB = 1950, DEFLATE = 1951, GZIP = 1952 }

@@ -34,7 +34,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Utils.CompundDocument
+namespace CompuMaster.Epplus4.Utils.CompundDocument
 {
     internal class CompoundDocumentItem : IComparable<CompoundDocumentItem>
     {

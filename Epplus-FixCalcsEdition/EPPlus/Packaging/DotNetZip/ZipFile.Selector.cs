@@ -35,10 +35,10 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
+using CompuMaster.Epplus4.Packaging.Ionic.Zip;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
 
     partial class ZipFile
@@ -1245,7 +1245,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
 
 
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic
+namespace CompuMaster.Epplus4.Packaging.Ionic
 {
     internal abstract partial class SelectionCriterion
     {

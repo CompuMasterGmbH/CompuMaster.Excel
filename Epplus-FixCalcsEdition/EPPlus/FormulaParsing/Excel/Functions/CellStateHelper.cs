@@ -25,7 +25,7 @@
 using System;
 using System.Linq;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     internal static class CellStateHelper
     {

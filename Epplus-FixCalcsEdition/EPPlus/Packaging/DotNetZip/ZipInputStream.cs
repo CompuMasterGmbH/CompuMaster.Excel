@@ -34,8 +34,8 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using Ionic.Zip;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Crc;
+using CompuMaster.Epplus4.Packaging.Ionic.Zip;
+using CompuMaster.Epplus4.Packaging.Ionic.Crc;
 
 namespace  Ionic.Zip
 {

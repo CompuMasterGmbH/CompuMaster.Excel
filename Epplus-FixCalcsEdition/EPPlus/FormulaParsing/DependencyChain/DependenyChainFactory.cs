@@ -28,15 +28,15 @@
  * ******************************************************************************
  * Jan Källman                      Added                       2012-03-04  
  *******************************************************************************/
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing
+namespace CompuMaster.Epplus4.FormulaParsing
 {
     internal static class DependencyChainFactory
     {

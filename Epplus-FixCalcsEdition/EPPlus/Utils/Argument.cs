@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Utils
+namespace CompuMaster.Epplus4.Utils
 {
     internal class Argument<T> : IArgument<T>
     {

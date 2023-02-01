@@ -7,15 +7,15 @@
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <Authors>Jan Källman, Jochen Wezel</Authors>
     <Company></Company>
-    <Product>EPPlus CompuMaster-Edition</Product>
-    <Description>EPPlus CompuMaster-Edition, fork of EPPlus 4.5.3.3 with features for calculation cache reset</Description>
-    <AssemblyName>CompuMaster.EPPlus4.FixCalcsEdition</AssemblyName>
+    <Product>EPPlus CompuMaster FixMsCalcs-Edition</Product>
+    <Description>EPPlus CompuMaster FixMsCalcs-Edition, fork of EPPlus 4.5.3.3 with features for calculation cache reset</Description>
+    <AssemblyName>CompuMaster.EPPlus4</AssemblyName>
     <RootNamespace>EpplusFreeOfficeOpenXml</RootNamespace>
     <RepositoryUrl></RepositoryUrl>
     <PackageTags>Excel Epplus</PackageTags>
     <Copyright>Jan Källman 2020, CompuMaster GmbH 2021-2023</Copyright>
     <PackageReleaseNotes>
-		# EpplusFreeOfficeOpenXml
+		# CompuMaster.Epplus4
 
 		Added support for ExcelRange.ClearCachedCalculatedFormulaValue and ExcelRange.HasMissingCachedCalculatedFormulaValue to support removal of calculated results to force MS Excel to recalculate all cells
 		(otherwise it might happen that MS Excel doesn't refresh those calculated values in indirectly depending cells)

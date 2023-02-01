@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     public class BoolArgumentParser : ArgumentParser
     {

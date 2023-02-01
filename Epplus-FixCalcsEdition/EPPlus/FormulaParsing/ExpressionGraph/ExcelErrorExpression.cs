@@ -32,11 +32,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph
+namespace CompuMaster.Epplus4.FormulaParsing.ExpressionGraph
 {
     public class ExcelErrorExpression : Expression
     {

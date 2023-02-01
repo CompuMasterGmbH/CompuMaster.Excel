@@ -34,7 +34,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
 	/// <summary>
 	/// Functions related to the <see cref="ExcelConditionalFormattingColorScaleValue"/>

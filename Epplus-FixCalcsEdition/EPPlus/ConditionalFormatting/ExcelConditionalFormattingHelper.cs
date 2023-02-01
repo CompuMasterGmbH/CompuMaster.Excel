@@ -33,12 +33,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 using System.Drawing;
 using System.Globalization;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
   /// <summary>
   /// Conditional formatting helper

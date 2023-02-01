@@ -40,23 +40,23 @@ using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting;
-using EpplusFreeOfficeOpenXml.DataValidation;
-using EpplusFreeOfficeOpenXml.Drawing;
-using EpplusFreeOfficeOpenXml.Drawing.Chart;
-using EpplusFreeOfficeOpenXml.Drawing.Vml;
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
-using EpplusFreeOfficeOpenXml.Style.XmlAccess;
-using EpplusFreeOfficeOpenXml.Table;
-using EpplusFreeOfficeOpenXml.Table.PivotTable;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.ConditionalFormatting;
+using CompuMaster.Epplus4.DataValidation;
+using CompuMaster.Epplus4.Drawing;
+using CompuMaster.Epplus4.Drawing.Chart;
+using CompuMaster.Epplus4.Drawing.Vml;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.Packaging.Ionic.Zip;
+using CompuMaster.Epplus4.Style.XmlAccess;
+using CompuMaster.Epplus4.Table;
+using CompuMaster.Epplus4.Table.PivotTable;
+using CompuMaster.Epplus4.Utils;
 
 using System.Linq;
-using EpplusFreeOfficeOpenXml.Compatibility;
-using EpplusFreeOfficeOpenXml.Sparkline;
+using CompuMaster.Epplus4.Compatibility;
+using CompuMaster.Epplus4.Sparkline;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
   /// <summary>
   /// Worksheet hidden enumeration
@@ -2999,7 +2999,7 @@ namespace EpplusFreeOfficeOpenXml
         {
                     //Init Zip
                     stream.CodecBufferSize = 8096;
-                    stream.CompressionLevel = (EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
+                    stream.CompressionLevel = (CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
                     stream.PutNextEntry(fileName);
 
                     

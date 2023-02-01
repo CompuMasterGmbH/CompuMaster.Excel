@@ -34,12 +34,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math;
+using CompuMaster.Epplus4.Utils;
 using System.Security;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
 
-namespace EpplusFreeOfficeOpenXml.Table
+namespace CompuMaster.Epplus4.Table
 {
     /// <summary>
     /// Table style Enum

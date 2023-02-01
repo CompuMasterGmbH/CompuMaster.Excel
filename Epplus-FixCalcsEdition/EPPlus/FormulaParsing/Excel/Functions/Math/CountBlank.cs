@@ -16,14 +16,14 @@
  *******************************************************************************
  * Mats Alm Added		                2018-12-27
  *******************************************************************************/
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Logical;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math
 {
     public class CountBlank : ExcelFunction
     {

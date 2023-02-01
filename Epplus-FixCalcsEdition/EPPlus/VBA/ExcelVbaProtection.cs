@@ -34,7 +34,7 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 
-namespace EpplusFreeOfficeOpenXml.VBA
+namespace CompuMaster.Epplus4.VBA
 {
     /// <summary>
     /// Vba security properties

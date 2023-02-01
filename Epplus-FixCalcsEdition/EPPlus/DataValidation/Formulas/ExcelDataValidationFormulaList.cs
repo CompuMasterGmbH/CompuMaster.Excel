@@ -34,12 +34,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
 using System.Text.RegularExpressions;
 using System.Collections;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas
+namespace CompuMaster.Epplus4.DataValidation.Formulas
 {
     internal class ExcelDataValidationFormulaList : ExcelDataValidationFormula, IExcelDataValidationFormulaList
     {

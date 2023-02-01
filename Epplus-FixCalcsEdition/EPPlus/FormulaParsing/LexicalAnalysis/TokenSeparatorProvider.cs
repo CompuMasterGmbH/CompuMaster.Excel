@@ -34,7 +34,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis
+namespace CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis
 {
     public class TokenSeparatorProvider : ITokenSeparatorProvider
     {

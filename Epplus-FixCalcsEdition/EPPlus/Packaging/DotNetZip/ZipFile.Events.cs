@@ -27,7 +27,7 @@
 using System;
 using System.IO;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     internal partial class ZipFile
     {

@@ -35,8 +35,8 @@ using System.Text;
 using Ionic.Zip;
 using System.IO;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib;
-namespace EpplusFreeOfficeOpenXml.Packaging
+using CompuMaster.Epplus4.Packaging.Ionic.Zlib;
+namespace CompuMaster.Epplus4.Packaging
 {
     public abstract class ZipPackageRelationshipBase
     {

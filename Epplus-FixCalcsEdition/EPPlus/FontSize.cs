@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     public class FontSizeInfo
     {

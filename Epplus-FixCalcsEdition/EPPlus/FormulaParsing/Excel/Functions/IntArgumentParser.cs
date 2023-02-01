@@ -26,10 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     public class IntArgumentParser : ArgumentParser
     {

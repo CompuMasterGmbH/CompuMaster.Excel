@@ -26,12 +26,12 @@
 // ------------------------------------------------------------------
 
 
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib;
+using CompuMaster.Epplus4.Packaging.Ionic.Zlib;
 using System;
 using System.IO;
 using RE = System.Text.RegularExpressions;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     internal partial class ZipEntry
     {
@@ -683,7 +683,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
         {
             if (_UncompressedSize < 0x10) return false;
             if (_CompressionMethod == 0x00) return false;
-            if (CompressionLevel == EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel.None) return false;
+            if (CompressionLevel == CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel.None) return false;
             if (_CompressedSize < _UncompressedSize) return false;
 
             if (this._Source == ZipEntrySource.Stream && !this._sourceStream.CanSeek) return false;
@@ -1991,7 +1991,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
                     return o1;
                 }
 #endif
-                var o = new DeflateStream(s, EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionMode.Compress,
+                var o = new DeflateStream(s, CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionMode.Compress,
                                                      CompressionLevel,
                                                      true);
                 if (_container.CodecBufferSize > 0)

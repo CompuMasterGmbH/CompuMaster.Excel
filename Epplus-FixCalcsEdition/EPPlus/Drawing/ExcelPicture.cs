@@ -38,10 +38,10 @@ using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.Compatibility;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.Compatibility;
 
-namespace EpplusFreeOfficeOpenXml.Drawing
+namespace CompuMaster.Epplus4.Drawing
 {
     /// <summary>
     /// An image object

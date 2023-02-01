@@ -36,7 +36,7 @@ using System.Xml;
 using System.Globalization;
 using System.Drawing;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Vml
+namespace CompuMaster.Epplus4.Drawing.Vml
 {
     /// <summary>
     /// Horizontal Alingment

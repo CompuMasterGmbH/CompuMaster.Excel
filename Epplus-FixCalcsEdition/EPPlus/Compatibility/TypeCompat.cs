@@ -32,7 +32,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
-namespace EpplusFreeOfficeOpenXml.Compatibility
+namespace CompuMaster.Epplus4.Compatibility
 {
     internal class TypeCompat
     {

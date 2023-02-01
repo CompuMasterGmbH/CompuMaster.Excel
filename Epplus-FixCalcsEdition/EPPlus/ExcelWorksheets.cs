@@ -37,18 +37,18 @@ using System.Text;
 using System.Xml;
 using System.IO;
 using System.Linq;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using EpplusFreeOfficeOpenXml.Style;
-using EpplusFreeOfficeOpenXml.Drawing;
-using EpplusFreeOfficeOpenXml.Drawing.Chart;
-using EpplusFreeOfficeOpenXml.Style.XmlAccess;
-using EpplusFreeOfficeOpenXml.Drawing.Vml;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.VBA;
-using EpplusFreeOfficeOpenXml.Table.PivotTable;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Logical;
+using CompuMaster.Epplus4.Style;
+using CompuMaster.Epplus4.Drawing;
+using CompuMaster.Epplus4.Drawing.Chart;
+using CompuMaster.Epplus4.Style.XmlAccess;
+using CompuMaster.Epplus4.Drawing.Vml;
+using CompuMaster.Epplus4.Packaging.Ionic.Zlib;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.VBA;
+using CompuMaster.Epplus4.Table.PivotTable;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
 	/// <summary>
 	/// The collection of worksheets for the workbook

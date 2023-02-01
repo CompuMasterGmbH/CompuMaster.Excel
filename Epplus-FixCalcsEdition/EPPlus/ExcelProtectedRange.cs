@@ -1,4 +1,4 @@
-﻿using EpplusFreeOfficeOpenXml.Utils;
+﻿using CompuMaster.Epplus4.Utils;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Algorithm for password hash

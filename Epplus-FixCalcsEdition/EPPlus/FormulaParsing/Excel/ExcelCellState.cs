@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel
+namespace CompuMaster.Epplus4.FormulaParsing.Excel
 {
     [Flags]
     public enum ExcelCellState

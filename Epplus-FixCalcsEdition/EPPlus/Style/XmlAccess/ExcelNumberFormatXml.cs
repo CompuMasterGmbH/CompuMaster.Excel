@@ -35,7 +35,7 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 using System.Text.RegularExpressions;
-namespace EpplusFreeOfficeOpenXml.Style.XmlAccess
+namespace CompuMaster.Epplus4.Style.XmlAccess
 {
     /// <summary>
     /// Xml access class for number formats

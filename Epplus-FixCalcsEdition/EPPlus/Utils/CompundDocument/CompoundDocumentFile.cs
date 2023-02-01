@@ -34,7 +34,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-namespace EpplusFreeOfficeOpenXml.Utils.CompundDocument
+namespace CompuMaster.Epplus4.Utils.CompundDocument
 {
     /// <summary>
     /// Read and write a compound document.

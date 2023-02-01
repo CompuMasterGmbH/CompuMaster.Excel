@@ -24,14 +24,14 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.IO;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.Utils.CompundDocument;
+using CompuMaster.Epplus4.Utils.CompundDocument;
 
-namespace EpplusFreeOfficeOpenXml.VBA
+namespace CompuMaster.Epplus4.VBA
 {
     /// <summary>
     /// Represents the VBA project part of the package

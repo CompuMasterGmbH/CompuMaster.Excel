@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation
+namespace CompuMaster.Epplus4.DataValidation
 {
     /// <summary>
     /// warning style, controls how Excel will handle invalid changes.

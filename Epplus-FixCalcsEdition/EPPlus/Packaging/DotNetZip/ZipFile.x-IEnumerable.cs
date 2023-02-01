@@ -25,7 +25,7 @@
 // ------------------------------------------------------------------
 
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
 
     // For some weird reason, the method with the DispId(-4) attribute, which is used as

@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Operators
 {
     public class OperatorsDict : Dictionary<string, IOperator>
     {

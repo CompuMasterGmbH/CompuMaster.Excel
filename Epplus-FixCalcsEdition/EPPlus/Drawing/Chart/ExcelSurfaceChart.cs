@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Table.PivotTable;
+using CompuMaster.Epplus4.Table.PivotTable;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Chart
+namespace CompuMaster.Epplus4.Drawing.Chart
 {
     /// <summary>
     /// A Surface chart

@@ -27,7 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     ///   Delegate in which the application writes the <c>ZipEntry</c> content for the named entry.
@@ -133,7 +133,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
     /// </para>
     /// </remarks>
     /// <seealso cref="Ionic.Zip.ZipFile.SetCompression"/>
-    public delegate EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
+    public delegate CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
 
     /// <summary>
     ///   In an EventArgs type, indicates which sort of progress event is being

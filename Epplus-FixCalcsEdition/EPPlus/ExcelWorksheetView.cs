@@ -32,7 +32,7 @@
 using System;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
 	/// <summary>
 	/// Represents the different view states of the worksheet

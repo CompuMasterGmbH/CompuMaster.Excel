@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts
+namespace CompuMaster.Epplus4.DataValidation.Formulas.Contracts
 {
     /// <summary>
     /// Validation formula interface for <see cref="DateTime"/>

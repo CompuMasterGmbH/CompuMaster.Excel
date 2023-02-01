@@ -26,10 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Database
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Database
 {
     public class Dvar : DatabaseFunction
     {

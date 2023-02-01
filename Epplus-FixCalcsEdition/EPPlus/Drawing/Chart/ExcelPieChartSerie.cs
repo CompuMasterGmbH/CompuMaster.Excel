@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Chart
+namespace CompuMaster.Epplus4.Drawing.Chart
 {
     /// <summary>
     /// A serie for a pie chart

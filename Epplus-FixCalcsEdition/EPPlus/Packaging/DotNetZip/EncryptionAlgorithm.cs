@@ -25,7 +25,7 @@
 // ------------------------------------------------------------------
 
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     /// An enum that provides the various encryption algorithms supported by this

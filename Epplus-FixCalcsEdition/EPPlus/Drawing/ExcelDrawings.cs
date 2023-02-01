@@ -37,10 +37,10 @@ using System.Collections;
 using System.IO;
 using System.Drawing;
 using System.Linq;
-using EpplusFreeOfficeOpenXml.Drawing.Chart;
-using EpplusFreeOfficeOpenXml.Table.PivotTable;
-using EpplusFreeOfficeOpenXml.Utils;
-namespace EpplusFreeOfficeOpenXml.Drawing
+using CompuMaster.Epplus4.Drawing.Chart;
+using CompuMaster.Epplus4.Table.PivotTable;
+using CompuMaster.Epplus4.Utils;
+namespace CompuMaster.Epplus4.Drawing
 {
     /// <summary>
     /// Collection for Drawing objects.
@@ -553,7 +553,7 @@ namespace EpplusFreeOfficeOpenXml.Drawing
             {
                 var ix = 0;
                 //Now set the size for all drawings depending on the editAs property.
-                foreach (EpplusFreeOfficeOpenXml.Drawing.ExcelDrawing d in this)
+                foreach (CompuMaster.Epplus4.Drawing.ExcelDrawing d in this)
                 {
                     if (d.EditAs != Drawing.eEditAs.TwoCell)
                     {
@@ -571,7 +571,7 @@ namespace EpplusFreeOfficeOpenXml.Drawing
             {
                 var ix = 0;
                 //Now set the size for all drawings depending on the editAs property.
-                foreach (EpplusFreeOfficeOpenXml.Drawing.ExcelDrawing d in this)
+                foreach (CompuMaster.Epplus4.Drawing.ExcelDrawing d in this)
                 {
                     if (d.EditAs != Drawing.eEditAs.TwoCell)
                     {

@@ -34,7 +34,7 @@ using System.Linq;
 using System.Text;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph
+namespace CompuMaster.Epplus4.FormulaParsing.ExpressionGraph
 {
     public class DecimalExpression : AtomicExpression
     {

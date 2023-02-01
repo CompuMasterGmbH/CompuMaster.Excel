@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.Sparkline
+namespace CompuMaster.Epplus4.Sparkline
 {
     /// <summary>
     /// Represents a single sparkline within the sparkline group

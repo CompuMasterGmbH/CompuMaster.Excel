@@ -37,7 +37,7 @@ using System.Xml;
 using System.Drawing;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Style
+namespace CompuMaster.Epplus4.Style
 {
     /// <summary>
     /// Collection of Richtext objects

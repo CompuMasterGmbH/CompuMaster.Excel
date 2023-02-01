@@ -22,13 +22,13 @@
  *******************************************************************************
  * Mats Alm   		                Added		                2015-01-15
  *******************************************************************************/
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Information
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Information
 {
     public class ErrorType : ExcelFunction
     {

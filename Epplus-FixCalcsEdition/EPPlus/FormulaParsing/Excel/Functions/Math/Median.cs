@@ -22,13 +22,13 @@
  *******************************************************************************
  * Mats Alm   		                Added		                2015-01-10
  *******************************************************************************/
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math
 {
     public class Median : ExcelFunction
     {

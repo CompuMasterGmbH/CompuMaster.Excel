@@ -35,7 +35,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.Encryption
+namespace CompuMaster.Epplus4.Encryption
 {
     internal abstract class EncryptionInfo
     {

@@ -34,12 +34,12 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
-using EpplusFreeOfficeOpenXml.Style.Dxf;
+using CompuMaster.Epplus4.ConditionalFormatting.Contracts;
+using CompuMaster.Epplus4.Style.Dxf;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
   /// <summary>
   /// 

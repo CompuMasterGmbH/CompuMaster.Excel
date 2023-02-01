@@ -54,7 +54,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
-using EpplusFreeOfficeOpenXml.Drawing.Vml;namespace EpplusFreeOfficeOpenXml
+using CompuMaster.Epplus4.Drawing.Vml;namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// This is the store for all Rows, Columns and Cells.

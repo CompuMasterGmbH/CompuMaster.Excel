@@ -35,9 +35,9 @@ using System.Text;
 using Ionic.Zip;
 using System.IO;
 using System.Security;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
+using CompuMaster.Epplus4.Packaging.Ionic.Zip;
 
-namespace EpplusFreeOfficeOpenXml.Packaging
+namespace CompuMaster.Epplus4.Packaging
 {
     public class ZipPackageRelationshipCollection : IEnumerable<ZipPackageRelationship>
     {

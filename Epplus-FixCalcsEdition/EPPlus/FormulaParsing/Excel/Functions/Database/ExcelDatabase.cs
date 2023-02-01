@@ -28,7 +28,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Database
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Database
 {
     public class ExcelDatabase
     {

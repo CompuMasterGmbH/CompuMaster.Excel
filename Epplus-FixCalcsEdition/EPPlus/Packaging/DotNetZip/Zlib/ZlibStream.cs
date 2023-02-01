@@ -28,7 +28,7 @@
 using System;
 using System.IO;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zlib
 {
 
     /// <summary>

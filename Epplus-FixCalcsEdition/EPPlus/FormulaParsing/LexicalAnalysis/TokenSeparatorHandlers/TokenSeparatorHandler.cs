@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis.TokenSeparatorHandlers
+namespace CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis.TokenSeparatorHandlers
 {
     /// <summary>
     /// This class provides access to <see cref="SeparatorHandler"/>s - classes that exposes functionatlity

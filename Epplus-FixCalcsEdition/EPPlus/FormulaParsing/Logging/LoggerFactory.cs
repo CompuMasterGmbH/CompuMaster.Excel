@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Logging
+namespace CompuMaster.Epplus4.FormulaParsing.Logging
 {
     /// <summary>
     /// Create loggers that can be used for logging the formula parser.

@@ -34,7 +34,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Encryption
+namespace CompuMaster.Epplus4.Encryption
 {
     [Flags]
     internal enum Flags

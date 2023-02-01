@@ -34,12 +34,12 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Security;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
 	/// <summary>
 	/// 18.3.1.11 cfvo (Conditional Format Value Object)

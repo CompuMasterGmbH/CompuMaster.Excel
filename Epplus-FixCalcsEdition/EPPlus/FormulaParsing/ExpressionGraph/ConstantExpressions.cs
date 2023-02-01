@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph
+namespace CompuMaster.Epplus4.FormulaParsing.ExpressionGraph
 {
     public static class ConstantExpressions
     {

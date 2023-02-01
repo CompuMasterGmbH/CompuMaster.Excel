@@ -33,16 +33,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.DataValidation.Formulas;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
+using CompuMaster.Epplus4.DataValidation.Contracts;
 using System.Runtime.CompilerServices;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation
+namespace CompuMaster.Epplus4.DataValidation
 {
     /// <summary>
-    /// Validation for times (<see cref="EpplusFreeOfficeOpenXml.DataValidation.ExcelTime"/>).
+    /// Validation for times (<see cref="CompuMaster.Epplus4.DataValidation.ExcelTime"/>).
     /// </summary>
     public class ExcelDataValidationTime : ExcelDataValidationWithFormula2<IExcelDataValidationFormulaTime>, IExcelDataValidationTime
     {

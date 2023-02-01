@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.Table.PivotTable
+namespace CompuMaster.Epplus4.Table.PivotTable
 {
     /// <summary>
     /// Base collection class for pivottable fields

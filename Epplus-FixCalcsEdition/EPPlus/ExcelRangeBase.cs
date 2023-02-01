@@ -36,29 +36,29 @@ using System.ComponentModel;
 using System.Text;
 using System.Data;
 using System.Threading;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-using EpplusFreeOfficeOpenXml.Style;
+using CompuMaster.Epplus4.FormulaParsing;
+using CompuMaster.Epplus4.Style;
 using System.Xml;
 using System.Drawing;
 using System.Globalization;
 using System.Collections;
-using EpplusFreeOfficeOpenXml.Table;
+using CompuMaster.Epplus4.Table;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Linq;
-using EpplusFreeOfficeOpenXml.DataValidation;
-using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
+using CompuMaster.Epplus4.DataValidation;
+using CompuMaster.Epplus4.DataValidation.Contracts;
 using System.Reflection;
-using EpplusFreeOfficeOpenXml.Style.XmlAccess;
+using CompuMaster.Epplus4.Style.XmlAccess;
 using System.Security;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.ConditionalFormatting;
+using CompuMaster.Epplus4.ConditionalFormatting.Contracts;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
 using w = System.Windows;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.Compatibility;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.Compatibility;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// A range of cells 
@@ -1420,7 +1420,7 @@ namespace EpplusFreeOfficeOpenXml
                 }
                 else
                 {
-                    xml.LoadXml("<d:si xmlns:d=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" ><d:r><d:t>" + EpplusFreeOfficeOpenXml.Utils.ConvertUtil.ExcelEscapeString(v.ToString()) + "</d:t></d:r></d:si>");
+                    xml.LoadXml("<d:si xmlns:d=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" ><d:r><d:t>" + CompuMaster.Epplus4.Utils.ConvertUtil.ExcelEscapeString(v.ToString()) + "</d:t></d:r></d:si>");
                 }
             }
             else

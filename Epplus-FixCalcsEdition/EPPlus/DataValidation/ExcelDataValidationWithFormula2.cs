@@ -33,10 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation
+namespace CompuMaster.Epplus4.DataValidation
 {
     public class ExcelDataValidationWithFormula2<T> : ExcelDataValidationWithFormula<T>
         where T : IExcelDataValidationFormula

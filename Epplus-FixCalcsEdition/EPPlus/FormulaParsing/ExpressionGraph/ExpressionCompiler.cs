@@ -32,10 +32,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.CompileStrategy;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Operators;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph.CompileStrategy;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph
+namespace CompuMaster.Epplus4.FormulaParsing.ExpressionGraph
 {
     public class ExpressionCompiler : IExpressionCompiler
     {

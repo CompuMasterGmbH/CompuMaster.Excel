@@ -34,10 +34,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Drawing;
+using CompuMaster.Epplus4.Drawing;
 using System.Drawing;
 
-namespace EpplusFreeOfficeOpenXml.Style
+namespace CompuMaster.Epplus4.Style
 {
     /// <summary>
     /// Linestyle

@@ -34,7 +34,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
+namespace CompuMaster.Epplus4.FormulaParsing.ExcelUtilities
 {
     public static class ExcelAddressUtil
     {
@@ -66,7 +66,7 @@ namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
                 }
                 token = token.Substring(token.IndexOf('!') + 1);
             }
-            return EpplusFreeOfficeOpenXml.ExcelAddress.IsValidAddress(token);
+            return CompuMaster.Epplus4.ExcelAddress.IsValidAddress(token);
         }
         readonly static char[] NameInvalidChars = new char[] { '!', '@', '#', '$', '£', '%', '&', '/', '(', ')', '[', ']', '{', '}', '<', '>', '=', '+', '*', '-', '~', '^', ':', ';', '|', ',', ' ' };
         public static bool IsValidName(string name)

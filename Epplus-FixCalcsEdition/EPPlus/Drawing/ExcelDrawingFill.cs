@@ -35,7 +35,7 @@ using System.Text;
 using System.Xml;
 using System.Drawing;
 
-namespace EpplusFreeOfficeOpenXml.Drawing
+namespace CompuMaster.Epplus4.Drawing
 {
     /// <summary>
     /// Fill properties for drawing objects

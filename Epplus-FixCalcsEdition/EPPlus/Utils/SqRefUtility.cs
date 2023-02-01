@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace EpplusFreeOfficeOpenXml.Utils
+namespace CompuMaster.Epplus4.Utils
 {
     /// <summary>
     /// Class for handling translation between ExcelAddresses and sqref addresses.

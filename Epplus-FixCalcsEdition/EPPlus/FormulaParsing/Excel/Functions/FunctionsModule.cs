@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph.FunctionCompilers;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     /// <summary>
     /// Base class 

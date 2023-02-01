@@ -63,7 +63,7 @@
 
 using System;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zlib
 {
     /// <summary>
     /// A bunch of constants used in the Zlib interface.

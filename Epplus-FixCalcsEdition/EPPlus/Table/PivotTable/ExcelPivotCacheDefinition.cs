@@ -34,10 +34,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Linq;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 using System.Security;
 
-namespace EpplusFreeOfficeOpenXml.Table.PivotTable
+namespace CompuMaster.Epplus4.Table.PivotTable
 {
     public enum eSourceType
     {

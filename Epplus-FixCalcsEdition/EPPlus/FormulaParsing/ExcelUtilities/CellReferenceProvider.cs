@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
+namespace CompuMaster.Epplus4.FormulaParsing.ExcelUtilities
 {
     public class CellReferenceProvider
     {

@@ -35,7 +35,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-namespace EpplusFreeOfficeOpenXml.Style.XmlAccess
+namespace CompuMaster.Epplus4.Style.XmlAccess
 {
     /// <summary>
     /// Xml access class for fonts

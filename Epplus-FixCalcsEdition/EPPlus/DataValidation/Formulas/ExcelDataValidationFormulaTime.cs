@@ -33,12 +33,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
-using EpplusFreeOfficeOpenXml.DataValidation;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.DataValidation;
 using System.Xml;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas
+namespace CompuMaster.Epplus4.DataValidation.Formulas
 {
     internal class ExcelDataValidationFormulaTime : ExcelDataValidationFormulaValue<ExcelTime>, IExcelDataValidationFormulaTime
     {

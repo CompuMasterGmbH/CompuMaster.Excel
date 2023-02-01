@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Contracts
+namespace CompuMaster.Epplus4.DataValidation.Contracts
 {
     /// <summary>
     /// Represents a validation with an operator

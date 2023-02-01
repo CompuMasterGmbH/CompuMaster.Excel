@@ -36,7 +36,7 @@ using System.Xml;
 using System.Globalization;
 using System.Linq;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     #region "Enums"
     /// <summary>

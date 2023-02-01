@@ -52,7 +52,7 @@ public enum eEndSize
     Large
 }
 
-namespace EpplusFreeOfficeOpenXml.Drawing
+namespace CompuMaster.Epplus4.Drawing
 {
     /// <summary>
     /// Properties for drawing line ends

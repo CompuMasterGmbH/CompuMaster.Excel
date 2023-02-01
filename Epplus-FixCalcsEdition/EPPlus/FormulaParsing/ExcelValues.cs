@@ -22,7 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Represents the errortypes in excel

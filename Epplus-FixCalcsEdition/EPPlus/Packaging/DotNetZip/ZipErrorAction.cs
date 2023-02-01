@@ -26,7 +26,7 @@
 // ------------------------------------------------------------------
 
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     /// An enum providing the options when an error occurs during opening or reading

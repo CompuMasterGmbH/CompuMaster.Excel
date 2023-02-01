@@ -27,16 +27,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 using System.Globalization;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
 using System.Collections;
-using static EpplusFreeOfficeOpenXml.FormulaParsing.EpplusExcelDataProvider;
-using static EpplusFreeOfficeOpenXml.FormulaParsing.ExcelDataProvider;
-using EpplusFreeOfficeOpenXml.Compatibility;
+using static CompuMaster.Epplus4.FormulaParsing.EpplusExcelDataProvider;
+using static CompuMaster.Epplus4.FormulaParsing.ExcelDataProvider;
+using CompuMaster.Epplus4.Compatibility;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     /// <summary>
     /// Base class for Excel function implementations.

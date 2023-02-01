@@ -36,7 +36,7 @@ using System.Text;
 using System.Xml;
 using System.Drawing;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Chart
+namespace CompuMaster.Epplus4.Drawing.Chart
 {
     /// <summary>
     /// A serie for a scatter chart

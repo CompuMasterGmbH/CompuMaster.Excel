@@ -35,7 +35,7 @@ using System.Text;
 using System.Xml;
 using System.Collections;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Vml
+namespace CompuMaster.Epplus4.Drawing.Vml
 {
     public class ExcelVmlDrawingBaseCollection
     {        

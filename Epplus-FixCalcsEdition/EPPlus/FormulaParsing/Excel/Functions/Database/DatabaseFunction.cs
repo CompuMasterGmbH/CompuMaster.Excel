@@ -27,9 +27,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Database
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Database
 {
     public abstract class DatabaseFunction : ExcelFunction
     {

@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Contracts
+namespace CompuMaster.Epplus4.DataValidation.Contracts
 {
     public interface IExcelDataValidationWithFormula<T> : IExcelDataValidation
         where T : IExcelDataValidationFormula

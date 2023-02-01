@@ -26,17 +26,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Database;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Numeric;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Information;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Finance;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Database;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Text;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Logical;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.DateTime;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Numeric;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Information;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Finance;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     public class BuiltInFunctions : FunctionsModule
     {

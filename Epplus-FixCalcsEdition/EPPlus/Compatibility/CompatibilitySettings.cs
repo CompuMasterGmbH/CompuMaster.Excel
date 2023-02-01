@@ -31,9 +31,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EpplusFreeOfficeOpenXml;
+using CompuMaster.Epplus4;
 
-namespace EpplusFreeOfficeOpenXml.Compatibility
+namespace CompuMaster.Epplus4.Compatibility
 {
     /// <summary>
     /// Settings to stay compatible with older versions of EPPlus

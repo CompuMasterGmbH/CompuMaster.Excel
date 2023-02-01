@@ -34,10 +34,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas
+namespace CompuMaster.Epplus4.DataValidation.Formulas
 {
     /// <summary>
     /// Enumeration representing the state of an <see cref="ExcelDataValidationFormulaValue{T}"/>

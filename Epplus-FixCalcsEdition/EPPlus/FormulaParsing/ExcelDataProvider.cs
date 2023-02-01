@@ -16,13 +16,13 @@
  *******************************************************************************
  * Mats Alm Added		                2016-12-27
  *******************************************************************************/
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing
+namespace CompuMaster.Epplus4.FormulaParsing
 {
     /// <summary>
     /// This class should be implemented to be able to deliver excel data

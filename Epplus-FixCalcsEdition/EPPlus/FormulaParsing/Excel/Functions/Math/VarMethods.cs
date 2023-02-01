@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math
 {
     internal static class VarMethods
     {

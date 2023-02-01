@@ -33,8 +33,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections;
-using EpplusFreeOfficeOpenXml;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup;
+using CompuMaster.Epplus4;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
 
     internal class IndexBase : IComparable<IndexBase>
     {        

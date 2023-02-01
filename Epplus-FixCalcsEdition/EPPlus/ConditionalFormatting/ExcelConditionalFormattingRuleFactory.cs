@@ -33,10 +33,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.ConditionalFormatting.Contracts;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
 	/// <summary>
 	/// Factory class for ExcelConditionalFormatting.

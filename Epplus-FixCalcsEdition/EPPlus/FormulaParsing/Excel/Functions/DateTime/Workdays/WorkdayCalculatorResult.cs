@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime.Workdays
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.DateTime.Workdays
 {
     public class WorkdayCalculatorResult
     {

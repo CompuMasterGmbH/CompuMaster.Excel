@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 using System.Linq;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Collection for named ranges

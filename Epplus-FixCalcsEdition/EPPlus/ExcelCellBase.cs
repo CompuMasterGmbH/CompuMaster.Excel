@@ -33,13 +33,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using EpplusFreeOfficeOpenXml.Style;
+using CompuMaster.Epplus4.Style;
 using System.Text.RegularExpressions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
 using System.Linq;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-namespace EpplusFreeOfficeOpenXml
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions;
+using CompuMaster.Epplus4.FormulaParsing;
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Base class containing cell address manipulating methods.

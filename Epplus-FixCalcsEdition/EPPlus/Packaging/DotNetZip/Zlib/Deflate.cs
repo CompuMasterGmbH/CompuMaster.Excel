@@ -69,7 +69,7 @@
 
 using System;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zlib
 {
 
     internal enum BlockState

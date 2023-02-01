@@ -28,10 +28,10 @@
  * ******************************************************************************
  * Eyal Seagull		    Conditional Formatting    2012-04-03
  *******************************************************************************/
-using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
+using CompuMaster.Epplus4.ConditionalFormatting.Contracts;
 using System.Drawing;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
 	/// <summary>
 	/// Provides functionality for adding Conditional Formatting to a range (<see cref="ExcelRangeBase"/>).

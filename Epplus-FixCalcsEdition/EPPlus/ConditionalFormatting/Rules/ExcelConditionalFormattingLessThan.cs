@@ -34,9 +34,9 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting.Contracts;
+using CompuMaster.Epplus4.ConditionalFormatting.Contracts;
 
-namespace EpplusFreeOfficeOpenXml.ConditionalFormatting
+namespace CompuMaster.Epplus4.ConditionalFormatting
 {
   /// <summary>
   /// ExcelConditionalFormattingLessThan

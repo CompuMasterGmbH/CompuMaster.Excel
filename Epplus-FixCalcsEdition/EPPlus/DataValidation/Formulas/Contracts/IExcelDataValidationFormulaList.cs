@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts
+namespace CompuMaster.Epplus4.DataValidation.Formulas.Contracts
 {
     /// <summary>
     /// Interface for a data validation of list type

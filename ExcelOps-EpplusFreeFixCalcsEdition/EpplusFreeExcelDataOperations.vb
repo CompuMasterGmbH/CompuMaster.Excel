@@ -3,9 +3,9 @@ Option Explicit On
 
 Imports System.Data
 Imports System.ComponentModel
-Imports EpplusFreeOfficeOpenXml
-Imports EpplusFreeOfficeOpenXml.FormulaParsing
-Imports EpplusFreeOfficeOpenXml.FormulaParsing.Logging
+Imports CompuMaster.Epplus4
+Imports CompuMaster.Epplus4.FormulaParsing
+Imports CompuMaster.Epplus4.FormulaParsing.Logging
 
 Namespace ExcelOps
     Public Class EpplusFreeExcelDataOperations
@@ -15,8 +15,8 @@ Namespace ExcelOps
             MyBase.New(file, mode, False, True, [readOnly])
         End Sub
 
-        Private _WorkbookPackage As EpplusFreeOfficeOpenXml.ExcelPackage
-        Public ReadOnly Property WorkbookPackage As EpplusFreeOfficeOpenXml.ExcelPackage
+        Private _WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
+        Public ReadOnly Property WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
             Get
                 If Me._WorkbookPackage Is Nothing Then
                     Throw New InvalidOperationException("Workbook has already been closed")
@@ -25,7 +25,7 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Public ReadOnly Property Workbook As EpplusFreeOfficeOpenXml.ExcelWorkbook
+        Public ReadOnly Property Workbook As CompuMaster.Epplus4.ExcelWorkbook
             Get
                 If Me._WorkbookPackage Is Nothing Then
                     Throw New InvalidOperationException("Workbook has already been closed")
@@ -148,8 +148,8 @@ Namespace ExcelOps
                             Return Me.Workbook.Worksheets(cell.SheetName).GetValue(Of T)(MyExcelCellAddress.Row, MyExcelCellAddress.Column)
                         Catch ex As InvalidCastException
                             Dim CellValue As Object = Me.Workbook.Worksheets(cell.SheetName).GetValue(MyExcelCellAddress.Row, MyExcelCellAddress.Column)
-                            If CellValue.GetType Is GetType(EpplusFreeOfficeOpenXml.ExcelErrorValue) Then
-                                Dim ErrorValue As String = CType(CellValue, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString
+                            If CellValue.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
+                                Dim ErrorValue As String = CType(CellValue, CompuMaster.Epplus4.ExcelErrorValue).ToString
                                 Return CType(CType(ErrorValue, Object), T)
                             Else
                                 Throw
@@ -238,8 +238,8 @@ Namespace ExcelOps
                             Return Me.Workbook.Worksheets(sheetName).GetValue(Of T)(rowIndex + 1, columnIndex + 1)
                         Catch ex As InvalidCastException
                             Dim CellValue As Object = Me.Workbook.Worksheets(sheetName).GetValue(rowIndex + 1, columnIndex + 1)
-                            If CellValue.GetType Is GetType(EpplusFreeOfficeOpenXml.ExcelErrorValue) Then
-                                Dim ErrorValue As String = CType(CellValue, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString
+                            If CellValue.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
+                                Dim ErrorValue As String = CType(CellValue, CompuMaster.Epplus4.ExcelErrorValue).ToString
                                 Return CType(CType(ErrorValue, Object), T)
                             Else
                                 Throw
@@ -559,7 +559,7 @@ Namespace ExcelOps
 #Disable Warning CA1034 ' Nested types should not be visible
         Public Class FormulaParserLogger
 #Enable Warning CA1034 ' Nested types should not be visible
-            Implements EpplusFreeOfficeOpenXml.FormulaParsing.Logging.IFormulaParserLogger
+            Implements CompuMaster.Epplus4.FormulaParsing.Logging.IFormulaParserLogger
 
             Public ReadOnly Property FullLog As New System.Text.StringBuilder
             Public ReadOnly Property ExceptionsLog As New System.Text.StringBuilder
@@ -654,9 +654,9 @@ Namespace ExcelOps
         Public Overloads Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Calculate
-            If throwExceptionOnCalculationError AndAlso Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value?.GetType Is GetType(EpplusFreeOfficeOpenXml.ExcelErrorValue) Then
+            If throwExceptionOnCalculationError AndAlso Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value?.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
                 Dim Cell As New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
-                Throw New NotSupportedException("Epplus calculation at " & Cell.Address(True) & " resulted in #" & UCase(CType(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value, EpplusFreeOfficeOpenXml.ExcelErrorValue).Type.ToString) & "!" & " for formula =" & Me.LookupCellFormula(Cell))
+                Throw New NotSupportedException("Epplus calculation at " & Cell.Address(True) & " resulted in #" & UCase(CType(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value, CompuMaster.Epplus4.ExcelErrorValue).Type.ToString) & "!" & " for formula =" & Me.LookupCellFormula(Cell))
             End If
         End Sub
 
@@ -672,7 +672,7 @@ Namespace ExcelOps
 
         Protected Overrides Sub CreateWorkbook()
             If Me.FilePath <> Nothing AndAlso System.IO.File.Exists(Me.FilePath) = True Then Throw New System.InvalidOperationException("File already exists: " & Me.FilePath)
-            Me._WorkbookPackage = New EpplusFreeOfficeOpenXml.ExcelPackage()
+            Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage()
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
@@ -681,7 +681,7 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
-            Me._WorkbookPackage = New EpplusFreeOfficeOpenXml.ExcelPackage(file)
+            Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file)
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
@@ -694,7 +694,7 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         Public Overrides Function LookupLastColumnIndex(sheetName As String) As Integer
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet.Dimension Is Nothing Then Return 0
             Return Sheet.Dimension.End.Column - 1
         End Function
@@ -705,7 +705,7 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         Public Overrides Function LookupLastContentColumnIndex(sheetName As String) As Integer
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
             If Sheet.Dimension Is Nothing Then Return 0
             Dim autoSuggestionLastRowIndex As Integer = Sheet.Dimension.End.Row - 1
@@ -726,7 +726,7 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         Public Overrides Function LookupLastRowIndex(sheetName As String) As Integer
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet Is Nothing Then Throw New NullReferenceException("Sheet """ & sheetName & """ doesn't exist in workbook")
             If Sheet.Dimension Is Nothing Then Return 0
             Return Sheet.Dimension.End.Row - 1
@@ -738,7 +738,7 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         Public Overrides Function LookupLastContentRowIndex(sheetName As String) As Integer
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet Is Nothing Then Throw New ArgumentException("Must be an existing sheet name: """ & sheetName & """", NameOf(sheetName))
             If Sheet.Dimension Is Nothing Then Return 0
             Dim autoSuggestionLastColumnIndex As Integer = Sheet.Dimension.End.Column - 1
@@ -780,7 +780,7 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="cell"></param>
         Public Overrides Function LookupRowIndex(cell As ExcelOps.ExcelCell) As Integer
-            Return New EpplusFreeOfficeOpenXml.ExcelCellAddress(cell.Address).Row - 1
+            Return New CompuMaster.Epplus4.ExcelCellAddress(cell.Address).Row - 1
         End Function
 
         ''' <summary>
@@ -788,7 +788,7 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="cell"></param>
         Public Overrides Function LookupColumnIndex(cell As ExcelOps.ExcelCell) As Integer
-            Return New EpplusFreeOfficeOpenXml.ExcelCellAddress(cell.Address).Column - 1
+            Return New CompuMaster.Epplus4.ExcelCellAddress(cell.Address).Column - 1
         End Function
 
         ''' <summary>
@@ -801,7 +801,7 @@ Namespace ExcelOps
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet.Dimension Is Nothing Then Throw New Exception("Specified worksheet is not a data worksheet")
             Sheet.DeleteRow(startRowIndex + 1, rows)
         End Sub
@@ -821,7 +821,7 @@ Namespace ExcelOps
                 rangeLastCell.SheetName = sheetName
             End If
             If rangeFirstCell.SheetName = Nothing Then Throw New ArgumentNullException(NameOf(rangeFirstCell))
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet.Dimension Is Nothing Then Throw New Exception("Specified worksheet is not a data worksheet")
             Dim ws As ExcelWorksheet = Me.WorkbookPackage.Workbook.Worksheets.Item(rangeFirstCell.SheetName)
             ws.Cells(rangeFirstCell.Address & ":" & rangeLastCell.Address).Clear()
@@ -835,7 +835,7 @@ Namespace ExcelOps
         ''' <param name="columnIndex">Zero-based index</param>
         Public Overrides Function IsEmptyCell(sheetName As String, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             Return IsEmptyCell(Sheet, rowIndex, columnIndex)
         End Function
 
@@ -845,7 +845,7 @@ Namespace ExcelOps
         ''' <param name="sheet"></param>
         ''' <param name="rowIndex">Zero-based index</param>
         ''' <param name="columnIndex">Zero-based index</param>
-        Private Overloads Function IsEmptyCell(ByVal sheet As EpplusFreeOfficeOpenXml.ExcelWorksheet, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
+        Private Overloads Function IsEmptyCell(ByVal sheet As CompuMaster.Epplus4.ExcelWorksheet, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
             If sheet.Cells(rowIndex + 1, columnIndex + 1).Formula <> Nothing Then
                 Return False
             End If
@@ -1038,8 +1038,8 @@ Namespace ExcelOps
                 End If
             Catch ex As InvalidCastException
                 Dim CellValue As Object = Me.Workbook.Worksheets(sheetName).GetValue(rowIndex + 1, columnIndex + 1)
-                If CellValue.GetType Is GetType(EpplusFreeOfficeOpenXml.ExcelErrorValue) Then
-                    Return CType(CellValue, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString
+                If CellValue.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
+                    Return CType(CellValue, CompuMaster.Epplus4.ExcelErrorValue).ToString
                 Else
                     Throw
                 End If
@@ -1128,7 +1128,7 @@ Namespace ExcelOps
         Protected Overrides Sub RecalculateAllInternal()
             Throw New NotSupportedException("Epplus can't successfully calculate all formulas")
             If Me.CalculationModuleDisabled Then Throw New InvalidOperationException("Calculation engine is disabled, requested recalculation failed")
-            EpplusFreeOfficeOpenXml.CalculationExtension.Calculate(Me.Workbook)
+            CompuMaster.Epplus4.CalculationExtension.Calculate(Me.Workbook)
         End Sub
 
         ''' <summary>
@@ -1214,7 +1214,7 @@ Namespace ExcelOps
         Public Sub WriteTableToSheet(dataTable As DataTable, sheetName As String)
 
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim WorkSheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            Dim WorkSheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             WorkSheet.Cells.Clear()
 
             'Paste the column headers
@@ -1222,7 +1222,7 @@ Namespace ExcelOps
                 Dim headline As String = dataTable.Columns(ColCounter).ColumnName
                 WorkSheet.Cells(1, ColCounter + 1).Value = headline
                 WorkSheet.Cells(1, ColCounter + 1).Style.Font.Bold = True
-                WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Style = EpplusFreeOfficeOpenXml.Style.ExcelBorderStyle.Medium
+                WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Style = CompuMaster.Epplus4.Style.ExcelBorderStyle.Medium
                 WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Color.SetColor(System.Drawing.Color.FromArgb(0, 0, 0))
             Next
 
@@ -1245,7 +1245,7 @@ Namespace ExcelOps
                         WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = Nothing
                     ElseIf value.GetType Is GetType(String) Then
                         'Excel requires line-breaks to be an LF character only, not a windows typical CR+LF
-                        Dim cell As EpplusFreeOfficeOpenXml.ExcelRange = WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1)
+                        Dim cell As CompuMaster.Epplus4.ExcelRange = WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1)
                         If CType(value, String) <> Nothing Then
                             value = Replace(CType(value, String), ControlChars.CrLf, ControlChars.Lf) 'Windows line breaks
                             value = Replace(CType(value, String), ControlChars.Cr, ControlChars.Lf) 'Mac or Linux line break
@@ -1278,14 +1278,14 @@ Namespace ExcelOps
                     ElseIf value.GetType Is GetType(Double) Then
                         Dim doubleValue As Double = CType(value, Double)
                         If doubleValue = Double.PositiveInfinity Then
-                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
+                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = CompuMaster.Epplus4.ExcelErrorValue.Values.Num
                         ElseIf doubleValue = Double.NegativeInfinity Then
-                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
+                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = CompuMaster.Epplus4.ExcelErrorValue.Values.Num
                         ElseIf Double.IsNaN(doubleValue) Then
-                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Div0
+                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = CompuMaster.Epplus4.ExcelErrorValue.Values.Div0
                         ElseIf Double.Epsilon = doubleValue Then
                             'too small number would be rounded to just 0
-                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = EpplusFreeOfficeOpenXml.ExcelErrorValue.Values.Num
+                            WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = CompuMaster.Epplus4.ExcelErrorValue.Values.Num
                         Else
                             WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = CType(value, Double)
                         End If
@@ -1312,8 +1312,8 @@ Namespace ExcelOps
         Public Overrides Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim CellValue As Object = Me.LookupCellValueAsObject(sheetName, rowIndex, columnIndex)
-            If CellValue IsNot Nothing AndAlso CellValue.GetType Is GetType(EpplusFreeOfficeOpenXml.ExcelErrorValue) Then
-                Return CType(CellValue, EpplusFreeOfficeOpenXml.ExcelErrorValue).ToString
+            If CellValue IsNot Nothing AndAlso CellValue.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
+                Return CType(CellValue, CompuMaster.Epplus4.ExcelErrorValue).ToString
             Else
                 Return Nothing
             End If
@@ -1337,7 +1337,7 @@ Namespace ExcelOps
 
         Public Overrides Sub SelectCell(cell As ExcelCell)
             If cell.SheetName = Nothing Then Throw New ArgumentException("Sheet name required", NameOf(cell))
-            Dim WorkSheet As EpplusFreeOfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(cell.SheetName)
+            Dim WorkSheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(cell.SheetName)
             WorkSheet.Select(cell.Address(False), False)
         End Sub
 

@@ -33,13 +33,13 @@ using System;
 using System.Xml;
 using System.Linq;
 using System.Collections.Generic;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Logical;
 using draw=System.Drawing;
-using EpplusFreeOfficeOpenXml.Style;
-using EpplusFreeOfficeOpenXml.Style.XmlAccess;
-using EpplusFreeOfficeOpenXml.Style.Dxf;
-using EpplusFreeOfficeOpenXml.ConditionalFormatting;
-namespace EpplusFreeOfficeOpenXml
+using CompuMaster.Epplus4.Style;
+using CompuMaster.Epplus4.Style.XmlAccess;
+using CompuMaster.Epplus4.Style.Dxf;
+using CompuMaster.Epplus4.ConditionalFormatting;
+namespace CompuMaster.Epplus4
 {
 	/// <summary>
 	/// Containts all shared cell styles for a workbook

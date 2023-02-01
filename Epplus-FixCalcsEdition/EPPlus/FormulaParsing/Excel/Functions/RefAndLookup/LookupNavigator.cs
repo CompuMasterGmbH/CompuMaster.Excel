@@ -26,10 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup
 {
     public abstract class LookupNavigator
     {

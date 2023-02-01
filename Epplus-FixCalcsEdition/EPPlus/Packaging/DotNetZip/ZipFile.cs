@@ -43,8 +43,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using Interop = System.Runtime.InteropServices;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib;
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+using CompuMaster.Epplus4.Packaging.Ionic.Zlib;
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     ///   The ZipFile type represents a zip archive file.
@@ -471,7 +471,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
         ///    alone, and accept the default.
         ///  </para>
         /// </remarks>
-        public EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel CompressionLevel
+        public CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel CompressionLevel
         {
             get;
             set;
@@ -2840,7 +2840,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
             _StatusMessageTextWriter = statusMessageWriter;
             _contentsChanged = true;
             AddDirectoryWillTraverseReparsePoints = true;  // workitem 8617
-            CompressionLevel = EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel.Default;
+            CompressionLevel = CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel.Default;
 #if !NETCF
             ParallelDeflateThreshold = 512 * 1024;
 #endif

@@ -34,7 +34,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis.TokenSeparatorHandlers
+namespace CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis.TokenSeparatorHandlers
 {
     public class MultipleCharSeparatorHandler : SeparatorHandler
     {

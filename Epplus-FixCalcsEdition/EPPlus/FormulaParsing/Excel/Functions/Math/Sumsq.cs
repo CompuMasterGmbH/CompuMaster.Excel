@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math
 {
     public class Sumsq : HiddenValuesHandlingFunction
     {

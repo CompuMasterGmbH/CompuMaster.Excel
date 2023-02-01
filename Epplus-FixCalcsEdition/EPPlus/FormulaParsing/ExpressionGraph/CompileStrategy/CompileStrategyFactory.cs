@@ -32,9 +32,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Operators;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.CompileStrategy
+namespace CompuMaster.Epplus4.FormulaParsing.ExpressionGraph.CompileStrategy
 {
     public class CompileStrategyFactory : ICompileStrategyFactory
     {

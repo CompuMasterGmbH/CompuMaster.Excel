@@ -27,7 +27,7 @@
 
 using System;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zlib
 {
     /// <summary>
     /// A class for compressing and decompressing streams using the Deflate algorithm.

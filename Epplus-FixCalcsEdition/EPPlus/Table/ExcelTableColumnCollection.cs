@@ -35,7 +35,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.Table
+namespace CompuMaster.Epplus4.Table
 {
     /// <summary>
     /// A collection of table columns

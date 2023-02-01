@@ -41,7 +41,7 @@ using comTypes=System.Runtime.InteropServices.ComTypes;
 using System.IO;
 using System.Security.Cryptography;
 using System.Xml;
-namespace EpplusFreeOfficeOpenXml.Utils
+namespace CompuMaster.Epplus4.Utils
 {
     [ComImport] 
     [Guid("0000000d-0000-0000-C000-000000000046")] 

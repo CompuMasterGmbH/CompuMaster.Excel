@@ -35,10 +35,10 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.Packaging.Ionic.Zip;
 using Ionic.Zip;
-namespace EpplusFreeOfficeOpenXml.Packaging
+namespace CompuMaster.Epplus4.Packaging
 {
     /// <summary>
     /// Specifies whether the target is inside or outside the System.IO.Packaging.Package.
@@ -277,7 +277,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging
         {
             var enc = Encoding.UTF8;
             ZipOutputStream os = new ZipOutputStream(stream, true);
-            os.CompressionLevel = (EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel)_compression;            
+            os.CompressionLevel = (CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel)_compression;            
             /**** ContentType****/
             var entry = os.PutNextEntry("[Content_Types].xml");
             byte[] b = enc.GetBytes(GetContentTypeXml());

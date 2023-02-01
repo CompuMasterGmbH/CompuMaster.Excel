@@ -20,7 +20,7 @@
 // ------------------------------------------------------------------
 //
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     /// An enum that specifies the source of the ZipEntry. 

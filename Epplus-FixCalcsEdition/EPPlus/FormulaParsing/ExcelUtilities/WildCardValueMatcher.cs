@@ -34,7 +34,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities
+namespace CompuMaster.Epplus4.FormulaParsing.ExcelUtilities
 {
     public class WildCardValueMatcher : ValueMatcher
     {

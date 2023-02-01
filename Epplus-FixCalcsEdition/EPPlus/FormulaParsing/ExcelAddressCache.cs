@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing
+namespace CompuMaster.Epplus4.FormulaParsing
 {
     /// <summary>
     /// Caches string by generated id's.

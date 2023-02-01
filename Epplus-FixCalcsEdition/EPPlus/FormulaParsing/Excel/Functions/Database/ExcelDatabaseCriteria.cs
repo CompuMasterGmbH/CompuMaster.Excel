@@ -27,10 +27,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Database
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Database
 {
     public class ExcelDatabaseCriteria
     {

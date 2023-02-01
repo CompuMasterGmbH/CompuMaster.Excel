@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions
+namespace CompuMaster.Epplus4.FormulaParsing.Exceptions
 {
     /// <summary>
     /// This Exception represents an Excel error. When this exception is thrown

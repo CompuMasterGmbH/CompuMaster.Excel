@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Style.XmlAccess;
-using EpplusFreeOfficeOpenXml.Drawing;
-using EpplusFreeOfficeOpenXml.Style;
+using CompuMaster.Epplus4.Style.XmlAccess;
+using CompuMaster.Epplus4.Drawing;
+using CompuMaster.Epplus4.Style;
 /// <summary>
 /// Shape style
 /// </summary>
@@ -255,7 +255,7 @@ public enum eFillStyle
     BlipFill,
     GroupFill
 }
-namespace EpplusFreeOfficeOpenXml.Drawing
+namespace CompuMaster.Epplus4.Drawing
 {
     /// <summary>
     /// An Excel shape.

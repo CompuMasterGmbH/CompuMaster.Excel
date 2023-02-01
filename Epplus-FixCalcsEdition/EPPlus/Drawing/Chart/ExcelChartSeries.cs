@@ -34,8 +34,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Collections;
-using EpplusFreeOfficeOpenXml.Table.PivotTable;
-namespace EpplusFreeOfficeOpenXml.Drawing.Chart
+using CompuMaster.Epplus4.Table.PivotTable;
+namespace CompuMaster.Epplus4.Drawing.Chart
 {
     public sealed class ExcelBubbleChartSeries : ExcelChartSeries
     {

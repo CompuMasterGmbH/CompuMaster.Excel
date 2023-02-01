@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Flag enum, specify all flags that you want to exclude from the copy.

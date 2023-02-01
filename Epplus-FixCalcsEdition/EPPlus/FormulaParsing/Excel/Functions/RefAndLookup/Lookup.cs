@@ -26,13 +26,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
 using System.Text.RegularExpressions;
-using static EpplusFreeOfficeOpenXml.FormulaParsing.EpplusExcelDataProvider;
+using static CompuMaster.Epplus4.FormulaParsing.EpplusExcelDataProvider;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup
 {
     public class Lookup : LookupFunction
     {

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime.Workdays
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.DateTime.Workdays
 {
     public class HolidayWeekdays
     {

@@ -30,7 +30,7 @@ using System;
 using System.IO;
 using Interop = System.Runtime.InteropServices;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     /// Represents a single entry in a ZipFile. Typically, applications get a ZipEntry
@@ -1445,7 +1445,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
         /// </remarks>
         ///
         /// <seealso cref="CompressionMethod"/>
-        public EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel CompressionLevel
+        public CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel CompressionLevel
         {
             get
             {
@@ -1457,18 +1457,18 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
                     _CompressionMethod != (short)CompressionMethod.None)
                     return ; // no effect
 
-                if (value == EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel.Default &&
+                if (value == CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel.Default &&
                     _CompressionMethod == (short)CompressionMethod.Deflate) return; // nothing to do
                 _CompressionLevel = value;
 
-                if (value == EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel.None &&
+                if (value == CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel.None &&
                     _CompressionMethod == (short)CompressionMethod.None)
                     return; // nothing more to do
 
-                if (_CompressionLevel == EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel.None)
-                    _CompressionMethod = (short)EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip.CompressionMethod.None;
+                if (_CompressionLevel == CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel.None)
+                    _CompressionMethod = (short)CompuMaster.Epplus4.Packaging.Ionic.Zip.CompressionMethod.None;
                 else
-                    _CompressionMethod = (short)EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip.CompressionMethod.Deflate;
+                    _CompressionMethod = (short)CompuMaster.Epplus4.Packaging.Ionic.Zip.CompressionMethod.Deflate;
 
                 if (_container.ZipFile != null) _container.ZipFile.NotifyEntryChanged();
                 _restreamRequiredOnSave = true;

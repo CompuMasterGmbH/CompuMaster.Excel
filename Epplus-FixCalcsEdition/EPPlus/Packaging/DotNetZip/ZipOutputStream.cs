@@ -47,9 +47,9 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using Ionic.Zip;
-using EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib;
+using CompuMaster.Epplus4.Packaging.Ionic.Zlib;
 
-namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
+namespace CompuMaster.Epplus4.Packaging.Ionic.Zip
 {
     /// <summary>
     ///   Provides a stream metaphor for generating zip files.
@@ -346,8 +346,8 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
         {
             // workitem 9307
             _outputStream = stream.CanRead ? stream : new CountingStream(stream);
-            CompressionLevel = EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel.Default;
-            CompressionMethod = EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip.CompressionMethod.Deflate;
+            CompressionLevel = CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel.Default;
+            CompressionMethod = CompuMaster.Epplus4.Packaging.Ionic.Zip.CompressionMethod.Deflate;
             _encryption = EncryptionAlgorithm.None;
             _entriesWritten = new Dictionary<String, ZipEntry>(StringComparer.Ordinal);
             _zip64 = Zip64Option.Never;
@@ -581,7 +581,7 @@ namespace EpplusFreeOfficeOpenXml.Packaging.Ionic.Zip
         ///    alone, and accept the default.
         ///  </para>
         /// </remarks>
-        public EpplusFreeOfficeOpenXml.Packaging.Ionic.Zlib.CompressionLevel CompressionLevel
+        public CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel CompressionLevel
         {
             get;
             set;

@@ -1,10 +1,10 @@
-﻿using EpplusFreeOfficeOpenXml.Compatibility;
+﻿using CompuMaster.Epplus4.Compatibility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Utilities
+namespace CompuMaster.Epplus4.FormulaParsing.Utilities
 {
     public static class ExtensionMethods
     {

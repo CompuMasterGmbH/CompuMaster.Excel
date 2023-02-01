@@ -41,7 +41,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Encryption Algorithm

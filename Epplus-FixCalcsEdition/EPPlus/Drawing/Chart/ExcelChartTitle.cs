@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Style;
+using CompuMaster.Epplus4.Style;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Chart
+namespace CompuMaster.Epplus4.Drawing.Chart
 {
     /// <summary>
     /// The title of a chart

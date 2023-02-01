@@ -32,7 +32,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-namespace EpplusFreeOfficeOpenXml.Style
+namespace CompuMaster.Epplus4.Style
 {
     internal enum eStyleClass
     {

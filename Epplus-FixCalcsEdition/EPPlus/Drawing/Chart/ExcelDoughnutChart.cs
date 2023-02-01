@@ -34,9 +34,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Globalization;
-using EpplusFreeOfficeOpenXml.Table.PivotTable;
+using CompuMaster.Epplus4.Table.PivotTable;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Chart
+namespace CompuMaster.Epplus4.Drawing.Chart
 {
     /// <summary>
     /// Provides access to doughnut chart specific properties

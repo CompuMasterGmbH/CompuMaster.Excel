@@ -36,10 +36,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Style;
+using CompuMaster.Epplus4.Style;
 using System.Globalization;
 using System.IO;
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
 	/// <summary>
 	/// Help class containing XML functions. 

@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Utils
+namespace CompuMaster.Epplus4.Utils
 {
     /// <summary>
     /// An argument

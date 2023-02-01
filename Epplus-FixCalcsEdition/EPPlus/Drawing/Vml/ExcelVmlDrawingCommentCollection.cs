@@ -36,7 +36,7 @@ using System.Xml;
 using System.Collections;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.Drawing.Vml
+namespace CompuMaster.Epplus4.Drawing.Vml
 {
     internal class ExcelVmlDrawingCommentCollection : ExcelVmlDrawingBaseCollection, IEnumerable
     {

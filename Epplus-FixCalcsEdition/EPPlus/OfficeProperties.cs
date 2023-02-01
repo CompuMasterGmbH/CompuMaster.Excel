@@ -35,9 +35,9 @@ using System;
 using System.Xml;
 using System.IO;
 using System.Globalization;
-using EpplusFreeOfficeOpenXml.Utils;
+using CompuMaster.Epplus4.Utils;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {
     /// <summary>
     /// Provides access to the properties bag of the package

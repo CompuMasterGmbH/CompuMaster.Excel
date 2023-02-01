@@ -33,9 +33,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.DataValidation;
+using CompuMaster.Epplus4.DataValidation;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts
+namespace CompuMaster.Epplus4.DataValidation.Formulas.Contracts
 {
     public interface IExcelDataValidationFormulaTime : IExcelDataValidationFormulaWithValue<ExcelTime>
     {

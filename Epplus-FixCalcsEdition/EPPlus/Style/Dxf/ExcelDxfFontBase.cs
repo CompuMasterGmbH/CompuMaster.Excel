@@ -5,7 +5,7 @@ using System.Text;
 using System.Drawing;
 using System.Xml;
 
-namespace EpplusFreeOfficeOpenXml.Style.Dxf
+namespace CompuMaster.Epplus4.Style.Dxf
 {
     public class ExcelDxfFontBase : DxfStyleBase<ExcelDxfFontBase>
     {

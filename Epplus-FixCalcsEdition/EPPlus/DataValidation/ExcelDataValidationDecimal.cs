@@ -35,11 +35,11 @@ using System.Linq;
 using System.Text;
 using System.Globalization;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas.Contracts;
-using EpplusFreeOfficeOpenXml.DataValidation.Formulas;
-using EpplusFreeOfficeOpenXml.DataValidation.Contracts;
+using CompuMaster.Epplus4.DataValidation.Formulas.Contracts;
+using CompuMaster.Epplus4.DataValidation.Formulas;
+using CompuMaster.Epplus4.DataValidation.Contracts;
 
-namespace EpplusFreeOfficeOpenXml.DataValidation
+namespace CompuMaster.Epplus4.DataValidation
 {
     /// <summary>
     /// Data validation for decimal values

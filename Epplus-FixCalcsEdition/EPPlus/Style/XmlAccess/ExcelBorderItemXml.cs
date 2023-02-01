@@ -34,8 +34,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Xml;
-using EpplusFreeOfficeOpenXml.Style;
-namespace EpplusFreeOfficeOpenXml.Style.XmlAccess
+using CompuMaster.Epplus4.Style;
+namespace CompuMaster.Epplus4.Style.XmlAccess
 {
     /// <summary>
     /// Xml access class for border items

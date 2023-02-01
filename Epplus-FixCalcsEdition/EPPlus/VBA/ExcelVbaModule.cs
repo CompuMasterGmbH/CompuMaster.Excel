@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.VBA
+namespace CompuMaster.Epplus4.VBA
 {
     /// <summary>
     /// Type of VBA module

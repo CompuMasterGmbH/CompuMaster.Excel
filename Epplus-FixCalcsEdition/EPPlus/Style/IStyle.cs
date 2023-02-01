@@ -32,8 +32,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EpplusFreeOfficeOpenXml.Style;
-namespace EpplusFreeOfficeOpenXml.Style
+using CompuMaster.Epplus4.Style;
+namespace CompuMaster.Epplus4.Style
 {
     internal interface IStyle
     {

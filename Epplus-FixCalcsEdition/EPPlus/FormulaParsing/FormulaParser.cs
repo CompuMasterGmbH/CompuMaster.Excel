@@ -32,19 +32,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
-using EpplusFreeOfficeOpenXml.FormulaParsing;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Operators;
-using EpplusFreeOfficeOpenXml.FormulaParsing.LexicalAnalysis;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Logging;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Operators;
+using CompuMaster.Epplus4.FormulaParsing.LexicalAnalysis;
+using CompuMaster.Epplus4.FormulaParsing.Excel;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.Logging;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
 using System.Diagnostics;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing
+namespace CompuMaster.Epplus4.FormulaParsing
 {
     public class FormulaParser : IDisposable
     {

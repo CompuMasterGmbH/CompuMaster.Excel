@@ -35,7 +35,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 using System.Drawing;
-namespace EpplusFreeOfficeOpenXml.Style.XmlAccess
+namespace CompuMaster.Epplus4.Style.XmlAccess
 {
     /// <summary>
     /// Xml access class xfs records. This is the top level style object.

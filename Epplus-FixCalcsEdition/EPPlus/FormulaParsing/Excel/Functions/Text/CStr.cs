@@ -26,9 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Text
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Text
 {
     public class CStr : ExcelFunction
     {

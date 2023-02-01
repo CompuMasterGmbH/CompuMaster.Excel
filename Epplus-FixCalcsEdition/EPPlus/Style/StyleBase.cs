@@ -33,7 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace EpplusFreeOfficeOpenXml.Style
+namespace CompuMaster.Epplus4.Style
 {
     /// <summary>
     /// Border line style
@@ -164,10 +164,10 @@ namespace EpplusFreeOfficeOpenXml.Style
     public abstract class StyleBase
     {
         protected ExcelStyles _styles;
-        internal EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler _ChangedEvent;
+        internal CompuMaster.Epplus4.XmlHelper.ChangedEventHandler _ChangedEvent;
         protected int _positionID;
         protected string _address;
-        internal StyleBase(ExcelStyles styles, EpplusFreeOfficeOpenXml.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string Address)
+        internal StyleBase(ExcelStyles styles, CompuMaster.Epplus4.XmlHelper.ChangedEventHandler ChangedEvent, int PositionID, string Address)
         {
             _styles = styles;
             _ChangedEvent = ChangedEvent;

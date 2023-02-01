@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing
+namespace CompuMaster.Epplus4.FormulaParsing
 {
     internal class DependencyChain
     {

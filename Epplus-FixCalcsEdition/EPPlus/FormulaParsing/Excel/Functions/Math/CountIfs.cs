@@ -27,13 +27,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.XPath;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExcelUtilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.Utils;
-using Require = EpplusFreeOfficeOpenXml.FormulaParsing.Utilities.Require;
+using CompuMaster.Epplus4.FormulaParsing.ExcelUtilities;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.Utils;
+using Require = CompuMaster.Epplus4.FormulaParsing.Utilities.Require;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math
 {
     public class CountIfs : MultipleRangeCriteriasFunction
     {

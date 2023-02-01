@@ -35,13 +35,13 @@ using System.Xml;
 using System.Text.RegularExpressions;
 using System.Drawing;
 using System.Collections.Generic;
-using EpplusFreeOfficeOpenXml.Drawing.Vml;
+using CompuMaster.Epplus4.Drawing.Vml;
 using System.IO;
-using EpplusFreeOfficeOpenXml.Drawing;
-using EpplusFreeOfficeOpenXml.Utils;
-using EpplusFreeOfficeOpenXml.Compatibility;
+using CompuMaster.Epplus4.Drawing;
+using CompuMaster.Epplus4.Utils;
+using CompuMaster.Epplus4.Compatibility;
 
-namespace EpplusFreeOfficeOpenXml
+namespace CompuMaster.Epplus4
 {    
     /// <summary>
     /// How a picture will be aligned in the header/footer

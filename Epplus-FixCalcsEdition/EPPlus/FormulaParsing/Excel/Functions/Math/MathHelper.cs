@@ -28,7 +28,7 @@ using System.Linq;
 using System.Text;
 using MathObj = System.Math;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.Math
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Math
 {
     /// <summary>
     /// Thanks to the guys in this thread: http://stackoverflow.com/questions/2840798/c-sharp-math-class-question

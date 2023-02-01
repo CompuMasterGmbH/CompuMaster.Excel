@@ -27,10 +27,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph;
 using System.Globalization;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions.DateTime
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions.DateTime
 {
     public class Hour : DateParsingFunction
     {

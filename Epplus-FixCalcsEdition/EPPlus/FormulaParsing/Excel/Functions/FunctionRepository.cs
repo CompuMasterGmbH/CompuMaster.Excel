@@ -27,12 +27,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Utilities;
-using EpplusFreeOfficeOpenXml.FormulaParsing.Exceptions;
-using EpplusFreeOfficeOpenXml.FormulaParsing.ExpressionGraph.FunctionCompilers;
+using CompuMaster.Epplus4.FormulaParsing.Excel.Functions;
+using CompuMaster.Epplus4.FormulaParsing.Utilities;
+using CompuMaster.Epplus4.FormulaParsing.Exceptions;
+using CompuMaster.Epplus4.FormulaParsing.ExpressionGraph.FunctionCompilers;
 
-namespace EpplusFreeOfficeOpenXml.FormulaParsing.Excel.Functions
+namespace CompuMaster.Epplus4.FormulaParsing.Excel.Functions
 {
     /// <summary>
     /// This class provides methods for accessing/modifying VBA Functions.
