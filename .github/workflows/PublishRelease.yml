@@ -69,11 +69,15 @@ jobs:
         runs-on: windows-latest
         #if: false # always skip job
 
+        env:
+          VersionPrefix: ${{  github.ref_name }}
+
         steps:
-            - name: GitHub Tag Name example
+            - name: GitHub Tag for assembly versioning
               run: |
-                echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
+                #echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
                 echo "Tag name from github.ref_name: ${{  github.ref_name }}"
+                echo "Tag name from environment: ${{  env.VersionPrefix }}"
 
             # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
             - name: Checkout
@@ -83,13 +87,6 @@ jobs:
               uses: actions/setup-dotnet@v1
               with:
                 dotnet-version: 7.0.x
-
-            - name: Setup assembly versions for all projects to ${{  github.ref_name }}
-              uses: jacobtomlinson/gha-find-replace@v2
-              with:
-                find: '\<Version\>.*?\</Version\>'
-                replace: "<Version>${{  github.ref_name }}</Version>"
-                include: "**.??proj" 
 
             - name: Install dependencies
               run: dotnet restore /p:Configuration=${{env.BUILD_CONFIGURATION}}

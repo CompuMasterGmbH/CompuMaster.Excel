@@ -9,8 +9,6 @@
 
     <Title>CompuMaster.Excel.MsExcelComInteropTest</Title>
 
-    <Version>2023.01.27.100</Version>
-
     <OptionStrict>On</OptionStrict>
   </PropertyGroup>
 
