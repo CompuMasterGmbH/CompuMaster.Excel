@@ -5,13 +5,15 @@
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
     <AssemblyName>CompuMaster.Excel.FreeSpireXls</AssemblyName>
+    <PackageIcon>logo_64x64.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FreeSpire.XLS" Version="12.7.0" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
-		  <PackagePath></PackagePath>
+		  <PackagePath>\</PackagePath>
 	  </None>
   </ItemGroup>
 

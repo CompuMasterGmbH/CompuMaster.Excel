@@ -6,13 +6,16 @@
     <Title>CompuMaster.Excel.MsExcelComInterop</Title>
     <OptionStrict>On</OptionStrict>
     <ImportedNamespaces>CompuMaster.ComInterop=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,CompuMaster.MsExcelComInterop=True</ImportedNamespaces>
+    <PackageIcon>logo_64x64.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <Copyright>2023 CompuMaster GmbH</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CompuMaster.ComInterop" Version="1.0.0" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
-		  <PackagePath></PackagePath>
+		  <PackagePath>\</PackagePath>
 	  </None>
   </ItemGroup>
 

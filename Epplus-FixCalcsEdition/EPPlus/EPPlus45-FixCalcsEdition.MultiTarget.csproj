@@ -239,8 +239,10 @@ Release Candidate changes
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>OpenOfficeXml.snk</AssemblyOriginatorKeyFile>
     <NeutralLanguage />
-    <PackageLicenseFile>lgpl-3.0.txt</PackageLicenseFile>
     <PackageId>$(AssemblyName)</PackageId>
+    <PackageIcon>logo_64x64.png</PackageIcon>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
   </PropertyGroup>
  
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
@@ -335,7 +337,7 @@ Release Candidate changes
     </None>
 	  <None Include="..\..\logo_64x64.png">
 		  <Pack>True</Pack>
-		  <PackagePath></PackagePath>
+		  <PackagePath>\</PackagePath>
 	  </None>
   </ItemGroup>
   <ItemGroup>
