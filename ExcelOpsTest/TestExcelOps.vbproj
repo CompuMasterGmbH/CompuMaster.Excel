@@ -14,12 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\nunit.engine.api.dll" />
-    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\nunit.engine.core.dll" />
-    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\nunit.engine.dll" />
-    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\NUnit3.TestAdapter.dll" />
-    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\NUnit3.TestAdapter.pdb" />
-    <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\testcentric.engine.metadata.dll" />
     <None Remove="test_data\ExcelOpsGrund01.xlsx" />
     <None Remove="test_data\ExcelOpsGrund02.xlsx" />
     <None Remove="test_data\ExcelOpsTestCollection.xlsx" />
@@ -44,7 +38,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+	  <PackageReference Include="JUnitTestLogger4GitHub" Version="1.1.1" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
     <PackageReference Include="NUnit.Analyzers" Version="3.3.0" />

@@ -1,0 +1,121 @@
+name: Publish/Upload dotnet package on release
+
+# PLEASE NOTE: PUBLISHING/DEPLOYMENT
+# Release is to be created manually at GitHub releases management page
+# - release name usually contains "v1.2.3"
+# After creating a GitHub release, following actions will automatically run:
+# 1. NuGet package (version as defined in VS.Net project property "package version")
+# 2. Attaching of compiled binaries to GitHub release
+
+on:
+  release:
+    types: [created]
+
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Name of project configuration for build as well as name of the bin output subdirectory (both must match for "dotnet pack" to find compiled files!)
+  BUILD_CONFIGURATION: CI_CD
+  BUILD_OUTPUT_SUBDIR: CI_CD
+  PACK_CONFIGURATION: CI_CD
+  # Name of build project which creates required output for packaging/deployment
+  BUILD_PROJECT1: Epplus-FixCalcsEdition/Epplus/EPPlus45-FixCalcsEdition.MultiTarget.csproj
+  BUILD_PROJECT2: ExcelOps/ExcelOps.vbproj
+  BUILD_PROJECT3: ExcelOps-EpplusFreeFixCalcsEdition/ExcelOps-EpplusFreeFixCalcsEdition.vbproj
+  BUILD_PROJECT4: ExcelOps-EpplusPolyform/ExcelOps-EpplusPolyformEdition.vbproj
+  BUILD_PROJECT5: ExcelOps-MicrosoftExcelAndReporting/ExcelOps-MicrosoftExcelAndReporting.vbproj
+  BUILD_PROJECT6: ExcelOps-SpireXls/ExcelOps-SpireXls.vbproj
+  BUILD_PROJECT7: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/CompuMaster.Data.Controls.vbproj
+  BUILD_PROJECT8: CM.Data.EpplusFixCalcsEdition/CM.Data.EpplusFreeFixCalcsEdition.vbproj
+  BUILD_PROJECT9: CM.Data.EpplusPolyformEdition/CM.Data.EpplusPolyformEdition.vbproj
+  # Name of directory (e.g. "bin") containing the subdirectory (e.g. "CI_CD") with all output files (*.dll)
+  BUILD_OUTPUT_BASEDIR1: Epplus-FixCalcsEdition/Epplus/bin
+  BUILD_OUTPUT_BASEDIR2: ExcelOps/bin
+  BUILD_OUTPUT_BASEDIR3: ExcelOps-EpplusFreeFixCalcsEdition/bin
+  BUILD_OUTPUT_BASEDIR4: ExcelOps-EpplusPolyform/bin
+  BUILD_OUTPUT_BASEDIR5: ExcelOps-MicrosoftExcelAndReporting/bin
+  BUILD_OUTPUT_BASEDIR6: ExcelOps-SpireXls/bin
+  BUILD_OUTPUT_BASEDIR7: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/bin
+  BUILD_OUTPUT_BASEDIR8: CM.Data.EpplusFixCalcsEdition/bin
+  BUILD_OUTPUT_BASEDIR9: CM.Data.EpplusPolyformEdition/bin
+  # Name of project
+  PROJECT_NAME1: Epplus-FixCalcsEdition
+  PROJECT_NAME2: ExcelOps
+  PROJECT_NAME3: ExcelOps-EpplusFreeFixCalcsEdition
+  PROJECT_NAME4: ExcelOps-EpplusPolyform
+  PROJECT_NAME5: ExcelOps-MicrosoftExcelAndReporting
+  PROJECT_NAME6: ExcelOps-SpireXls
+  PROJECT_NAME7: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition
+  PROJECT_NAME8: CM.Data.EpplusFixCalcsEdition
+  PROJECT_NAME9: CM.Data.EpplusPolyformEdition
+  # BinariesZipName of project artifacts
+  ARTIFACTS_BIN_ZIP1: bin-Epplus-FixCalcsEdition.zip
+  ARTIFACTS_BIN_ZIP2: bin-ExcelOps.zip
+  ARTIFACTS_BIN_ZIP3: bin-ExcelOps-EpplusFreeFixCalcsEdition.zip
+  ARTIFACTS_BIN_ZIP4: bin-ExcelOps-EpplusPolyform.zip
+  ARTIFACTS_BIN_ZIP5: bin-ExcelOps-MicrosoftExcelAndReporting.zip
+  ARTIFACTS_BIN_ZIP6: bin-ExcelOps-SpireXls.zip
+  ARTIFACTS_BIN_ZIP7: bin-ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.zip
+  ARTIFACTS_BIN_ZIP8: bin-CM.Data.EpplusFixCalcsEdition.zip
+  ARTIFACTS_BIN_ZIP9: bin-CM.Data.EpplusPolyformEdition.zip
+
+
+jobs:
+    publish:
+        runs-on: windows-latest
+        #if: false # always skip job
+
+        steps:
+            # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            - name: Setup .NET Core
+              uses: actions/setup-dotnet@v1
+              with:
+                dotnet-version: 7.0.x
+
+            - name: Install dependencies
+              run: dotnet restore /p:Configuration=${{env.BUILD_CONFIGURATION}}
+
+            - name: Build
+              run: dotnet build --configuration=${{env.BUILD_CONFIGURATION}} --no-restore 
+
+            - name: Zip binaries ${{env.PROJECT_NAME1}}
+              run: Compress-Archive -DestinationPath bin.zip ${{env.BUILD_OUTPUT_BASEDIR1}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME2}}
+              run: Compress-Archive -DestinationPath bin-wincontrols.zip ${{env.BUILD_OUTPUT_BASEDIR2}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME1}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP1}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME2}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP2}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Pack ${{env.PROJECT_NAME1}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT1}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME2}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT2}} --output .  
+
+            - name: PushNuget ${{env.PROJECT_NAME1}} + ${{env.PROJECT_NAME2}}
+              run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate 
+
+            - name: Publish Package Artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                name: Nupkg Artifacts
+                path: ./**/*.nupkg
