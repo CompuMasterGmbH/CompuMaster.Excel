@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>CompuMaster.Excel.MsExcelComInterop</RootNamespace>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Version>2023.01.27.100</Version>
     <Title>CompuMaster.Excel.MsExcelComInterop</Title>
     <OptionStrict>On</OptionStrict>
