@@ -7,7 +7,7 @@ Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "TestExcelOps", "ExcelOpsTes
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps", "ExcelOps\ExcelOps.vbproj", "{5ECF9B24-1E8A-47E3-9C52-7EDA6345B562}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EPPlus.MultiTarget", "Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj", "{BE4A6343-F411-44A3-8D6F-F40747ED7BA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EPPlus45-FixCalcsEdition.MultiTarget", "Epplus-FixCalcsEdition\EPPlus\EPPlus45-FixCalcsEdition.MultiTarget.csproj", "{BE4A6343-F411-44A3-8D6F-F40747ED7BA5}"
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "CM.Data.EpplusFreeFixCalcsEdition", "CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj", "{14DA1292-0D02-452E-9518-18496AB59231}"
 EndProject

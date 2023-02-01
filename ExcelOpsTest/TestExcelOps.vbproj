@@ -53,7 +53,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CM.Data.EpplusPolyformEdition\CM.Data.EpplusPolyformEdition.vbproj" />
     <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
-    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj" />
+    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus45-FixCalcsEdition.MultiTarget.csproj" />
     <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-EpplusPolyform\ExcelOps-EpplusPolyformEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcelAndReporting.vbproj" />

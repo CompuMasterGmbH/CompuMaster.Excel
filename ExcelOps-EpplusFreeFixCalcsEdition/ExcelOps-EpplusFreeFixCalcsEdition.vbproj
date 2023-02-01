@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
-    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus.MultiTarget.csproj" />
+    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus45-FixCalcsEdition.MultiTarget.csproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
   </ItemGroup>
 
