@@ -86,10 +86,31 @@ jobs:
               run: dotnet build --configuration=${{env.BUILD_CONFIGURATION}} --no-restore 
 
             - name: Zip binaries ${{env.PROJECT_NAME1}}
-              run: Compress-Archive -DestinationPath bin.zip ${{env.BUILD_OUTPUT_BASEDIR1}}/${{env.BUILD_OUTPUT_SUBDIR}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP1}} ${{env.BUILD_OUTPUT_BASEDIR1}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
             - name: Zip binaries ${{env.PROJECT_NAME2}}
-              run: Compress-Archive -DestinationPath bin-wincontrols.zip ${{env.BUILD_OUTPUT_BASEDIR2}}/${{env.BUILD_OUTPUT_SUBDIR}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP2}} ${{env.BUILD_OUTPUT_BASEDIR2}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME3}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP3}} ${{env.BUILD_OUTPUT_BASEDIR3}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME4}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP4}} ${{env.BUILD_OUTPUT_BASEDIR4}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME5}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP5}} ${{env.BUILD_OUTPUT_BASEDIR5}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME6}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP6}} ${{env.BUILD_OUTPUT_BASEDIR6}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME7}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP7}} ${{env.BUILD_OUTPUT_BASEDIR7}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME8}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP8}} ${{env.BUILD_OUTPUT_BASEDIR8}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            - name: Zip binaries ${{env.PROJECT_NAME9}}
+              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP9}} ${{env.BUILD_OUTPUT_BASEDIR9}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
             - name: Publish zipped binaries ${{env.PROJECT_NAME1}}
               uses: softprops/action-gh-release@v1
@@ -105,13 +126,83 @@ jobs:
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Publish zipped binaries ${{env.PROJECT_NAME3}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP3}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME4}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP4}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME5}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP5}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME6}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP6}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME7}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP7}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME8}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP8}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Publish zipped binaries ${{env.PROJECT_NAME9}}
+              uses: softprops/action-gh-release@v1
+              with:
+                files: ${{env.ARTIFACTS_BIN_ZIP9}}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
             - name: Pack ${{env.PROJECT_NAME1}}
               run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT1}} --output .  
 
             - name: Pack ${{env.PROJECT_NAME2}}
               run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT2}} --output .  
 
-            - name: PushNuget ${{env.PROJECT_NAME1}} + ${{env.PROJECT_NAME2}}
+            - name: Pack ${{env.PROJECT_NAME3}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT3}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME4}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT4}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME5}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT5}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME6}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT6}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME7}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT7}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME8}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT8}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME9}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT9}} --output .  
+
+            - name: PushNuget ${{env.PROJECT_NAME1}} + ${{env.PROJECT_NAME2}} + ${{env.PROJECT_NAME3}} + ${{env.PROJECT_NAME4}} + ${{env.PROJECT_NAME5}} + ${{env.PROJECT_NAME6}} + ${{env.PROJECT_NAME7}} + ${{env.PROJECT_NAME8}} + ${{env.PROJECT_NAME9}}
               run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate 
 
             - name: Publish Package Artifacts
