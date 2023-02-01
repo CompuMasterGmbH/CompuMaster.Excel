@@ -87,7 +87,7 @@ jobs:
             - name: Setup assembly versions for all projects to $GITHUB_REF_NAME
               uses: jacobtomlinson/gha-find-replace@v2
               with:
-                find: "\<Version\>.*?\</Version\>"
+                find: '\<Version\>.*?\</Version\>'
                 replace: "<Version>$GITHUB_REF_NAME</Version>"
                 include: "**.??proj" 
 
