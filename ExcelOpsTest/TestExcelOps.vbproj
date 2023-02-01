@@ -20,6 +20,21 @@
     <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\NUnit3.TestAdapter.dll" />
     <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\NUnit3.TestAdapter.pdb" />
     <None Remove="C:\Users\wezelslave\.nuget\packages\nunit3testadapter\4.3.1\build\net35\testcentric.engine.metadata.dll" />
+    <None Remove="test_data\ExcelOpsGrund01.xlsx" />
+    <None Remove="test_data\ExcelOpsGrund02.xlsx" />
+    <None Remove="test_data\ExcelOpsTestCollection.xlsx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="test_data\ExcelOpsGrund01.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelOpsGrund02.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelOpsTestCollection.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
