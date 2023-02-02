@@ -27,10 +27,10 @@ Namespace MsExcelComInteropTest
         Public Sub ExportAsFixedFormat()
             Dim TargetTestFile As String = TestEnvironment.FullPathOfDynTestFile(
                                        "pdf-export",
-                                       System.IO.Path.GetFileNameWithoutExtension(TestEnvironment.TestFiles.TestFileExcelOpsTestCollection.FullName) & ".pdf"
+                                       System.IO.Path.GetFileNameWithoutExtension(TestFiles.TestFileExcelOpsTestCollection.FullName) & ".pdf"
                                        )
             If System.IO.File.Exists(TargetTestFile) Then System.IO.File.Delete(TargetTestFile)
-            Dim Wb = OpenExcelAppAndWorkbook(TestEnvironment.TestFiles.TestFileExcelOpsTestCollection.FullName)
+            Dim Wb = OpenExcelAppAndWorkbook(TestFiles.TestFileExcelOpsTestCollection.FullName)
             Wb.ExportAsFixedFormat(MsExcelComInterop.Enumerations.XlFixedFormatType.XlTypePDF, TargetTestFile)
             Assert.True(System.IO.File.Exists(TargetTestFile))
             Wb.Close()

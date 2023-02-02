@@ -2,7 +2,7 @@
     Inherits ComObjectBase
 
     Friend Sub New(parentItemResponsibleForDisposal As ComObjectBase, app As ExcelApplication)
-        MyBase.New(parentItemResponsibleForDisposal, app.InvokePropertyGet("Workbooks"))
+        MyBase.New(parentItemResponsibleForDisposal, app.InvokePropertyGet(Of Object)("Workbooks"))
         Me.Parent = app
     End Sub
 

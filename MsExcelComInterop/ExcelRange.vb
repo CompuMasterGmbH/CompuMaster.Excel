@@ -2,7 +2,7 @@
     Inherits ComObjectBase
 
     Friend Sub New(parentItemResponsibleForDisposal As ComObjectBase, sheet As ExcelSheet, rangeName As String)
-        MyBase.New(parentItemResponsibleForDisposal, sheet.InvokeFunction("Range", rangeName))
+        MyBase.New(parentItemResponsibleForDisposal, sheet.InvokeFunction(Of Object)("Range", rangeName))
     End Sub
 
     Protected Overrides Sub OnDisposeChildren()

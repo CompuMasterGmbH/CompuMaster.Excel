@@ -32,4 +32,8 @@
 	  </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.1" />
+  </ItemGroup>
+
 </Project>

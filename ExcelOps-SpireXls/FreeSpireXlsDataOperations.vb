@@ -18,11 +18,19 @@ Namespace ExcelOps
     Public Class FreeSpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
-        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean)
-            MyBase.New(file, mode, True, False, [readOnly])
+        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
+            MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
         End Sub
 
-        Private _Workbook As New Spire.Xls.Workbook
+        Public Sub New()
+            Me.New(Nothing)
+        End Sub
+
+        Public Sub New(passwordForOpeningOnNextTime As String)
+            MyBase.New(True, False, True, passwordForOpeningOnNextTime)
+        End Sub
+
+        Private _Workbook As Spire.Xls.Workbook
         Public ReadOnly Property Workbook As Spire.Xls.Workbook
             Get
                 If Me._Workbook Is Nothing Then
@@ -43,55 +51,27 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Public Overrides Sub Save()
+        Protected Overrides Sub SaveInternal()
             Me.Save(SaveOptionsForDisabledCalculationEngines.NoReset)
         End Sub
 
-        Public Overloads Sub Save(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If Me.ReadOnly Then Throw New InvalidOperationException("Saving of read-only file forbidden")
-            If Me.FilePath <> Nothing AndAlso Me._Workbook.FileName = Nothing Then
-                'Created workbook, initial save must provide a file path, so use SaveAs method instead
-                Me.SaveAs(Me.FilePath, cachedCalculationsOption)
-            Else
-                Me.SaveInternal_ExecuteCachedCalculationOption(cachedCalculationsOption)
-                Me.AutoCalculationEnabled = True
-                Me._Workbook.Save()
-            End If
-        End Sub
-
-        Public Overloads Sub SaveAs(filePath As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If Me.ReadOnly = True AndAlso Me._FilePath = filePath Then
-                Throw New ArgumentException("File is read-only and can't be saved at same location")
-            End If
-            Me.SaveAsInternal(filePath, cachedCalculationsOption)
-            Me._FilePath = filePath
-            Me.ReadOnly = False
-        End Sub
-
-        Protected Sub SaveInternal_ExecuteCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.DefaultBehaviour Then
-                cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.NoReset
-            End If
-            Select Case cachedCalculationsOption
-                Case SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation
-                'do nothing
-                Case SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired
-                'do nothing
-                Case SaveOptionsForDisabledCalculationEngines.NoReset
-                    'do nothing
-                Case Else
-                    Throw New NotImplementedException("Invalid option: " & cachedCalculationsOption)
-            End Select
+        Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            MyBase.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
         End Sub
 
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            Me.SaveInternal_ExecuteCachedCalculationOption(cachedCalculationsOption)
-            If Me.RecalculationRequired Then Me.RecalculateAll()
-            Dim CurrentAutoCalculationEnabled As Boolean = Me.AutoCalculationEnabled
-            Me.AutoCalculationEnabled = True
             Me._Workbook.SaveToFile(fileName)
-            Me.AutoCalculationEnabled = CurrentAutoCalculationEnabled
         End Sub
+
+        Protected Overrides ReadOnly Property WorkbookFilePath As String
+            Get
+                If Me.IsClosed Then
+                    Return Nothing
+                Else
+                    Return CompuMaster.Data.Utils.StringNotEmptyOrNothing(Me.Workbook.FileName)
+                End If
+            End Get
+        End Property
 
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
@@ -349,7 +329,7 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub CreateWorkbook()
-            If Me.FilePath <> Nothing AndAlso System.IO.File.Exists(Me.FilePath) = True Then Throw New System.InvalidOperationException("File already exists: " & Me.FilePath)
+            Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.Worksheets(0).Name = "Sheet1"
         End Sub
 
@@ -791,6 +771,16 @@ Namespace ExcelOps
             If cell.SheetName = Nothing Then Throw New ArgumentException("Sheet name required", NameOf(cell))
             Dim WorkSheet As Worksheet = Me.Workbook.Worksheets.Item(cell.SheetName)
             WorkSheet.Range(cell.Address(False)).Activate(True)
+        End Sub
+
+        Public Overrides ReadOnly Property HasVbaProject As Boolean
+            Get
+                Throw New NotImplementedException()
+            End Get
+        End Property
+
+        Public Overrides Sub RemoveVbaProject()
+            Throw New NotImplementedException()
         End Sub
 
     End Class

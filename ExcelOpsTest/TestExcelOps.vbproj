@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ExcelOpsEngineTests\ExcelDataOperationsTest.vb" />
+    <Compile Remove="ExcelOpsEngineTests\ExcelDataOperationsVsMsExcelTest.vb" />
     <Compile Remove="ExcelOpsEngineTests\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
   </ItemGroup>
 
@@ -17,6 +17,7 @@
     <None Remove="test_data\ExcelOpsGrund01.xlsx" />
     <None Remove="test_data\ExcelOpsGrund02.xlsx" />
     <None Remove="test_data\ExcelOpsTestCollection.xlsx" />
+    <None Remove="test_data\VbaProject.xlsm" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,11 +30,14 @@
     <Content Include="test_data\ExcelOpsTestCollection.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="test_data\VbaProject.xlsm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
-    <None Include="ExcelOpsEngineTests\ExcelDataOperationsTest.vb" />
+    <None Include="ExcelOpsEngineTests\ExcelDataOperationsVsMsExcelTest.vb" />
     <None Include="ExcelOpsEngineTests\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
   </ItemGroup>
 

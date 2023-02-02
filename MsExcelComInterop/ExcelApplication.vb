@@ -40,11 +40,11 @@
     End Function
 
     Public Function Run(vbaMethodNameInclWorkbookName As String) As Object
-        Return InvokeFunction("Run", New Object() {vbaMethodNameInclWorkbookName})
+        Return InvokeFunction(Of Object)("Run", New Object() {vbaMethodNameInclWorkbookName})
     End Function
 
     Public Function Run(workbookName As String, vbaMethod As String) As Object
-        Return InvokeFunction("Run", New Object() {"'" & workbookName & "'!" & vbaMethod})
+        Return InvokeFunction(Of Object)("Run", New Object() {"'" & workbookName & "'!" & vbaMethod})
     End Function
 
     Public ReadOnly Property IsClosed As Boolean

@@ -11,8 +11,16 @@ Namespace ExcelOps
     Public Class EpplusFreeExcelDataOperations
         Inherits ExcelDataOperationsBase
 
-        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean)
-            MyBase.New(file, mode, False, True, [readOnly])
+        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
+            MyBase.New(file, mode, False, True, [readOnly], passwordForOpening)
+        End Sub
+
+        Public Sub New()
+            Me.New(Nothing)
+        End Sub
+
+        Public Sub New(passwordForOpeningOnNextTime As String)
+            MyBase.New(False, True, True, passwordForOpeningOnNextTime)
         End Sub
 
         Private _WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
@@ -45,32 +53,15 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Public Overrides Sub Save()
-            Me.Save(SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired)
-        End Sub
-
-        Public Overloads Sub Save(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If Me.ReadOnly Then Throw New InvalidOperationException("Saving of read-only file forbidden")
-            If Me.FilePath <> Nothing AndAlso Me.WorkbookPackage.File Is Nothing Then
-                'Created workbook, initial save must provide a file path, so use SaveAs method instead
-                Me.SaveAs(Me.FilePath, cachedCalculationsOption)
+        Protected Overrides Sub SaveInternal()
+            If Me.PasswordForOpening <> Nothing Then
+                Me.WorkbookPackage.Save(Me.PasswordForOpening)
             Else
-                Me.SaveInternal_ExecuteCachedCalculationOption(cachedCalculationsOption)
-                Me.AutoCalculationEnabled = True
                 Me.WorkbookPackage.Save()
             End If
         End Sub
 
-        Public Overloads Sub SaveAs(filePath As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If Me.ReadOnly = True AndAlso Me._FilePath = filePath Then
-                Throw New ArgumentException("File is read-only and can't be saved at same location")
-            End If
-            Me.SaveAsInternal(filePath, cachedCalculationsOption)
-            Me._FilePath = filePath
-            Me.ReadOnly = False
-        End Sub
-
-        Protected Sub SaveInternal_ExecuteCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+        Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.DefaultBehaviour Then
                 cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.NoReset
             End If
@@ -87,12 +78,24 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            Me.SaveInternal_ExecuteCachedCalculationOption(cachedCalculationsOption)
-            Dim CurrentAutoCalculationEnabled As Boolean = Me.AutoCalculationEnabled
-            Me.AutoCalculationEnabled = True
-            Me.WorkbookPackage.SaveAs(New System.IO.FileInfo(fileName))
-            Me.AutoCalculationEnabled = CurrentAutoCalculationEnabled
+            Dim FullPath As New System.IO.FileInfo(fileName)
+            If Me.PasswordForOpening <> Nothing Then
+                Me.WorkbookPackage.SaveAs(FullPath, Me.PasswordForOpening)
+            Else
+                Me.WorkbookPackage.SaveAs(FullPath)
+            End If
+            Me._FilePath = FullPath.FullName
         End Sub
+
+        Protected Overrides ReadOnly Property WorkbookFilePath As String
+            Get
+                If Me.IsClosed Then
+                    Return Nothing
+                Else
+                    Return Me.WorkbookPackage.File?.FullName
+                End If
+            End Get
+        End Property
 
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
@@ -347,7 +350,7 @@ Namespace ExcelOps
         Public Overrides Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
-            If rowIndex < 0 Then Throw New ArgumentOutOfRangeException("RowIndex " & rowIndex & " must be equal or bigger than 0", NameOf(rowIndex))
+            If rowIndex <0 Then Throw New ArgumentOutOfRangeException("RowIndex " & rowIndex & " must be equal or bigger than 0", NameOf(rowIndex))
             If columnIndex < 0 Then Throw New ArgumentOutOfRangeException("ColumnIndex " & columnIndex & " must be equal or bigger than 0", NameOf(columnIndex))
             Return CompuMaster.Data.Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Formula)
         End Function
@@ -671,7 +674,6 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub CreateWorkbook()
-            If Me.FilePath <> Nothing AndAlso System.IO.File.Exists(Me.FilePath) = True Then Throw New System.InvalidOperationException("File already exists: " & Me.FilePath)
             Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage()
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
@@ -1340,6 +1342,19 @@ Namespace ExcelOps
             Dim WorkSheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(cell.SheetName)
             WorkSheet.Select(cell.Address(False), False)
         End Sub
+
+        Public Overrides Sub RemoveVbaProject()
+            If Me.Workbook.VbaProject IsNot Nothing Then
+                Me.Workbook.VbaProject.Remove()
+            End If
+            Me.Workbook.RemoveVBAProject()
+        End Sub
+
+        Public Overrides ReadOnly Property HasVbaProject As Boolean
+            Get
+                Return Me.Workbook.VbaProject IsNot Nothing
+            End Get
+        End Property
 
     End Class
 

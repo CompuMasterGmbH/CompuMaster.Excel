@@ -2,7 +2,7 @@
     Inherits ComObjectBase
 
     Friend Sub New(parentItemResponsibleForDisposal As ComObjectBase, c As ExcelWorkbooksCollection, path As String)
-        MyBase.New(parentItemResponsibleForDisposal, c.InvokeFunction("Open", New Object() {path}))
+        MyBase.New(parentItemResponsibleForDisposal, c.InvokeFunction(Of Object)("Open", New Object() {path}))
         Parent = c
         FilePath = path
         Sheets = New ExcelSheetCollection(Me, Me)
@@ -16,7 +16,7 @@
 
     Public ReadOnly Property Name As String
         Get
-            Return CType(InvokePropertyGet("Name"), String)
+            Return InvokePropertyGet(Of String)("Name")
         End Get
     End Property
 

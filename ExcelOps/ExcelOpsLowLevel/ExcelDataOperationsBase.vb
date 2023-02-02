@@ -9,19 +9,21 @@ Namespace ExcelOps
             CreateFile = 1
         End Enum
 
-        Protected Sub New(file As String, mode As OpenMode, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean)
+        Protected Sub New(file As String, mode As OpenMode, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
             Me.CalculationModuleDisabled = calculationModuleDisabled
+            Me.ReadOnly = [readOnly]
             Select Case mode
                 Case OpenMode.OpenExistingFile
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
+                    Me.ReadOnly = True
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select
-            Me.ReadOnly = [readOnly]
+            Me.PasswordForOpening = passwordForOpening
         End Sub
 
         ''' <summary>
@@ -29,16 +31,23 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
         ''' <param name="calculationModuleDisabled">Disables the Excel calculation engine</param>
-        Protected Sub New(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean)
+        Protected Sub New(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
             Me.CalculationModuleDisabled = calculationModuleDisabled
             Me.ReadOnly = [readOnly]
+            Me.PasswordForOpening = passwordForOpening
         End Sub
 
         Public Sub ReloadFromFile()
             Me.LoadAndInitializeWorkbookFile(Me.FilePath)
         End Sub
+
+        ''' <summary>
+        ''' A password for opening an excel file
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property PasswordForOpening As String
 
         ''' <summary>
         ''' Write protection for this filename prevents Save, but still allows SaveAs
@@ -65,6 +74,10 @@ Namespace ExcelOps
         Public MustOverride Property AutoCalculationEnabled As Boolean
 
         Protected _FilePath As String
+        ''' <summary>
+        ''' The file path as initialized in constructor (applies for saved files as well as for created, not-saved files with their intended file location on 1st save)
+        ''' </summary>
+        ''' <returns></returns>
         Public ReadOnly Property FilePath As String
             Get
                 Return _FilePath
@@ -88,21 +101,80 @@ Namespace ExcelOps
         Public MustOverride Sub CloseExcelAppInstance()
 
         ''' <summary>
+        ''' The current workbook file name (as it is known by the Excel engine)
+        ''' </summary>
+        ''' <returns>Null/Nothing if the file has been created in memory, but hasn't been saved OR the file name from last open/save action</returns>
+        Protected Friend MustOverride ReadOnly Property WorkbookFilePath As String
+
+        ''' <summary>
         ''' Save modifications made to the workbook
         ''' </summary>
-        Public MustOverride Sub Save()
+        Public Sub Save()
+            Me.Save(SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        End Sub
+
+        ''' <summary>
+        ''' Save modifications made to the workbook
+        ''' </summary>
+        Public Sub Save(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            If Me.ReadOnly = True Then
+                Throw New FileReadOnlyException("File is read-only and can't be saved at same location")
+            End If
+            If FilePath.ToLowerInvariant.EndsWith(".xlsx") AndAlso Me.HasVbaProject Then
+                Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
+            End If
+            If FilePath.ToLowerInvariant.EndsWith(".xlsx") Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
+                Me.RemoveVbaProject()
+            End If
+            If Me.RecalculationRequired Then Me.RecalculateAll()
+            If Me.FilePath <> Nothing AndAlso Me.WorkbookFilePath = Nothing Then
+                'Created workbook, initial save must provide a file path, so use SaveAs method instead
+                Me.SaveAs(Me.FilePath, cachedCalculationsOption)
+            Else
+                Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
+                Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
+                Try
+                    Me.AutoCalculationEnabled = True
+                    Me.SaveInternal()
+                Finally
+                    Me.AutoCalculationEnabled = AutoCalcBuffer
+                End Try
+            End If
+        End Sub
+
+        ''' <summary>
+        ''' Apply CachedCalculation setting
+        ''' </summary>
+        ''' <param name="cachedCalculationsOption"></param>
+        Protected Overridable Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            If cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.DefaultBehaviour Then
+                cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.NoReset
+            End If
+            Select Case cachedCalculationsOption
+                Case SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation
+                    'do nothing
+                Case SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired
+                   'do nothing
+                Case SaveOptionsForDisabledCalculationEngines.NoReset
+                    'do nothing
+                Case Else
+                    Throw New NotImplementedException("Invalid option: " & cachedCalculationsOption)
+            End Select
+        End Sub
+
+        ''' <summary>
+        ''' Save modifications made to the workbook
+        ''' </summary>
+        Protected MustOverride Sub SaveInternal()
 
         ''' <summary>
         ''' Save workbook as another file
         ''' </summary>
         ''' <param name="filePath"></param>
-        <Obsolete("Use overloaded method", True)> Public Sub SaveAs(filePath As String)
-            If Me.ReadOnly = True AndAlso Me._FilePath = filePath Then
-                Throw New ArgumentException("File is read-only and can't be saved at same location")
-            End If
-            Me.SaveAsInternal(filePath, SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
-            Me._FilePath = filePath
-            Me.ReadOnly = False
+        <Obsolete("Use overloaded method", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        Public Sub SaveAs(filePath As String)
+            Me.SaveAs(filePath, SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         End Sub
 
         ''' <summary>
@@ -110,10 +182,26 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="filePath"></param>
         Public Sub SaveAs(filePath As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If Me.ReadOnly = True AndAlso Me._FilePath = filePath Then
-                Throw New ArgumentException("File is read-only and can't be saved at same location")
+            If Me.ReadOnly = True AndAlso Me._FilePath = filePath AndAlso Me.WorkbookFilePath <> Nothing Then
+                Throw New FileReadOnlyException("File """ & filePath & """ is read-only and can't be saved at same location")
             End If
-            Me.SaveAsInternal(filePath, cachedCalculationsOption)
+            If filePath.ToLowerInvariant.EndsWith(".xlsx") AndAlso Me.HasVbaProject Then
+                Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
+            End If
+            If filePath.ToLowerInvariant.EndsWith(".xlsx") Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
+                Me.RemoveVbaProject()
+            End If
+            If Me.RecalculationRequired Then Me.RecalculateAll()
+
+            Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
+            Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
+            Try
+                Me.AutoCalculationEnabled = True
+                Me.SaveAsInternal(filePath, cachedCalculationsOption)
+            Finally
+                Me.AutoCalculationEnabled = AutoCalcBuffer
+            End Try
+
             Me._FilePath = filePath
             Me.ReadOnly = False
         End Sub
@@ -294,7 +382,8 @@ Namespace ExcelOps
 
         Protected MustOverride Sub LoadWorkbook(file As System.IO.FileInfo)
 
-        Protected Overridable Sub LoadAndInitializeWorkbookFile(inputPath As String)
+        Protected Sub LoadAndInitializeWorkbookFile(inputPath As String)
+            If inputPath = Nothing Then Throw New ArgumentNullException(NameOf(inputPath))
             'Load the changed worksheet
             Me._FilePath = inputPath
             Dim file As New System.IO.FileInfo(inputPath)
@@ -310,12 +399,20 @@ Namespace ExcelOps
 
         Protected MustOverride Sub CreateWorkbook()
 
-        Protected Overridable Sub CreateAndInitializeWorkbookFile(filePath As String)
+        ''' <summary>
+        ''' Create a new workbook
+        ''' </summary>
+        ''' <param name="intendedFilePath">If the file path is already known, the file will be checked to not exist already and the file path will be used for later saving</param>
+        Protected Sub CreateAndInitializeWorkbookFile(intendedFilePath As String)
             'Load the changed worksheet
-            Me._FilePath = filePath
-            Dim file As New System.IO.FileInfo(filePath)
-            If file.Exists = True Then
-                Throw New System.InvalidOperationException("File already exists: " & file.ToString)
+            If intendedFilePath <> Nothing Then
+                Me._FilePath = intendedFilePath
+                Dim file As New System.IO.FileInfo(intendedFilePath)
+                If file.Exists = True Then
+                    Throw New FileAlreadyExistsException(Me.FilePath)
+                End If
+            Else
+                Me._FilePath = Nothing
             End If
             Me.CreateWorkbook()
             Me.AutoCalculationEnabled = False
@@ -967,7 +1064,7 @@ Namespace ExcelOps
         End Enum
 
         Public Overrides Function ToString() As String
-            Return "FileName=" & System.IO.Path.GetFileName(Me.FilePath) & "; ExcelEngine=" & Me.EngineName.ToString
+            Return "FileName=" & System.IO.Path.GetFileName(Me.FilePath) & "; ExcelEngine=" & Me.EngineName
         End Function
 
         Public MustOverride ReadOnly Property EngineName As String
@@ -984,6 +1081,10 @@ Namespace ExcelOps
             Next
             Return Result
         End Function
+
+        Public MustOverride ReadOnly Property HasVbaProject As Boolean
+
+        Public MustOverride Sub RemoveVbaProject()
 
     End Class
 End Namespace

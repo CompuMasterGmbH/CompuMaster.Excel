@@ -2,14 +2,14 @@
     Inherits ComObjectBase
 
     Public Sub New(parentItemResponsibleForDisposal As ComObjectBase, workbook As ExcelWorkbook)
-        MyBase.New(parentItemResponsibleForDisposal, workbook.InvokePropertyGet("Sheets"))
+        MyBase.New(parentItemResponsibleForDisposal, workbook.InvokePropertyGet(Of Object)("Sheets"))
         Parent = workbook
     End Sub
 
     Public ReadOnly Property Parent As ExcelWorkbook
 
     Public Function Add() As ExcelSheet
-        Return New ExcelSheet(Me, Me, InvokeFunction("Add"))
+        Return New ExcelSheet(Me, Me, InvokeFunction(Of Object)("Add"))
     End Function
 
     Public Function Item(sheetName As String) As ExcelSheet

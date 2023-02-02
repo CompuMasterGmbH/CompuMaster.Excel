@@ -22,9 +22,9 @@
         InvokeMethod("Select")
     End Sub
 
-    Public Function Delete() As ExcelSheet
-        Return CType(InvokeFunction("Delete"), ExcelSheet)
-    End Function
+    Public Sub Delete()
+        InvokeMethod("Delete")
+    End Sub
 
     Friend ReadOnly Parent As ExcelSheetCollection
     Private oRanges As New List(Of ExcelRange)

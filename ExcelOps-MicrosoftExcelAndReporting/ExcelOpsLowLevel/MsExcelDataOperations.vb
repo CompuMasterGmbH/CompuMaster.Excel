@@ -65,9 +65,43 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         '''     MsExcelOps.CloseExcelAppInstance()
         ''' End Try
         ''' </code>
+        ''' </remarks> 
+        Public Sub New(passwordForOpeningOnNextTime As String)
+            Me.New(Nothing, OpenMode.CreateFile, False, True, passwordForOpeningOnNextTime)
+        End Sub
+
+        ''' <summary>
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelOps.CloseExcelAppInstance()
+        ''' End Try
+        ''' </code>
+        ''' </remarks> 
+        Public Sub New()
+            Me.New(Nothing)
+        End Sub
+
+        ''' <summary>
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelOps.CloseExcelAppInstance()
+        ''' End Try
+        ''' </code>
         ''' </remarks>
-        Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, [readOnly] As Boolean)
-            Me.New(file, mode, CreateMsExcelAppInstance, unprotectWorksheets, [readOnly])
+        Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(file, mode, CreateMsExcelAppInstance, unprotectWorksheets, [readOnly], passwordForOpening)
         End Sub
 
 #Disable Warning CA1034 ' Nested types should not be visible
@@ -143,15 +177,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsAppInstance, [readOnly] As Boolean)
-            Me.New(file, mode, msExcelApp.AppInstance, True, [readOnly])
+        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsAppInstance, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(file, mode, msExcelApp.AppInstance, True, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
         End Sub
 
 #Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen
-        Private Sub New(file As String, mode As OpenMode, msExcelApp As MsExcel.Application, unprotectWorksheets As Boolean, [readOnly] As Boolean)
+        Private Sub New(file As String, mode As OpenMode, msExcelApp As MsExcel.Application, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
-            MyBase.New(True, False, [readOnly])
+            MyBase.New(True, False, [readOnly], passwordForOpening)
             Me.MSExcelApp = msExcelApp
             Me._Workbooks = msExcelApp.Workbooks
             Select Case mode
@@ -159,6 +193,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
+                    Me.ReadOnly = True
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select
@@ -228,23 +263,6 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 ExcelProcess = System.Diagnostics.Process.GetProcessById(ExcelProcessID)
             Catch
             End Try
-            'Do Until msExcelApp.Workbooks.Count = 0
-            '    Dim wb As MsExcel.Workbook = Nothing
-            '    Try
-            '        wb = msExcelApp.Workbooks(0)
-            '    Catch
-            '    End Try
-            '    Try
-            '        wb = msExcelApp.Workbooks(1)
-            '    Catch
-            '    End Try
-            '    wb.Close(SaveChanges:=False)
-            '    Do While System.Runtime.InteropServices.Marshal.ReleaseComObject(wb) > 0
-            '    Loop
-            '    System.Runtime.InteropServices.Marshal.FinalReleaseComObject(wb)
-            '    GC.Collect()
-            '    GC.WaitForPendingFinalizers()
-            'Loop
             Try
                 msExcelApp.Quit()
             Catch
@@ -302,37 +320,27 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
         End Property
 
-        Public Overrides Sub Save()
-            If Me.ReadOnly Then Throw New InvalidOperationException("Saving of read-only file forbidden")
-            If Me.RecalculationRequired Then Me.RecalculateAll()
-            If Me.FilePath <> Nothing AndAlso CType(Me.Workbook.Path, String) = Nothing Then
-                'Created workbook, initial save must provide a file path, so use SaveAs method instead
-                Me.SaveAs(Me.FilePath, SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
-            Else
-                Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
-                Try
-                    Me.AutoCalculationEnabled = True
-                    Me.Workbook.Save()
-                Finally
-                    Me.AutoCalculationEnabled = AutoCalcBuffer
-                End Try
+        Protected Overrides Sub SaveInternal()
+            If Me.PasswordForOpening <> Nothing Then
+                Me.Workbook.Protect(Me.PasswordForOpening)
             End If
+            Me.Workbook.Save()
         End Sub
 
-        Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+        Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Select Case cachedCalculationsOption
                 Case SaveOptionsForDisabledCalculationEngines.DefaultBehaviour, SaveOptionsForDisabledCalculationEngines.NoReset
                 Case Else
                     Throw New NotSupportedException("SaveOptionsForDisabledCalculationEngines " & cachedCalculationsOption.ToString & " not supported by MS Excel")
             End Select
-            If Me.RecalculationRequired Then Me.RecalculateAll()
-            Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
-            Try
-                Me.AutoCalculationEnabled = True
-                Me.Workbook.SaveAs(fileName) 'calculation module is not disabled - just ignore 2nd argument
-            Finally
-                Me.AutoCalculationEnabled = AutoCalcBuffer
-            End Try
+            MyBase.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
+        End Sub
+
+        Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            If Me.PasswordForOpening <> Nothing Then
+                Me.Workbook.Protect(Me.PasswordForOpening)
+            End If
+            Me.Workbook.SaveAs(fileName)
         End Sub
 
         Private _Workbook As MsExcel.Workbook
@@ -356,7 +364,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Property
 
         Protected Overrides Sub CreateWorkbook()
-            If Me.FilePath <> Nothing AndAlso System.IO.File.Exists(Me.FilePath) = True Then Throw New System.InvalidOperationException("File already exists: " & Me.FilePath)
+            'If Me._Workbook IsNot Nothing Then
+            '    If Me.WorkbookFilePath IsNot Nothing Then Throw New UnauthorizedAccessException("Found another workbook opened and in access by current MS Excel instance which hasn't been opened/created by (this) code")
+            '    Me._Workbook.Close(MsExcel.XlSaveAction.xlDoNotSaveChanges)
+            'End If
             If Me._Workbook Is Nothing Then
                 Dim Wb As MsExcel.Workbook = Me._Workbooks.Add()
                 Me._Workbook = Wb
@@ -364,7 +375,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     CType(Wb.Worksheets(Wb.Worksheets.Count), MsExcel.Worksheet).Delete()
                 End While
             End If
-            If Me.MSExcelApp Is Nothing AndAlso Me.Workbook IsNot Nothing Then
+            If Me.MSExcelApp Is Nothing AndAlso Me._Workbook IsNot Nothing Then
                 Me.MSExcelApp = Me.Workbook.Application
             End If
             Me.Workbook.EnableAutoRecover = False
@@ -373,7 +384,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
             If file.Exists = False Then Throw New System.IO.FileNotFoundException("Workbook file must exist for loading from disk", file.FullName)
             If Me._Workbook Is Nothing Then
-                Dim Wb As MsExcel.Workbook = Me._Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False)
+                Dim Wb As MsExcel.Workbook
+                If Me.PasswordForOpening <> Nothing Then
+                    Wb = Me._Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
+                Else
+                    Wb = Me._Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False)
+                End If
                 Me._Workbook = Wb
             End If
             If Me.MSExcelApp Is Nothing AndAlso Me.Workbook IsNot Nothing Then
@@ -1079,11 +1095,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         Public Shared Sub RecalculateFile(filePath As String, msAppInstance As MsExcelDataOperations.MsAppInstance)
+            RecalculateFile(filePath, msAppInstance, Nothing)
+        End Sub
+
+        Public Shared Sub RecalculateFile(filePath As String, msAppInstance As MsExcelDataOperations.MsAppInstance, passwordForOpening As String)
             Dim MsExcelApp As MsAppInstance = msAppInstance
             If MsExcelApp Is Nothing Then
                 MsExcelApp = New MsAppInstance()
             End If
-            Dim wb As New MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False)
+            Dim wb As New MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, passwordForOpening)
             Try
                 wb.RecalculateAll()
                 wb.Save()
@@ -1103,6 +1123,43 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 Return "MS Excel"
             End Get
         End Property
+
+        Public Overrides ReadOnly Property HasVbaProject As Boolean
+            Get
+                Return Me.Workbook.HasVBProject
+            End Get
+        End Property
+
+        Protected Overrides ReadOnly Property WorkbookFilePath As String
+            Get
+                If Me.IsClosed Then
+                    Return Nothing
+                ElseIf Me._Workbook.FullName.Contains(".") = False Then 'e.g. Mappe1 --> is a name without file name extension --> indicates that it hasn't been saved, yet
+                    Return Nothing
+                Else
+                    Return Me._Workbook.FullName
+                End If
+            End Get
+        End Property
+
+        Public Overrides Sub RemoveVbaProject()
+            Dim Components As Microsoft.Vbe.Interop.VBComponents = Me.Workbook.VBProject.VBComponents
+            For Each c As Microsoft.Vbe.Interop.VBComponent In Components
+                Select Case c.Type
+                    Case Microsoft.Vbe.Interop.vbext_ComponentType.vbext_ct_StdModule, Microsoft.Vbe.Interop.vbext_ComponentType.vbext_ct_ClassModule
+                        Components.Remove(c)
+                    Case Else
+                        Components.Remove(c)
+                End Select
+            Next
+
+            ''Theory: will be removed automatically when saving as non-xlsm-file
+            'If Me.WorkbookFilePath = Nothing OrElse Me.Workbook.Saved = False Then Throw New NotSupportedException("Removal of VBA project requires a saved workbook for Excel engine """ & Me.EngineName & """")
+            'Dim TempFile As String = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlsx"
+            'Dim CurrentFileName As String = Me.FilePath
+            'Me.Workbook.SaveAs(TempFile)
+            'Me.Workbook.SaveAs(CurrentFileName)
+        End Sub
 
     End Class
 
