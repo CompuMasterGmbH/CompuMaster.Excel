@@ -20,7 +20,6 @@ Namespace Global.CompuMaster.Excel.ExcelOps
     ''' </remarks>
     Public Class MsExcelDataOperations
         Inherits ExcelDataOperationsBase
-        Implements IDisposable
 
         Public Shared Property AutoKillAllExistingMsExcelInstances As Boolean = False
 
@@ -43,15 +42,6 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 End If
             End If
         End Sub
-
-        ''' <summary>
-        ''' Are there any running MS Excel instances on the current system (owned by any user)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Shared Function HasRunningMsExcelInstances() As Boolean
-            Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-            Return MsExcelProcesses IsNot Nothing AndAlso MsExcelProcesses.Length > 0
-        End Function
 
         ''' <summary>
         ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
@@ -101,67 +91,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' </code>
         ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
-            Me.New(file, mode, CreateMsExcelAppInstance, unprotectWorksheets, [readOnly], passwordForOpening)
+            Me.New(file, mode, New MsExcelApplicationWrapper, unprotectWorksheets, [readOnly], passwordForOpening)
         End Sub
-
-#Disable Warning CA1034 ' Nested types should not be visible
-        ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
-        ''' </summary>
-        ''' <remarks>Use with pattern
-        ''' <code>
-        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
-        ''' Try
-        '''    '...
-        ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
-        ''' End Try
-        ''' </code>
-        ''' </remarks>
-        Public Class MsAppInstance
-#Enable Warning CA1034 ' Nested types should not be visible
-            Public Sub New()
-                Me.AppInstance = CreateMsExcelAppInstance()
-            End Sub
-            Friend Sub New(instance As MsExcel.Application)
-                Me.AppInstance = instance
-            End Sub
-            Friend Property AppInstance As MsExcel.Application
-            Public Sub Close()
-                If Me.AppInstance IsNot Nothing Then
-                    MsExcelDataOperations.PrepareCloseExcelAppInstance(Me)
-                    MsExcelDataOperations.SafelyCloseExcelAppInstance(Me)
-                End If
-            End Sub
-        End Class
-
-        ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
-        ''' </summary>
-        ''' <remarks>Use with pattern
-        ''' <code>
-        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
-        ''' Try
-        '''    '...
-        ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
-        ''' End Try
-        ''' </code>
-        ''' </remarks>
-        Private Shared Function CreateMsExcelAppInstance() As MsExcel.Application
-            Dim MSExcelApp As New MsExcel.Application()
-            Try
-                MSExcelApp.Interactive = False
-                MSExcelApp.ScreenUpdating = False
-                MSExcelApp.DisplayAlerts = False
-                MSExcelApp.Visible = False
-            Catch ex As Exception
-                Throw New PlatformNotSupportedException("App and installed MS Office must both 64 bit or both 32 bit processed")
-            End Try
-            Return MSExcelApp
-        End Function
 
         ''' <summary>
         ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
@@ -177,17 +108,17 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsAppInstance, [readOnly] As Boolean, passwordForOpening As String)
-            Me.New(file, mode, msExcelApp.AppInstance, True, [readOnly], passwordForOpening)
+        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(file, mode, msExcelApp, True, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
         End Sub
 
 #Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen
-        Private Sub New(file As String, mode As OpenMode, msExcelApp As MsExcel.Application, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
+        Private Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
             MyBase.New(True, False, [readOnly], passwordForOpening)
-            Me.MSExcelApp = msExcelApp
-            Me._Workbooks = msExcelApp.Workbooks
+            Me._MsExcelAppInstance = msExcelApp
+            Me._Workbooks = New MsExcelWorkbooksWrapper(msExcelApp, msExcelApp.ComObjectStronglyTyped.Workbooks)
             Select Case mode
                 Case OpenMode.OpenExistingFile
                     Me.LoadAndInitializeWorkbookFile(file)
@@ -202,115 +133,62 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
-        ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
-        ''' </summary>
-        ''' <remarks>Use with pattern
-        ''' <code>
-        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
-        ''' Try
-        '''    '...
-        ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
-        ''' End Try
-        ''' </code>
-        ''' </remarks>
-        Protected Property MSExcelApp As MsExcel.Application
+        '''' <summary>
+        '''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
+        '''' </summary>
+        '''' <remarks>Use with pattern
+        '''' <code>
+        '''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
+        '''' Try
+        ''''    '...
+        '''' Finally
+        ''''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
+        ''''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        '''' End Try
+        '''' </code>
+        '''' </remarks>
+        'Protected Property MSExcelApp As ComMsExcelApplication
 
-        Private _MsExcelAppInstance As MsAppInstance
-        Public ReadOnly Property MsExcelAppInstance As MsAppInstance
+        Private _MsExcelAppInstance As MsExcelApplicationWrapper
+        Public ReadOnly Property MsExcelAppInstance As MsExcelApplicationWrapper
             Get
                 If _MsExcelAppInstance Is Nothing Then
-                    _MsExcelAppInstance = New MsAppInstance(MSExcelApp)
+                    _MsExcelAppInstance = New MsExcelApplicationWrapper()
                 End If
                 Return _MsExcelAppInstance
             End Get
         End Property
 
-        Private Declare Auto Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Integer, ByRef lpdwProcessId As Integer) As Integer
-
-        Public Shared Sub PrepareCloseExcelAppInstance(msExcelApp As MsAppInstance)
-            If msExcelApp IsNot Nothing AndAlso msExcelApp.AppInstance IsNot Nothing Then
-                PrepareCloseExcelAppInstanceInternal(msExcelApp.AppInstance)
-            End If
-        End Sub
-
-        Private Shared Sub PrepareCloseExcelAppInstanceInternal(ByRef msExcelApp As MsExcel.Application)
-            Try
-                If msExcelApp IsNot Nothing Then
-                    msExcelApp.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic 'reset value from manual to automatic (=expected default setting of user in 99% of all situations)
-                End If
-            Catch
-            End Try
-        End Sub
-
-        Public Shared Sub SafelyCloseExcelAppInstance(ByRef msExcelApp As MsAppInstance)
-            If msExcelApp Is Nothing Then Return
-            SafelyCloseExcelAppInstanceInternal(msExcelApp.AppInstance)
-            If msExcelApp IsNot Nothing Then
-                msExcelApp.AppInstance = Nothing
-            End If
-            msExcelApp = Nothing
-        End Sub
-
-        Private Shared Sub SafelyCloseExcelAppInstanceInternal(ByRef msExcelApp As MsExcel.Application)
-            If msExcelApp Is Nothing Then Return
-            Dim ExcelProcess As System.Diagnostics.Process = Nothing
-            Try
-                Dim ExcelProcessID As Integer = Nothing
-                GetWindowThreadProcessId(msExcelApp.Hwnd, ExcelProcessID)
-                ExcelProcess = System.Diagnostics.Process.GetProcessById(ExcelProcessID)
-            Catch
-            End Try
-            Try
-                msExcelApp.Quit()
-            Catch
-            End Try
-            Do While System.Runtime.InteropServices.Marshal.ReleaseComObject(msExcelApp) > 0
-            Loop
-            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(msExcelApp)
-            msExcelApp = Nothing
-            GC.Collect(0, GCCollectionMode.Forced, True, False)
-            GC.WaitForPendingFinalizers()
-            GC.Collect(2, GCCollectionMode.Forced, True, False)
-            GC.WaitForPendingFinalizers()
-            GC.Collect(0, GCCollectionMode.Forced, True, False)
-            GC.WaitForPendingFinalizers()
-            If ExcelProcess IsNot Nothing AndAlso ExcelProcess.HasExited = False Then
-                ExcelProcess.Kill()
-                System.Threading.Thread.Sleep(1000)
-            End If
-        End Sub
-
-        Public Overrides Sub CloseExcelAppInstance()
-            PrepareCloseExcelAppInstanceInternal(Me.MSExcelApp)
-            'Close workbook if still open
-            Me.Close()
-            'Close workbooks collection
-            If Me._Workbooks IsNot Nothing Then
-                Me._Workbooks.Close()
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(_Workbooks)
-                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(_Workbooks)
-                Me._Workbooks = Nothing
-            End If
-            SafelyCloseExcelAppInstanceInternal(Me.MSExcelApp)
-        End Sub
-
         Public Overrides Sub Close()
             If Me._Workbook IsNot Nothing Then
-                Me._Workbook.Close(SaveChanges:=False)
-                Do While System.Runtime.InteropServices.Marshal.ReleaseComObject(_Workbook) > 0
-                Loop
-                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(_Workbook)
+                Me.Workbook.Close(SaveChanges:=False)
+                Me._Workbook.Dispose()
                 Me._Workbook = Nothing
             End If
         End Sub
 
-        Private _Workbooks As MsExcel.Workbooks
+        Public Overrides Sub CloseExcelAppInstance()
+            'Close workbook if still open
+            Me.Close()
+            'Close workbooks collection
+            If Me._Workbooks IsNot Nothing Then
+                Me._Workbooks.Dispose()
+                Me._Workbooks = Nothing
+            End If
+            If Me._MsExcelAppInstance IsNot Nothing Then
+                Me._MsExcelAppInstance.Dispose()
+                Me._MsExcelAppInstance = Nothing
+            End If
+        End Sub
+
+        Private _Workbooks As MsExcelWorkbooksWrapper
         Public ReadOnly Property Workbooks As MsExcel.Workbooks
             Get
-                Return _Workbooks
+                If _Workbooks Is Nothing Then
+                    Return Nothing
+                Else
+                    Return _Workbooks.ComObjectStronglyTyped
+                End If
             End Get
         End Property
 
@@ -343,22 +221,26 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.SaveAs(fileName)
         End Sub
 
-        Private _Workbook As MsExcel.Workbook
+        Private _Workbook As MsExcelWorkbookWrapper
         Public ReadOnly Property Workbook As MsExcel.Workbook
             Get
-                Return _Workbook
+                If _Workbook Is Nothing Then
+                    Return Nothing
+                Else
+                    Return _Workbook.ComObjectStronglyTyped
+                End If
             End Get
         End Property
 
         Public Overrides Property AutoCalculationEnabled As Boolean
             Get
-                Return (Me.MSExcelApp.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic)
+                Return (Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic)
             End Get
             Set(value As Boolean)
                 If value Then
-                    Me.MSExcelApp.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic
+                    Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic
                 Else
-                    Me.MSExcelApp.Calculation = MsExcel.XlCalculation.xlCalculationManual
+                    Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationManual
                 End If
             End Set
         End Property
@@ -369,15 +251,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             '    Me._Workbook.Close(MsExcel.XlSaveAction.xlDoNotSaveChanges)
             'End If
             If Me._Workbook Is Nothing Then
-                Dim Wb As MsExcel.Workbook = Me._Workbooks.Add()
-                Me._Workbook = Wb
+                Dim Wb As MsExcel.Workbook = Me.Workbooks.Add()
+                Me._Workbook = New MsExcelWorkbookWrapper(Me._Workbooks, Wb)
                 While Wb.Worksheets.Count > 1
                     CType(Wb.Worksheets(Wb.Worksheets.Count), MsExcel.Worksheet).Delete()
                 End While
             End If
-            If Me.MSExcelApp Is Nothing AndAlso Me._Workbook IsNot Nothing Then
-                Me.MSExcelApp = Me.Workbook.Application
-            End If
+            'If Me.MSExcelApp Is Nothing AndAlso Me._Workbook IsNot Nothing Then
+            '    Me.MSExcelApp = Me.Workbook.Application
+            'End If
             Me.Workbook.EnableAutoRecover = False
         End Sub
 
@@ -386,15 +268,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             If Me._Workbook Is Nothing Then
                 Dim Wb As MsExcel.Workbook
                 If Me.PasswordForOpening <> Nothing Then
-                    Wb = Me._Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
+                    Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
                 Else
-                    Wb = Me._Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False)
+                    Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False)
                 End If
-                Me._Workbook = Wb
+                Me._Workbook = New MsExcelWorkbookWrapper(Me._Workbooks, Wb)
             End If
-            If Me.MSExcelApp Is Nothing AndAlso Me.Workbook IsNot Nothing Then
-                Me.MSExcelApp = Me.Workbook.Application
-            End If
+            'If Me.MSExcelApp Is Nothing AndAlso Me.Workbook IsNot Nothing Then
+            '    Me.MSExcelApp = Me.Workbook.Application
+            'End If
             Me.Workbook.EnableAutoRecover = False
         End Sub
 
@@ -861,43 +743,6 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).Calculate()
         End Sub
 
-#Region "IDisposable Support"
-        Private disposedValue As Boolean ' Dient zur Erkennung redundanter Aufrufe.
-
-        ' IDisposable
-        Protected Overridable Sub Dispose(disposing As Boolean)
-            If Not disposedValue Then
-                If disposing Then
-                    ' TODO: verwalteten Zustand (verwaltete Objekte) entsorgen.
-                End If
-
-                ' TODO: nicht verwaltete Ressourcen (nicht verwaltete Objekte) freigeben und Finalize() weiter unten überschreiben.
-                ' TODO: große Felder auf Null setzen.
-                Me.Close()
-                If Me.MSExcelApp IsNot Nothing Then
-                    Me.CloseExcelAppInstance()
-                End If
-            End If
-            disposedValue = True
-        End Sub
-
-        ' TODO: Finalize() nur überschreiben, wenn Dispose(disposing As Boolean) weiter oben Code zur Bereinigung nicht verwalteter Ressourcen enthält.
-        'Protected Overrides Sub Finalize()
-        '    ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in Dispose(disposing As Boolean) weiter oben ein.
-        '    Dispose(False)
-        '    MyBase.Finalize()
-        'End Sub
-
-        ' Dieser Code wird von Visual Basic hinzugefügt, um das Dispose-Muster richtig zu implementieren.
-        Public Sub Dispose() Implements IDisposable.Dispose
-            ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in Dispose(disposing As Boolean) weiter oben ein.
-            Dispose(True)
-            ' TODO: Auskommentierung der folgenden Zeile aufheben, wenn Finalize() oben überschrieben wird.
-            ' GC.SuppressFinalize(Me)
-        End Sub
-
-#End Region
-
         Public Overrides Function IsProtectedSheet(sheetName As String) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.IsProtectedSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
@@ -1084,33 +929,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Public Overrides Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(MsExcelDataOperations) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
-            If Me.MSExcelApp IsNot CType(targetWorkbook, MsExcelDataOperations).MSExcelApp Then Throw New NotSupportedException("Excel application must be the same for source and target workbook for copying worksheets")
+            If Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot CType(targetWorkbook, MsExcelDataOperations).MsExcelAppInstance.ComObjectStronglyTyped Then Throw New NotSupportedException("Excel application must be the same for source and target workbook for copying worksheets")
             Dim TargetWorkSheet As MsExcel.Worksheet = CType(CType(targetWorkbook, MsExcelDataOperations).Workbook.Worksheets(targetSheetName), MsExcel.Worksheet)
             targetWorkbook.ClearSheet(targetSheetName)
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells.Copy(TargetWorkSheet.Cells)
-        End Sub
-
-        Public Shared Sub RecalculateFile(filePath As String)
-            RecalculateFile(filePath, Nothing)
-        End Sub
-
-        Public Shared Sub RecalculateFile(filePath As String, msAppInstance As MsExcelDataOperations.MsAppInstance)
-            RecalculateFile(filePath, msAppInstance, Nothing)
-        End Sub
-
-        Public Shared Sub RecalculateFile(filePath As String, msAppInstance As MsExcelDataOperations.MsAppInstance, passwordForOpening As String)
-            Dim MsExcelApp As MsAppInstance = msAppInstance
-            If MsExcelApp Is Nothing Then
-                MsExcelApp = New MsAppInstance()
-            End If
-            Dim wb As New MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, passwordForOpening)
-            Try
-                wb.RecalculateAll()
-                wb.Save()
-            Finally
-                wb.Close()
-                If msAppInstance Is Nothing Then wb.CloseExcelAppInstance()
-            End Try
         End Sub
 
         Public Overrides Sub SelectCell(cell As ExcelCell)
@@ -1134,10 +956,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Get
                 If Me.IsClosed Then
                     Return Nothing
-                ElseIf Me._Workbook.FullName.Contains(".") = False Then 'e.g. Mappe1 --> is a name without file name extension --> indicates that it hasn't been saved, yet
+                ElseIf Me.Workbook.FullName.Contains(".") = False Then 'e.g. Mappe1 --> is a name without file name extension --> indicates that it hasn't been saved, yet
                     Return Nothing
                 Else
-                    Return Me._Workbook.FullName
+                    Return Me.Workbook.FullName
                 End If
             End Get
         End Property

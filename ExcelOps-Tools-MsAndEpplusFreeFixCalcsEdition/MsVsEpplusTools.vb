@@ -40,10 +40,10 @@ Namespace ExcelOps
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path As String, passwordForOpening As String)
             OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path)
-            Dim MSExcel As ExcelOps.MsExcelDataOperations.MsAppInstance = Nothing
+            Dim MSExcel As ExcelOps.MsExcelApplicationWrapper = Nothing
             Dim MsExcelWb As ExcelOps.MsExcelDataOperations = Nothing
             Try
-                MSExcel = New ExcelOps.MsExcelDataOperations.MsAppInstance()
+                MSExcel = New ExcelOps.MsExcelApplicationWrapper
                 MsExcelWb = New ExcelOps.MsExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, False, passwordForOpening)
                 MsExcelWb.RecalculateAll()
                 MsExcelWb.Save()
@@ -60,7 +60,7 @@ Namespace ExcelOps
                     End Try
                 End If
                 If MSExcel IsNot Nothing Then
-                    MSExcel.Close()
+                    MSExcel.Dispose()
                 End If
             End Try
         End Sub

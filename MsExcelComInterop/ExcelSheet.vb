@@ -1,9 +1,8 @@
 ﻿Public Class ExcelSheet
-    Inherits ComObjectBase
+    Inherits ComChildObject(Of ExcelSheetCollection, Object)
 
-    Friend Sub New(parentItemResponsibleForDisposal As ComObjectBase, c As ExcelSheetCollection, sheetComObject As Object)
-        MyBase.New(parentItemResponsibleForDisposal, sheetComObject)
-        Parent = c
+    Friend Sub New(parent As ExcelSheetCollection, sheetComObject As Object)
+        MyBase.New(parent, sheetComObject)
     End Sub
 
     Public ReadOnly Property Name As String
@@ -26,7 +25,6 @@
         InvokeMethod("Delete")
     End Sub
 
-    Friend ReadOnly Parent As ExcelSheetCollection
     Private oRanges As New List(Of ExcelRange)
 
     Public ReadOnly Property Index As Integer
@@ -72,12 +70,6 @@
             oRanges(MyCounter).Dispose()
             oRanges.RemoveAt(MyCounter)
         Next
-    End Sub
-
-    Protected Overrides Sub OnClosing()
-    End Sub
-
-    Protected Overrides Sub OnClosed()
     End Sub
 
 End Class

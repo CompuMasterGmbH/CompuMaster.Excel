@@ -79,7 +79,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
 
     <Test> Public Sub CreateWorkbookWithoutFilePath()
         Dim Wb As T
-        Dim TestFile As String
+        Dim TestFile As String = Nothing
 
         Wb = Me.CreateInstance()
         Assert.AreEqual(TestFile, Wb.FilePath)

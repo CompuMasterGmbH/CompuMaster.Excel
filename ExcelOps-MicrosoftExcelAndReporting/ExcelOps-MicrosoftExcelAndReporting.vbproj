@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <RootNamespace>CompuMaster.Excel</RootNamespace>
-    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
     <AssemblyName>CompuMaster.Excel.MicrosoftExcel</AssemblyName>
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <OptionStrict>On</OptionStrict>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.1" />
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.5" />
   </ItemGroup>
 
 </Project>

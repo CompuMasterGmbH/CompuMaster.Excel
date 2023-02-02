@@ -1,18 +1,15 @@
 ﻿Public Class ExcelWorkbook
-    Inherits ComObjectBase
+    Inherits ComChildObject(Of ExcelWorkbooksCollection, Object)
 
-    Friend Sub New(parentItemResponsibleForDisposal As ComObjectBase, c As ExcelWorkbooksCollection, path As String)
-        MyBase.New(parentItemResponsibleForDisposal, c.InvokeFunction(Of Object)("Open", New Object() {path}))
-        Parent = c
+    Friend Sub New(parentItem As ExcelWorkbooksCollection, path As String)
+        MyBase.New(parentItem, parentItem.InvokeFunction(Of Object)("Open", New Object() {path}))
         FilePath = path
-        Sheets = New ExcelSheetCollection(Me, Me)
+        Sheets = New ExcelSheetCollection(Me)
     End Sub
 
     Public ReadOnly Property Sheets() As ExcelSheetCollection
 
     Public ReadOnly FilePath As String
-
-    Friend ReadOnly Parent As ExcelWorkbooksCollection
 
     Public ReadOnly Property Name As String
         Get
@@ -47,16 +44,6 @@
         InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, activePrinter, printToFile, collatePages, printToFileName, ignorePrintAreas)
     End Sub
 
-    Public ReadOnly Property IsClosed As Boolean
-        Get
-            Return MyBase.IsDisposedComObject
-        End Get
-    End Property
-
-    Public Sub Close()
-        MyBase.CloseAndDisposeChildrenAndComObject()
-    End Sub
-
     Protected Overrides Sub OnDisposeChildren()
         Sheets.Dispose()
     End Sub
@@ -66,7 +53,7 @@
     End Sub
 
     Protected Overrides Sub OnClosed()
-        Parent.Workbooks.Remove(Me)
+        Me.Parent.Workbooks.Remove(Me)
     End Sub
 
 End Class

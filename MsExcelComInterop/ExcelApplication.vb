@@ -1,9 +1,11 @@
 ﻿Public Class ExcelApplication
-    Inherits ComObjectBase
+    Inherits ComRootObject(Of Object)
 
     Public Sub New()
-        MyBase.New(Nothing, CreateObject("Excel.Application"))
-        Me.Workbooks = New ExcelWorkbooksCollection(Me, Me)
+#Disable Warning CA1416
+        MyBase.New(CreateObject("Excel.Application"), Sub(instance) instance.InvokeMethod("Quit"))
+#Enable Warning CA1416
+        Me.Workbooks = New ExcelWorkbooksCollection(Me)
     End Sub
 
     Public ReadOnly Property Workbooks As ExcelWorkbooksCollection
@@ -35,6 +37,24 @@
         End Set
     End Property
 
+    Public Property Interactive As Boolean
+        Get
+            Return InvokePropertyGet(Of Boolean)("Interactive")
+        End Get
+        Set(value As Boolean)
+            InvokePropertySet("Interactive", value)
+        End Set
+    End Property
+
+    Public Property ScreenUpdating As Boolean
+        Get
+            Return InvokePropertyGet(Of Boolean)("ScreenUpdating")
+        End Get
+        Set(value As Boolean)
+            InvokePropertySet("ScreenUpdating", value)
+        End Set
+    End Property
+
     Public Function Dialogs(type As Enumerations.XlBuiltInDialog) As ExcelDialog
         Return New ExcelDialog(Me, InvokePropertyGet("Dialogs", CType(type, Integer)))
     End Function
@@ -47,35 +67,14 @@
         Return InvokeFunction(Of Object)("Run", New Object() {"'" & workbookName & "'!" & vbaMethod})
     End Function
 
-    Public ReadOnly Property IsClosed As Boolean
-        Get
-            Return MyBase.IsDisposedComObject
-        End Get
-    End Property
-
-    Public Sub Close()
-        Me.Quit()
-    End Sub
-
-    Public Sub Quit()
-        If Not IsDisposedComObject Then
-            UserControl = True
-            MyBase.CloseAndDisposeChildrenAndComObject()
-        End If
-    End Sub
-
     Private AdditionalDisposeChildrenList As New List(Of ComObjectBase)
 
     Protected Overrides Sub OnDisposeChildren()
         If Me.Workbooks IsNot Nothing Then Me.Workbooks.Dispose()
     End Sub
 
-    Protected Overrides Sub OnClosing()
-        InvokeMethod("Quit")
-    End Sub
-
-    Protected Overrides Sub OnClosed()
-        GC.Collect(2, GCCollectionMode.Forced, True)
+    Protected Overrides Sub onBeforeClosing()
+        UserControl = True
     End Sub
 
 End Class

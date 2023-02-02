@@ -1,7 +1,7 @@
 ﻿Public Class ExcelDialog
-    Inherits ComObjectBase
+    Inherits ComChildObject(Of ExcelApplication, Object)
 
-    Public Sub New(parentItemResponsibleForDisposal As ComObjectBase, comObject As Object)
+    Public Sub New(parentItemResponsibleForDisposal As ExcelApplication, comObject As Object)
         MyBase.New(parentItemResponsibleForDisposal, comObject)
     End Sub
 
@@ -13,12 +13,4 @@
         Return InvokeFunction(Of Boolean)("Show")
     End Function
 
-    Protected Overrides Sub OnDisposeChildren()
-    End Sub
-
-    Protected Overrides Sub OnClosing()
-    End Sub
-
-    Protected Overrides Sub OnClosed()
-    End Sub
 End Class
