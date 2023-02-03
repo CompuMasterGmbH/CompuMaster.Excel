@@ -480,7 +480,7 @@ namespace CompuMaster.Epplus4
 		/// </summary>
 		public void RemoveVBAProject()
 		{
-			if (_vba == null) _vba = null;
+			_vba = null;
             if (_package.Package.PartExists(new Uri(ExcelVbaProject.PartUri, UriKind.Relative)))
 			{
 				_package.Package.DeletePart(new Uri(ExcelVbaProject.PartUri, UriKind.Relative));
