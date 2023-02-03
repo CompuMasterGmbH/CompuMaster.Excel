@@ -974,13 +974,6 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                         Components.Remove(c)
                 End Select
             Next
-
-            ''Theory: will be removed automatically when saving as non-xlsm-file
-            'If Me.WorkbookFilePath = Nothing OrElse Me.Workbook.Saved = False Then Throw New NotSupportedException("Removal of VBA project requires a saved workbook for Excel engine """ & Me.EngineName & """")
-            'Dim TempFile As String = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlsx"
-            'Dim CurrentFileName As String = Me.FilePath
-            'Me.Workbook.SaveAs(TempFile)
-            'Me.Workbook.SaveAs(CurrentFileName)
         End Sub
 
     End Class
