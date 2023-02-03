@@ -810,6 +810,9 @@ Namespace ExcelOps
         End Property
 
         Public Overrides Sub RemoveVbaProject()
+            If Me.Workbook.HasMacros = False Then Return 'Shortcut and circumvent following workaround
+
+            'NOTE: Manufacturer component doesn't provide a direct way to remove the VBA project (setting Me.Workbook.HasMacros = False has no effect)
             'NOTE: VBA project will be removed automatically when saving as non-xlsm-file            
 
             '0. Lookup required private field of Spire.Xls

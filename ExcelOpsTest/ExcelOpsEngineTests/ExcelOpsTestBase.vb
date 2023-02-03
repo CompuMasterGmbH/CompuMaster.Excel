@@ -32,6 +32,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Assert.AreEqual(FilePathInEngineBefore, Wb.WorkbookFilePath)
         Assert.False(Wb.HasVbaProject)
         Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        Wb.Close()
 
         Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, "")
         Assert.True(Wb.HasVbaProject)
@@ -40,7 +41,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Wb.RemoveVbaProject()
         Assert.False(Wb.HasVbaProject)
         Wb.Save()
-
+        Wb.Close()
 
         'But new created file saves with success
         Dim NonVbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
@@ -51,10 +52,25 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
         Assert.False(Wb.HasVbaProject)
         Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        Wb.Close()
 
         Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, "")
         Assert.False(Wb.HasVbaProject)
         Wb.Save()
+        Wb.Close()
+
+        'Loading a workbook with VBA project + removing VBA project + saving workbook as XLSM + reloading workbook = must still HasVbaProject = False
+        VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
+        NewXlsxTargetPath = TestEnvironment.FullPathOfDynTestFile(NameOf(SaveXlsxWithVbaProjectMustFail), "VbaProject.xlsm")
+        Wb = Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+        Assert.True(Wb.HasVbaProject)
+        Wb.RemoveVbaProject()
+        Assert.False(Wb.HasVbaProject)
+        Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        Wb.Close()
+        Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+        Assert.False(Wb.HasVbaProject)
+
     End Sub
 
     <Test> Public Sub PasswordForOpening()
@@ -68,6 +84,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Wb.PasswordForOpening = "dummy"
         Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile("PasswordProtectedFile.xlsx")
         Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        Wb.Close()
 
         'Try to reload it without password -> it must fail
         Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "something else"))
@@ -81,21 +98,25 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
 
     <Test> Public Sub CreateWorkbookWithoutFilePath()
         Dim Wb As T
-        Dim TestFile As String = Nothing
+        Dim TestFile As String
 
+        TestFile = Nothing
         Wb = Me.CreateInstance()
         Assert.AreEqual(TestFile, Wb.FilePath)
         Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+        Wb.Close()
 
         TestFile = Nothing
         Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
         Assert.AreEqual(TestFile, Wb.FilePath)
         Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+        Wb.Close()
 
         TestFile = ""
         Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
         Assert.AreEqual(Nothing, Wb.FilePath)
         Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
+        Wb.Close()
     End Sub
 
     <Test> Public Sub CreateAndSaveAsAndFilePath()
@@ -109,6 +130,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
         Assert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
         Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        Wb.Close()
 
         'Creating a new workbook must fail with a pre-defined file name if there is already a file
         Assert.Throws(Of FileAlreadyExistsException)(Sub()
@@ -146,6 +168,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Assert.AreEqual(True, Wb.ReadOnly)
         Assert.AreEqual(TestFile, Wb.FilePath)
         Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+        Wb.Close()
 
         'Saving a ReadWrite file must be allowed
         Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, "")
@@ -158,6 +181,6 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Assert.AreEqual(False, Wb.ReadOnly)
         Assert.AreEqual(TestFile, Wb.FilePath)
         Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
-
+        Wb.Close()
     End Sub
 End Class
