@@ -29,7 +29,12 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Assert.Throws(Of NotSupportedException)(Sub() Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
         Dim FilePathInEngineBefore As String = Wb.WorkbookFilePath
         Wb.RemoveVbaProject()
-        Assert.AreEqual(FilePathInEngineBefore, Wb.WorkbookFilePath)
+        If GetType(T) Is GetType(MsExcelDataOperations) Then
+            'MS Excel engine: feature RemoveVbaProject not supported + workaround only partially possible
+            Assert.IsNotEmpty(Wb.WorkbookFilePath)
+        Else
+            Assert.AreEqual(FilePathInEngineBefore, Wb.WorkbookFilePath)
+        End If
         Assert.False(Wb.HasVbaProject)
         Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         Wb.Close()

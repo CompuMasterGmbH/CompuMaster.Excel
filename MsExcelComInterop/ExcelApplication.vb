@@ -56,7 +56,7 @@
     End Property
 
     Public Function Dialogs(type As Enumerations.XlBuiltInDialog) As ExcelDialog
-        Return New ExcelDialog(Me, InvokePropertyGet("Dialogs", CType(type, Integer)))
+        Return New ExcelDialog(Me, InvokePropertyGet(Of Object)("Dialogs", CType(type, Integer)))
     End Function
 
     Public Function Run(vbaMethodNameInclWorkbookName As String) As Object

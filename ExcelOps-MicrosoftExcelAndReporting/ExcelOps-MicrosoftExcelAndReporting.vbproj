@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.5" />
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.7" />
   </ItemGroup>
 
 </Project>

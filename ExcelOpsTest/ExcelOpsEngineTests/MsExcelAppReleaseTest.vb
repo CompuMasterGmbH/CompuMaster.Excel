@@ -45,9 +45,9 @@ Namespace ExcelOpsEngineTests
         <Test, NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit> Public Sub OpenAnCloseMsExcelWithPropertProcessCleanup_ReusedMsExcelApp()
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Assert.Zero(MsExcelProcessesBefore.Length)
-            Dim MsExcelApp As New MsExcelApplicationWrapper
-            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True, Nothing)
-            Dim DummyCTWb2 As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True, Nothing)
+            Dim MsExcelApp As New MsExcelApplicationWrapper()
+            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
+            Dim DummyCTWb2 As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
 #Disable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
             DummyCTWb = Nothing
             DummyCTWb2 = Nothing

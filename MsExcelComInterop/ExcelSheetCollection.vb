@@ -11,11 +11,11 @@
 
     Public Function Item(sheetName As String) As ExcelSheet
         If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-        Return New ExcelSheet(Me, InvokePropertyGet("Item", sheetName))
+        Return New ExcelSheet(Me, InvokePropertyGet(Of Object)("Item", sheetName))
     End Function
 
     Public Function Item(index As Integer) As ExcelSheet
-        Return New ExcelSheet(Me, InvokePropertyGet("Item", index + 1))
+        Return New ExcelSheet(Me, InvokePropertyGet(Of Object)("Item", index + 1))
     End Function
 
     Public Function Count() As Integer

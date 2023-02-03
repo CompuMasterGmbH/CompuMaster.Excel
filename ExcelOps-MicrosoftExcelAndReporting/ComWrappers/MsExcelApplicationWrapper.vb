@@ -28,7 +28,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         Protected Overrides Sub OnClosing()
-            Me.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic 'reset value from manual to automatic (=expected default setting of user in 99% of all situations)
+            If Not Me.IsDisposedComObject Then
+                Try
+                    Me.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic 'reset value from manual to automatic (=expected default setting of user in 99% of all situations)
+                Catch
+                End Try
+            End If
             Me.ComObjectStronglyTyped.Quit()
             MyBase.OnClosing()
             SafelyCloseExcelAppInstanceInternal()
@@ -36,12 +41,32 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Private Sub SafelyCloseExcelAppInstanceInternal()
             If ProcessId <> Nothing AndAlso Process() IsNot Nothing AndAlso Process.HasExited = False Then
-                MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, New TimeSpan(0, 0, 15)) 'Sometimes it takes time to close MS Excel...
-                If Me.Process.HasExited = False Then
-                    'Force kill on Excel 
-                    Me.Process.Kill()
-                    MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, New TimeSpan(0, 0, 1))
-                End If
+                Try
+                    MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, New TimeSpan(0, 0, 15)) 'Sometimes it takes time to close MS Excel...
+                    Me.Process.Refresh()
+                    If Me.Process.HasExited = False Then
+                        'Force kill on Excel 
+                        Me.Process.Kill()
+                        Try
+                            MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, New TimeSpan(0, 0, 1))
+                        Catch 'ex As ArgumentException
+                            'expected for invalid processId after kill
+                        End Try
+                        Try
+                            MsExcelTools.WaitUntilTrueOrTimeout(Function()
+                                                                    Dim ExcelProcesses() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
+                                                                    For Each ExcelProcess In ExcelProcesses
+                                                                        If ExcelProcess.Id = Me.ProcessId Then Return False
+                                                                    Next
+                                                                    Return True
+                                                                End Function, New TimeSpan(0, 0, 1))
+                        Catch 'ex As Exception
+                            'ignore any exceptions on getting process list
+                        End Try
+                    End If
+                Catch 'ex As Exception
+                    'ignore any exceptions of watching/handling process close/kill
+                End Try
             End If
         End Sub
 

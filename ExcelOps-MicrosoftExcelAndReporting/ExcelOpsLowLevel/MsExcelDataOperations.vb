@@ -108,13 +108,28 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
+        <Obsolete("Use overload; WARNING: this overload always leads to: unprotectWorksheets = True")>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, msExcelApp, True, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
         End Sub
 
+        ''' <summary>
+        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
+        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
 #Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen
-        Private Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
             MyBase.New(True, False, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
@@ -218,7 +233,24 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             If Me.PasswordForOpening <> Nothing Then
                 Me.Workbook.Protect(Me.PasswordForOpening)
             End If
-            Me.Workbook.SaveAs(fileName)
+            Dim Format As MsExcel.XlFileFormat?
+            Select Case System.IO.Path.GetExtension(fileName.ToLowerInvariant)
+                Case ".xlsx"
+                    Format = MsExcel.XlFileFormat.xlOpenXMLWorkbook
+                Case ".xlst"
+                    Format = MsExcel.XlFileFormat.xlOpenXMLTemplate
+                Case ".xlsm"
+                    Format = MsExcel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled
+                Case ".xlt"
+                    Format = MsExcel.XlFileFormat.xlTemplate
+                Case ".xls"
+                    Format = MsExcel.XlFileFormat.xlWorkbookDefault
+            End Select
+            If Format.HasValue Then
+                Me.Workbook.SaveAs(fileName, FileFormat:=Format, Password:=Me.PasswordForOpening)
+            Else
+                Me.Workbook.SaveAs(fileName, Password:=Me.PasswordForOpening)
+            End If
         End Sub
 
         Private _Workbook As MsExcelWorkbookWrapper
@@ -965,15 +997,36 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Property
 
         Public Overrides Sub RemoveVbaProject()
-            Dim Components As Microsoft.Vbe.Interop.VBComponents = Me.Workbook.VBProject.VBComponents
-            For Each c As Microsoft.Vbe.Interop.VBComponent In Components
-                Select Case c.Type
-                    Case Microsoft.Vbe.Interop.vbext_ComponentType.vbext_ct_StdModule, Microsoft.Vbe.Interop.vbext_ComponentType.vbext_ct_ClassModule
-                        Components.Remove(c)
-                    Case Else
-                        Components.Remove(c)
-                End Select
-            Next
+            If Me.Workbook.HasVBProject = False Then Return 'Shortcut and circumvent following workaround
+
+            'NOTE: Manufacturer component doesn't provide a direct way to remove the VBA project (removing from Me.Workbook.VBProject.VBComponents list typically fails because of "not trusted")
+            'NOTE: VBA project will be removed automatically when saving as non-xlsm-file            
+
+            ''0. Lookup required private field of Spire.Xls
+            'Dim XlsWorkbookMembers = CompuMaster.Reflection.NonPublicInstanceMembers.GetMembers(Of System.Reflection.FieldInfo)(Me.Workbook.GetType, GetType(Spire.Xls.Core.Spreadsheet.XlsWorkbook))
+            'If XlsWorkbookMembers.Count <> 1 Then
+            '    Throw New NotSupportedException("Spire.Xls incompatibility, please open an issue at https://github.com/CompuMasterGmbH/CompuMaster.Excel")
+            'End If
+
+            '0. Preserve required values for later reset
+            'Dim XlsWb = CompuMaster.Reflection.NonPublicInstanceMembers.InvokeFieldGet(Of Spire.Xls.Core.Spreadsheet.XlsWorkbook)(Me.Workbook, Me.Workbook.GetType, XlsWorkbookMembers(0).Name)
+            Dim PreservedFileName As String = Me.Workbook.FullName
+            Dim PreservedIsSavedState As Boolean = Me.Workbook.Saved
+
+            '1. Save to temp file
+            Dim TempFile As String = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlsx"
+            Me.Workbook.SaveAs(TempFile, FileFormat:=MsExcel.XlFileFormat.xlOpenXMLWorkbook)
+            Me.Close()
+
+            '2. Reload
+            Me.LoadAndInitializeWorkbookFile(TempFile)
+
+            '3. Reset FileName property
+            'Me.WorkbookFilePath = PreservedFileName or Me.SetWorkbookFilePath(PreservedFileName) or similar not available for MS Excel via COM
+            '-> IGNORE this action, here!
+
+            '4. Reset IsSaved property
+            Me.Workbook.Saved = PreservedIsSavedState
         End Sub
 
     End Class

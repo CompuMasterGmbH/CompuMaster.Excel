@@ -59,7 +59,7 @@
             If MsExcelApp Is Nothing Then
                 MsExcelApp = New MsExcelApplicationWrapper()
             End If
-            Dim wb As New ExcelOps.MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, passwordForOpening)
+            Dim wb As New ExcelOps.MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, False, passwordForOpening)
             Try
                 wb.RecalculateAll()
                 wb.Save()
