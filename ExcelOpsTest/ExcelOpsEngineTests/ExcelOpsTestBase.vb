@@ -89,15 +89,16 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Wb.PasswordForOpening = "dummy"
         Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile("PasswordProtectedFile.xlsx")
         Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        'Console.WriteLine("Saved password protected file to: " & NewXlsxTargetPath)
         Wb.Close()
 
         'Try to reload it without password -> it must fail
-        Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "something else"))
-        Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, ""))
-        Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing))
+        Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "something else"))
+        Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, ""))
+        Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing))
 
         'Reload it with password -> now it must succeed
-        Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "dummy")
+        Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "dummy")
         Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
     End Sub
 

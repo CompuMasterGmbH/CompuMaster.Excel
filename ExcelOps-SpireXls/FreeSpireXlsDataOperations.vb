@@ -61,6 +61,7 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me._Workbook.OpenPassword = Me.PasswordForOpening
             Me._Workbook.SaveToFile(fileName)
             Me.SetWorkbookFilePath(New System.IO.FileInfo(fileName).FullName)
         End Sub
@@ -364,6 +365,7 @@ Namespace ExcelOps
 
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
             Me._Workbook = New Spire.Xls.Workbook
+            Me.Workbook.OpenPassword = Me.PasswordForOpening
             Me.Workbook.LoadFromFile(file.FullName)
         End Sub
 

@@ -16,14 +16,15 @@ Namespace ExcelOps
             Me.ReadOnly = [readOnly]
             Select Case mode
                 Case OpenMode.OpenExistingFile
+                    Me.PasswordForOpening = passwordForOpening
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
                     Me.ReadOnly = True
+                    Me.PasswordForOpening = passwordForOpening
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select
-            Me.PasswordForOpening = passwordForOpening
         End Sub
 
         ''' <summary>

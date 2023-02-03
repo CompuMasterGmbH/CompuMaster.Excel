@@ -551,7 +551,11 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
-            Me._WorkbookPackage = New OfficeOpenXml.ExcelPackage(file)
+            If Me.PasswordForOpening <> Nothing Then
+                Me._WorkbookPackage = New OfficeOpenXml.ExcelPackage(file, Me.PasswordForOpening)
+            Else
+                Me._WorkbookPackage = New OfficeOpenXml.ExcelPackage(file)
+            End If
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad

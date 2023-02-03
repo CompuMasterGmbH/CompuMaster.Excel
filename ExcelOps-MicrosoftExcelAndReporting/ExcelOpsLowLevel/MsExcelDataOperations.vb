@@ -302,7 +302,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 If Me.PasswordForOpening <> Nothing Then
                     Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
                 Else
-                    Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False)
+                    Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:="")
                 End If
                 Me._Workbook = New MsExcelWorkbookWrapper(Me._Workbooks, Wb)
             End If
