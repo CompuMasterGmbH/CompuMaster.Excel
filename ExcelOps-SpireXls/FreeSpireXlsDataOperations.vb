@@ -52,7 +52,7 @@ Namespace ExcelOps
         End Property
 
         Protected Overrides Sub SaveInternal()
-            Me.Save(SaveOptionsForDisabledCalculationEngines.NoReset)
+            Me._Workbook.SaveToFile(Me.FilePath) 'NOTE: _Workbook.Save is forbidden since the file path might have changed in background due to a workaround required for RemoveVbaProject
         End Sub
 
         Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
@@ -63,6 +63,11 @@ Namespace ExcelOps
             Me._Workbook.SaveToFile(fileName)
         End Sub
 
+        ''' <summary>
+        ''' The current workbook filename as reported by the Spire.Xls engine
+        ''' </summary>
+        ''' <remarks>WARNING: The file path might not reflect the expected value because it changed in background due to a workaround required for <see cref="RemoveVbaProject"/></remarks>
+        ''' <returns></returns>
         Protected Overrides ReadOnly Property WorkbookFilePath As String
             Get
                 If Me.IsClosed Then
@@ -334,6 +339,7 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
+            Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.LoadFromFile(file.FullName)
         End Sub
 
@@ -775,12 +781,39 @@ Namespace ExcelOps
 
         Public Overrides ReadOnly Property HasVbaProject As Boolean
             Get
-                Throw New NotImplementedException()
+                Return Me.Workbook.HasMacros
             End Get
         End Property
 
         Public Overrides Sub RemoveVbaProject()
-            Throw New NotImplementedException()
+            'NOTE: VBA project will be removed automatically when saving as non-xlsm-file            
+
+            '0. Lookup required private field of Spire.Xls
+            Dim XlsWorkbookMembers = CompuMaster.Reflection.NonPublicInstanceMembers.GetMembers(Of System.Reflection.FieldInfo)(Me.Workbook.GetType, GetType(Spire.Xls.Core.Spreadsheet.XlsWorkbook))
+            If XlsWorkbookMembers.Count <> 1 Then
+                Throw New NotSupportedException("Spire.Xls incompatibility, please open an issue at https://github.com/CompuMasterGmbH/CompuMaster.Excel")
+            End If
+
+            '0. Preserve required values for later reset
+            Dim XlsWb = CompuMaster.Reflection.NonPublicInstanceMembers.InvokeFieldGet(Of Spire.Xls.Core.Spreadsheet.XlsWorkbook)(Me.Workbook, Me.Workbook.GetType, XlsWorkbookMembers(0).Name)
+            Dim PreservedFileName As String = XlsWb.FullFileName
+            Dim PreservedIsSavedState As Boolean = Me.Workbook.IsSaved
+
+            '1. Save to temp file
+            Dim TempFile As String = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlsx"
+            Me.Workbook.SaveToFile(TempFile)
+
+            '2. Reload
+            Me.Workbook.LoadFromFile(TempFile)
+
+            '3. Reset FileName property
+            XlsWb = CompuMaster.Reflection.NonPublicInstanceMembers.InvokeFieldGet(Of Spire.Xls.Core.Spreadsheet.XlsWorkbook)(Me.Workbook, Me.Workbook.GetType, XlsWorkbookMembers(0).Name)
+            Dim pi = CompuMaster.Reflection.PublicInstanceMembers.GetMembers(Of System.Reflection.PropertyInfo)(XlsWb.GetType, "FullFileName")
+            Dim p = pi.GetSetMethod(True) 'NOTE: property-setter is non-public, while the property and its getter is public!
+            p.Invoke(XlsWb, New Object() {PreservedFileName})
+
+            '4. Reset IsSaved property
+            Me.Workbook.IsSaved = PreservedIsSavedState
         End Sub
 
     End Class

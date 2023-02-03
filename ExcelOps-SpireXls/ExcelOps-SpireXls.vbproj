@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CompuMaster.Reflection" Version="1.0.1" />
     <PackageReference Include="FreeSpire.XLS" Version="12.7.0" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>

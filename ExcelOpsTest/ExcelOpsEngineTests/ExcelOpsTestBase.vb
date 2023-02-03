@@ -27,7 +27,9 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
         Assert.True(Wb.HasVbaProject)
         Assert.Throws(Of NotSupportedException)(Sub() Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+        Dim FilePathInEngineBefore As String = Wb.WorkbookFilePath
         Wb.RemoveVbaProject()
+        Assert.AreEqual(FilePathInEngineBefore, Wb.WorkbookFilePath)
         Assert.False(Wb.HasVbaProject)
         Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
 
