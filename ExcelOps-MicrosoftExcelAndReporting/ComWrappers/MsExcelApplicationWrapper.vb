@@ -70,6 +70,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        Public ReadOnly Property IsDisposed As Boolean
+            Get
+                Return MyBase.IsDisposedComObject
+            End Get
+        End Property
+
     End Class
 
 End Namespace
