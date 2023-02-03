@@ -22,19 +22,24 @@ Public Class MsExcelOpsTest
 
     <SetUp>
     Public Sub Setup()
-        'AssertNoExcelProcessesAvailable
-        If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
-            Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-            If MsExcelProcesses.Length <> 0 Then
-                Assert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but no excel processes allowed")
-            End If
-        End If
+        AssertNoExcelProcessesAvailable()
     End Sub
 
     <TearDown>
     Public Sub TearDown()
         'CloseDisposeFinalizeExcelAppInstance
         MsExcelInstance.Dispose()
+        GC.Collect(2, GCCollectionMode.Forced)
+        AssertNoExcelProcessesAvailable()
+    End Sub
+
+    Private Sub AssertNoExcelProcessesAvailable()
+        If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
+            Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
+            If MsExcelProcesses.Length <> 0 Then
+                Assert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but no excel processes allowed")
+            End If
+        End If
     End Sub
 
     Private MsExcelInstance As CompuMaster.Excel.ExcelOps.MsExcelApplicationWrapper
