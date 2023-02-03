@@ -13,6 +13,7 @@ Imports System.ComponentModel
 Imports Spire.Xls
 Imports Spire.Xls.Collections
 Imports Spire.Xls.Charts
+Imports Spire
 
 Namespace ExcelOps
     Public Class FreeSpireXlsDataOperations
@@ -61,6 +62,27 @@ Namespace ExcelOps
 
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Me._Workbook.SaveToFile(fileName)
+            Me.SetWorkbookFilePath(New System.IO.FileInfo(fileName).FullName)
+        End Sub
+
+        ''' <summary>
+        ''' Setter for workbook filename in SpireXls
+        ''' </summary>
+        ''' <param name="fileName"></param>
+        ''' <remarks>WORKAROUND FEATURE: required for methods
+        ''' <list type="bullet">
+        ''' <item>RemoveVbaProject() to reset filepath in workbook</item>
+        ''' <item>SaveAs() to set the filepath in workbook also for 2nd and following times (original manufacturer logic sets the file path once and never updates it any more!)</item>
+        ''' </list></remarks>
+        Private Sub SetWorkbookFilePath(fileName As String)
+            Dim XlsWorkbookMembers = CompuMaster.Reflection.NonPublicInstanceMembers.GetMembers(Of System.Reflection.FieldInfo)(Me.Workbook.GetType, GetType(Spire.Xls.Core.Spreadsheet.XlsWorkbook))
+            If XlsWorkbookMembers.Count <> 1 Then
+                Throw New NotSupportedException("Spire.Xls incompatibility, please open an issue at https://github.com/CompuMasterGmbH/CompuMaster.Excel")
+            End If
+            Dim XlsWb = CompuMaster.Reflection.NonPublicInstanceMembers.InvokeFieldGet(Of Spire.Xls.Core.Spreadsheet.XlsWorkbook)(Me.Workbook, Me.Workbook.GetType, XlsWorkbookMembers(0).Name)
+            Dim pi = CompuMaster.Reflection.PublicInstanceMembers.GetMembers(Of System.Reflection.PropertyInfo)(XlsWb.GetType, "FullFileName")
+            Dim p = pi.GetSetMethod(True) 'NOTE: property-setter is non-public, while the property and its getter is public!
+            p.Invoke(XlsWb, New Object() {CompuMaster.Data.Utils.StringNotEmptyOrAlternativeValue(fileName, "/")}) 'WORKAROUND: Setter indirectly calls System.IO.Path.GetDirectoryName which crashed on empty string -> requires property WorkbookFileName to consider "/" as null/Nothing
         End Sub
 
         ''' <summary>
@@ -71,6 +93,8 @@ Namespace ExcelOps
         Protected Overrides ReadOnly Property WorkbookFilePath As String
             Get
                 If Me.IsClosed Then
+                    Return Nothing
+                ElseIf Me.Workbook.FileName = "/" Then 'WORKAROUND DEPENDENCY: required for RemoveVbaProject to reset workbook filename to blank value
                     Return Nothing
                 Else
                     Return CompuMaster.Data.Utils.StringNotEmptyOrNothing(Me.Workbook.FileName)
@@ -807,10 +831,7 @@ Namespace ExcelOps
             Me.Workbook.LoadFromFile(TempFile)
 
             '3. Reset FileName property
-            XlsWb = CompuMaster.Reflection.NonPublicInstanceMembers.InvokeFieldGet(Of Spire.Xls.Core.Spreadsheet.XlsWorkbook)(Me.Workbook, Me.Workbook.GetType, XlsWorkbookMembers(0).Name)
-            Dim pi = CompuMaster.Reflection.PublicInstanceMembers.GetMembers(Of System.Reflection.PropertyInfo)(XlsWb.GetType, "FullFileName")
-            Dim p = pi.GetSetMethod(True) 'NOTE: property-setter is non-public, while the property and its getter is public!
-            p.Invoke(XlsWb, New Object() {PreservedFileName})
+            Me.SetWorkbookFilePath(PreservedFileName)
 
             '4. Reset IsSaved property
             Me.Workbook.IsSaved = PreservedIsSavedState
