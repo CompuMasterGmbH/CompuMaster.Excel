@@ -401,6 +401,8 @@ Namespace ExcelOps
 
         Protected Sub LoadAndInitializeWorkbookFile(inputPath As String)
             If inputPath = Nothing Then Throw New ArgumentNullException(NameOf(inputPath))
+            '1st, close an exsting workbook instance
+            If Me.IsClosed = False Then Me.Close()
             'Load the changed worksheet
             Me._FilePath = inputPath
             Dim file As New System.IO.FileInfo(inputPath)
