@@ -1,4 +1,7 @@
-﻿Public Class ExcelApplication
+﻿''' <summary>
+''' A wrapper for an Excel application instance created with Interaction.CreateObject without requiring MS Office type libraries
+''' </summary>
+Public Class ExcelApplication
     Inherits ComRootObject(Of Object)
 
     Public Sub New()

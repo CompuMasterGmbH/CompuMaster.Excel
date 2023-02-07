@@ -2,6 +2,10 @@
 Option Strict On
 
 Namespace ExcelOps
+
+    ''' <summary>
+    ''' Base implementation for common API for the several Excel engines
+    ''' </summary>
     Public MustInherit Class ExcelDataOperationsBase
 
         Public Enum OpenMode As Byte
@@ -9,6 +13,15 @@ Namespace ExcelOps
             CreateFile = 1
         End Enum
 
+        ''' <summary>
+        ''' Create or open a workbook
+        ''' </summary>
+        ''' <param name="file"></param>
+        ''' <param name="mode"></param>
+        ''' <param name="autoCalculationOnLoad"></param>
+        ''' <param name="calculationModuleDisabled"></param>
+        ''' <param name="[readOnly]"></param>
+        ''' <param name="passwordForOpening"></param>
         Protected Sub New(file As String, mode As OpenMode, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
@@ -28,7 +41,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks
+        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
         ''' <param name="calculationModuleDisabled">Disables the Excel calculation engine</param>
@@ -40,6 +53,9 @@ Namespace ExcelOps
             Me.PasswordForOpening = passwordForOpening
         End Sub
 
+        ''' <summary>
+        ''' Reload a file from disk
+        ''' </summary>
         Public Sub ReloadFromFile()
             Me.LoadAndInitializeWorkbookFile(Me.FilePath)
         End Sub
