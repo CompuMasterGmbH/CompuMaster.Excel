@@ -9,6 +9,7 @@
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <OptionStrict>On</OptionStrict>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Based on Microsoft.Office.Interop.Excel v15</Description>
   </PropertyGroup>
 
   <ItemGroup>

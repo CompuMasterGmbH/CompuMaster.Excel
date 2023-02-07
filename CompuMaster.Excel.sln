@@ -20,7 +20,7 @@ Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-SpireXls", "ExcelO
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-EpplusFreeFixCalcsEdition", "ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj", "{F8812B31-ADA2-4F8A-BABE-68D74A2FD857}"
 EndProject
-Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-MicrosoftExcelAndReporting", "ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcelAndReporting.vbproj", "{C22C6695-AE00-4325-ACB7-07A9997197F7}"
+Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-MicrosoftExcel", "ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcel.vbproj", "{C22C6695-AE00-4325-ACB7-07A9997197F7}"
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition", "ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj", "{FE45F938-6967-4F84-832B-236D62306EBF}"
 EndProject
@@ -31,6 +31,8 @@ EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "CompuMaster.MsExcelComInterop", "MsExcelComInterop\CompuMaster.MsExcelComInterop.vbproj", "{8D586DA6-16DC-45DA-B317-837843168AB3}"
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "CompuMaster.MsExcelComInteropTest", "MsExcelComInteropTest\CompuMaster.MsExcelComInteropTest.vbproj", "{D90332E5-DD87-4370-830E-EB86272D9EF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestAndDemoExcelOps", "TestAndDemoExcelOps\TestAndDemoExcelOps.csproj", "{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -260,6 +262,24 @@ Global
 		{D90332E5-DD87-4370-830E-EB86272D9EF0}.Release|x64.Build.0 = Release|Any CPU
 		{D90332E5-DD87-4370-830E-EB86272D9EF0}.Release|x86.ActiveCfg = Release|Any CPU
 		{D90332E5-DD87-4370-830E-EB86272D9EF0}.Release|x86.Build.0 = Release|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.CI_CD|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.CI_CD|Any CPU.Build.0 = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.CI_CD|x64.ActiveCfg = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.CI_CD|x64.Build.0 = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.CI_CD|x86.ActiveCfg = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.CI_CD|x86.Build.0 = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Debug|x64.Build.0 = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Debug|x86.Build.0 = Debug|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Release|x64.ActiveCfg = Release|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Release|x64.Build.0 = Release|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Release|x86.ActiveCfg = Release|Any CPU
+		{CDC856C0-C4DA-4E02-B8ED-F3A2D37FEFF0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
