@@ -28,7 +28,7 @@ Public Class MsExcelOpsTest
     <TearDown>
     Public Sub TearDown()
         'CloseDisposeFinalizeExcelAppInstance
-        MsExcelInstance.Dispose()
+        If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
         GC.Collect(2, GCCollectionMode.Forced)
         AssertNoExcelProcessesAvailable()
     End Sub
