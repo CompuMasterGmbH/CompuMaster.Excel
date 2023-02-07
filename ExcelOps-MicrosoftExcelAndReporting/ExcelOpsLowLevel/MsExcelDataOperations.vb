@@ -974,7 +974,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Public Overrides ReadOnly Property EngineName As String
             Get
-                Return "MS Excel"
+                Return "Microsoft Excel (2013 or higher)"
             End Get
         End Property
 

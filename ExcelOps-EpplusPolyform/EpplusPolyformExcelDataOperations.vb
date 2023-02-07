@@ -1024,7 +1024,7 @@ Namespace ExcelOps
 
         Public Overrides ReadOnly Property EngineName As String
             Get
-                Return "EpplusPolyformEdition"
+                Return "Epplus (Polyform license edition)"
             End Get
         End Property
 

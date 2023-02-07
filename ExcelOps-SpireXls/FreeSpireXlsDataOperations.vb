@@ -611,7 +611,7 @@ Namespace ExcelOps
 
         Public Overrides ReadOnly Property EngineName As String
             Get
-                Return "Epplus"
+                Return "FreeSpire.Xls"
             End Get
         End Property
 

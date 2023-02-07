@@ -8,6 +8,7 @@ Imports CompuMaster.Epplus4.FormulaParsing
 Imports CompuMaster.Epplus4.FormulaParsing.Logging
 
 Namespace ExcelOps
+
     Public Class EpplusFreeExcelDataOperations
         Inherits ExcelDataOperationsBase
 
@@ -350,7 +351,7 @@ Namespace ExcelOps
         Public Overrides Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
-            If rowIndex <0 Then Throw New ArgumentOutOfRangeException("RowIndex " & rowIndex & " must be equal or bigger than 0", NameOf(rowIndex))
+            If rowIndex < 0 Then Throw New ArgumentOutOfRangeException("RowIndex " & rowIndex & " must be equal or bigger than 0", NameOf(rowIndex))
             If columnIndex < 0 Then Throw New ArgumentOutOfRangeException("ColumnIndex " & columnIndex & " must be equal or bigger than 0", NameOf(columnIndex))
             Return CompuMaster.Data.Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Formula)
         End Function
@@ -1156,7 +1157,7 @@ Namespace ExcelOps
 
         Public Overrides ReadOnly Property EngineName As String
             Get
-                Return "Epplus"
+                Return "Epplus 4 (LGPL)"
             End Get
         End Property
 
