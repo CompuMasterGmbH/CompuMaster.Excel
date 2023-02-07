@@ -25,6 +25,9 @@
     <Reference Include="Microsoft.Vbe.Interop">
       <HintPath>libs-NonWindowsPlatforms\Microsoft.Vbe.Interop.dll</HintPath>
     </Reference>
+    <Reference Include="office">
+      <HintPath>libs-NonWindowsPlatforms\OFFICE.DLL</HintPath>
+    </Reference>
   </ItemGroup>
   
   <ItemGroup>
