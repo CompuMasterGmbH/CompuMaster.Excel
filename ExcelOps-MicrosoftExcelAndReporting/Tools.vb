@@ -32,7 +32,13 @@
                 If test() = True Then
                     Return True
                 End If
-                System.Threading.Thread.Sleep(500)
+                If maxTimeout.TotalDays > 0 OrElse maxTimeout.Hours > 0 Then 'prevent exceeded range when calling maxTimeout.TotalMilliseconds
+                    'Check at least twice per second
+                    System.Threading.Thread.Sleep(500)
+                Else
+                    'Check at least 10 times and minimum twice per second
+                    System.Threading.Thread.Sleep(System.Math.Min(maxTimeout.TotalMilliseconds / 10, 500))
+                End If
             Loop
             Return False
         End Function
