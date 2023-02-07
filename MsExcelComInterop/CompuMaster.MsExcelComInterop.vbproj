@@ -9,6 +9,7 @@
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <Copyright>2023 CompuMaster GmbH</Copyright>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,6 +8,7 @@
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

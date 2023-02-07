@@ -8,6 +8,7 @@
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <OptionStrict>On</OptionStrict>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +26,7 @@
       <HintPath>libs-NonWindowsPlatforms\Microsoft.Vbe.Interop.dll</HintPath>
     </Reference>
   </ItemGroup>
-
+  
   <ItemGroup>
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>

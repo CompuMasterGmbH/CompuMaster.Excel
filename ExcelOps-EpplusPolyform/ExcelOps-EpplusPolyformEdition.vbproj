@@ -7,6 +7,7 @@
     <AssemblyName>CompuMaster.Excel.EpplusPolyformEdition</AssemblyName>
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
