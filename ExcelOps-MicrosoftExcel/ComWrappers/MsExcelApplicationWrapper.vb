@@ -39,16 +39,36 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             SafelyCloseExcelAppInstanceInternal()
         End Sub
 
+        ''' <summary>
+        ''' A timeout value for closing MS Excel regulary, default to 15 seconds
+        ''' </summary>
+        ''' <returns></returns>
+        ''' <remarks>After timeout, process will be killed if the process hasn't exited</remarks>
+        Public Property Timeout1AfterAppClosing As New TimeSpan(0, 0, 15)
+
+        ''' <summary>
+        ''' A timeout value for process exiting after MS Excel process has been killed, defaults to 1 second
+        ''' </summary>
+        ''' <returns></returns>
+        ''' <remarks>After timeout, code waits for disappearance of process in process list</remarks>
+        Public Property Timeout2ProcessExitAfterAppKill As New TimeSpan(0, 0, 1)
+
+        ''' <summary>
+        ''' A timeout value for watching process list for disappeared MS Excel process, defaults to 1 second
+        ''' </summary>
+        ''' <returns>After timeout, process is expected to be closed "with chance of 99.99%" (not guaranteed)</returns>
+        Public Property Timeout3ProcessListDisappearanceAfterAppKill As New TimeSpan(0, 0, 1)
+
         Private Sub SafelyCloseExcelAppInstanceInternal()
             If ProcessId <> Nothing AndAlso Process() IsNot Nothing AndAlso Process.HasExited = False Then
                 Try
-                    MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, New TimeSpan(0, 0, 15)) 'Sometimes it takes time to close MS Excel...
+                    MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, Timeout1AfterAppClosing) 'Sometimes it takes time to close MS Excel...
                     Me.Process.Refresh()
                     If Me.Process.HasExited = False Then
                         'Force kill on Excel 
                         Me.Process.Kill()
                         Try
-                            MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, New TimeSpan(0, 0, 1))
+                            MsExcelTools.WaitUntilTrueOrTimeout(Function() Me.Process.HasExited = True, Timeout2ProcessExitAfterAppKill)
                         Catch 'ex As ArgumentException
                             'expected for invalid processId after kill
                         End Try
@@ -59,7 +79,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                                                                         If ExcelProcess.Id = Me.ProcessId Then Return False
                                                                     Next
                                                                     Return True
-                                                                End Function, New TimeSpan(0, 0, 1))
+                                                                End Function, Timeout3ProcessListDisappearanceAfterAppKill)
                         Catch 'ex As Exception
                             'ignore any exceptions on getting process list
                         End Try
