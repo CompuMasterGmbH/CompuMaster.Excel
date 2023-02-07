@@ -1,11 +1,18 @@
 ﻿Imports NUnit.Framework
 Imports CompuMaster.Excel.ExcelOps
+Imports Spire.Xls
 
 Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
     Protected MustOverride Function CreateInstance() As T
 
     Protected MustOverride Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
+
+    <TearDown>
+    Public Sub CommonTearDown()
+        GC.Collect(2, GCCollectionMode.Forced)
+        GC.WaitForPendingFinalizers()
+    End Sub
 
     <Test> Public Sub HasVbaProject()
         Dim VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
@@ -189,4 +196,26 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
         Wb.Close()
     End Sub
+
+    <Test>
+    Public Sub CreateInstanceWithOrWithoutCreationOfWorkbook()
+        Dim workbook As ExcelDataOperationsBase
+
+        workbook = Me.CreateInstance()
+        Select Case workbook.GetType
+            Case GetType(MsExcelDataOperations)
+                'Accept fact that a new workbook is opened automatically
+                Assert.NotZero(workbook.SheetNames.Count)
+            Case Else
+                'No workbook opened - must be done in 2ndary step
+                Assert.Throws(Of InvalidOperationException)(Function() workbook.SheetNames.Count)
+        End Select
+        workbook.Close()
+
+        workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing)
+        Assert.NotZero(workbook.SheetNames.Count)
+        workbook.Close()
+
+    End Sub
+
 End Class
