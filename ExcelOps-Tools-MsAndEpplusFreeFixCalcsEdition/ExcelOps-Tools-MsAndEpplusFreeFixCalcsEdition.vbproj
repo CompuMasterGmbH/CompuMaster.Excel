@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
-    <ProjectReference Include="..\ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcel.vbproj" />
+    <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />
   </ItemGroup>
 
   <ItemGroup>

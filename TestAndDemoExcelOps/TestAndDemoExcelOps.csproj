@@ -10,8 +10,8 @@
   <ItemGroup>
     <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-EpplusPolyform\ExcelOps-EpplusPolyformEdition.vbproj" />
-    <ProjectReference Include="..\ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcel.vbproj" />
-    <ProjectReference Include="..\ExcelOps-SpireXls\ExcelOps-SpireXls.vbproj" />
+    <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />
+    <ProjectReference Include="..\ExcelOps-FreeSpireXls\ExcelOps-FreeSpireXls.vbproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
   </ItemGroup>
 

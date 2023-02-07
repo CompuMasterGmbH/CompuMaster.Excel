@@ -16,11 +16,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-SpireXls", "ExcelOps-SpireXls\ExcelOps-SpireXls.vbproj", "{10E9FEF2-C5AD-4834-B0CA-5CA8F27023CD}"
+Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-FreeSpireXls", "ExcelOps-FreeSpireXls\ExcelOps-FreeSpireXls.vbproj", "{10E9FEF2-C5AD-4834-B0CA-5CA8F27023CD}"
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-EpplusFreeFixCalcsEdition", "ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj", "{F8812B31-ADA2-4F8A-BABE-68D74A2FD857}"
 EndProject
-Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-MicrosoftExcel", "ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcel.vbproj", "{C22C6695-AE00-4325-ACB7-07A9997197F7}"
+Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-MicrosoftExcel", "ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj", "{C22C6695-AE00-4325-ACB7-07A9997197F7}"
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition", "ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj", "{FE45F938-6967-4F84-832B-236D62306EBF}"
 EndProject

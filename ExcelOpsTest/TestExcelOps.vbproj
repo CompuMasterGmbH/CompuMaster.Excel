@@ -55,8 +55,8 @@
     <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus45-FixCalcsEdition.MultiTarget.csproj" />
     <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-EpplusPolyform\ExcelOps-EpplusPolyformEdition.vbproj" />
-    <ProjectReference Include="..\ExcelOps-MicrosoftExcelAndReporting\ExcelOps-MicrosoftExcel.vbproj" />
-    <ProjectReference Include="..\ExcelOps-SpireXls\ExcelOps-SpireXls.vbproj" />
+    <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />
+    <ProjectReference Include="..\ExcelOps-FreeSpireXls\ExcelOps-FreeSpireXls.vbproj" />
     <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
   </ItemGroup>
