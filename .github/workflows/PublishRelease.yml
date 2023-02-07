@@ -28,8 +28,8 @@ env:
   BUILD_PROJECT_03: ExcelOps/ExcelOps.vbproj
   BUILD_PROJECT_04: ExcelOps-EpplusFreeFixCalcsEdition/ExcelOps-EpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT_05: ExcelOps-EpplusPolyform/ExcelOps-EpplusPolyformEdition.vbproj
-  BUILD_PROJECT_06: ExcelOps-MicrosoftExcelAndReporting/ExcelOps-MicrosoftExcelAndReporting.vbproj
-  BUILD_PROJECT_07: ExcelOps-SpireXls/ExcelOps-SpireXls.vbproj
+  BUILD_PROJECT_06: ExcelOps-MicrosoftExcel/ExcelOps-MicrosoftExcel.vbproj
+  BUILD_PROJECT_07: ExcelOps-FreeSpireXls/ExcelOps-FreeSpireXls.vbproj
   BUILD_PROJECT_08: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT_09: CM.Data.EpplusFixCalcsEdition/CM.Data.EpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT_10: CM.Data.EpplusPolyformEdition/CM.Data.EpplusPolyformEdition.vbproj
@@ -39,8 +39,8 @@ env:
   BUILD_OUTPUT_BASEDIR_03: ExcelOps/bin
   BUILD_OUTPUT_BASEDIR_04: ExcelOps-EpplusFreeFixCalcsEdition/bin
   BUILD_OUTPUT_BASEDIR_05: ExcelOps-EpplusPolyform/bin
-  BUILD_OUTPUT_BASEDIR_06: ExcelOps-MicrosoftExcelAndReporting/bin
-  BUILD_OUTPUT_BASEDIR_07: ExcelOps-SpireXls/bin
+  BUILD_OUTPUT_BASEDIR_06: ExcelOps-MicrosoftExcel/bin
+  BUILD_OUTPUT_BASEDIR_07: ExcelOps-FreeSpireXls/bin
   BUILD_OUTPUT_BASEDIR_08: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/bin
   BUILD_OUTPUT_BASEDIR_09: CM.Data.EpplusFixCalcsEdition/bin
   BUILD_OUTPUT_BASEDIR_10: CM.Data.EpplusPolyformEdition/bin
@@ -50,8 +50,8 @@ env:
   PROJECT_NAME_03: ExcelOps
   PROJECT_NAME_04: ExcelOps-EpplusFreeFixCalcsEdition
   PROJECT_NAME_05: ExcelOps-EpplusPolyform
-  PROJECT_NAME_06: ExcelOps-MicrosoftExcelAndReporting
-  PROJECT_NAME_07: ExcelOps-SpireXls
+  PROJECT_NAME_06: ExcelOps-MicrosoftExcel
+  PROJECT_NAME_07: ExcelOps-FreeSpireXls
   PROJECT_NAME_08: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition
   PROJECT_NAME_09: CM.Data.EpplusFixCalcsEdition
   PROJECT_NAME_10: CM.Data.EpplusPolyformEdition
@@ -61,8 +61,8 @@ env:
   ARTIFACTS_BIN_ZIP_03: bin-CM.Excel.ExcelOps.zip
   ARTIFACTS_BIN_ZIP_04: bin-CM.Excel.ExcelOps-EpplusFreeFixCalcsEdition.zip
   ARTIFACTS_BIN_ZIP_05: bin-CM.Excel.ExcelOps-EpplusPolyform.zip
-  ARTIFACTS_BIN_ZIP_06: bin-CM.Excel.ExcelOps-MicrosoftExcelAndReporting.zip
-  ARTIFACTS_BIN_ZIP_07: bin-CM.Excel.ExcelOps-SpireXls.zip
+  ARTIFACTS_BIN_ZIP_06: bin-CM.Excel.ExcelOps-MicrosoftExcel.zip
+  ARTIFACTS_BIN_ZIP_07: bin-CM.Excel.ExcelOps-FreeSpireXls.zip
   ARTIFACTS_BIN_ZIP_08: bin-CM.Excel.ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.zip
   ARTIFACTS_BIN_ZIP_09: bin-CM.Data.EpplusFixCalcsEdition.zip
   ARTIFACTS_BIN_ZIP_10: bin-CM.Data.EpplusPolyformEdition.zip
