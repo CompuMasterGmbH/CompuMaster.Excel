@@ -90,6 +90,23 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(file, mode, New MsExcelApplicationWrapper, False, [readOnly], passwordForOpening)
+        End Sub
+
+        ''' <summary>
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelOps.CloseExcelAppInstance()
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, New MsExcelApplicationWrapper, unprotectWorksheets, [readOnly], passwordForOpening)
         End Sub
