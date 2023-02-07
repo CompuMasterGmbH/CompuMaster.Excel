@@ -37,7 +37,7 @@
                     System.Threading.Thread.Sleep(500)
                 Else
                     'Check at least 10 times and minimum twice per second
-                    System.Threading.Thread.Sleep(System.Math.Min(maxTimeout.TotalMilliseconds / 10, 500))
+                    System.Threading.Thread.Sleep(System.Math.Min(CType(maxTimeout.TotalMilliseconds / 10, Integer), 500))
                 End If
             Loop
             Return False
