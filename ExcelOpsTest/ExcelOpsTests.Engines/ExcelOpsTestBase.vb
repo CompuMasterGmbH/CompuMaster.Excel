@@ -12,13 +12,13 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Try
             Return _CreateInstance()
         Catch ex As Exception
-            If ex Is GetType(PlatformNotSupportedException) Then
-                Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+            If ex.GetType() Is GetType(PlatformNotSupportedException) Then
+                Throw
             Else
                 Dim InnerEx As Exception = ex.InnerException
                 Do While InnerEx IsNot Nothing
-                    If ex Is GetType(PlatformNotSupportedException) Then
-                        Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+                    If InnerEx.GetType() Is GetType(PlatformNotSupportedException) Then
+                        Throw InnerEx
                     Else
                         InnerEx = InnerEx.InnerException
                     End If
@@ -32,13 +32,13 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
         Try
             Return _CreateInstance(file, mode, [readOnly], passwordForOpening)
         Catch ex As Exception
-            If ex Is GetType(PlatformNotSupportedException) Then
-                Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+            If ex.GetType() Is GetType(PlatformNotSupportedException) Then
+                Throw
             Else
                 Dim InnerEx As Exception = ex.InnerException
                 Do While InnerEx IsNot Nothing
-                    If ex Is GetType(PlatformNotSupportedException) Then
-                        Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+                    If InnerEx.GetType() Is GetType(PlatformNotSupportedException) Then
+                        Throw InnerEx
                     Else
                         InnerEx = InnerEx.InnerException
                     End If
@@ -51,7 +51,9 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
     <OneTimeSetUp>
     Public Sub CommonOneTimeSetup()
         Try
-            Assert.NotNull(Me.CreateInstance)
+            Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing))
+        Catch ex As PlatformNotSupportedException
+            Assert.Ignore("Platform not supported: " & ex.Message)
         Catch ex As System.Runtime.InteropServices.COMException
             Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
         End Try
