@@ -4,7 +4,7 @@
 Public Class MsExcelOpsTest
     Inherits ExcelOpsTestBase(Of ExcelOps.MsExcelDataOperations)
 
-    Protected Overrides Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.MsExcelDataOperations
+    Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.MsExcelDataOperations
         If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
             'recreate excel instance
             MsExcelInstance = New CompuMaster.Excel.ExcelOps.MsExcelApplicationWrapper
@@ -12,7 +12,7 @@ Public Class MsExcelOpsTest
         Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, [readOnly], passwordForOpening)
     End Function
 
-    Protected Overrides Function CreateInstance() As ExcelOps.MsExcelDataOperations
+    Protected Overrides Function _CreateInstance() As ExcelOps.MsExcelDataOperations
         If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
             'recreate excel instance
             MsExcelInstance = New CompuMaster.Excel.ExcelOps.MsExcelApplicationWrapper

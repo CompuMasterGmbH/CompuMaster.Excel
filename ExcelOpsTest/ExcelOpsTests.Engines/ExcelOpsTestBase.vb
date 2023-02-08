@@ -4,16 +4,56 @@ Imports Spire.Xls
 
 Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
-    Protected MustOverride Function CreateInstance() As T
+    Protected MustOverride Function _CreateInstance() As T
 
-    Protected MustOverride Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
+    Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
+
+    Protected Function CreateInstance() As T
+        Try
+            Return _CreateInstance()
+        Catch ex As Exception
+            If ex Is GetType(PlatformNotSupportedException) Then
+                Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+            Else
+                Dim InnerEx As Exception = ex.InnerException
+                Do While InnerEx IsNot Nothing
+                    If ex Is GetType(PlatformNotSupportedException) Then
+                        Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+                    Else
+                        InnerEx = InnerEx.InnerException
+                    End If
+                Loop
+            End If
+            Throw
+        End Try
+    End Function
+
+    Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
+        Try
+            Return _CreateInstance(file, mode, [readOnly], passwordForOpening)
+        Catch ex As Exception
+            If ex Is GetType(PlatformNotSupportedException) Then
+                Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+            Else
+                Dim InnerEx As Exception = ex.InnerException
+                Do While InnerEx IsNot Nothing
+                    If ex Is GetType(PlatformNotSupportedException) Then
+                        Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+                    Else
+                        InnerEx = InnerEx.InnerException
+                    End If
+                Loop
+            End If
+            Throw
+        End Try
+    End Function
 
     <OneTimeSetUp>
     Public Sub CommonOneTimeSetup()
         Try
             Assert.NotNull(Me.CreateInstance)
         Catch ex As System.Runtime.InteropServices.COMException
-            Assert.Ignore("Platform not supported for COM operations or requested COM application not installed: " & ex.Message)
+            Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
         End Try
     End Sub
 
