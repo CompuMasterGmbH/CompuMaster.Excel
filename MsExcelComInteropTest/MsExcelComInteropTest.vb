@@ -8,14 +8,6 @@ Namespace MsExcelComInteropTest
         Public Sub Setup()
         End Sub
 
-        <OneTimeTearDown>
-        Public Sub TearDown()
-            'CloseDisposeFinalizeExcelAppInstance
-            ExcelApp.Dispose()
-            GC.Collect(2, GCCollectionMode.Forced)
-            AssertNoExcelProcessesAvailable()
-        End Sub
-
         <OneTimeSetUp>
         Public Sub OneTimeSetUp()
             AssertNoExcelProcessesAvailable()
@@ -24,6 +16,14 @@ Namespace MsExcelComInteropTest
             Catch
                 Assert.Ignore("Platform not supported or MS Excel application not installed")
             End Try
+        End Sub
+
+        <OneTimeTearDown>
+        Public Sub TearDown()
+            'CloseDisposeFinalizeExcelAppInstance
+            If ExcelApp IsNot Nothing Then ExcelApp.Dispose()
+            GC.Collect(2, GCCollectionMode.Forced)
+            AssertNoExcelProcessesAvailable()
         End Sub
 
         Private Sub AssertNoExcelProcessesAvailable()

@@ -6,7 +6,7 @@ Public Class ExcelApplication
 
     Public Sub New()
 #Disable Warning CA1416
-        MyBase.New(CreateObject("Excel.Application"), Sub(instance) instance.InvokeMethod("Quit"))
+        MyBase.New(CreateObject("Excel.Application"), Sub(instance) If instance IsNot Nothing Then instance.InvokeMethod("Quit"))
 #Enable Warning CA1416
         Me.Workbooks = New ExcelWorkbooksCollection(Me)
     End Sub
