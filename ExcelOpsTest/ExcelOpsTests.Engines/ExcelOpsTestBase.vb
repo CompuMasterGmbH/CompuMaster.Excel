@@ -8,6 +8,15 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
 
     Protected MustOverride Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
 
+    <OneTimeSetUp>
+    Public Sub CommonOneTimeSetup()
+        Try
+            Assert.NotNull(Me.CreateInstance)
+        Catch ex As System.Runtime.InteropServices.COMException
+            Assert.Ignore("Platform not supported for COM operations or requested COM application not installed: " & ex.Message)
+        End Try
+    End Sub
+
     <TearDown>
     Public Sub CommonTearDown()
         GC.Collect(2, GCCollectionMode.Forced)
