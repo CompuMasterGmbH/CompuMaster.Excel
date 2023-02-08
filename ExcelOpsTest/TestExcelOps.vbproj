@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ExcelOpsEngineTests\ExcelDataOperationsVsMsExcelTest.vb" />
-    <Compile Remove="ExcelOpsEngineTests\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
+    <Compile Remove="ExcelOpsTests.MsExcelSpecials\ExcelDataOperationsVsMsExcelTest.vb" />
+    <Compile Remove="ExcelOpsTests.MsExcelSpecials\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,8 +37,6 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
-    <None Include="ExcelOpsEngineTests\ExcelDataOperationsVsMsExcelTest.vb" />
-    <None Include="ExcelOpsEngineTests\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
   </ItemGroup>
 
   <ItemGroup>

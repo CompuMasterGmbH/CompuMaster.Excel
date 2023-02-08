@@ -63,7 +63,7 @@ Namespace ExcelOpsEngineTests
             System.Console.WriteLine()
 
             'Create new Excel workbook with Epplus and add some cells with values and formulas
-            Dim Eppeo As New ExcelOps.EpplusFreeExcelDataOperations(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False)
+            Dim Eppeo As New ExcelOps.EpplusFreeExcelDataOperations(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
 
             Eppeo.WriteCellValue(Of String)(FirstSheetName, 0, 0, "Static value initially set")
