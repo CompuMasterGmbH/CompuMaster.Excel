@@ -2,6 +2,10 @@
     Inherits ExcelOpsTestBase(Of ExcelOps.EpplusPolyformExcelDataOperations)
 
     Public Sub New()
+        AssignLicenseContext()
+    End Sub
+
+    Friend Shared Sub AssignLicenseContext()
         ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial
     End Sub
 

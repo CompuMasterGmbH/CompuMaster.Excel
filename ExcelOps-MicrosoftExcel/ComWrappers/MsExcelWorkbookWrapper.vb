@@ -1,6 +1,6 @@
 ﻿Imports MsExcel = Microsoft.Office.Interop.Excel
 
-Namespace Global.CompuMaster.Excel.ExcelOps
+Namespace Global.CompuMaster.Excel.MsExcelCom
 
     Public Class MsExcelWorkbookWrapper
         Inherits CompuMaster.ComInterop.ComChildObject(Of MsExcelWorkbooksWrapper, MsExcel.Workbook)

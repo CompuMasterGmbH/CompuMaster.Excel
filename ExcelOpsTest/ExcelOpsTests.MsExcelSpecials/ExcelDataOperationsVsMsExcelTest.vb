@@ -17,7 +17,7 @@ Namespace ExcelOpsEngineTests
 #End If
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim mseo As ExcelOps.ExcelDataOperationsBase
-            Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
+            Dim MsExcelApp As New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper()
             Try
                 Dim ExpectedMatrix As String
                 Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
@@ -255,9 +255,28 @@ Namespace ExcelOpsEngineTests
                 Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
                 Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
             Finally
-                MsExcelDataOperations.PrepareCloseExcelAppInstance(MsExcelApp)
-                MsExcelDataOperations.SafelyCloseExcelAppInstance(MsExcelApp)
+                MsExcelApp.Dispose()
             End Try
+        End Sub
+
+        Private Sub SheetContentMatrix(eo As ExcelOps.ExcelDataOperationsBase, matrixContentType As ExcelOps.ExcelDataOperationsBase.MatrixContent, expectedMatrix As String)
+            Dim MatrixContentName As String = matrixContentType.ToString
+            Dim Grunddaten As TextTable = eo.SheetContentMatrix("Grunddaten", matrixContentType)
+            Grunddaten.AutoTrim()
+            Select Case eo.GetType
+                Case GetType(ExcelOps.EpplusFreeExcelDataOperations), GetType(ExcelOps.EpplusPolyformExcelDataOperations)
+                    Console.WriteLine("## Table EPPlus - " & MatrixContentName)
+                Case GetType(MsExcelDataOperations)
+#If CI_CD Then
+                    If System.Environment.OSVersion.Platform <> PlatformID.Win32NT Then Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
+#End If
+                    Console.WriteLine("## Table MS Excel - " & MatrixContentName)
+                Case Else
+                    Throw New NotImplementedException
+            End Select
+            Console.WriteLine(Grunddaten.ToUIExcelTable)
+            Console.WriteLine("## /Table")
+            Assert.AreEqual(expectedMatrix, Grunddaten.ToUIExcelTable)
         End Sub
 
         <Test> Public Sub LookupCellValue()
@@ -343,11 +362,11 @@ Namespace ExcelOpsEngineTests
             Try
                 Dim LastCellFound As ExcelOps.ExcelCell
                 LastCellFound = eppeo.LookupLastContentCell(TestSheet)
-                Assert.AreEqual("E40", LastCellFound.Address) 'in file: D40, but E40 after CT-Load with setup of field E1 for tracking required calculations
+                Assert.AreEqual("E40", LastCellFound.Address)
                 Assert.AreEqual(eppeo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
                 Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
                 LastCellFound = mseo.LookupLastContentCell(TestSheet)
-                Assert.AreEqual("E40", LastCellFound.Address) 'in file: D40, but E40 after CT-Load with setup of field E1 for tracking required calculations
+                Assert.AreEqual("E40", LastCellFound.Address)
                 Assert.AreEqual(mseo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
                 Assert.AreEqual(mseo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
             Finally
@@ -416,11 +435,12 @@ Namespace ExcelOpsEngineTests
             End Try
         End Sub
 
-        <Test> Public Sub CalcTest()
+        <Test> Public Sub CalcTest_EpplusPolyform()
+            EpplusPolyformEditionOpsTest.AssignLicenseContext()
             Dim wb As New OfficeOpenXml.ExcelPackage()
             Dim TestCell As OfficeOpenXml.ExcelRange
             wb.Workbook.Worksheets.Add("test-calcs")
-            TestCell = wb.Workbook.Worksheets(1).Cells(1, 1)
+            TestCell = wb.Workbook.Worksheets(0).Cells(1, 1)
             Assert.AreEqual("#NAME?", Me.CalcTestCell(TestCell, "INVALIDFUNCTION(B2)"))
             Assert.AreEqual("5", Me.CalcTestCell(TestCell, "2+3"))
             Assert.AreEqual("6", Me.CalcTestCell(TestCell, "2*3"))
@@ -451,12 +471,46 @@ Namespace ExcelOpsEngineTests
             End Try
         End Function
 
+        <Test> Public Sub CalcTest_EpplusFree()
+            Dim wb As New CompuMaster.Epplus4.ExcelPackage
+            Dim TestCell As CompuMaster.Epplus4.ExcelRange
+            wb.Workbook.Worksheets.Add("test-calcs")
+            TestCell = wb.Workbook.Worksheets(0).Cells(1, 1)
+            Assert.AreEqual("#NAME?", Me.CalcTestCell(TestCell, "INVALIDFUNCTION(B2)"))
+            Assert.AreEqual("5", Me.CalcTestCell(TestCell, "2+3"))
+            Assert.AreEqual("6", Me.CalcTestCell(TestCell, "2*3"))
+            Assert.AreEqual("0", Me.CalcTestCell(TestCell, "B2"))
+            If "#VALUE!" = Me.CalcTestCell(TestCell, "B2+B3") Then
+                Assert.Warn("EPPlus calculation engine not working for formula '=B2+B3'")
+                Assert.Ignore("EPPlus calculation engine not working for formula '=B2+B3'")
+            End If
+            Assert.AreEqual("0", Me.CalcTestCell(TestCell, "B2+B3"))
+            Assert.AreEqual("5", Me.CalcTestCell(TestCell, "SUM(2,3)"))
+        End Sub
+
+        Private Function CalcTestCell(cell As CompuMaster.Epplus4.ExcelRange, formula As String) As String
+            cell.Formula = formula
+            CompuMaster.Epplus4.CalculationExtension.Calculate(cell)
+            Try
+                If cell Is Nothing Then
+                    Return Nothing
+                ElseIf cell.Value.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
+                    Return CType(cell.Value, CompuMaster.Epplus4.ExcelErrorValue).ToString
+                Else
+                    Return CType(cell.Value, String)
+                End If
+#Disable Warning CA1031 ' Do not catch general exception types
+            Catch ex As Exception
+                Return "ERROR: " & ex.Message
+#Enable Warning CA1031 ' Do not catch general exception types
+            End Try
+        End Function
 
         <Test> Public Sub CellWithErrorMsExcel()
 #If CI_CD Then
             If System.Environment.OSVersion.Platform <> PlatformID.Win32NT Then Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
 #End If
-            Dim wb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True)
+            Dim wb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
             Dim SheetName As String = wb.SheetNames(0)
 
             Try
@@ -553,7 +607,7 @@ Namespace ExcelOpsEngineTests
             Dim TestControllingToolFileNameOut As String
 
             TestControllingToolFileNameIn = TestFiles.TestFileGrund01.FullName
-            TestControllingToolFileNameOutTemplate = CTTestFiles.TestFileV25.FullName
+            TestControllingToolFileNameOutTemplate = TestFiles.TestFileGrund01.FullName
             TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile("CopySheetContentEpplus.xlsx")
             eppeoIn = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileNameIn, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
             eppeoOut = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileNameOutTemplate, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
@@ -562,11 +616,12 @@ Namespace ExcelOpsEngineTests
             Console.WriteLine("Test file output template: " & TestControllingToolFileNameOutTemplate)
             Console.WriteLine("Test file output: " & TestControllingToolFileNameOut)
 
+            Const SheetToCopy As String = "Grunddaten"
             Try
-                eppeoIn.CopySheetContent("Unternehmerlohn", eppeoOut, CopySheetOption.TargetSheetMightExist)
-                eppeoOut.SelectSheet("Unternehmerlohn")
-                eppeoOut.SaveAs(TestControllingToolFileNameOut, False, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                Assert.AreEqual(eppeoIn.SheetContentMatrix("Unternehmerlohn", ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix("Unternehmerlohn", ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
+                eppeoIn.CopySheetContent(SheetToCopy, eppeoOut, ExcelOps.ExcelDataOperationsBase.CopySheetOption.TargetSheetMightExist)
+                eppeoOut.SelectSheet(SheetToCopy)
+                eppeoOut.SaveAs(TestControllingToolFileNameOut, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.AreEqual(eppeoIn.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
                 Assert.Pass("Required manual, optical review for comparison to check for formattings")
             Catch ex As NotSupportedException
                 Assert.Ignore("Not supported by Epplus engine, currently: copy sheet content incl. data+formats+locks")
@@ -582,27 +637,29 @@ Namespace ExcelOpsEngineTests
             Dim TestControllingToolFileNameIn As String
             Dim TestControllingToolFileNameOutTemplate As String
             Dim TestControllingToolFileNameOut As String
-            Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance()
+            Dim MsExcelApp As New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper()
 
             TestControllingToolFileNameIn = TestFiles.TestFileGrund01.FullName
-            TestControllingToolFileNameOutTemplate = CTTestFiles.TestFileV25.FullName
+            TestControllingToolFileNameOutTemplate = TestFiles.TestFileGrund02.FullName
             TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile("CopySheetContentMsExcel.xlsx")
             Try
-                eppeoIn = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameIn, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True)
-                eppeoOut = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameOutTemplate, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True)
+                eppeoIn = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameIn, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True, True, String.Empty)
+                eppeoOut = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameOutTemplate, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True, True, String.Empty)
 
                 Console.WriteLine("Test file in: " & TestControllingToolFileNameIn)
                 Console.WriteLine("Test file output template: " & TestControllingToolFileNameOutTemplate)
                 Console.WriteLine("Test file output: " & TestControllingToolFileNameOut)
 
-                eppeoIn.CopySheetContent("Unternehmerlohn", eppeoOut, CopySheetOption.TargetSheetMightExist)
-                eppeoOut.SelectSheet("Unternehmerlohn")
-                eppeoOut.SaveAs(TestControllingToolFileNameOut, False, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                Assert.AreEqual(eppeoIn.SheetContentMatrix("Unternehmerlohn", ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix("Unternehmerlohn", ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
+                Const SheetToCopy As String = "Grunddaten"
+                eppeoIn.CopySheetContent(SheetToCopy, eppeoOut, ExcelOps.ExcelDataOperationsBase.CopySheetOption.TargetSheetMightExist)
+                eppeoOut.SelectSheet(SheetToCopy)
+                eppeoOut.SaveAs(TestControllingToolFileNameOut, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.AreEqual(eppeoIn.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
                 Assert.Pass("Required manual, optical review for comparison to check for formattings")
             Finally
                 If eppeoOut IsNot Nothing Then eppeoOut.Close()
                 eppeoIn.CloseExcelAppInstance()
+                MsExcelApp.Dispose()
             End Try
         End Sub
 

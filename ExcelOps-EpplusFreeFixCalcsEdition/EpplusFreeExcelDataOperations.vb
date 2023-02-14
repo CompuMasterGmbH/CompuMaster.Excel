@@ -1133,8 +1133,7 @@ Namespace ExcelOps
         End Sub
 
         Protected Overrides Sub RecalculateAllInternal()
-            Throw New NotSupportedException("Epplus can't successfully calculate all formulas")
-            If Me.CalculationModuleDisabled Then Throw New InvalidOperationException("Calculation engine is disabled, requested recalculation failed")
+            If Me.CalculationModuleDisabled Then Throw New FeatureDisabledException("Calculation engine")
             CompuMaster.Epplus4.CalculationExtension.Calculate(Me.Workbook)
         End Sub
 
@@ -1331,7 +1330,7 @@ Namespace ExcelOps
             Me.Workbook.Worksheets(sheetName).Cells.Clear()
         End Sub
 
-        Public Overrides Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
+        Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(EpplusFreeExcelDataOperations) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
             'Me.Workbook.Worksheets.Copy(sheetName, targetSheetName)

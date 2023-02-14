@@ -1,6 +1,8 @@
 ﻿Option Explicit On
 Option Strict On
+
 Imports MsExcel = Microsoft.Office.Interop.Excel
+Imports CompuMaster.Excel.MsExcelCom
 
 Namespace Global.CompuMaster.Excel.ExcelOps
 
@@ -975,7 +977,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells.Clear()
         End Sub
 
-        Public Overrides Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
+        Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(MsExcelDataOperations) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
             If Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot CType(targetWorkbook, MsExcelDataOperations).MsExcelAppInstance.ComObjectStronglyTyped Then Throw New NotSupportedException("Excel application must be the same for source and target workbook for copying worksheets")

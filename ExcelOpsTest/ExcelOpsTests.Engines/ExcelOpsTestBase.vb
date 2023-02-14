@@ -2,6 +2,7 @@
 Imports CompuMaster.Excel.ExcelOps
 Imports Spire.Xls
 
+<NonParallelizable>
 Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
     Protected MustOverride Function _CreateInstance() As T

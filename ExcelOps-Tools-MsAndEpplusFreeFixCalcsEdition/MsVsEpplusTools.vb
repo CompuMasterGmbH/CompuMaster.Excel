@@ -40,10 +40,10 @@ Namespace ExcelOps
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path As String, passwordForOpening As String)
             OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path)
-            Dim MSExcel As ExcelOps.MsExcelApplicationWrapper = Nothing
+            Dim MSExcel As MsExcelCom.MsExcelApplicationWrapper = Nothing
             Dim MsExcelWb As ExcelOps.MsExcelDataOperations = Nothing
             Try
-                MSExcel = New ExcelOps.MsExcelApplicationWrapper
+                MSExcel = New MsExcelCom.MsExcelApplicationWrapper
                 MsExcelWb = New ExcelOps.MsExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, False, passwordForOpening)
                 MsExcelWb.RecalculateAll()
                 MsExcelWb.Save()

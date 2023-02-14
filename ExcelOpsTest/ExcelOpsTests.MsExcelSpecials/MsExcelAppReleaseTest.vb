@@ -1,5 +1,6 @@
 ﻿Imports NUnit.Framework
 Imports CompuMaster.Excel.ExcelOps
+Imports CompuMaster.Excel.MsExcelCom
 
 Namespace ExcelOpsEngineTests
     <TestFixture(Explicit:=True, IgnoreReason:="Only for explicit calling")> Public Class MsExcelAppReleaseTest

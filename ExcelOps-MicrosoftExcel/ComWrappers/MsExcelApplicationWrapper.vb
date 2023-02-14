@@ -1,10 +1,17 @@
-﻿Imports MsExcel = Microsoft.Office.Interop.Excel
+﻿Imports Microsoft.Office.Interop.Excel
+Imports MsExcel = Microsoft.Office.Interop.Excel
 
-Namespace Global.CompuMaster.Excel.ExcelOps
+Namespace Global.CompuMaster.Excel.MsExcelCom
 
+    ''' <summary>
+    ''' An MS Excel wrapper for safe COM object handling and release
+    ''' </summary>
     Public Class MsExcelApplicationWrapper
         Inherits CompuMaster.ComInterop.ComRootObject(Of MsExcel.Application)
 
+        ''' <summary>
+        ''' Create a new MS Excel instance within its wrapper instance
+        ''' </summary>
         Public Sub New()
             MyBase.New(New MsExcel.Application(), Nothing)
             Me.ComObjectStronglyTyped.Visible = False
@@ -21,12 +28,27 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Private Declare Auto Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Integer, ByRef lpdwProcessId As Integer) As Integer
 
+        ''' <summary>
+        ''' The process ID of the COM server
+        ''' </summary>
+        ''' <returns></returns>
         Public ReadOnly Property ProcessId As Integer
 
+        ''' <summary>
+        ''' The process of the COM server
+        ''' </summary>
+        ''' <returns></returns>
         Public Function Process() As System.Diagnostics.Process
-            Return System.Diagnostics.Process.GetProcessById(Me.ProcessId)
+            If Me.ProcessId = 0 Then
+                Return Nothing
+            Else
+                Return System.Diagnostics.Process.GetProcessById(Me.ProcessId)
+            End If
         End Function
 
+        ''' <summary>
+        ''' Required close commands for the COM object like App.Quit() or Document.Close()
+        ''' </summary>
         Protected Overrides Sub OnClosing()
             If Not Me.IsDisposedComObject Then
                 Try
@@ -36,6 +58,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
             Me.ComObjectStronglyTyped.Quit()
             MyBase.OnClosing()
+        End Sub
+
+        ''' <summary>
+        ''' Required actions after the COM object has been closed, e.g. removing from a list of open documents
+        ''' </summary>
+        Protected Overrides Sub OnClosed()
+            MyBase.OnClosed()
+            CompuMaster.ComInterop.ComTools.ReleaseComObject(Me.ComObject)
             SafelyCloseExcelAppInstanceInternal()
         End Sub
 
@@ -59,6 +89,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <returns>After timeout, process is expected to be closed "with chance of 99.99%" (not guaranteed)</returns>
         Public Property Timeout3ProcessListDisappearanceAfterAppKill As New TimeSpan(0, 0, 1)
 
+        ''' <summary>
+        ''' At some unkown circumstances, MS Excel process wasn't closed sometimes and required a forced process killing
+        ''' </summary>
         Private Sub SafelyCloseExcelAppInstanceInternal()
             If ProcessId <> Nothing AndAlso Process() IsNot Nothing AndAlso Process.HasExited = False Then
                 Try
@@ -93,6 +126,20 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Public ReadOnly Property IsDisposed As Boolean
             Get
                 Return MyBase.IsDisposedComObject
+            End Get
+        End Property
+
+        Private _Workbooks As MsExcelWorkbooksWrapper
+        ''' <summary>
+        ''' The Excel workbooks collection
+        ''' </summary>
+        ''' <returns></returns>
+        Public ReadOnly Property Workbooks As MsExcelWorkbooksWrapper
+            Get
+                If _Workbooks Is Nothing Then
+                    _Workbooks = New MsExcelWorkbooksWrapper(Me, Me.ComObjectStronglyTyped.Workbooks)
+                End If
+                Return _Workbooks
             End Get
         End Property
 

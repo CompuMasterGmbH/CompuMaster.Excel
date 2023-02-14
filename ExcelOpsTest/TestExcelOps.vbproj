@@ -9,11 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ExcelOpsTests.MsExcelSpecials\ExcelDataOperationsVsMsExcelTest.vb" />
-    <Compile Remove="ExcelOpsTests.MsExcelSpecials\MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug.vb" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="test_data\ExcelOpsGrund01.xlsx" />
     <None Remove="test_data\ExcelOpsGrund02.xlsx" />
     <None Remove="test_data\ExcelOpsTestCollection.xlsx" />
