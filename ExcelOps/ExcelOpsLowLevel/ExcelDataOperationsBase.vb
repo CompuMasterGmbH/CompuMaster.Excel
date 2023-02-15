@@ -33,7 +33,7 @@ Namespace ExcelOps
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
-                    Me.ReadOnly = (file = Nothing)
+                    Me.ReadOnly = [readOnly] OrElse (file = Nothing)
                     Me.PasswordForOpening = passwordForOpening
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))

@@ -158,7 +158,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
-                    Me.ReadOnly = True
+                    Me.ReadOnly = [readOnly] OrElse (file = Nothing)
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select
