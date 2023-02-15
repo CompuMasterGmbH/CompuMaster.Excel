@@ -36,14 +36,14 @@ Public Class MsExcelOpsTest
     Public Sub TearDown()
         'CloseDisposeFinalizeExcelAppInstance
         If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
-        GC.Collect(2, GCCollectionMode.Forced)
+        CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
         AssertNoExcelProcessesAvailable()
     End Sub
 
     <OneTimeTearDown>
     Public Sub OneTimeTearDown()
         If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
-        GC.Collect(2, GCCollectionMode.Forced)
+        CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
         AssertNoExcelProcessesAvailable()
     End Sub
 

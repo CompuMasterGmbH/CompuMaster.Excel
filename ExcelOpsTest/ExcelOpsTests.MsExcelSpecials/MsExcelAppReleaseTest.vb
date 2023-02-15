@@ -25,6 +25,7 @@ Namespace ExcelOpsEngineTests
 
         <TearDown> Public Sub TearDown()
             If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
+                CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
                 Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
                 Assert.Zero(MsExcelProcessesAfter.Length, "There are Excel processes after test completed (TearDown)")
             End If
@@ -59,9 +60,7 @@ Namespace ExcelOpsEngineTests
             If explicitlyCloseMsExcelAppInstance Then DummyCTWb.CloseExcelAppInstance()
             DummyCTWb = Nothing
 #Enable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
-            GC.Collect(0, GCCollectionMode.Forced, True, False)
-            GC.Collect(2, GCCollectionMode.Forced, True, False)
-            GC.Collect(0, GCCollectionMode.Forced, True, False)
+            CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             MsExcelTools.WaitUntilTrueOrTimeout(Function() System.Diagnostics.Process.GetProcessesByName("EXCEL").Length = 0, New TimeSpan(0, 0, 15))
             Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Assert.AreEqual(MsExcelProcessesAfter.Length, MsExcelProcessesAfter.Length, "Process count after GC.Collect")
@@ -78,9 +77,7 @@ Namespace ExcelOpsEngineTests
             If explicitlyCloseMsExcelAppInstance Then MsExcelApp.Dispose()
             MsExcelApp = Nothing
 #Enable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
-            GC.Collect(0, GCCollectionMode.Forced, True, False)
-            GC.Collect(2, GCCollectionMode.Forced, True, False)
-            GC.Collect(0, GCCollectionMode.Forced, True, False)
+            CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Assert.AreEqual(MsExcelProcessesAfter.Length, MsExcelProcessesAfter.Length, "Process count after GC.Collect")
         End Sub

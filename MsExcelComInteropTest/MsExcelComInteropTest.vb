@@ -22,7 +22,7 @@ Namespace MsExcelComInteropTest
         Public Sub TearDown()
             'CloseDisposeFinalizeExcelAppInstance
             If ExcelApp IsNot Nothing Then ExcelApp.Dispose()
-            GC.Collect(2, GCCollectionMode.Forced)
+            CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             AssertNoExcelProcessesAvailable()
         End Sub
 

@@ -62,8 +62,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
 
     <TearDown>
     Public Sub CommonTearDown()
-        GC.Collect(2, GCCollectionMode.Forced)
-        GC.WaitForPendingFinalizers()
+        CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
     End Sub
 
     <Test> Public Sub HasVbaProject()
