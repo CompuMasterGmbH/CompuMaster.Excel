@@ -22,7 +22,7 @@ Namespace MsExcelComInteropTest
         Public Sub TearDown()
             'CloseDisposeFinalizeExcelAppInstance
             If ExcelApp IsNot Nothing Then ExcelApp.Dispose()
-            GC.Collect(2, GCCollectionMode.Forced)
+            CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             AssertNoExcelProcessesAvailable()
         End Sub
 
@@ -64,7 +64,13 @@ Namespace MsExcelComInteropTest
         Private Shared Sub CheckForRunningMsExcelInstancesAndAskUserToKill()
             Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             If MsExcelProcesses IsNot Nothing AndAlso MsExcelProcesses.Length > 0 Then
-                If MsgBox(MsExcelProcesses.Length & " bereits geöffenete MS Excel Instanzen wurden gefunden. Sollen diese zuvor geschlossen werden?", MsgBoxStyle.Question Or MsgBoxStyle.YesNo) = vbYes Then
+                Dim AllowedToKillProcesses As Boolean = False
+                Try
+                    AllowedToKillProcesses = (MsgBox(MsExcelProcesses.Length & " bereits geöffenete MS Excel Instanzen wurden gefunden. Sollen diese zuvor geschlossen werden?", MsgBoxStyle.Question Or MsgBoxStyle.YesNo) = vbYes)
+                Catch ex As System.PlatformNotSupportedException
+                    AllowedToKillProcesses = True
+                End Try
+                If AllowedToKillProcesses Then
                     For Each ExcelInstance As System.Diagnostics.Process In MsExcelProcesses
                         Try
                             ExcelInstance.CloseMainWindow()

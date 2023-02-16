@@ -1275,7 +1275,7 @@ Namespace CompuMaster.Data
         Private Shared Function ResolveWorksheetIndex(ByVal workbook As CompuMaster.Epplus4.ExcelPackage, ByVal worksheetName As String) As Integer
             Dim sheetIndex As Integer = -1
             For MyCounter As Integer = 0 To workbook.Workbook.Worksheets.Count - 1
-                Dim sheet As CompuMaster.Epplus4.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter + 1)
+                Dim sheet As CompuMaster.Epplus4.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter)
                 If sheet.Name.ToLower = worksheetName.ToLower Then
                     sheetIndex = MyCounter
                 End If
@@ -1301,7 +1301,7 @@ Namespace CompuMaster.Data
             If resolvedIndex = -1 Then
                 Throw New Exception("Worksheet """ & sheetName & """ hasn't been found")
             Else
-                Return workbook.Workbook.Worksheets(resolvedIndex + 1)
+                Return workbook.Workbook.Worksheets(resolvedIndex)
             End If
         End Function
 #End Region

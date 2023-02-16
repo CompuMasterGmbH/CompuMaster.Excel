@@ -2,6 +2,7 @@
 Imports CompuMaster.Excel.ExcelOps
 Imports Spire.Xls
 
+<NonParallelizable>
 Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
     Protected MustOverride Function _CreateInstance() As T
@@ -61,8 +62,7 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
 
     <TearDown>
     Public Sub CommonTearDown()
-        GC.Collect(2, GCCollectionMode.Forced)
-        GC.WaitForPendingFinalizers()
+        CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
     End Sub
 
     <Test> Public Sub HasVbaProject()
@@ -186,14 +186,18 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
     <Test> Public Sub CreateAndSaveAsAndFilePath()
         Dim Wb As T
         Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile("created-workbook.xlsx")
+        Dim TestFile2 As String = TestEnvironment.FullPathOfDynTestFile("created-workbook2.xlsx")
 
         'Creating a new workbook without pre-defined file name must fail on Save(), but successful on SaveAs()
         Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
-        Assert.AreEqual(True, Wb.ReadOnly, "Newly created files must always be ReadOnly")
+        Assert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up")
         Assert.AreEqual(TestFile, Wb.FilePath)
         Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
+        Wb.Save()
+        Wb.ReadOnly = True
         Assert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
-        Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+        Assert.Throws(Of FileReadOnlyException)(Sub() Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+        Wb.SaveAs(TestFile2, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         Wb.Close()
 
         'Creating a new workbook must fail with a pre-defined file name if there is already a file
@@ -204,10 +208,10 @@ Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBa
 
         'Creating a new workbook must always be ReadOnly and saving it without a name must be forbidden
         Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
-        Assert.AreEqual(True, Wb.ReadOnly, "Newly created files must always be ReadOnly")
+        Assert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must always be ReadOnly")
         Assert.AreEqual(TestFile, Wb.FilePath)
         Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
-        Assert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
+        Wb.Save()
         Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         Assert.AreEqual(False, Wb.ReadOnly, "Newly saved files must always be ReadWrite")
         Assert.AreEqual(TestFile, Wb.FilePath)

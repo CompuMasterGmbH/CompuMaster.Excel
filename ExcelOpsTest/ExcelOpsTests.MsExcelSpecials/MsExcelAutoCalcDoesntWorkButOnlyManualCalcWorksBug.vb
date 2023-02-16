@@ -5,7 +5,9 @@ Imports System.Data
 Namespace ExcelOpsEngineTests
 
     '<TestFixture(Explicit:=True, IgnoreReason:="MS Excel not supported on Non-Windows platforms")> Public Class MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug
-    <TestFixture> Public Class MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug
+    <NonParallelizable>
+    <TestFixture>
+    Public Class MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug
 
         <SetUp> Public Sub ResetConsoleForTestOutput()
             CompuMaster.Excel.Test.Console.ResetConsoleForTestOutput()
@@ -81,10 +83,15 @@ Namespace ExcelOpsEngineTests
             Eppeo.WriteCellValue(Of String)(FirstSheetName, 5, 0, "Formula referencing B3 NOT calculated by Epplus")
             Eppeo.WriteCellFormula(FirstSheetName, 5, 1, "B3", False)
 
+            Assert.AreEqual(True, Eppeo.CalculationModuleDisabled)
+            Assert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+            Eppeo.CalculationModuleDisabled = False
+            Assert.AreEqual(False, Eppeo.CalculationModuleDisabled)
             Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
             'Create workbook copy, open and recalculate and save in MS Excel
             TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
+            Eppeo.CalculationModuleDisabled = False
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
             CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
@@ -149,7 +156,7 @@ Namespace ExcelOpsEngineTests
             System.Console.WriteLine()
 
             'Create new Excel workbook with Epplus and add some cells with values and formulas
-            Dim Eppeo As New ExcelOps.EpplusFreeExcelDataOperations(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False)
+            Dim Eppeo As New ExcelOps.EpplusFreeExcelDataOperations(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
             Eppeo.AddSheet("Sheet2")
 
@@ -174,6 +181,7 @@ Namespace ExcelOpsEngineTests
                 Eppeo.WriteCellValue(Of Integer)(FirstSheetName, 2, 3 + MyCounter, 1)
             Next
 
+            Eppeo.CalculationModuleDisabled = False
             Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
             'Create workbook copy, open and recalculate and save in MS Excel

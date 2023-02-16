@@ -33,7 +33,7 @@ Namespace ExcelOps
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
-                    Me.ReadOnly = True
+                    Me.ReadOnly = [readOnly] OrElse (file = Nothing)
                     Me.PasswordForOpening = passwordForOpening
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
@@ -208,7 +208,7 @@ Namespace ExcelOps
             If filePath.ToLowerInvariant.EndsWith(".xlsx") Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
                 Me.RemoveVbaProject()
             End If
-            If Me.RecalculationRequired Then Me.RecalculateAll()
+            If Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False Then Me.RecalculateAll()
 
             Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
             Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
@@ -1035,7 +1035,53 @@ Namespace ExcelOps
             Return Me.SheetNames.IndexOf(worksheetName)
         End Function
 
-        Public MustOverride Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
+        Public MustOverride Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
+
+        Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase)
+            Me.CopySheetContent(sheetName, targetWorkbook, sheetName, CopySheetOption.TargetSheetMustNotExist)
+        End Sub
+
+        Public Enum CopySheetOption As Byte
+            TargetSheetMustNotExist = 0
+            TargetSheetMustExist = 1
+            TargetSheetMightExist = 2
+        End Enum
+
+        Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, copyOption As CopySheetOption)
+            Me.CopySheetContent(sheetName, targetWorkbook, sheetName, copyOption)
+        End Sub
+
+        Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String, copyOption As CopySheetOption)
+            If sheetName Is Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If targetWorkbook Is Nothing Then Throw New ArgumentNullException(NameOf(targetWorkbook))
+            If targetWorkbook Is Me Then Throw New ArgumentException("Must be another workbook", NameOf(targetWorkbook))
+            Select Case copyOption
+                Case CopySheetOption.TargetSheetMustNotExist
+                    If targetWorkbook.SheetNames.Contains(targetSheetName) = True Then Throw New InvalidOperationException("Target workbook must not contain worksheet """ & sheetName & """")
+                    targetWorkbook.AddSheet(targetSheetName)
+                Case CopySheetOption.TargetSheetMustExist
+                    If targetWorkbook.SheetNames.Contains(targetSheetName) = False Then Throw New InvalidOperationException("Target workbook must contain worksheet """ & sheetName & """")
+                Case CopySheetOption.TargetSheetMightExist
+                    If targetWorkbook.SheetNames.Contains(targetSheetName) = False Then
+                        targetWorkbook.AddSheet(targetSheetName)
+                    End If
+                Case Else
+                    Throw New ArgumentException(NameOf(copyOption))
+            End Select
+            If Me.GetType IsNot targetWorkbook.GetType Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
+            targetWorkbook.ClearSheet(sheetName)
+            Me.CopySheetContentInternal(sheetName, targetWorkbook, targetSheetName)
+        End Sub
+
+        Public Function AllFormulasOfWorkbook() As List(Of TextTableCell)
+            Dim Result As New List(Of TextTableCell)
+            Dim Sheets As List(Of String) = Me.SheetNames
+            For MyCounter As Integer = 0 To Sheets.Count - 1
+                Dim FoundFormulas As IEnumerable(Of TextTableCell) = Me.SheetContentMatrix(Sheets(MyCounter), ExcelDataOperationsBase.MatrixContent.Formulas).ToCellValuesList(Sheets(MyCounter))
+                Result.AddRange(FoundFormulas)
+            Next
+            Return Result
+        End Function
 
         Public Sub SelectCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             Me.SelectCell(New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All))

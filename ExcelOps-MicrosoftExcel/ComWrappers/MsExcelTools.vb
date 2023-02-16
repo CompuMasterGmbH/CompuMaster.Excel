@@ -1,6 +1,8 @@
-﻿Namespace Global.CompuMaster.Excel.ExcelOps
+﻿Imports CompuMaster.Excel.MsExcelCom
 
-    Public Class MsExcelTools
+Namespace Global.CompuMaster.Excel.MsExcelCom
+
+    Public NotInheritable Class MsExcelTools
 
         ''' <summary>
         ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
@@ -74,6 +76,31 @@
                 If msAppInstance Is Nothing Then wb.CloseExcelAppInstance()
             End Try
         End Sub
+
+        Public Shared Function IsPlatformSupportingComInterop() As Boolean
+            Select Case System.Environment.OSVersion.Platform
+                Case PlatformID.Win32NT, PlatformID.Win32S, PlatformID.Win32Windows
+                    Return True
+                Case Else
+                    Return False
+            End Select
+        End Function
+
+        Public Shared Function IsPlatformSupportingComInteropAndMsExcelAppInstalled() As Boolean
+            If IsPlatformSupportingComInterop() = False Then
+                Return False
+            Else
+                'Windows platform ok - MS Excel installed?
+                Try
+#Disable Warning CA1416
+                    Dim MsExcelType As Type = Type.GetTypeFromProgID("Excel.Application")
+#Enable Warning
+                    Return MsExcelType IsNot Nothing
+                Catch
+                    Return False
+                End Try
+            End If
+        End Function
 
     End Class
 

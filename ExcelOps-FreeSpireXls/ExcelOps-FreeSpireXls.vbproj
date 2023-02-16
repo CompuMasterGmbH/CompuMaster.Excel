@@ -13,8 +13,6 @@
   <ItemGroup>
     <PackageReference Include="CompuMaster.Reflection" Version="1.0.2" />
     <PackageReference Include="FreeSpire.XLS" Version="12.7.0" />
-    <PackageReference Include="SkiaSharp" Version="2.88.3" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.3" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>

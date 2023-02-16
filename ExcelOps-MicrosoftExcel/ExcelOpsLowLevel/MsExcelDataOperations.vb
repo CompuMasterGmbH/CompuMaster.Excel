@@ -1,6 +1,8 @@
 ﻿Option Explicit On
 Option Strict On
+
 Imports MsExcel = Microsoft.Office.Interop.Excel
+Imports CompuMaster.Excel.MsExcelCom
 
 Namespace Global.CompuMaster.Excel.ExcelOps
 
@@ -156,7 +158,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     Me.LoadAndInitializeWorkbookFile(file)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file)
-                    Me.ReadOnly = True
+                    Me.ReadOnly = [readOnly] OrElse (file = Nothing)
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select
@@ -315,12 +317,16 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
             If file.Exists = False Then Throw New System.IO.FileNotFoundException("Workbook file must exist for loading from disk", file.FullName)
             If Me._Workbook Is Nothing Then
+                If Me.Workbooks Is Nothing Then Throw New NullReferenceException("Workbooks")
+                If Me.MsExcelAppInstance.ComObject Is Nothing Then Throw New NullReferenceException("MsExcelAppInstance")
+                If Me.MsExcelAppInstance.IsDisposed Then Throw New NullReferenceException("MsExcelAppInstance already disposed")
                 Dim Wb As MsExcel.Workbook
                 If Me.PasswordForOpening <> Nothing Then
                     Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
                 Else
                     Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:="")
                 End If
+                If Wb Is Nothing Then Throw New NullReferenceException("Null result after Workbooks.Open")
                 Me._Workbook = New MsExcelWorkbookWrapper(Me._Workbooks, Wb)
             End If
             'If Me.MSExcelApp Is Nothing AndAlso Me.Workbook IsNot Nothing Then
@@ -975,7 +981,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells.Clear()
         End Sub
 
-        Public Overrides Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
+        Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(MsExcelDataOperations) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
             If Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot CType(targetWorkbook, MsExcelDataOperations).MsExcelAppInstance.ComObjectStronglyTyped Then Throw New NotSupportedException("Excel application must be the same for source and target workbook for copying worksheets")
