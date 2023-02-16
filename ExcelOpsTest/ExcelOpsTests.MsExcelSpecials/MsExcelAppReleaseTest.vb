@@ -38,7 +38,6 @@ Namespace ExcelOpsEngineTests
             End If
         End Sub
 
-#If Not CI_CD Then
         <Test, Explicit("Known2Fail But Less Important")> Public Sub ManualRunOnly_KillAllMsExcelAppProcesses()
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Console.WriteLine("Found " & MsExcelProcessesBefore.Length & " EXCEL processes")
@@ -86,7 +85,7 @@ Namespace ExcelOpsEngineTests
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             Assert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
         End Sub
-#End If
 
     End Class
+
 End Namespace

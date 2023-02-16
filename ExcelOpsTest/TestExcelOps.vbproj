@@ -6,6 +6,11 @@
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
     <OptionStrict>On</OptionStrict>
     <AssemblyName>CompuMaster.Excel.Test</AssemblyName>
+    <Configurations>Debug;Release;CI_CD</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='CI_CD'">
+    <DefineConstants>CI_CD=True</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,10 +57,6 @@
     <ProjectReference Include="..\ExcelOps-FreeSpireXls\ExcelOps-FreeSpireXls.vbproj" />
     <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="My Project\" />
   </ItemGroup>
 
 </Project>

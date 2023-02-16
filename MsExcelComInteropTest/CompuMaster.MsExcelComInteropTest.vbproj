@@ -10,6 +10,12 @@
     <Title>CompuMaster.Excel.MsExcelComInteropTest</Title>
 
     <OptionStrict>On</OptionStrict>
+
+    <Configurations>Debug;Release;CI_CD</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='CI_CD'">
+    <DefineConstants>CI_CD=True</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
