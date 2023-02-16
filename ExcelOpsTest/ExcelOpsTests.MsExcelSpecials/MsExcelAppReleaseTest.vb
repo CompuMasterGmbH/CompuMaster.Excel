@@ -55,31 +55,36 @@ Namespace ExcelOpsEngineTests
 
         '<NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit>
         <Test> Public Sub OpenAnCloseMsExcelWithPropertProcessCleanup_SeparateMsExcelApp(<Values(True, False)> explicitlyCloseMsExcelAppInstance As Boolean)
-            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, Nothing)
+            Dim Dummy = Sub()
+                            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, Nothing)
 #Disable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
-            If explicitlyCloseMsExcelAppInstance Then DummyCTWb.CloseExcelAppInstance()
-            DummyCTWb = Nothing
+                            If explicitlyCloseMsExcelAppInstance Then DummyCTWb.CloseExcelAppInstance()
+                            DummyCTWb = Nothing
 #Enable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
+                        End Sub
+            Dummy()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
-            MsExcelTools.WaitUntilTrueOrTimeout(Function() System.Diagnostics.Process.GetProcessesByName("EXCEL").Length = 0, New TimeSpan(0, 0, 15))
-            Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-            Assert.AreEqual(MsExcelProcessesAfter.Length, MsExcelProcessesAfter.Length, "Process count after GC.Collect")
+            'If System.Diagnostics.Process.GetProcessesByName("EXCEL").Length <> 0 Then System.Console.WriteLine(Found)
+            'MsExcelTools.WaitUntilTrueOrTimeout(Function() System.Diagnostics.Process.GetProcessesByName("EXCEL").Length = 0, New TimeSpan(0, 0, 15))
+            Assert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
         End Sub
 
         '<NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit>
         <Test> Public Sub OpenAnCloseMsExcelWithPropertProcessCleanup_ReusedMsExcelApp(<Values(True, False)> explicitlyCloseMsExcelAppInstance As Boolean)
-            Dim MsExcelApp As New MsExcelApplicationWrapper()
-            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
-            Dim DummyCTWb2 As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
+            Dim Dummy = Sub()
+                            Dim MsExcelApp As New MsExcelApplicationWrapper()
+                            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
+                            Dim DummyCTWb2 As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
 #Disable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
-            DummyCTWb = Nothing
-            DummyCTWb2 = Nothing
-            If explicitlyCloseMsExcelAppInstance Then MsExcelApp.Dispose()
-            MsExcelApp = Nothing
+                            DummyCTWb = Nothing
+                            DummyCTWb2 = Nothing
+                            If explicitlyCloseMsExcelAppInstance Then MsExcelApp.Dispose()
+                            MsExcelApp = Nothing
 #Enable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
+                        End Sub
+            Dummy()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
-            Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-            Assert.AreEqual(MsExcelProcessesAfter.Length, MsExcelProcessesAfter.Length, "Process count after GC.Collect")
+            Assert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
         End Sub
 #End If
 
