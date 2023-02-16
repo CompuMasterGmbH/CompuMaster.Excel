@@ -361,6 +361,9 @@ Namespace ExcelOps
         Protected Overrides Sub CreateWorkbook()
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.Worksheets(0).Name = "Sheet1"
+            For MyCounter As Integer = Me.Workbook.Worksheets.Count - 1 To 1 Step -1
+                Me.Workbook.Worksheets.RemoveAt(MyCounter)
+            Next
         End Sub
 
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)

@@ -307,6 +307,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 While Wb.Worksheets.Count > 1
                     CType(Wb.Worksheets(Wb.Worksheets.Count), MsExcel.Worksheet).Delete()
                 End While
+                CType(Wb.Worksheets(1), MsExcel.Worksheet).Name = "Sheet1"
             End If
             'If Me.MSExcelApp Is Nothing AndAlso Me._Workbook IsNot Nothing Then
             '    Me.MSExcelApp = Me.Workbook.Application

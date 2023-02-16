@@ -270,7 +270,8 @@ Namespace ExcelOpsTests.Engines
             workbook.Close()
 
             workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing)
-            Assert.NotZero(workbook.SheetNames.Count)
+            Assert.AreEqual(1, workbook.SheetNames.Count, "Sheets Count")
+            Assert.AreEqual("Sheet1", workbook.SheetNames(0))
             workbook.Close()
 
         End Sub
