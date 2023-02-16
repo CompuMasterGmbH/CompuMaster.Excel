@@ -42,7 +42,11 @@ Namespace ExcelOpsEngineTests
             TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_12_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
-            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Try
+                CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Catch ex As System.PlatformNotSupportedException
+                Assert.Ignore ("Platform not supported or MS Excel app not installed: " & ex.Message)
+            End Try
 
             'Compare expected values
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
@@ -94,7 +98,11 @@ Namespace ExcelOpsEngineTests
             Eppeo.CalculationModuleDisabled = False
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
-            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Try
+                CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Catch ex As System.PlatformNotSupportedException
+                Assert.Ignore ("Platform not supported or MS Excel app not installed: " & ex.Message)
+            End Try
 
             'Update single cells in calculated workbook with Epplus
             Eppeo.ReloadFromFile()
@@ -136,7 +144,11 @@ Namespace ExcelOpsEngineTests
             Eppeo.Close()
 
             'Open and recalculate and save in MS Excel
-            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Try
+                CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Catch ex As System.PlatformNotSupportedException
+                Assert.Ignore ("Platform not supported or MS Excel app not installed: " & ex.Message)
+            End Try
 
             'Compare expected values
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
@@ -188,7 +200,11 @@ Namespace ExcelOpsEngineTests
             TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
-            CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Try
+                CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
+            Catch ex As System.PlatformNotSupportedException
+                Assert.Ignore ("Platform not supported or MS Excel app not installed: " & ex.Message)
+            End Try
 
             'Update single cells in calculated workbook with Epplus
             Eppeo.ReloadFromFile()

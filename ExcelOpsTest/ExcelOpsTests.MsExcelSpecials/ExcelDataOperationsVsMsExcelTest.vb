@@ -19,7 +19,11 @@ Namespace ExcelOpsEngineTests
         Private ReadOnly Property MsExcelAppWrapper As MsExcelCom.MsExcelApplicationWrapper
             Get
                 If _MsExcelAppWrapper Is Nothing Then
-                    _MsExcelAppWrapper = New MsExcelCom.MsExcelApplicationWrapper
+                    Try
+                        _MsExcelAppWrapper = New MsExcelCom.MsExcelApplicationWrapper   
+                    Catch ex As System.PlatformNotSupportedException
+                        Assert.Ignore ("Platform not supported or MS Excel app not installed: " & ex.Message)
+                    End Try
                 End If
                 Return _MsExcelAppWrapper
             End Get
