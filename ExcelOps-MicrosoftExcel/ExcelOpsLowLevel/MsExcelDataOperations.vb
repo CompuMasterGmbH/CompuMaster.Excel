@@ -793,10 +793,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex">0-based row number</param>
         ''' <param name="columnIndex">0-based column number</param>
-        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
-            CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).Calculate()
+            Dim ECell = CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range)
+            ECell.Calculate()
+            If throwExceptionOnCalculationError AndAlso ECell.Value?.GetType Is GetType(MsExcel.XlCVError) Then
+                Dim Cell As New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
+                Throw New NotSupportedException("Epplus calculation at " & Cell.Address(True) & " resulted in #" & UCase(CType(ECell.Value, MsExcel.XlCVError).ToString) & "!" & " for formula =" & Me.LookupCellFormula(Cell))
+            End If
         End Sub
 
         Public Overrides Function IsProtectedSheet(sheetName As String) As Boolean

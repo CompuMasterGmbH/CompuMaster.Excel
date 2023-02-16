@@ -143,23 +143,48 @@ Namespace ExcelOps
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             Try
+                Dim CurrentCell = Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber)
                 Select Case GetType(T)
                     Case GetType(Integer), GetType(Long), GetType(Byte), GetType(Double), GetType(Decimal), GetType(Boolean)
-                        If Trim(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).DisplayedText) = Nothing Then
+                        If Trim(CurrentCell.DisplayedText) = Nothing Then
+                            Return Nothing
+                        ElseIf CurrentCell.HasFormula Then
+                            Return CType(CType(CurrentCell.FormulaValue, Object), T)
+                        ElseIf CurrentCell.IsBlank Then
                             Return Nothing
                         Else
-                            Return CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Value2, T)
+                            Return CType(CurrentCell.Value2, T)
                         End If
                     Case GetType(String)
-                        If Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).HasError Then
-                            Return CType(CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).ErrorValue, Object), T)
+                        If CurrentCell.HasError Then
+                            Return CType(CType(CurrentCell.ErrorValue, Object), T)
+                        ElseIf CurrentCell.HasFormula Then
+                            Return CType(CType(CurrentCell.FormulaValue, Object), T)
+                        ElseIf CurrentCell.IsBlank Then
+                            Return Nothing
                         Else
-                            Return CType(CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).DisplayedText, Object), T)
+                            Return CType(CType(CurrentCell.DisplayedText, Object), T)
                         End If
                     Case GetType(Object)
-                        Return CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Value2, T)
+                        If CurrentCell.HasError Then
+                            Return CType(CType(CurrentCell.ErrorValue, Object), T)
+                        ElseIf CurrentCell.HasFormula Then
+                            Return CType(CType(CurrentCell.FormulaValue, Object), T)
+                        ElseIf CurrentCell.IsBlank Then
+                            Return Nothing
+                        Else
+                            Return CType(CurrentCell.Value2, T)
+                        End If
                     Case Else
-                        Return CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Value2, T)
+                        If CurrentCell.HasError Then
+                            Return CType(CType(CurrentCell.ErrorValue, Object), T)
+                        ElseIf CurrentCell.HasFormula Then
+                            Return CType(CType(CurrentCell.FormulaValue, Object), T)
+                        ElseIf CurrentCell.IsBlank Then
+                            Return Nothing
+                        Else
+                            Return CType(CurrentCell.Value2, T)
+                        End If
                 End Select
             Catch ex As InvalidCastException
                 Throw New System.FormatException("Value """ & Me.LookupCellFormattedText(cell) & """ in cell """ & cell.Address(True) & """ can't be converted to " & GetType(T).Name, ex)
@@ -203,16 +228,7 @@ Namespace ExcelOps
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(cell As ExcelCell) As T?
             Try
-                Select Case GetType(T)
-                    Case GetType(Integer), GetType(Long), GetType(Byte), GetType(Double), GetType(Decimal), GetType(Boolean)
-                        If Trim(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).DisplayedText) = Nothing Then
-                            Return Nothing
-                        Else
-                            Return CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Value2, T)
-                        End If
-                    Case Else
-                        Return CType(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Value2, T)
-                End Select
+                Return Me.LookupCellValue(Of T)(cell)
             Catch ex As Exception
                 Return Nothing
             End Try
@@ -328,18 +344,7 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex">0-based row number</param>
         ''' <param name="columnIndex">0-based column number</param>
-        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Me.RecalculateCell(sheetName, rowIndex, columnIndex, True)
-        End Sub
-
-        ''' <summary>
-        ''' Recalculate a cell based on its formula
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        Public Overloads Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
+        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).CalculateAllValue()
             If throwExceptionOnCalculationError AndAlso Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).HasError Then
@@ -778,7 +783,9 @@ Namespace ExcelOps
 
         Public Overrides Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            If Me.Workbook.Worksheets(sheetName).Range(rowIndex + 1, columnIndex + 1).HasError Then
+            If Me.Workbook.Worksheets(sheetName).Range(rowIndex + 1, columnIndex + 1).HasFormulaErrorValue Then
+                Return Me.Workbook.Worksheets(sheetName).Range(rowIndex + 1, columnIndex + 1).FormulaErrorValue
+            ElseIf Me.Workbook.Worksheets(sheetName).Range(rowIndex + 1, columnIndex + 1).HasError Then
                 Return Me.Workbook.Worksheets(sheetName).Range(rowIndex + 1, columnIndex + 1).ErrorValue
             Else
                 Return Nothing

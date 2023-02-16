@@ -598,7 +598,18 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex">0-based row number</param>
         ''' <param name="columnIndex">0-based column number</param>
-        Public MustOverride Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+        Public Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            Me.RecalculateCell(sheetName, rowIndex, columnIndex, True)
+        End Sub
+
+        ''' <summary>
+        ''' Recalculate a cell based on its formula
+        ''' </summary>
+        ''' <param name="sheetName"></param>
+        ''' <param name="rowIndex">0-based row number</param>
+        ''' <param name="columnIndex">0-based column number</param>
+        Public MustOverride Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
 
         ''' <summary>
         ''' Try to lookup the cell's value to a string anyhow

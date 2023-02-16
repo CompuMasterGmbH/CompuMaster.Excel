@@ -644,18 +644,7 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex">0-based row number</param>
         ''' <param name="columnIndex">0-based column number</param>
-        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Me.RecalculateCell(sheetName, rowIndex, columnIndex, True)
-        End Sub
-
-        ''' <summary>
-        ''' Recalculate a cell based on its formula
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        Public Overloads Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
+        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Calculate
             If throwExceptionOnCalculationError AndAlso Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value?.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then

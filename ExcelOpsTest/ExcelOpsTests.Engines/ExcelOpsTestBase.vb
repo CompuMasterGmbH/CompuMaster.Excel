@@ -323,6 +323,37 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
         End Sub
 
+        <Test> Public Sub SheetNames()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+            Dim EppeoSheetNamesList As List(Of String)
+            EppeoSheetNamesList = eppeo.SheetNames
+            System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            Assert.AreEqual("Grunddaten,Kostenplanung", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+        End Sub
+
+        <Test> Public Sub AddSheet()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
+
+            Dim BeforeSheet As String = "Grunddaten"
+            Dim SheetNameTopPosition As String = "SheetOnTop"
+            Dim SheetNameBottomPosition As String = "SheetOnBottom"
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Dim ExpectedSheetNamesList, NewSheetNamesList As List(Of String)
+            ExpectedSheetNamesList = eppeo.SheetNames
+            ExpectedSheetNamesList.Add(SheetNameBottomPosition)
+            ExpectedSheetNamesList.Insert(0, SheetNameTopPosition)
+
+            eppeo.AddSheet(SheetNameBottomPosition)
+            eppeo.AddSheet(SheetNameTopPosition, BeforeSheet)
+            NewSheetNamesList = eppeo.SheetNames
+            Assert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
+        End Sub
+
         <Test> Public Sub AllFormulasOfWorkbook()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String
@@ -353,8 +384,8 @@ Namespace ExcelOpsTests.Engines
             Assert.IsTrue(ExcelOps.Tools.ContainsFormulasWithSheetReferencesToSheet(AllFormulas, "Grunddaten", Nothing))
         End Sub
 
-        <Test> Public Sub CellWithErrorEpplus()
-            Dim wb As New EpplusFreeExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
+        <Test> Public Sub CellWithError()
+            Dim wb As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestFiles.TestFileGrund02.FullName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
             Dim SheetName As String = wb.SheetNames(0)
 
             wb.WriteCellFormula(SheetName, 0, 0, "B2", False)
@@ -387,6 +418,20 @@ Namespace ExcelOpsTests.Engines
                     wb.RecalculateCell(SheetName, 0, 0, False)
                     Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
             End Select
+        End Sub
+
+        <Test> Public Sub LookupLastCellAddress()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
+
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+            Dim LastCellFound As ExcelOps.ExcelCell
+            LastCellFound = eppeo.LookupLastContentCell(TestSheet)
+            Assert.AreEqual("E40", LastCellFound.Address)
+            Assert.AreEqual(eppeo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
+            Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
         End Sub
 
     End Class
