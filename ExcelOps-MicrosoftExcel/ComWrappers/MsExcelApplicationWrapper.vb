@@ -24,6 +24,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
                 Me.ProcessId = ExcelProcessID
             Catch
             End Try
+            Me.Workbooks.CloseAllWorkbooks() 'Close initial empty workbook which is always there after app startup
         End Sub
 
         Private Declare Auto Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Integer, ByRef lpdwProcessId As Integer) As Integer

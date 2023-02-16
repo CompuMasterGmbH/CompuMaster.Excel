@@ -8,6 +8,8 @@ Public Class MsExcelOpsTest
         If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
             'recreate excel instance
             MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
+        Else 'If MsExcelInstance IsNot Nothing Then
+            MsExcelInstance.Workbooks.CloseAllWorkbooks()
         End If
         Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, [readOnly], passwordForOpening)
     End Function
@@ -34,10 +36,19 @@ Public Class MsExcelOpsTest
 
     <TearDown>
     Public Sub TearDown()
-        'CloseDisposeFinalizeExcelAppInstance
-        If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
-        CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
-        AssertNoExcelProcessesAvailable()
+        Dim WbCount As Integer = MsExcelInstance.Workbooks.Count
+        Dim AssertionMessageWbCount As String = Nothing
+        For MyCounter As Integer = 0 To WbCount - 1
+            If AssertionMessageWbCount <> Nothing Then AssertionMessageWbCount &= ","
+            AssertionMessageWbCount &= MsExcelInstance.Workbooks.Workbook(MyCounter + 1).Name
+        Next
+        If WbCount > 1 Then
+
+        End If
+        Assert.LessOrEqual(WbCount, 1, AssertionMessageWbCount)
+        If WbCount = 1 Then
+            MsExcelInstance.Workbooks.Workbook(1).CloseAndDispose()
+        End If
     End Sub
 
     <OneTimeTearDown>
