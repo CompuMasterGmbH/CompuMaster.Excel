@@ -46,7 +46,7 @@ Namespace ExcelOpsEngineTests
             Assert.Pass()
         End Sub
 
-        <Test> Public Sub OpenAnCloseMsExcelWithPropertProcessCleanup_SeparateMsExcelAppWithExplicitQuit()
+        <Test> Public Sub OpenAnCloseMsExcelWithProperProcessCleanup_SeparateMsExcelAppWithExplicitQuit()
             Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, Nothing)
             DummyCTWb.CloseExcelAppInstance()
             Dim MsExcelProcessesAfterExplicitQuit As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")

@@ -2,6 +2,7 @@
 Imports CompuMaster.Excel.ExcelOps
 
 Namespace ExcelOpsEngineTests
+
     <TestFixture> Public Class ExcelDataOperationsTest
 
         <OneTimeSetUp()> Public Sub OneTimeInitConfig()
@@ -9,6 +10,31 @@ Namespace ExcelOpsEngineTests
 
         <SetUp> Public Sub Setup()
             Test.Console.ResetConsoleForTestOutput()
+            If _MsExcelAppWrapper IsNot Nothing Then
+                _MsExcelAppWrapper.Workbooks.CloseAllWorkbooks()
+            End If
+        End Sub
+
+        Private _MsExcelAppWrapper As MsExcelCom.MsExcelApplicationWrapper
+        Private ReadOnly Property MsExcelAppWrapper As MsExcelCom.MsExcelApplicationWrapper
+            Get
+                If _MsExcelAppWrapper Is Nothing Then
+                    _MsExcelAppWrapper = New MsExcelCom.MsExcelApplicationWrapper
+                End If
+                Return _MsExcelAppWrapper
+            End Get
+        End Property
+
+        <TearDown>
+        Public Sub TearDown()
+            CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
+        End Sub
+
+        <OneTimeTearDown>
+        Public Sub OneTimeTearDown()
+            If _MsExcelAppWrapper IsNot Nothing Then
+                _MsExcelAppWrapper.Dispose()
+            End If
         End Sub
 
         <Test> Public Sub SheetContentMatrix()
@@ -17,16 +43,15 @@ Namespace ExcelOpsEngineTests
 #End If
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim mseo As ExcelOps.ExcelDataOperationsBase
-            Dim MsExcelApp As New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper()
-            Try
-                Dim ExpectedMatrix As String
-                Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
-                Dim TestSheet As String = "Grunddaten"
 
-                eppeo = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
-                mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
+            Dim ExpectedMatrix As String
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
 
-                ExpectedMatrix =
+            eppeo = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
+            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
+
+            ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
                          "--+----------------------------+---------+---+------+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019     |   |      |False" & ControlChars.CrLf &
@@ -69,10 +94,10 @@ Namespace ExcelOpsEngineTests
                          "38|Pflegekasse                 |1,4      |   |      |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0,25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12,45    |   |      |     " & ControlChars.CrLf
-                Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedMatrix)
-                Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedMatrix)
+            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedMatrix)
+            Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedMatrix)
 
-                ExpectedMatrix =
+            ExpectedMatrix =
                          "# |A                           |B        |C  |D |E    " & ControlChars.CrLf &
                          "--+----------------------------+---------+---+--+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019     |   |  |False" & ControlChars.CrLf &
@@ -114,10 +139,10 @@ Namespace ExcelOpsEngineTests
                          "37|Rentenkasse                 |8        |   |  |     " & ControlChars.CrLf &
                          "38|Pflegekasse                 |1,4      |   |  |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0,25     |   |  |     " & ControlChars.CrLf
-                Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedMatrix)
-                Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedMatrix)
+            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedMatrix)
+            Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedMatrix)
 
-                ExpectedMatrix =
+            ExpectedMatrix =
                          "# |A |B            |C |D                                  " & ControlChars.CrLf &
                          "--+--+-------------+--+-----------------------------------" & ControlChars.CrLf &
                          "1 |  |             |  |                                   " & ControlChars.CrLf &
@@ -160,10 +185,10 @@ Namespace ExcelOpsEngineTests
                          "38|  |             |  |                                   " & ControlChars.CrLf &
                          "39|  |             |  |                                   " & ControlChars.CrLf &
                          "40|  |=SUM(B36:B39)|  |                                   " & ControlChars.CrLf
-                Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedMatrix)
-                Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedMatrix)
+            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedMatrix)
+            Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedMatrix)
 
-                ExpectedMatrix =
+            ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
                          "--+----------------------------+---------+---+------+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019     |   |      |False" & ControlChars.CrLf &
@@ -206,10 +231,10 @@ Namespace ExcelOpsEngineTests
                          "38|Pflegekasse                 |1,4      |   |      |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0,25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12,45    |   |      |     " & ControlChars.CrLf
-                Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedMatrix)
-                Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedMatrix)
+            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedMatrix)
+            Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedMatrix)
 
-                ExpectedMatrix =
+            ExpectedMatrix =
                          "# |A                           |B            |C  |D                                  |E    " & ControlChars.CrLf &
                          "--+----------------------------+-------------+---+-----------------------------------+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019         |   |                                   |False" & ControlChars.CrLf &
@@ -252,11 +277,8 @@ Namespace ExcelOpsEngineTests
                          "38|Pflegekasse                 |1,4          |   |                                   |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0,25         |   |                                   |     " & ControlChars.CrLf &
                          "40|                            |=SUM(B36:B39)|   |                                   |     " & ControlChars.CrLf
-                Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
-                Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
-            Finally
-                MsExcelApp.Dispose()
-            End Try
+            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
+            Me.SheetContentMatrix(mseo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
         End Sub
 
         Private Sub SheetContentMatrix(eo As ExcelOps.ExcelDataOperationsBase, matrixContentType As ExcelOps.ExcelDataOperationsBase.MatrixContent, expectedMatrix As String)
@@ -289,63 +311,60 @@ Namespace ExcelOpsEngineTests
             Dim TestSheet As String = "Grunddaten"
 
             eppeo = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
-            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
-            Try
-                '## Expected matrix like following
-                '"# |A                           |B              |C  |D                                  |E     
-                '"--+----------------------------+---------------+---+-----------------------------------+----- 
-                '"1 |Jahr                        |2019           |   |                                   |False 
-                '"2 |Geschäftsjahr von           |               |bis|                                   |      
-                '"3 |Aktueller Monat             |1              |   |=INDEX(B23:B34,MATCH(B3,A23:A34,0))|      
-                '"4 |                            |               |   |                                   |      
-                '"5 |Name Betrieb                |Test           |   |                                   |      
-                '"6 |                            |               |   |                                   |      
-                '"7 |Arbeitgeberanteile In %     |               |   |                                   |      
-                '"8 |Chef: 14,09                 |               |   |                                   |      
-                '"9 |Büroangestellte: 20,00      |               |   |                                   |      
-                '"10|Produktivkraft: 25,00       |               |   |                                   |      
-                '"11|Azubi / Aushilfen: 33,00    |               |   |                                   |      
-                '"12|                            |               |   |                                   |      
-                '"13|Berechnung Jahresarbeitszeit|               |   |                                   |      
-                '"14|Tage / Jahr:                |365            |   |                                   |      
-                '"15|Wochenendtage               |=2*52          |   |                                   |      
-                '"16|=Zahltage:                  |=B14-B15       |   |                                   |      
-                '"17|Wochenarbeitszeit           |40             |   |                                   |      
-                '"18|Tagesarbeitszeit:           |=B17/5         |   |                                   |      
-                '"19|Normallohnstunden / Jahr:   |=B18*B16       |   |                                   |      
-                '"20|                            |               |   |                                   |      
-                '"36|Krankenkasse                |2,8            |   |                                   |      
-                '"37|Rentenkasse                 |8              |   |                                   |      
-                '"38|Pflegekasse                 |1,4            |   |                                   |      
-                '"39|Krankengeld                 |0,25           |   |                                   |      
-                '"40|                            |=SUMME(B36:B39)|   |                                   |      
+            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
 
-                'D3
-                Assert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("Januar", mseo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("Januar", mseo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", mseo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+            '## Expected matrix like following
+            '"# |A                           |B              |C  |D                                  |E     
+            '"--+----------------------------+---------------+---+-----------------------------------+----- 
+            '"1 |Jahr                        |2019           |   |                                   |False 
+            '"2 |Geschäftsjahr von           |               |bis|                                   |      
+            '"3 |Aktueller Monat             |1              |   |=INDEX(B23:B34,MATCH(B3,A23:A34,0))|      
+            '"4 |                            |               |   |                                   |      
+            '"5 |Name Betrieb                |Test           |   |                                   |      
+            '"6 |                            |               |   |                                   |      
+            '"7 |Arbeitgeberanteile In %     |               |   |                                   |      
+            '"8 |Chef: 14,09                 |               |   |                                   |      
+            '"9 |Büroangestellte: 20,00      |               |   |                                   |      
+            '"10|Produktivkraft: 25,00       |               |   |                                   |      
+            '"11|Azubi / Aushilfen: 33,00    |               |   |                                   |      
+            '"12|                            |               |   |                                   |      
+            '"13|Berechnung Jahresarbeitszeit|               |   |                                   |      
+            '"14|Tage / Jahr:                |365            |   |                                   |      
+            '"15|Wochenendtage               |=2*52          |   |                                   |      
+            '"16|=Zahltage:                  |=B14-B15       |   |                                   |      
+            '"17|Wochenarbeitszeit           |40             |   |                                   |      
+            '"18|Tagesarbeitszeit:           |=B17/5         |   |                                   |      
+            '"19|Normallohnstunden / Jahr:   |=B18*B16       |   |                                   |      
+            '"20|                            |               |   |                                   |      
+            '"36|Krankenkasse                |2,8            |   |                                   |      
+            '"37|Rentenkasse                 |8              |   |                                   |      
+            '"38|Pflegekasse                 |1,4            |   |                                   |      
+            '"39|Krankengeld                 |0,25           |   |                                   |      
+            '"40|                            |=SUMME(B36:B39)|   |                                   |      
 
-                'A8
-                Assert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual(14.09D, mseo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("Chef: 14,09", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("Chef: 14,09", mseo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                Assert.AreEqual(Nothing, mseo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+            'D3
+            Assert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("Januar", mseo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("Januar", mseo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", mseo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
 
-                'E1
-                Assert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                Assert.AreEqual(False, mseo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("False", mseo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                Assert.AreEqual("False", mseo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-            Finally
-                mseo.CloseExcelAppInstance()
-            End Try
+            'A8
+            Assert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual(14.09D, mseo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("Chef: 14,09", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("Chef: 14,09", mseo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+            Assert.AreEqual(Nothing, mseo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+
+            'E1
+            Assert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+            Assert.AreEqual(False, mseo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("False", mseo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+            Assert.AreEqual("False", mseo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
         End Sub
 
         <Test> Public Sub LookupLastCellAddress()
@@ -358,20 +377,17 @@ Namespace ExcelOpsEngineTests
             Dim TestSheet As String = "Grunddaten"
 
             eppeo = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
-            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
-            Try
-                Dim LastCellFound As ExcelOps.ExcelCell
-                LastCellFound = eppeo.LookupLastContentCell(TestSheet)
-                Assert.AreEqual("E40", LastCellFound.Address)
-                Assert.AreEqual(eppeo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
-                Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
-                LastCellFound = mseo.LookupLastContentCell(TestSheet)
-                Assert.AreEqual("E40", LastCellFound.Address)
-                Assert.AreEqual(mseo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
-                Assert.AreEqual(mseo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
-            Finally
-                mseo.CloseExcelAppInstance()
-            End Try
+            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
+
+            Dim LastCellFound As ExcelOps.ExcelCell
+            LastCellFound = eppeo.LookupLastContentCell(TestSheet)
+            Assert.AreEqual("E40", LastCellFound.Address)
+            Assert.AreEqual(eppeo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
+            Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
+            LastCellFound = mseo.LookupLastContentCell(TestSheet)
+            Assert.AreEqual("E40", LastCellFound.Address)
+            Assert.AreEqual(mseo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
+            Assert.AreEqual(mseo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
         End Sub
 
         <Test> Public Sub AddSheet()
@@ -387,31 +403,27 @@ Namespace ExcelOpsEngineTests
             Dim SheetNameTopPosition As String = "SheetOnTop"
             Dim SheetNameBottomPosition As String = "SheetOnBottom"
             eppeo = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
-            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
-            Try
-                Dim ExpectedSheetNamesList, NewSheetNamesList As List(Of String)
-                ExpectedSheetNamesList = eppeo.SheetNames
-                ExpectedSheetNamesList.Add(SheetNameBottomPosition)
-                ExpectedSheetNamesList.Insert(0, SheetNameTopPosition)
+            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
+            Dim ExpectedSheetNamesList, NewSheetNamesList As List(Of String)
+            ExpectedSheetNamesList = eppeo.SheetNames
+            ExpectedSheetNamesList.Add(SheetNameBottomPosition)
+            ExpectedSheetNamesList.Insert(0, SheetNameTopPosition)
 
-                eppeo.AddSheet(SheetNameBottomPosition)
-                eppeo.AddSheet(SheetNameTopPosition, BeforeSheet)
-                NewSheetNamesList = eppeo.SheetNames
-                Assert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
+            eppeo.AddSheet(SheetNameBottomPosition)
+            eppeo.AddSheet(SheetNameTopPosition, BeforeSheet)
+            NewSheetNamesList = eppeo.SheetNames
+            Assert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
 
-                ExpectedSheetNamesList = mseo.SheetNames
-                ExpectedSheetNamesList.Add(SheetNameBottomPosition)
-                ExpectedSheetNamesList.Insert(0, SheetNameTopPosition)
-                System.Console.WriteLine("MS Expected: " & Strings.Join(ExpectedSheetNamesList.ToArray, ","))
+            ExpectedSheetNamesList = mseo.SheetNames
+            ExpectedSheetNamesList.Add(SheetNameBottomPosition)
+            ExpectedSheetNamesList.Insert(0, SheetNameTopPosition)
+            System.Console.WriteLine("MS Expected: " & Strings.Join(ExpectedSheetNamesList.ToArray, ","))
 
-                mseo.AddSheet(SheetNameBottomPosition)
-                mseo.AddSheet(SheetNameTopPosition, BeforeSheet)
-                NewSheetNamesList = mseo.SheetNames
-                System.Console.WriteLine("MS NewList : " & Strings.Join(NewSheetNamesList.ToArray, ","))
-                Assert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
-            Finally
-                mseo.CloseExcelAppInstance()
-            End Try
+            mseo.AddSheet(SheetNameBottomPosition)
+            mseo.AddSheet(SheetNameTopPosition, BeforeSheet)
+            NewSheetNamesList = mseo.SheetNames
+            System.Console.WriteLine("MS NewList : " & Strings.Join(NewSheetNamesList.ToArray, ","))
+            Assert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
         End Sub
 
         <Test> Public Sub SheetNames()
@@ -422,17 +434,14 @@ Namespace ExcelOpsEngineTests
             Dim mseo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
             eppeo = New ExcelOps.EpplusFreeExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
-            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
-            Try
-                Dim EppeoSheetNamesList, MseoSheetNamesList As List(Of String)
-                EppeoSheetNamesList = eppeo.SheetNames
-                MseoSheetNamesList = mseo.SheetNames
-                System.Console.WriteLine("EPP: " & Strings.Join(EppeoSheetNamesList.ToArray, ","))
-                System.Console.WriteLine("MS : " & Strings.Join(MseoSheetNamesList.ToArray, ","))
-                Assert.AreEqual(EppeoSheetNamesList.ToArray, MseoSheetNamesList.ToArray)
-            Finally
-                mseo.CloseExcelAppInstance()
-            End Try
+            mseo = New ExcelOps.MsExcelDataOperations(TestControllingToolFileName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
+
+            Dim EppeoSheetNamesList, MseoSheetNamesList As List(Of String)
+            EppeoSheetNamesList = eppeo.SheetNames
+            MseoSheetNamesList = mseo.SheetNames
+            System.Console.WriteLine("EPP: " & Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            System.Console.WriteLine("MS : " & Strings.Join(MseoSheetNamesList.ToArray, ","))
+            Assert.AreEqual(EppeoSheetNamesList.ToArray, MseoSheetNamesList.ToArray)
         End Sub
 
         <Test> Public Sub CalcTest_EpplusPolyform()
@@ -513,28 +522,24 @@ Namespace ExcelOpsEngineTests
             Dim wb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
             Dim SheetName As String = wb.SheetNames(0)
 
-            Try
-                wb.WriteCellFormula(SheetName, 0, 0, "B2", True)
-                Assert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
+            wb.WriteCellFormula(SheetName, 0, 0, "B2", True)
+            Assert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
 
-                wb.WriteCellFormula(SheetName, 0, 0, "1/1", True)
-                Assert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
-                Assert.AreEqual(1, wb.LookupCellValue(Of Integer)(SheetName, 0, 0))
+            wb.WriteCellFormula(SheetName, 0, 0, "1/1", True)
+            Assert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
+            Assert.AreEqual(1, wb.LookupCellValue(Of Integer)(SheetName, 0, 0))
 
-                wb.WriteCellFormula(SheetName, 0, 0, "INVALIDFUNCTION(B2)", True)
-                Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
+            wb.WriteCellFormula(SheetName, 0, 0, "INVALIDFUNCTION(B2)", True)
+            Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
 
-                wb.WriteCellFormula(SheetName, 0, 0, "1/0", True)
-                Assert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
+            wb.WriteCellFormula(SheetName, 0, 0, "1/0", True)
+            Assert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
 
-                wb.WriteCellFormula(SheetName, 0, 0, "B2/0", True)
-                Assert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
+            wb.WriteCellFormula(SheetName, 0, 0, "B2/0", True)
+            Assert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
 
-                wb.WriteCellFormula(SheetName, 0, 0, "A0", True)
-                Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
-            Finally
-                wb.CloseExcelAppInstance()
-            End Try
+            wb.WriteCellFormula(SheetName, 0, 0, "A0", True)
+            Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
         End Sub
 
         <Test> Public Sub CellWithErrorEpplus()
@@ -637,14 +642,13 @@ Namespace ExcelOpsEngineTests
             Dim TestControllingToolFileNameIn As String
             Dim TestControllingToolFileNameOutTemplate As String
             Dim TestControllingToolFileNameOut As String
-            Dim MsExcelApp As New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper()
 
             TestControllingToolFileNameIn = TestFiles.TestFileGrund01.FullName
             TestControllingToolFileNameOutTemplate = TestFiles.TestFileGrund02.FullName
             TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile("CopySheetContentMsExcel.xlsx")
             Try
-                eppeoIn = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameIn, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True, True, String.Empty)
-                eppeoOut = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameOutTemplate, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, True, True, String.Empty)
+                eppeoIn = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameIn, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
+                eppeoOut = New ExcelOps.MsExcelDataOperations(TestControllingToolFileNameOutTemplate, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
 
                 Console.WriteLine("Test file in: " & TestControllingToolFileNameIn)
                 Console.WriteLine("Test file output template: " & TestControllingToolFileNameOutTemplate)
@@ -658,44 +662,32 @@ Namespace ExcelOpsEngineTests
                 Assert.Pass("Required manual, optical review for comparison to check for formattings")
             Finally
                 If eppeoOut IsNot Nothing Then eppeoOut.Close()
-                eppeoIn.CloseExcelAppInstance()
-                MsExcelApp.Dispose()
             End Try
         End Sub
 
         <Test> Public Sub ExcelOpsTestCollection_ZahlenUndProzentwerte()
             Dim eppeo As New ExcelOps.EpplusFreeExcelDataOperations(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, String.Empty)
+            Dim SheetName As String
+            SheetName = "ZahlenUndProzentwerte"
+            Assert.AreEqual("0.00", eppeo.LookupCellFormat(SheetName, 0, 1))
+            Assert.AreEqual("0.00%", eppeo.LookupCellFormat(SheetName, 1, 1))
+            Assert.AreEqual(10.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
+            Assert.AreEqual(0.1, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
+            eppeo.WriteCellValue(Of Double)(SheetName, 0, 1, 20.0)
+            eppeo.WriteCellValue(Of Double)(SheetName, 1, 1, 0.2)
+            Assert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
+            Assert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
 #If Not CI_CD Then
             Dim mseo As New MsExcelDataOperations(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, String.Empty)
+            Assert.AreEqual("0.00", mseo.LookupCellFormat(SheetName, 0, 1))
+            Assert.AreEqual("0.00%", mseo.LookupCellFormat(SheetName, 1, 1))
+            Assert.AreEqual(10.0, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
+            Assert.AreEqual(0.1, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
+            mseo.WriteCellValue(Of Double)(SheetName, 0, 1, 20.0)
+            mseo.WriteCellValue(Of Double)(SheetName, 1, 1, 0.2)
+            Assert.AreEqual(20.0, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
+            Assert.AreEqual(0.2, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
 #End If
-            Try
-                Dim SheetName As String
-                SheetName = "ZahlenUndProzentwerte"
-                Assert.AreEqual("0.00", eppeo.LookupCellFormat(SheetName, 0, 1))
-                Assert.AreEqual("0.00%", eppeo.LookupCellFormat(SheetName, 1, 1))
-                Assert.AreEqual(10.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-                Assert.AreEqual(0.1, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
-                eppeo.WriteCellValue(Of Double)(SheetName, 0, 1, 20.0)
-                eppeo.WriteCellValue(Of Double)(SheetName, 1, 1, 0.2)
-                Assert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-                Assert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
-#If Not CI_CD Then
-                Assert.AreEqual("0.00", mseo.LookupCellFormat(SheetName, 0, 1))
-                Assert.AreEqual("0.00%", mseo.LookupCellFormat(SheetName, 1, 1))
-                Assert.AreEqual(10.0, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-                Assert.AreEqual(0.1, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
-                mseo.WriteCellValue(Of Double)(SheetName, 0, 1, 20.0)
-                mseo.WriteCellValue(Of Double)(SheetName, 1, 1, 0.2)
-                Assert.AreEqual(20.0, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-                Assert.AreEqual(0.2, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
-#End If
-            Finally
-#If Not CI_CD Then
-                If mseo IsNot Nothing Then
-                    mseo.CloseExcelAppInstance()
-                End If
-#End If
-            End Try
         End Sub
 
     End Class

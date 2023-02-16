@@ -67,7 +67,11 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <returns></returns>
         Public ReadOnly Property Count() As Integer
             Get
-                Return Me.ComObjectStronglyTyped.Count
+                If Me.ComObject Is Nothing Then
+                    Return 0
+                Else
+                    Return Me.ComObjectStronglyTyped.Count
+                End If
             End Get
         End Property
 

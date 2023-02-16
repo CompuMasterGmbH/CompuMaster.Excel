@@ -92,7 +92,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             Else
                 'Windows platform ok - MS Excel installed?
                 Try
+#Disable Warning CA1416
                     Dim MsExcelType As Type = Type.GetTypeFromProgID("Excel.Application")
+#Enable Warning
                     Return MsExcelType IsNot Nothing
                 Catch
                     Return False
