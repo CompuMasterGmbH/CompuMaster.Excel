@@ -523,7 +523,7 @@ Namespace ExcelOpsEngineTests
 #If CI_CD Then
             If System.Environment.OSVersion.Platform <> PlatformID.Win32NT Then Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
 #End If
-            Dim wb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, True, String.Empty)
+            Dim wb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, True, True, String.Empty)
             Dim SheetName As String = wb.SheetNames(0)
 
             wb.WriteCellFormula(SheetName, 0, 0, "B2", True)
@@ -682,7 +682,7 @@ Namespace ExcelOpsEngineTests
             Assert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
             Assert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
 #If Not CI_CD Then
-            Dim mseo As New MsExcelDataOperations(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, String.Empty)
+            Dim mseo As New MsExcelDataOperations(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelAppWrapper, False, True, String.Empty)
             Assert.AreEqual("0.00", mseo.LookupCellFormat(SheetName, 0, 1))
             Assert.AreEqual("0.00%", mseo.LookupCellFormat(SheetName, 1, 1))
             Assert.AreEqual(10.0, System.Math.Round(mseo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
