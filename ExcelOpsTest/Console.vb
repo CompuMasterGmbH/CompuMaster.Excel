@@ -23,12 +23,20 @@
         Else
             System.Console.Write(text)
         End If
+        Log.Append(text)
     End Sub
 
     Private Shared IsNewLogicalTestConsole As Boolean = True
 
     Public Shared Sub ResetConsoleForTestOutput()
         IsNewLogicalTestConsole = True
+        Log.Clear()
     End Sub
+
+    Private Shared Log As New System.Text.StringBuilder()
+
+    Public Shared Function GetConsoleLog() As String
+        Return Log.ToString
+    End Function
 
 End Class

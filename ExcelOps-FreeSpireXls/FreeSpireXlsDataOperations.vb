@@ -152,6 +152,8 @@ Namespace ExcelOps
                             Return CType(CType(CurrentCell.FormulaValue, Object), T)
                         ElseIf CurrentCell.IsBlank Then
                             Return Nothing
+                        ElseIf CurrentCell.HasBoolean Then
+                            Return CType(CType(CurrentCell.BooleanValue, Object), T)
                         Else
                             Return CType(CurrentCell.Value2, T)
                         End If
@@ -162,6 +164,8 @@ Namespace ExcelOps
                             Return CType(CType(CurrentCell.FormulaValue, Object), T)
                         ElseIf CurrentCell.IsBlank Then
                             Return Nothing
+                        ElseIf CurrentCell.HasBoolean Then
+                            Return CType(CType(CurrentCell.BooleanValue, Object), T)
                         Else
                             Return CType(CType(CurrentCell.DisplayedText, Object), T)
                         End If
@@ -172,6 +176,8 @@ Namespace ExcelOps
                             Return CType(CType(CurrentCell.FormulaValue, Object), T)
                         ElseIf CurrentCell.IsBlank Then
                             Return Nothing
+                        ElseIf CurrentCell.HasBoolean Then
+                            Return CType(CType(CurrentCell.BooleanValue, Object), T)
                         Else
                             Return CType(CurrentCell.Value2, T)
                         End If
@@ -182,6 +188,8 @@ Namespace ExcelOps
                             Return CType(CType(CurrentCell.FormulaValue, Object), T)
                         ElseIf CurrentCell.IsBlank Then
                             Return Nothing
+                        ElseIf CurrentCell.HasBoolean Then
+                            Return CType(CType(CurrentCell.BooleanValue, Object), T)
                         Else
                             Return CType(CurrentCell.Value2, T)
                         End If
@@ -269,7 +277,13 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public Overrides Function LookupCellFormula(cell As ExcelCell) As String
             If Me.Workbook.Worksheets.Item(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & cell.SheetName, NameOf(cell))
-            Return Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Formula)
+            Dim Result As String = Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Formula)
+            If Result <> Nothing Then
+                If Result(0) <> "=" Then Throw New InvalidCastException("Formula must always begin with '=' character internally")
+                Return Result.Substring(1)
+            Else
+                Return Result
+            End If
         End Function
 
         ''' <summary>
@@ -284,7 +298,13 @@ Namespace ExcelOps
             If Me.Workbook.Worksheets.Item(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
             If rowIndex < 0 Then Throw New ArgumentOutOfRangeException("RowIndex " & rowIndex & " must be equal or bigger than 0", NameOf(rowIndex))
             If columnIndex < 0 Then Throw New ArgumentOutOfRangeException("ColumnIndex " & columnIndex & " must be equal or bigger than 0", NameOf(columnIndex))
-            Return Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Formula)
+            Dim Result As String = Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Formula)
+            If Result <> Nothing Then
+                If Result(0) <> "=" Then Throw New InvalidCastException("Formula must always begin with '=' character internally")
+                Return Result.Substring(1)
+            Else
+                Return Result
+            End If
         End Function
 
         Public Overrides Function LookupCellIsLocked(cell As ExcelCell) As Boolean
@@ -554,18 +574,27 @@ Namespace ExcelOps
         Public Overrides Function LookupCellFormattedText(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Try
-                Dim CellValue As Object = Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Value2
-                If CellValue IsNot Nothing AndAlso CellValue.GetType() Is GetType(Boolean) AndAlso Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Style.NumberFormat = "General" Then
-                    Return Me.LookupCellValue(Of String)(sheetName, rowIndex, columnIndex)
+                Dim CurrentCell = Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1)
+                If CurrentCell.HasFormulaErrorValue Then
+                    Return CurrentCell.FormulaErrorValue
+                ElseIf CurrentCell.HasError Then
+                    Return CurrentCell.ErrorValue
+                ElseIf CurrentCell.HasFormula Then
+                    Return CType(CurrentCell.FormulaValue, String)
+                ElseIf CurrentCell.HasBoolean Then
+                    Return CType(CurrentCell.BooleanValue, String)
+                ElseIf CurrentCell.IsBlank Then
+                    Return Nothing
                 Else
-                    Return Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Text
+                    'Dim CellValue As Object = CurrentCell.Value2
+                    'If CellValue IsNot Nothing AndAlso CellValue.GetType() Is GetType(Boolean) AndAlso CurrentCell.Style.NumberFormat = "General" Then
+                    '    Return Me.LookupCellValue(Of String)(sheetName, rowIndex, columnIndex)
+                    'Else
+                    'End If
+                    Return CurrentCell.DisplayedText
                 End If
             Catch ex As InvalidCastException
-                If Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).HasError Then
-                    Return Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).ErrorValue
-                Else
-                    Throw
-                End If
+                Throw
             Catch ex As Exception
                 Return "#ERROR: " & ex.Message
             End Try
