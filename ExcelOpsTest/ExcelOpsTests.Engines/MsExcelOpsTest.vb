@@ -10,7 +10,7 @@ Namespace ExcelOpsTests.Engines
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
-            Else 'If MsExcelInstance IsNot Nothing Then
+            ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
                 MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
             Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, [readOnly], passwordForOpening)
@@ -20,6 +20,8 @@ Namespace ExcelOpsTests.Engines
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
+            ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
+                MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
             Return New ExcelOps.MsExcelDataOperations(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, MsExcelInstance, False, True, Nothing)
         End Function
@@ -34,6 +36,7 @@ Namespace ExcelOpsTests.Engines
         <SetUp>
         Public Sub Setup()
             AssertExactlyOur1ExcelProcessAvailableInProcessList()
+            AlwaysCloseAllWorkbooksInNewEngineInstances = True
         End Sub
 
         <TearDown>
@@ -58,6 +61,16 @@ Namespace ExcelOpsTests.Engines
             If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             AssertNoExcelProcessesAvailable()
+        End Sub
+
+        Protected AlwaysCloseAllWorkbooksInNewEngineInstances As Boolean = True
+
+        ''' <summary>
+        ''' Configures the environment to allow multiple workbooks in MS Excel (otherwise all workbook would get closed in test setup)
+        ''' </summary>
+        Protected Sub ClosedAllWorkbooksAndAllowMultipleWorkbooksForThisTestRun()
+            MsExcelInstance.Workbooks.CloseAllWorkbooks()
+            AlwaysCloseAllWorkbooksInNewEngineInstances = False
         End Sub
 
         Private Sub AssertExactlyOur1ExcelProcessAvailableInProcessList()
@@ -87,6 +100,11 @@ Namespace ExcelOpsTests.Engines
             Console.WriteLine("Found " & MsExcelProcessesBefore.Length & " EXCEL processes")
             ExcelOps.MsExcelDataOperations.CheckForRunningMsExcelInstancesAndAskUserToKill()
             Assert.Pass()
+        End Sub
+
+        <Test> Public Overrides Sub CopySheetContent()
+            Me.ClosedAllWorkbooksAndAllowMultipleWorkbooksForThisTestRun()
+            MyBase.CopySheetContent()
         End Sub
 
     End Class

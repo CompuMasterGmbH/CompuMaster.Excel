@@ -1,4 +1,6 @@
-﻿Namespace ExcelOpsTests.Engines
+﻿Imports NUnit.Framework
+
+Namespace ExcelOpsTests.Engines
 
     Public Class EpplusPolyformEditionOpsTest
         Inherits ExcelOpsTestBase(Of ExcelOps.EpplusPolyformExcelDataOperations)
@@ -18,6 +20,10 @@
         Protected Overrides Function _CreateInstance() As ExcelOps.EpplusPolyformExcelDataOperations
             Return New ExcelOps.EpplusPolyformExcelDataOperations()
         End Function
+
+        <Test> Public Overrides Sub CopySheetContent()
+            Assert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
+        End Sub
 
     End Class
 

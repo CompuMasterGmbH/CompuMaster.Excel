@@ -1,4 +1,6 @@
-﻿Namespace ExcelOpsTests.Engines
+﻿Imports NUnit.Framework
+
+Namespace ExcelOpsTests.Engines
 
     Public Class EpplusFreeFixCalcsEditionOpsTest
         Inherits ExcelOpsTestBase(Of ExcelOps.EpplusFreeExcelDataOperations)
@@ -10,6 +12,10 @@
         Protected Overrides Function _CreateInstance() As ExcelOps.EpplusFreeExcelDataOperations
             Return New ExcelOps.EpplusFreeExcelDataOperations()
         End Function
+
+        <Test> Public Overrides Sub CopySheetContent()
+            Assert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
+        End Sub
 
     End Class
 
