@@ -13,7 +13,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' Create a new MS Excel instance within its wrapper instance
         ''' </summary>
         Public Sub New()
-            MyBase.New(New MsExcel.Application(), Nothing)
+            MyBase.New(CreateMsExcelApplication, Nothing)
             Me.ComObjectStronglyTyped.Visible = False
             Me.ComObjectStronglyTyped.Interactive = False
             Me.ComObjectStronglyTyped.ScreenUpdating = False
@@ -24,8 +24,18 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
                 Me.ProcessId = ExcelProcessID
             Catch
             End Try
-            Me.Workbooks.CloseAllWorkbooks() 'Close initial empty workbook which is always there after app startup
+            Me.Workbooks.CloseAllWorkbooks() 'Close initial empty workbook which is always there after 
         End Sub
+
+        Private Shared Function CreateMsExcelApplication() As MsExcel.Application
+            Try
+                Return New MsExcel.Application()
+            Catch ex As PlatformNotSupportedException
+                Throw
+            Catch ex As Exception
+                Throw New PlatformNotSupportedException(ex.Message, ex)
+            End Try
+        End Function
 
         Private Declare Auto Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Integer, ByRef lpdwProcessId As Integer) As Integer
 
