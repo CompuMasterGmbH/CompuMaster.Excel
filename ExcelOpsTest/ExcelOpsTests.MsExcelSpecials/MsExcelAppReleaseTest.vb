@@ -2,7 +2,7 @@
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.MsExcelCom
 
-Namespace ExcelOpsEngineTests
+Namespace ExcelOpsTests.MsExcelSpecials
 
     <NonParallelizable>
     Public Class MsExcelAppReleaseTest

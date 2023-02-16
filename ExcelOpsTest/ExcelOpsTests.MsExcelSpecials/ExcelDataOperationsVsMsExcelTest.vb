@@ -1,7 +1,7 @@
 ﻿Imports NUnit.Framework
 Imports CompuMaster.Excel.ExcelOps
 
-Namespace ExcelOpsEngineTests
+Namespace ExcelOpsTests.MsExcelSpecials
 
     <TestFixture> Public Class ExcelDataOperationsTest
 
@@ -20,9 +20,9 @@ Namespace ExcelOpsEngineTests
             Get
                 If _MsExcelAppWrapper Is Nothing Then
                     Try
-                        _MsExcelAppWrapper = New MsExcelCom.MsExcelApplicationWrapper   
+                        _MsExcelAppWrapper = New MsExcelCom.MsExcelApplicationWrapper
                     Catch ex As System.PlatformNotSupportedException
-                        Assert.Ignore ("Platform not supported or MS Excel app not installed: " & ex.Message)
+                        Assert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
                     End Try
                 End If
                 Return _MsExcelAppWrapper
@@ -449,7 +449,7 @@ Namespace ExcelOpsEngineTests
         End Sub
 
         <Test> Public Sub CalcTest_EpplusPolyform()
-            EpplusPolyformEditionOpsTest.AssignLicenseContext()
+            ExcelOpsTests.Engines.EpplusPolyformEditionOpsTest.AssignLicenseContext()
             Dim wb As New OfficeOpenXml.ExcelPackage()
             Dim TestCell As OfficeOpenXml.ExcelRange
             wb.Workbook.Worksheets.Add("test-calcs")

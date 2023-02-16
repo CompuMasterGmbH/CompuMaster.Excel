@@ -1,12 +1,16 @@
-﻿Public Class FreeSpireXlsOpsTest
-    Inherits ExcelOpsTestBase(Of ExcelOps.FreeSpireXlsDataOperations)
+﻿Namespace ExcelOpsTests.Engines
 
-    Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.FreeSpireXlsDataOperations
-        Return New ExcelOps.FreeSpireXlsDataOperations(file, mode, [readOnly], passwordForOpening)
-    End Function
+    Public Class FreeSpireXlsOpsTest
+        Inherits ExcelOpsTestBase(Of ExcelOps.FreeSpireXlsDataOperations)
 
-    Protected Overrides Function _CreateInstance() As ExcelOps.FreeSpireXlsDataOperations
-        Return New ExcelOps.FreeSpireXlsDataOperations()
-    End Function
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations(file, mode, [readOnly], passwordForOpening)
+        End Function
 
-End Class
+        Protected Overrides Function _CreateInstance() As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations()
+        End Function
+
+    End Class
+
+End Namespace

@@ -11,8 +11,17 @@ Namespace ExcelOps
             Me.Table = New DataTable
         End Sub
 
-        Private Sub New(table As DataTable)
-            Me.Table = table
+        Private Sub New(table As TextTable)
+            Me.Table = CompuMaster.Data.DataTables.CreateDataTableClone(table.Table)
+        End Sub
+
+        ''' <summary>
+        ''' A new instance of TextTable based on values of System.DataTable
+        ''' </summary>
+        ''' <param name="table"></param>
+        Public Sub New(table As DataTable)
+            Me.New
+            LoadFromDataTable(table)
         End Sub
 
         Private ReadOnly Table As DataTable
@@ -425,7 +434,7 @@ Namespace ExcelOps
         End Function
 
         Public Function Clone() As Object Implements ICloneable.Clone
-            Return New TextTable(CompuMaster.Data.DataTables.CreateDataTableClone(Me.Table))
+            Return New TextTable(Me)
         End Function
 
         Public Shared Operator =(obj1 As TextTable, obj2 As TextTable) As Boolean
@@ -451,6 +460,16 @@ Namespace ExcelOps
             Next
             Return Result
         End Function
+
+        Private Sub LoadFromDataTable(table As System.Data.DataTable)
+            Me.AddColumns(table.Columns.Count)
+            Me.AddRows(table.Rows.Count)
+            For RowIndex As Integer = 0 To table.Rows.Count - 1
+                For ColIndex As Integer = 0 To table.Columns.Count - 1
+                    Me.Cell(RowIndex, ColIndex) = CompuMaster.Data.Utils.NoDBNull(table.Rows(RowIndex)(ColIndex), CType(Nothing, String))
+                Next
+            Next
+        End Sub
 
     End Class
 End Namespace

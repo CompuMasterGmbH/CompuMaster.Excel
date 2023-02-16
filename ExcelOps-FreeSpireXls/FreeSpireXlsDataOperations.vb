@@ -106,7 +106,7 @@ Namespace ExcelOps
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
-                Result.Add(Me.Workbook.Worksheets(0).Name)
+                Result.Add(Me.Workbook.Worksheets(MyCounter).Name)
             Next
             Return Result
         End Function
@@ -287,7 +287,7 @@ Namespace ExcelOps
         ''' <param name="cell"></param>
         ''' <param name="value"></param>
         Public Overrides Sub WriteCellValue(Of T)(cell As ExcelCell, value As T)
-            Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.Address).Formula = Nothing
+            Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.Address).ClearContents()
             Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.Address).Value2 = value
         End Sub
 
@@ -301,7 +301,7 @@ Namespace ExcelOps
         ''' <param name="value"></param>
         Public Overrides Sub WriteCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer, value As T)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Formula = Nothing
+            Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).ClearContents()
             Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Value2 = value
         End Sub
 
