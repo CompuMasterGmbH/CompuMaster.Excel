@@ -37,9 +37,9 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
         <SetUp> Public Sub ResetConsoleForTestOutput()
             CompuMaster.Excel.Test.Console.ResetConsoleForTestOutput()
-#If CI_CD Then
-            If System.Environment.OSVersion.Platform <> PlatformID.Win32NT Then Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
-#End If
+            If CompuMaster.ComInterop.ComTools.IsPlatformSupportingComInteropAndMsExcelAppInstalled("Excel.Application") = False Then
+                Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
+            End If
         End Sub
 
         Private Sub EngineResetCellValueFromFormulaCell(engine As TestEngines, wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)
