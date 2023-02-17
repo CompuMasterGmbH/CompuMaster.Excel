@@ -98,6 +98,12 @@ Namespace ExcelOpsTests.Engines
             End If
         End Sub
 
+        Public MustOverride ReadOnly Property ExpectedEngineName As String
+
+        <Test> Public Sub EngineName()
+            Assert.AreEqual(ExpectedEngineName, Me.CreateInstance().EngineName)
+        End Sub
+
         <Test> Public Sub HasVbaProject()
             Dim VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
             Assert.IsTrue(Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "").HasVbaProject)

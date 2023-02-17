@@ -1,12 +1,9 @@
 ﻿Option Strict On
 Option Explicit On
 
-'TODO: FIX COMPILE ERRORS
-'TODO: FIX ExcelCell.LocalCellAddress(x,y) -> ExcelCell.LocalCellAddress(x-1,y-1)
-'TODO: ADD NUNIT TESTS
-'TODO: BACKPORT: ExcelCell.LocalAddress -> Public!
-'TODO: BACKPORT: ExcelRange.LocalAddress 
-'TODO: NUGET-PACKAGE: ExcelOps-Projects
+'TODO: INCLUDE LATEST LOGIC FROM FreeSpireXls
+'TODO: NUGET-PACKAGE: ExcelOps-Projects: workflow + initial publish
+'TODO: workflow checkup: files test-data + TestEnvironment & co. must be equal to base test project
 
 Imports System.Data
 Imports System.ComponentModel
@@ -16,7 +13,7 @@ Imports Spire.Xls.Charts
 Imports Spire
 
 Namespace ExcelOps
-    Public Class FreeSpireXlsDataOperations
+    Public Class SpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
         ''' <summary>
@@ -28,6 +25,7 @@ Namespace ExcelOps
         ''' <param name="passwordForOpening"></param>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
+            If IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider))
         End Sub
 
         ''' <summary>
@@ -45,9 +43,25 @@ Namespace ExcelOps
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
         End Sub
 
+        Private ReadOnly Property IsLicensedContext As Boolean
+            Get
+                Return True
+                Dim MemberName As String = Nothing
+                Dim Members = CompuMaster.Reflection.NonPublicStaticMembers.GetMembers(GetType(Spire.License.LicenseProvider))
+                For Each Member In Members
+                    MemberName = Member.Name
+                Next
+                If MemberName Is Nothing Then
+                    Throw New NotSupportedException("Spire.Xls version not supported (validation of license failed)")
+                End If
+                Dim Dict = CompuMaster.Reflection.NonPublicStaticMembers.InvokeFieldGet(Of IDictionary)(GetType(Spire.License.LicenseProvider), MemberName)
+                Return Dict.Count > 0
+            End Get
+        End Property
+
         Public Overrides ReadOnly Property EngineName As String
             Get
-                Return "FreeSpire.Xls"
+                Return "Spire.Xls"
             End Get
         End Property
 
@@ -59,9 +73,11 @@ Namespace ExcelOps
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
             targetWorkbook.ClearSheet(targetSheetName)
             Dim CopyRange As New ExcelRange(New ExcelCell(sheetName, 1, 1, ExcelCell.ValueTypes.All), New ExcelCell(sheetName, LastCell.RowIndex + 1, LastCell.ColumnIndex + 1, ExcelCell.ValueTypes.All))
-            Me.Workbook.Worksheets.Item(sheetName).Range(CopyRange.LocalAddress).Copy(CType(targetWorkbook, FreeSpireXlsDataOperations).Workbook.Worksheets.Item(targetSheetName).Range(CopyRange.LocalAddress))
+            Me.Workbook.Worksheets.Item(sheetName).Range(CopyRange.LocalAddress).Copy(CType(targetWorkbook, SpireXlsDataOperations).Workbook.Worksheets.Item(targetSheetName).Range(CopyRange.LocalAddress))
             'Me.Workbook.Worksheets.Item(sheetName).Cells.Copy(CType(targetWorkbook, EpplusExcelDataOperations).Workbook.Worksheets.Item(targetSheetName).Cells)
         End Sub
+
+        '----------------------------------------- BELOW CODE IS IDENTICAL TO FreeSpireXls EDITION ----------------------------------------------------
 
         Private _Workbook As Spire.Xls.Workbook
         Public ReadOnly Property Workbook As Spire.Xls.Workbook
@@ -694,7 +710,7 @@ Namespace ExcelOps
             If beforeSheetName <> Nothing Then
                 Dim OldIndex As Integer = Me.Workbook.Worksheets(sheetName).Index
                 Dim NewIndex As Integer = Me.Workbook.Worksheets(beforeSheetName).Index
-                Me.Workbook.Worksheets.Move(oldIndex, newIndex)
+                Me.Workbook.Worksheets.Move(OldIndex, NewIndex)
             End If
         End Sub
 

@@ -4,36 +4,12 @@ Imports System.Data
 
 Namespace ExcelOpsTests.MsExcelSpecials
 
-    '<TestFixture(Explicit:=True, IgnoreReason:="MS Excel not supported on Non-Windows platforms")> Public Class MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug
+    ''' <summary>
+    ''' Test (component design) issue: MsExcelAutoCalc doesn't work but only manual calc works -> Bug!?
+    ''' </summary>
     <NonParallelizable>
     <TestFixture>
-    Public Class MsExcelAutoCalcDoesntWorkButOnlyManualCalcWorksBug
-
-        Public Shared ReadOnly Property EngineTest() As TestEngines()
-            Get
-                Return TestTools.EnumValues(Of TestEngines).ToArray
-            End Get
-        End Property
-
-        Public Enum TestEngines As Byte
-            Epplus45LgplEdition
-            EpplusPolyformLicenseEdition
-            FreeSpireXls
-        End Enum
-
-        Private Function CreateEngineInstance(engineType As TestEngines, testFile As String) As ExcelOps.ExcelDataOperationsBase
-            Select Case engineType
-                Case TestEngines.Epplus45LgplEdition
-                    Return New ExcelOps.EpplusFreeExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
-                Case TestEngines.EpplusPolyformLicenseEdition
-                    ExcelOpsTests.Engines.EpplusPolyformEditionOpsTest.AssignLicenseContext()
-                    Return New ExcelOps.EpplusPolyformExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
-                Case TestEngines.FreeSpireXls
-                    Return New ExcelOps.FreeSpireXlsDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
-                Case Else
-                    Throw New NotImplementedException(engineType.ToString)
-            End Select
-        End Function
+    Public MustInherit Class MsExcelCalcTestBase
 
         <SetUp> Public Sub ResetConsoleForTestOutput()
             CompuMaster.Excel.Test.Console.ResetConsoleForTestOutput()
@@ -42,41 +18,32 @@ Namespace ExcelOpsTests.MsExcelSpecials
             End If
         End Sub
 
-        Private Sub EngineResetCellValueFromFormulaCell(engine As TestEngines, wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Select Case engine
-                Case TestEngines.Epplus45LgplEdition
-                    CType(wb, ExcelOps.EpplusFreeExcelDataOperations).ResetCellValueFromFormulaCell(sheetName, rowIndex, columnIndex)
-                Case TestEngines.EpplusPolyformLicenseEdition
-                    Assert.Ignore("Test not applicable for engine " & engine.ToString)
-                    'CType(wb, ExcelOps.EpplusPolyformExcelDataOperations).ResetCellValueFromFormulaCell(sheetName, rowIndex, columnIndex)
-                Case TestEngines.FreeSpireXls
-                    Assert.Ignore("Test not applicable for engine " & engine.ToString)
-                    'CType(wb, ExcelOps.FreeSpireXlsDataOperations).ResetCellValueFromFormulaCell(sheetName, rowIndex, columnIndex)
-                Case Else
-                    Throw New NotImplementedException(engine.ToString)
-            End Select
-        End Sub
+        Protected MustOverride ReadOnly Property EngineName As String
+
+        Protected MustOverride Function CreateEngineInstance(testFile As String) As ExcelOps.ExcelDataOperationsBase
+
+        Protected MustOverride Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)
 
 #Region "Test Sample 1"
         <Test>
-        Public Sub FormulaComplexityLevel1_Solution(<ValueSource(NameOf(EngineTest))> testEngine As TestEngines)
-            Dim Eppeo As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = CreateSheetWithReproducableBug_FormulaComplexityLevel1(testEngine)
+        Public Sub FormulaComplexityLevel1_Solution()
+            Dim Eppeo As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = CreateSheetWithReproducableBug_FormulaComplexityLevel1()
 
             'Solve buggy cells in Excel workbook with Epplus
             Eppeo.ReloadFromFile()
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
 
             System.Console.WriteLine("Formula B2 BEFORE RESET=" & Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
-            EngineResetCellValueFromFormulaCell(testEngine, Eppeo, FirstSheetName, 1, 1)
+            EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 1, 1)
             Assert.IsNotNull(Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
             Assert.IsNotEmpty(Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
             System.Console.WriteLine("Formula B2 AFTER RESET=" & Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
             System.Console.WriteLine()
-            EngineResetCellValueFromFormulaCell(testEngine, Eppeo, FirstSheetName, 2, 1)
-            EngineResetCellValueFromFormulaCell(testEngine, Eppeo, FirstSheetName, 4, 1)
-            EngineResetCellValueFromFormulaCell(testEngine, Eppeo, FirstSheetName, 5, 1)
+            EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 2, 1)
+            EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 4, 1)
+            EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 5, 1)
 
-            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & testEngine.ToString & "_FormulaComplexityLevel1{0}.xlsx"
+            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel1{0}.xlsx"
             Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_11_FixedInEpplus"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
@@ -101,18 +68,18 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Assert.AreEqual(20, ETable.Rows(5)(1))
         End Sub
 
-        <Test> Public Sub FormulaComplexityLevel1_BugReproduction(<ValueSource(NameOf(EngineTest))> testEngine As TestEngines)
-            CreateSheetWithReproducableBug_FormulaComplexityLevel1(testEngine)
+        <Test> Public Sub FormulaComplexityLevel1_BugReproduction()
+            CreateSheetWithReproducableBug_FormulaComplexityLevel1()
         End Sub
 
-        Private Function CreateSheetWithReproducableBug_FormulaComplexityLevel1(testEngine As TestEngines) As ExcelOps.ExcelDataOperationsBase
-            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & testEngine.ToString & "_FormulaComplexityLevel1{0}.xlsx"
+        Private Function CreateSheetWithReproducableBug_FormulaComplexityLevel1() As ExcelOps.ExcelDataOperationsBase
+            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel1{0}.xlsx"
             Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_01_InitialEpplus"))
             System.Console.WriteLine("Output path of test files: " & System.IO.Path.GetDirectoryName(TestFile))
             System.Console.WriteLine()
 
             'Create new Excel workbook with Epplus and add some cells with values and formulas
-            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstance(testEngine, TestFile)
+            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstance(TestFile)
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
 
             Eppeo.WriteCellValue(Of String)(FirstSheetName, 0, 0, "Static value initially set")
@@ -130,8 +97,8 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Eppeo.WriteCellValue(Of String)(FirstSheetName, 5, 0, "Formula referencing B3 NOT calculated by Epplus")
             Eppeo.WriteCellFormula(FirstSheetName, 5, 1, "B3", False)
 
-            Select Case testEngine
-                Case TestEngines.Epplus45LgplEdition
+            Select Case EngineName
+                Case (New ExcelOps.EpplusFreeExcelDataOperations()).EngineName
                     Assert.AreEqual(True, Eppeo.CalculationModuleDisabled)
                     Assert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
                 Case Else
@@ -179,14 +146,14 @@ Namespace ExcelOpsTests.MsExcelSpecials
 #End Region
 
 #Region "Test Sample 2"
-        <Test> Public Sub FormulaComplexityLevel2_Solution(<ValueSource(NameOf(EngineTest))> testEngine As TestEngines)
-            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = CreateSheetWithReproducableBug_FormulaComplexityLevel2(testEngine)
+        <Test> Public Sub FormulaComplexityLevel2_Solution()
+            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = CreateSheetWithReproducableBug_FormulaComplexityLevel2()
 
             Eppeo.ReloadFromFile()
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
 
             'Solve buggy cells in whole Excel workbook with Epplus by resetting all formula cells in all worksheets
-            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & testEngine.ToString & "_FormulaComplexityLevel2{0}.xlsx"
+            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel2{0}.xlsx"
             Dim TestFile As String
             TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_12_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation) 'solution: reset all cell values in cells with formulas
@@ -207,18 +174,18 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Assert.AreEqual("1", ETable.Rows(2)(2))
         End Sub
 
-        <Test> Public Sub FormulaComplexityLevel2_BugReproduction(<ValueSource(NameOf(EngineTest))> testEngine As TestEngines)
-            CreateSheetWithReproducableBug_FormulaComplexityLevel2(testEngine)
+        <Test> Public Sub FormulaComplexityLevel2_BugReproduction()
+            CreateSheetWithReproducableBug_FormulaComplexityLevel2()
         End Sub
 
-        Private Function CreateSheetWithReproducableBug_FormulaComplexityLevel2(testEngine As TestEngines) As ExcelOps.ExcelDataOperationsBase
-            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & testEngine.ToString & "_FormulaComplexityLevel2_{0}.xlsx"
+        Private Function CreateSheetWithReproducableBug_FormulaComplexityLevel2() As ExcelOps.ExcelDataOperationsBase
+            Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel2_{0}.xlsx"
             Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_01_InitialEpplus"))
             System.Console.WriteLine("Output path of test files: " & System.IO.Path.GetDirectoryName(TestFile))
             System.Console.WriteLine()
 
             'Create new Excel workbook with Epplus and add some cells with values and formulas
-            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstance(testEngine, TestFile)
+            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstance(TestFile)
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
             Eppeo.AddSheet("Sheet2")
 

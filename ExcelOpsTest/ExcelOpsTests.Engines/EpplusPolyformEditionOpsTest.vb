@@ -13,6 +13,8 @@ Namespace ExcelOpsTests.Engines
             ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial
         End Sub
 
+        Public Overrides ReadOnly Property ExpectedEngineName As String = "Epplus (Polyform license edition)"
+
         Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.EpplusPolyformExcelDataOperations
             Return New ExcelOps.EpplusPolyformExcelDataOperations(file, mode, [readOnly], passwordForOpening)
         End Function

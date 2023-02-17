@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel</RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <AssemblyName>CompuMaster.Excel.FreeSpireXls</AssemblyName>
+    <PackageIcon>logo_64x64.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CompuMaster.Reflection" Version="1.0.2" />
+    <PackageReference Include="Spire.XLS" Version="13.2.4" />
+	  <None Include="..\logo_64x64.png">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+	  </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+  </ItemGroup>
+
+</Project>

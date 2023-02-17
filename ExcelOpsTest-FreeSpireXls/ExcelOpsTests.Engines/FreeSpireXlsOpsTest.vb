@@ -3,7 +3,9 @@
 Namespace ExcelOpsTests.Engines
 
     Public Class FreeSpireXlsOpsTest
-        Inherits ExcelOpsTestBase(Of ExcelOps.FreeSpireXlsDataOperations)
+        Inherits CompuMaster.Excel.Test.ExcelOpsTests.Engines.ExcelOpsTestBase(Of ExcelOps.FreeSpireXlsDataOperations)
+
+        Public Overrides ReadOnly Property ExpectedEngineName As String = "FreeSpire.Xls"
 
         Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.FreeSpireXlsDataOperations
             Return New ExcelOps.FreeSpireXlsDataOperations(file, mode, [readOnly], passwordForOpening)

@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>CompuMaster.Excel.Test</RootNamespace>
+    <RootNamespace>CompuMaster.Excel.TestFreeSpireXls</RootNamespace>
     <TargetFrameworks>net48;net7.0</TargetFrameworks>
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
     <OptionStrict>On</OptionStrict>
-    <AssemblyName>CompuMaster.Excel.Test</AssemblyName>
+    <AssemblyName>CompuMaster.Excel.TestFreeSpireXls</AssemblyName>
     <Configurations>Debug;Release;CI_CD</Configurations>
   </PropertyGroup>
 
@@ -48,12 +48,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CM.Data.EpplusPolyformEdition\CM.Data.EpplusPolyformEdition.vbproj" />
-    <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
-    <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus45-FixCalcsEdition.MultiTarget.csproj" />
-    <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
-    <ProjectReference Include="..\ExcelOps-EpplusPolyform\ExcelOps-EpplusPolyformEdition.vbproj" />
+    <ProjectReference Include="..\ExcelOpsTest\TestExcelOps.vbproj" />
     <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />
+    <ProjectReference Include="..\ExcelOps-FreeSpireXls\ExcelOps-FreeSpireXls.vbproj" />
     <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
   </ItemGroup>

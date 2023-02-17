@@ -6,6 +6,8 @@ Namespace ExcelOpsTests.Engines
     Public Class MsExcelOpsTest
         Inherits ExcelOpsTestBase(Of ExcelOps.MsExcelDataOperations)
 
+        Public Overrides ReadOnly Property ExpectedEngineName As String = "Microsoft Excel (2013 or higher)"
+
         Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.MsExcelDataOperations
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
