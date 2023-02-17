@@ -19,14 +19,28 @@ Namespace ExcelOps
     Public Class FreeSpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="file"></param>
+        ''' <param name="mode"></param>
+        ''' <param name="[readOnly]"></param>
+        ''' <param name="passwordForOpening"></param>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
         End Sub
 
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
         Public Sub New()
             Me.New(Nothing)
         End Sub
 
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="passwordForOpeningOnNextTime"></param>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
         End Sub

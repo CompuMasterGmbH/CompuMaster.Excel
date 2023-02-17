@@ -11,6 +11,10 @@ Namespace ExcelOpsTests.Engines
 
         Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
 
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <returns></returns>
         Protected Function CreateInstance() As T
             Try
                 Return _CreateInstance()
@@ -35,6 +39,14 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Function
 
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="file"></param>
+        ''' <param name="mode"></param>
+        ''' <param name="[readOnly]"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <returns></returns>
         Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
             Try
                 Return _CreateInstance(file, mode, [readOnly], passwordForOpening)
@@ -449,37 +461,51 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
         End Sub
 
-        <Test> Public Sub SheetContentMatrix(<Values("invariant", "de-DE")> cultureName As String)
+        Protected Delegate Sub TestInCultureContextAction()
+
+        Protected Sub TestInCultureContext(cultureName As String, testMethod As TestInCultureContextAction)
             Dim OriginCulture = System.Threading.Thread.CurrentThread.CurrentCulture
             Try
                 Select Case cultureName
-                    Case "invariant"
+                    Case "", "invariant"
                         System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture
                     Case Else
                         System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(cultureName)
                 End Select
-                SheetContentMatrix_TestInCultureContext()
+                TestInCultureContext_AssignCurrentThreadCulture()
+                testMethod()
             Finally
                 System.Threading.Thread.CurrentThread.CurrentCulture = OriginCulture
+                TestInCultureContext_AssignCurrentThreadCulture()
             End Try
         End Sub
 
-        Private Function SheetContentMatrix_ExpectedMatrixInCultureContext(expectedRawMatrix As String) As String
+        ''' <summary>
+        ''' Assign current thread's culture to excel engine, if it requires additional steps after culture change (e.g. MS Excel)
+        ''' </summary>
+        Protected Overridable Sub TestInCultureContext_AssignCurrentThreadCulture()
+        End Sub
+
+        Protected Const PlaceHolderDecimalSeparator As String = "▲"c
+        Protected Const PlaceHolderGroupSeparator As String = "▪"c
+
+        Private Function ExpectedResultInCultureContext(expectedRawMatrix As String) As String
             Return expectedRawMatrix.
-                Replace("▲", System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator).
-                Replace("▪", System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberGroupSeparator)
+                Replace(PlaceHolderDecimalSeparator, System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator).
+                Replace(PlaceHolderGroupSeparator, System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberGroupSeparator)
         End Function
 
-        Protected Overridable Sub SheetContentMatrix_TestInCultureContext()
-            Dim eppeo As ExcelOps.ExcelDataOperationsBase
-
+        <Test> Public Overridable Sub SheetContentMatrix_StaticOrCalculatedValues(<Values("invariant", "de-DE")> cultureName As String)
             Dim ExpectedMatrix As String
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
             Dim TestSheet As String = "Grunddaten"
 
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            TestInCultureContext(
+                cultureName,
+                Sub()
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
 
-            ExpectedMatrix =
+                    ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
                          "--+----------------------------+---------+---+------+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019     |   |      |False" & ControlChars.CrLf &
@@ -522,98 +548,134 @@ Namespace ExcelOpsTests.Engines
                          "38|Pflegekasse                 |1▲4      |   |      |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedResultInCultureContext(ExpectedMatrix))
+                End Sub)
+        End Sub
 
-            ExpectedMatrix =
-                         "# |A                           |B        |C  |D |E    " & ControlChars.CrLf &
-                         "--+----------------------------+---------+---+--+-----" & ControlChars.CrLf &
-                         "1 |Jahr                        |2019     |   |  |False" & ControlChars.CrLf &
-                         "2 |Geschäftsjahr von           |         |bis|  |     " & ControlChars.CrLf &
-                         "3 |Aktueller Monat             |1        |   |  |     " & ControlChars.CrLf &
-                         "4 |                            |         |   |  |     " & ControlChars.CrLf &
-                         "5 |Name Betrieb                |Test     |   |  |     " & ControlChars.CrLf &
-                         "6 |                            |         |   |  |     " & ControlChars.CrLf &
-                         "7 |Arbeitgeberanteile in %     |         |   |  |     " & ControlChars.CrLf &
-                         "8 |Chef: 14▲09                 |         |   |  |     " & ControlChars.CrLf &
-                         "9 |Büroangestellte: 20▲00      |         |   |  |     " & ControlChars.CrLf &
-                         "10|Produktivkraft: 25▲00       |         |   |  |     " & ControlChars.CrLf &
-                         "11|Azubi / Aushilfen: 33▲00    |         |   |  |     " & ControlChars.CrLf &
-                         "12|                            |         |   |  |     " & ControlChars.CrLf &
-                         "13|Berechnung Jahresarbeitszeit|         |   |  |     " & ControlChars.CrLf &
-                         "14|Tage / Jahr:                |365      |   |  |     " & ControlChars.CrLf &
-                         "15|Wochenendtage               |         |   |  |     " & ControlChars.CrLf &
-                         "16|=Zahltage:                  |         |   |  |     " & ControlChars.CrLf &
-                         "17|Wochenarbeitszeit           |40       |   |  |     " & ControlChars.CrLf &
-                         "18|Tagesarbeitszeit:           |         |   |  |     " & ControlChars.CrLf &
-                         "19|Normallohnstunden / Jahr:   |         |   |  |     " & ControlChars.CrLf &
-                         "20|                            |         |   |  |     " & ControlChars.CrLf &
-                         "21|                            |         |   |  |     " & ControlChars.CrLf &
-                         "22|                            |         |   |  |     " & ControlChars.CrLf &
-                         "23|1                           |Januar   |   |  |     " & ControlChars.CrLf &
-                         "24|2                           |Februar  |   |  |     " & ControlChars.CrLf &
-                         "25|3                           |März     |   |  |     " & ControlChars.CrLf &
-                         "26|4                           |April    |   |  |     " & ControlChars.CrLf &
-                         "27|5                           |Mai      |   |  |     " & ControlChars.CrLf &
-                         "28|6                           |Juni     |   |  |     " & ControlChars.CrLf &
-                         "29|7                           |Juli     |   |  |     " & ControlChars.CrLf &
-                         "30|8                           |August   |   |  |     " & ControlChars.CrLf &
-                         "31|9                           |September|   |  |     " & ControlChars.CrLf &
-                         "32|10                          |Oktober  |   |  |     " & ControlChars.CrLf &
-                         "33|11                          |November |   |  |     " & ControlChars.CrLf &
-                         "34|12                          |Dezember |   |  |     " & ControlChars.CrLf &
-                         "35|Zusammensetzung AG Anteile  |         |   |  |     " & ControlChars.CrLf &
-                         "36|Krankenkasse                |2▲8      |   |  |     " & ControlChars.CrLf &
-                         "37|Rentenkasse                 |8        |   |  |     " & ControlChars.CrLf &
-                         "38|Pflegekasse                 |1▲4      |   |  |     " & ControlChars.CrLf &
-                         "39|Krankengeld                 |0▲25     |   |  |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
+        <Test> Public Overridable Sub SheetContentMatrix_StaticValues(<Values("invariant", "de-DE")> cultureName As String)
+            Dim ExpectedMatrix As String
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
 
-            ExpectedMatrix =
-                         "# |A |B            |C |D                                  " & ControlChars.CrLf &
-                         "--+--+-------------+--+-----------------------------------" & ControlChars.CrLf &
-                         "1 |  |             |  |                                   " & ControlChars.CrLf &
-                         "2 |  |             |  |                                   " & ControlChars.CrLf &
-                         "3 |  |             |  |=INDEX(B23:B34,MATCH(B3,A23:A34,0))" & ControlChars.CrLf &
-                         "4 |  |             |  |                                   " & ControlChars.CrLf &
-                         "5 |  |             |  |                                   " & ControlChars.CrLf &
-                         "6 |  |             |  |                                   " & ControlChars.CrLf &
-                         "7 |  |             |  |                                   " & ControlChars.CrLf &
-                         "8 |  |             |  |                                   " & ControlChars.CrLf &
-                         "9 |  |             |  |                                   " & ControlChars.CrLf &
-                         "10|  |             |  |                                   " & ControlChars.CrLf &
-                         "11|  |             |  |                                   " & ControlChars.CrLf &
-                         "12|  |             |  |                                   " & ControlChars.CrLf &
-                         "13|  |             |  |                                   " & ControlChars.CrLf &
-                         "14|  |             |  |                                   " & ControlChars.CrLf &
-                         "15|  |=2*52        |  |                                   " & ControlChars.CrLf &
-                         "16|  |=B14-B15     |  |                                   " & ControlChars.CrLf &
-                         "17|  |             |  |                                   " & ControlChars.CrLf &
-                         "18|  |=B17/5       |  |                                   " & ControlChars.CrLf &
-                         "19|  |=B18*B16     |  |                                   " & ControlChars.CrLf &
-                         "20|  |             |  |                                   " & ControlChars.CrLf &
-                         "21|  |             |  |                                   " & ControlChars.CrLf &
-                         "22|  |             |  |                                   " & ControlChars.CrLf &
-                         "23|  |             |  |                                   " & ControlChars.CrLf &
-                         "24|  |             |  |                                   " & ControlChars.CrLf &
-                         "25|  |             |  |                                   " & ControlChars.CrLf &
-                         "26|  |             |  |                                   " & ControlChars.CrLf &
-                         "27|  |             |  |                                   " & ControlChars.CrLf &
-                         "28|  |             |  |                                   " & ControlChars.CrLf &
-                         "29|  |             |  |                                   " & ControlChars.CrLf &
-                         "30|  |             |  |                                   " & ControlChars.CrLf &
-                         "31|  |             |  |                                   " & ControlChars.CrLf &
-                         "32|  |             |  |                                   " & ControlChars.CrLf &
-                         "33|  |             |  |                                   " & ControlChars.CrLf &
-                         "34|  |             |  |                                   " & ControlChars.CrLf &
-                         "35|  |             |  |                                   " & ControlChars.CrLf &
-                         "36|  |             |  |                                   " & ControlChars.CrLf &
-                         "37|  |             |  |                                   " & ControlChars.CrLf &
-                         "38|  |             |  |                                   " & ControlChars.CrLf &
-                         "39|  |             |  |                                   " & ControlChars.CrLf &
-                         "40|  |=SUM(B36:B39)|  |                                   " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
+            TestInCultureContext(
+                cultureName,
+                Sub()
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
 
-            ExpectedMatrix =
+                    ExpectedMatrix =
+                                 "# |A                           |B        |C  |D |E    " & ControlChars.CrLf &
+                                 "--+----------------------------+---------+---+--+-----" & ControlChars.CrLf &
+                                 "1 |Jahr                        |2019     |   |  |False" & ControlChars.CrLf &
+                                 "2 |Geschäftsjahr von           |         |bis|  |     " & ControlChars.CrLf &
+                                 "3 |Aktueller Monat             |1        |   |  |     " & ControlChars.CrLf &
+                                 "4 |                            |         |   |  |     " & ControlChars.CrLf &
+                                 "5 |Name Betrieb                |Test     |   |  |     " & ControlChars.CrLf &
+                                 "6 |                            |         |   |  |     " & ControlChars.CrLf &
+                                 "7 |Arbeitgeberanteile in %     |         |   |  |     " & ControlChars.CrLf &
+                                 "8 |Chef: 14▲09                 |         |   |  |     " & ControlChars.CrLf &
+                                 "9 |Büroangestellte: 20▲00      |         |   |  |     " & ControlChars.CrLf &
+                                 "10|Produktivkraft: 25▲00       |         |   |  |     " & ControlChars.CrLf &
+                                 "11|Azubi / Aushilfen: 33▲00    |         |   |  |     " & ControlChars.CrLf &
+                                 "12|                            |         |   |  |     " & ControlChars.CrLf &
+                                 "13|Berechnung Jahresarbeitszeit|         |   |  |     " & ControlChars.CrLf &
+                                 "14|Tage / Jahr:                |365      |   |  |     " & ControlChars.CrLf &
+                                 "15|Wochenendtage               |         |   |  |     " & ControlChars.CrLf &
+                                 "16|=Zahltage:                  |         |   |  |     " & ControlChars.CrLf &
+                                 "17|Wochenarbeitszeit           |40       |   |  |     " & ControlChars.CrLf &
+                                 "18|Tagesarbeitszeit:           |         |   |  |     " & ControlChars.CrLf &
+                                 "19|Normallohnstunden / Jahr:   |         |   |  |     " & ControlChars.CrLf &
+                                 "20|                            |         |   |  |     " & ControlChars.CrLf &
+                                 "21|                            |         |   |  |     " & ControlChars.CrLf &
+                                 "22|                            |         |   |  |     " & ControlChars.CrLf &
+                                 "23|1                           |Januar   |   |  |     " & ControlChars.CrLf &
+                                 "24|2                           |Februar  |   |  |     " & ControlChars.CrLf &
+                                 "25|3                           |März     |   |  |     " & ControlChars.CrLf &
+                                 "26|4                           |April    |   |  |     " & ControlChars.CrLf &
+                                 "27|5                           |Mai      |   |  |     " & ControlChars.CrLf &
+                                 "28|6                           |Juni     |   |  |     " & ControlChars.CrLf &
+                                 "29|7                           |Juli     |   |  |     " & ControlChars.CrLf &
+                                 "30|8                           |August   |   |  |     " & ControlChars.CrLf &
+                                 "31|9                           |September|   |  |     " & ControlChars.CrLf &
+                                 "32|10                          |Oktober  |   |  |     " & ControlChars.CrLf &
+                                 "33|11                          |November |   |  |     " & ControlChars.CrLf &
+                                 "34|12                          |Dezember |   |  |     " & ControlChars.CrLf &
+                                 "35|Zusammensetzung AG Anteile  |         |   |  |     " & ControlChars.CrLf &
+                                 "36|Krankenkasse                |2▲8      |   |  |     " & ControlChars.CrLf &
+                                 "37|Rentenkasse                 |8        |   |  |     " & ControlChars.CrLf &
+                                 "38|Pflegekasse                 |1▲4      |   |  |     " & ControlChars.CrLf &
+                                 "39|Krankengeld                 |0▲25     |   |  |     " & ControlChars.CrLf
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedResultInCultureContext(ExpectedMatrix))
+                End Sub)
+        End Sub
+
+        <Test> Public Overridable Sub SheetContentMatrix_Formulas(<Values("invariant", "de-DE")> cultureName As String)
+            Dim ExpectedMatrix As String
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
+
+            TestInCultureContext(
+                cultureName,
+                Sub()
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+                    ExpectedMatrix =
+                                 "# |A |B            |C |D                                  " & ControlChars.CrLf &
+                                 "--+--+-------------+--+-----------------------------------" & ControlChars.CrLf &
+                                 "1 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "2 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "3 |  |             |  |=INDEX(B23:B34,MATCH(B3,A23:A34,0))" & ControlChars.CrLf &
+                                 "4 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "5 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "6 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "7 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "8 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "9 |  |             |  |                                   " & ControlChars.CrLf &
+                                 "10|  |             |  |                                   " & ControlChars.CrLf &
+                                 "11|  |             |  |                                   " & ControlChars.CrLf &
+                                 "12|  |             |  |                                   " & ControlChars.CrLf &
+                                 "13|  |             |  |                                   " & ControlChars.CrLf &
+                                 "14|  |             |  |                                   " & ControlChars.CrLf &
+                                 "15|  |=2*52        |  |                                   " & ControlChars.CrLf &
+                                 "16|  |=B14-B15     |  |                                   " & ControlChars.CrLf &
+                                 "17|  |             |  |                                   " & ControlChars.CrLf &
+                                 "18|  |=B17/5       |  |                                   " & ControlChars.CrLf &
+                                 "19|  |=B18*B16     |  |                                   " & ControlChars.CrLf &
+                                 "20|  |             |  |                                   " & ControlChars.CrLf &
+                                 "21|  |             |  |                                   " & ControlChars.CrLf &
+                                 "22|  |             |  |                                   " & ControlChars.CrLf &
+                                 "23|  |             |  |                                   " & ControlChars.CrLf &
+                                 "24|  |             |  |                                   " & ControlChars.CrLf &
+                                 "25|  |             |  |                                   " & ControlChars.CrLf &
+                                 "26|  |             |  |                                   " & ControlChars.CrLf &
+                                 "27|  |             |  |                                   " & ControlChars.CrLf &
+                                 "28|  |             |  |                                   " & ControlChars.CrLf &
+                                 "29|  |             |  |                                   " & ControlChars.CrLf &
+                                 "30|  |             |  |                                   " & ControlChars.CrLf &
+                                 "31|  |             |  |                                   " & ControlChars.CrLf &
+                                 "32|  |             |  |                                   " & ControlChars.CrLf &
+                                 "33|  |             |  |                                   " & ControlChars.CrLf &
+                                 "34|  |             |  |                                   " & ControlChars.CrLf &
+                                 "35|  |             |  |                                   " & ControlChars.CrLf &
+                                 "36|  |             |  |                                   " & ControlChars.CrLf &
+                                 "37|  |             |  |                                   " & ControlChars.CrLf &
+                                 "38|  |             |  |                                   " & ControlChars.CrLf &
+                                 "39|  |             |  |                                   " & ControlChars.CrLf &
+                                 "40|  |=SUM(B36:B39)|  |                                   " & ControlChars.CrLf
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedResultInCultureContext(ExpectedMatrix))
+                End Sub)
+        End Sub
+
+        <Test> Public Overridable Sub SheetContentMatrix_FormattedText(<Values("en-US", "invariant", "de-DE")> cultureName As String)
+            Dim ExpectedMatrix As String
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
+
+            TestInCultureContext(
+                cultureName,
+                Sub()
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+                    ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
                          "--+----------------------------+---------+---+------+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019     |   |      |False" & ControlChars.CrLf &
@@ -656,9 +718,23 @@ Namespace ExcelOpsTests.Engines
                          "38|Pflegekasse                 |1▲4      |   |      |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
+                    Assert.AreEqual(12.45.ToString, eppeo.LookupCellFormattedText(TestSheet, 40 - 1, 2 - 1))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedResultInCultureContext(ExpectedMatrix))
+                End Sub)
+            System.Console.WriteLine(Console.GetConsoleLog)
+        End Sub
 
-            ExpectedMatrix =
+        <Test> Public Overridable Sub SheetContentMatrix_FormulaOrFormattedText(<Values("invariant", "de-DE")> cultureName As String)
+            Dim ExpectedMatrix As String
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
+
+            TestInCultureContext(
+                cultureName,
+                Sub()
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+                    ExpectedMatrix =
                          "# |A                           |B            |C  |D                                  |E    " & ControlChars.CrLf &
                          "--+----------------------------+-------------+---+-----------------------------------+-----" & ControlChars.CrLf &
                          "1 |Jahr                        |2019         |   |                                   |False" & ControlChars.CrLf &
@@ -701,69 +777,73 @@ Namespace ExcelOpsTests.Engines
                          "38|Pflegekasse                 |1▲4          |   |                                   |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0▲25         |   |                                   |     " & ControlChars.CrLf &
                          "40|                            |=SUM(B36:B39)|   |                                   |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedResultInCultureContext(ExpectedMatrix))
+                End Sub)
         End Sub
 
-        Private Sub SheetContentMatrix(eo As ExcelOps.ExcelDataOperationsBase, sheetName As String, matrixContentType As ExcelOps.ExcelDataOperationsBase.MatrixContent, expectedMatrix As String)
+        Private Sub AssertSheetContentMatrix(eo As ExcelOps.ExcelDataOperationsBase, sheetName As String, matrixContentType As ExcelOps.ExcelDataOperationsBase.MatrixContent, expectedMatrix As String)
             Dim MatrixContentName As String = matrixContentType.ToString
             Dim SheetData As TextTable = eo.SheetContentMatrix(sheetName, matrixContentType)
             SheetData.AutoTrim()
-            Console.WriteLine("## Table " & eo.EngineName & " - " & MatrixContentName)
+            Console.WriteLine("## Table " & eo.EngineName & " - " & MatrixContentName & " - " & System.Threading.Thread.CurrentThread.CurrentCulture.Name)
             Console.WriteLine(SheetData.ToUIExcelTable)
             Console.WriteLine("## /Table")
             Assert.AreEqual(expectedMatrix, SheetData.ToUIExcelTable)
         End Sub
 
-        <Test> Public Sub LookupCellValue()
-            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+        <Test> Public Sub LookupCellValue(<Values("invariant", "de-DE")> cultureName As String)
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
             Dim TestSheet As String = "Grunddaten"
 
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            TestInCultureContext(
+                cultureName,
+                Sub()
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
 
-            '## Expected matrix like following
-            '"# |A                           |B              |C  |D                                  |E     
-            '"--+----------------------------+---------------+---+-----------------------------------+----- 
-            '"1 |Jahr                        |2019           |   |                                   |False 
-            '"2 |Geschäftsjahr von           |               |bis|                                   |      
-            '"3 |Aktueller Monat             |1              |   |=INDEX(B23:B34,MATCH(B3,A23:A34,0))|      
-            '"4 |                            |               |   |                                   |      
-            '"5 |Name Betrieb                |Test           |   |                                   |      
-            '"6 |                            |               |   |                                   |      
-            '"7 |Arbeitgeberanteile In %     |               |   |                                   |      
-            '"8 |Chef: 14,09                 |               |   |                                   |      
-            '"9 |Büroangestellte: 20,00      |               |   |                                   |      
-            '"10|Produktivkraft: 25,00       |               |   |                                   |      
-            '"11|Azubi / Aushilfen: 33,00    |               |   |                                   |      
-            '"12|                            |               |   |                                   |      
-            '"13|Berechnung Jahresarbeitszeit|               |   |                                   |      
-            '"14|Tage / Jahr:                |365            |   |                                   |      
-            '"15|Wochenendtage               |=2*52          |   |                                   |      
-            '"16|=Zahltage:                  |=B14-B15       |   |                                   |      
-            '"17|Wochenarbeitszeit           |40             |   |                                   |      
-            '"18|Tagesarbeitszeit:           |=B17/5         |   |                                   |      
-            '"19|Normallohnstunden / Jahr:   |=B18*B16       |   |                                   |      
-            '"20|                            |               |   |                                   |      
-            '"36|Krankenkasse                |2,8            |   |                                   |      
-            '"37|Rentenkasse                 |8              |   |                                   |      
-            '"38|Pflegekasse                 |1,4            |   |                                   |      
-            '"39|Krankengeld                 |0,25           |   |                                   |      
-            '"40|                            |=SUMME(B36:B39)|   |                                   |      
+                    '## Expected matrix like following
+                    '"# |A                           |B              |C  |D                                  |E     
+                    '"--+----------------------------+---------------+---+-----------------------------------+----- 
+                    '"1 |Jahr                        |2019           |   |                                   |False 
+                    '"2 |Geschäftsjahr von           |               |bis|                                   |      
+                    '"3 |Aktueller Monat             |1              |   |=INDEX(B23:B34,MATCH(B3,A23:A34,0))|      
+                    '"4 |                            |               |   |                                   |      
+                    '"5 |Name Betrieb                |Test           |   |                                   |      
+                    '"6 |                            |               |   |                                   |      
+                    '"7 |Arbeitgeberanteile In %     |               |   |                                   |      
+                    '"8 |Chef: 14▲09                 |               |   |                                   |      
+                    '"9 |Büroangestellte: 20▲00      |               |   |                                   |      
+                    '"10|Produktivkraft: 25▲00       |               |   |                                   |      
+                    '"11|Azubi / Aushilfen: 33▲00    |               |   |                                   |      
+                    '"12|                            |               |   |                                   |      
+                    '"13|Berechnung Jahresarbeitszeit|               |   |                                   |      
+                    '"14|Tage / Jahr:                |365            |   |                                   |      
+                    '"15|Wochenendtage               |=2*52          |   |                                   |      
+                    '"16|=Zahltage:                  |=B14-B15       |   |                                   |      
+                    '"17|Wochenarbeitszeit           |40             |   |                                   |      
+                    '"18|Tagesarbeitszeit:           |=B17/5         |   |                                   |      
+                    '"19|Normallohnstunden / Jahr:   |=B18*B16       |   |                                   |      
+                    '"20|                            |               |   |                                   |      
+                    '"36|Krankenkasse                |2▲8            |   |                                   |      
+                    '"37|Rentenkasse                 |8              |   |                                   |      
+                    '"38|Pflegekasse                 |1▲4            |   |                                   |      
+                    '"39|Krankengeld                 |0▲25           |   |                                   |      
+                    '"40|                            |=SUMME(B36:B39)|   |                                   |      
 
-            'D3
-            Assert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-            Assert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-            Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    'D3
+                    Assert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
 
-            'A8
-            Assert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-            Assert.AreEqual("Chef: 14,09", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-            Assert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    'A8
+                    Assert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual(ExpectedResultInCultureContext("Chef: 14▲09"), eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
 
-            'E1
-            Assert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-            Assert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-            Assert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    'E1
+                    Assert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                End Sub)
         End Sub
 
     End Class

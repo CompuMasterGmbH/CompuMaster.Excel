@@ -17,6 +17,10 @@ Namespace ExcelOpsTests.Engines
             Assert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
         End Sub
 
+        Protected Overrides Sub TestInCultureContext_AssignCurrentThreadCulture()
+            MyBase.TestInCultureContext_AssignCurrentThreadCulture()
+        End Sub
+
     End Class
 
 End Namespace
