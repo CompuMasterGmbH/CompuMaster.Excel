@@ -728,7 +728,6 @@ Namespace ExcelOpsTests.Engines
                     Assert.AreEqual(12.45.ToString, eppeo.LookupCellFormattedText(TestSheet, 40 - 1, 2 - 1))
                     Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
-            System.Console.WriteLine(Console.GetConsoleLog)
         End Sub
 
         <Test> Public Overridable Sub SheetContentMatrix_FormulaOrFormattedText(<Values("invariant", "de-DE")> cultureName As String)
