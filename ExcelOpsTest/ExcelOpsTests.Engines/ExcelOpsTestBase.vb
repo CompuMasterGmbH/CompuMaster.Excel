@@ -63,7 +63,7 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         <SetUp>
-        Public Sub Setup()
+        Public Sub CommonSetup()
             Test.Console.ResetConsoleForTestOutput()
         End Sub
 

@@ -79,7 +79,7 @@ Namespace ExcelOpsTests.Engines
                 If MsExcelProcesses.Length <> 1 Then
                     Assert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but 1 excel processes allowed/required")
                 Else
-                    Assert.AreEqual(MsExcelInstance.ProcessId, MsExcelProcesses(0).Id)
+                    Assert.AreEqual(MsExcelInstance.ExcelProcessId, MsExcelProcesses(0).Id)
                 End If
             End If
         End Sub

@@ -26,25 +26,6 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             End Try
         End Function
 
-        Friend Delegate Function WaitUntilTrueConditionTest() As Boolean
-
-        Friend Shared Function WaitUntilTrueOrTimeout(test As WaitUntilTrueConditionTest, maxTimeout As TimeSpan) As Boolean
-            Dim Start As DateTime = Now
-            Do While Now.Subtract(Start) < maxTimeout
-                If test() = True Then
-                    Return True
-                End If
-                If maxTimeout.TotalDays > 0 OrElse maxTimeout.Hours > 0 Then 'prevent exceeded range when calling maxTimeout.TotalMilliseconds
-                    'Check at least twice per second
-                    System.Threading.Thread.Sleep(500)
-                Else
-                    'Check at least 10 times and minimum twice per second
-                    System.Threading.Thread.Sleep(System.Math.Min(CType(maxTimeout.TotalMilliseconds / 10, Integer), 500))
-                End If
-            Loop
-            Return False
-        End Function
-
         ''' <summary>
         ''' Are there any running MS Excel instances on the current system (owned by any user)
         ''' </summary>
@@ -77,29 +58,8 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             End Try
         End Sub
 
-        Public Shared Function IsPlatformSupportingComInterop() As Boolean
-            Select Case System.Environment.OSVersion.Platform
-                Case PlatformID.Win32NT, PlatformID.Win32S, PlatformID.Win32Windows
-                    Return True
-                Case Else
-                    Return False
-            End Select
-        End Function
-
         Public Shared Function IsPlatformSupportingComInteropAndMsExcelAppInstalled() As Boolean
-            If IsPlatformSupportingComInterop() = False Then
-                Return False
-            Else
-                'Windows platform ok - MS Excel installed?
-                Try
-#Disable Warning CA1416
-                    Dim MsExcelType As Type = Type.GetTypeFromProgID("Excel.Application")
-#Enable Warning
-                    Return MsExcelType IsNot Nothing
-                Catch
-                    Return False
-                End Try
-            End If
+            Return CompuMaster.ComInterop.ComTools.IsPlatformSupportingComInteropAndMsExcelAppInstalled("Excel.Application")
         End Function
 
     End Class
