@@ -15,11 +15,12 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' Create a new MS Excel instance within its wrapper instance
         ''' </summary>
         Public Sub New()
-            MyBase.New(CreateMsExcelApplication, Nothing, ExpectedProcessName)
+            MyBase.New(CreateMsExcelApplication, Function(x) x.ComObjectStronglyTyped.Hwnd, ExpectedProcessName)
             Me.ComObjectStronglyTyped.Visible = False
             Me.ComObjectStronglyTyped.Interactive = False
             Me.ComObjectStronglyTyped.ScreenUpdating = False
             Me.ComObjectStronglyTyped.DisplayAlerts = False
+            Me.SetCultureContext(System.Threading.Thread.CurrentThread.CurrentCulture) 'Always set MS Excel culture context to current thread's culture
             Me.Workbooks.CloseAllWorkbooks() 'Close initial empty workbook which is always there after 
         End Sub
 
@@ -44,8 +45,8 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
                     Me.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic 'reset value from manual to automatic (=expected default setting of user in 99% of all situations)
                 Catch
                 End Try
+                Me.ComObjectStronglyTyped.Quit()
             End If
-            Me.ComObjectStronglyTyped.Quit()
             MyBase.OnClosing()
         End Sub
 
@@ -74,6 +75,12 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
                 Return _Workbooks
             End Get
         End Property
+
+        Public Sub SetCultureContext(culture As System.Globalization.CultureInfo)
+            Me.ComObjectStronglyTyped.UseSystemSeparators = (culture Is Nothing) 'True allows customization in lines below, False uses system settings
+            Me.ComObjectStronglyTyped.DecimalSeparator = culture.NumberFormat.NumberDecimalSeparator
+            Me.ComObjectStronglyTyped.ThousandsSeparator = culture.NumberFormat.NumberGroupSeparator
+        End Sub
 
     End Class
 

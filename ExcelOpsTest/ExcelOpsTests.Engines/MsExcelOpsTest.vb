@@ -107,6 +107,11 @@ Namespace ExcelOpsTests.Engines
             MyBase.CopySheetContent()
         End Sub
 
+        Protected Overrides Sub SheetContentMatrix_TestInCultureContext()
+            MsExcelInstance.SetCultureContext(System.Threading.Thread.CurrentThread.CurrentCulture)
+            MyBase.SheetContentMatrix_TestInCultureContext()
+        End Sub
+
     End Class
 
 End Namespace

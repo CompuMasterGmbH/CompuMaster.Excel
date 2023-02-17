@@ -580,7 +580,7 @@ Namespace ExcelOps
                 ElseIf CurrentCell.HasError Then
                     Return CurrentCell.ErrorValue
                 ElseIf CurrentCell.HasFormula Then
-                    Return CType(CurrentCell.FormulaValue, String)
+                    Return CType(CurrentCell.DisplayedText, String)
                 ElseIf CurrentCell.HasBoolean Then
                     Return CType(CurrentCell.BooleanValue, String)
                 ElseIf CurrentCell.IsBlank Then

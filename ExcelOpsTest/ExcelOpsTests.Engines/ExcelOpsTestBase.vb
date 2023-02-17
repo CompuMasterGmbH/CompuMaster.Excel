@@ -449,7 +449,28 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
         End Sub
 
-        <Test> Public Sub SheetContentMatrix()
+        <Test> Public Sub SheetContentMatrix(<Values("invariant", "de-DE")> cultureName As String)
+            Dim OriginCulture = System.Threading.Thread.CurrentThread.CurrentCulture
+            Try
+                Select Case cultureName
+                    Case "invariant"
+                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture
+                    Case Else
+                        System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(cultureName)
+                End Select
+                SheetContentMatrix_TestInCultureContext()
+            Finally
+                System.Threading.Thread.CurrentThread.CurrentCulture = OriginCulture
+            End Try
+        End Sub
+
+        Private Function SheetContentMatrix_ExpectedMatrixInCultureContext(expectedRawMatrix As String) As String
+            Return expectedRawMatrix.
+                Replace("▲", System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator).
+                Replace("▪", System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberGroupSeparator)
+        End Function
+
+        Protected Overridable Sub SheetContentMatrix_TestInCultureContext()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
 
             Dim ExpectedMatrix As String
@@ -468,10 +489,10 @@ Namespace ExcelOpsTests.Engines
                          "5 |Name Betrieb                |Test     |   |      |     " & ControlChars.CrLf &
                          "6 |                            |         |   |      |     " & ControlChars.CrLf &
                          "7 |Arbeitgeberanteile in %     |         |   |      |     " & ControlChars.CrLf &
-                         "8 |Chef: 14,09                 |         |   |      |     " & ControlChars.CrLf &
-                         "9 |Büroangestellte: 20,00      |         |   |      |     " & ControlChars.CrLf &
-                         "10|Produktivkraft: 25,00       |         |   |      |     " & ControlChars.CrLf &
-                         "11|Azubi / Aushilfen: 33,00    |         |   |      |     " & ControlChars.CrLf &
+                         "8 |Chef: 14▲09                 |         |   |      |     " & ControlChars.CrLf &
+                         "9 |Büroangestellte: 20▲00      |         |   |      |     " & ControlChars.CrLf &
+                         "10|Produktivkraft: 25▲00       |         |   |      |     " & ControlChars.CrLf &
+                         "11|Azubi / Aushilfen: 33▲00    |         |   |      |     " & ControlChars.CrLf &
                          "12|                            |         |   |      |     " & ControlChars.CrLf &
                          "13|Berechnung Jahresarbeitszeit|         |   |      |     " & ControlChars.CrLf &
                          "14|Tage / Jahr:                |365      |   |      |     " & ControlChars.CrLf &
@@ -479,7 +500,7 @@ Namespace ExcelOpsTests.Engines
                          "16|=Zahltage:                  |261      |   |      |     " & ControlChars.CrLf &
                          "17|Wochenarbeitszeit           |40       |   |      |     " & ControlChars.CrLf &
                          "18|Tagesarbeitszeit:           |8        |   |      |     " & ControlChars.CrLf &
-                         "19|Normallohnstunden / Jahr:   |2.088,00 |   |      |     " & ControlChars.CrLf &
+                         "19|Normallohnstunden / Jahr:   |2▪088▲00 |   |      |     " & ControlChars.CrLf &
                          "20|                            |         |   |      |     " & ControlChars.CrLf &
                          "21|                            |         |   |      |     " & ControlChars.CrLf &
                          "22|                            |         |   |      |     " & ControlChars.CrLf &
@@ -496,12 +517,12 @@ Namespace ExcelOpsTests.Engines
                          "33|11                          |November |   |      |     " & ControlChars.CrLf &
                          "34|12                          |Dezember |   |      |     " & ControlChars.CrLf &
                          "35|Zusammensetzung AG Anteile  |         |   |      |     " & ControlChars.CrLf &
-                         "36|Krankenkasse                |2,8      |   |      |     " & ControlChars.CrLf &
+                         "36|Krankenkasse                |2▲8      |   |      |     " & ControlChars.CrLf &
                          "37|Rentenkasse                 |8        |   |      |     " & ControlChars.CrLf &
-                         "38|Pflegekasse                 |1,4      |   |      |     " & ControlChars.CrLf &
-                         "39|Krankengeld                 |0,25     |   |      |     " & ControlChars.CrLf &
-                         "40|                            |12,45    |   |      |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedMatrix)
+                         "38|Pflegekasse                 |1▲4      |   |      |     " & ControlChars.CrLf &
+                         "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
+                         "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
+            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
 
             ExpectedMatrix =
                          "# |A                           |B        |C  |D |E    " & ControlChars.CrLf &
@@ -513,10 +534,10 @@ Namespace ExcelOpsTests.Engines
                          "5 |Name Betrieb                |Test     |   |  |     " & ControlChars.CrLf &
                          "6 |                            |         |   |  |     " & ControlChars.CrLf &
                          "7 |Arbeitgeberanteile in %     |         |   |  |     " & ControlChars.CrLf &
-                         "8 |Chef: 14,09                 |         |   |  |     " & ControlChars.CrLf &
-                         "9 |Büroangestellte: 20,00      |         |   |  |     " & ControlChars.CrLf &
-                         "10|Produktivkraft: 25,00       |         |   |  |     " & ControlChars.CrLf &
-                         "11|Azubi / Aushilfen: 33,00    |         |   |  |     " & ControlChars.CrLf &
+                         "8 |Chef: 14▲09                 |         |   |  |     " & ControlChars.CrLf &
+                         "9 |Büroangestellte: 20▲00      |         |   |  |     " & ControlChars.CrLf &
+                         "10|Produktivkraft: 25▲00       |         |   |  |     " & ControlChars.CrLf &
+                         "11|Azubi / Aushilfen: 33▲00    |         |   |  |     " & ControlChars.CrLf &
                          "12|                            |         |   |  |     " & ControlChars.CrLf &
                          "13|Berechnung Jahresarbeitszeit|         |   |  |     " & ControlChars.CrLf &
                          "14|Tage / Jahr:                |365      |   |  |     " & ControlChars.CrLf &
@@ -541,11 +562,11 @@ Namespace ExcelOpsTests.Engines
                          "33|11                          |November |   |  |     " & ControlChars.CrLf &
                          "34|12                          |Dezember |   |  |     " & ControlChars.CrLf &
                          "35|Zusammensetzung AG Anteile  |         |   |  |     " & ControlChars.CrLf &
-                         "36|Krankenkasse                |2,8      |   |  |     " & ControlChars.CrLf &
+                         "36|Krankenkasse                |2▲8      |   |  |     " & ControlChars.CrLf &
                          "37|Rentenkasse                 |8        |   |  |     " & ControlChars.CrLf &
-                         "38|Pflegekasse                 |1,4      |   |  |     " & ControlChars.CrLf &
-                         "39|Krankengeld                 |0,25     |   |  |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedMatrix)
+                         "38|Pflegekasse                 |1▲4      |   |  |     " & ControlChars.CrLf &
+                         "39|Krankengeld                 |0▲25     |   |  |     " & ControlChars.CrLf
+            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
 
             ExpectedMatrix =
                          "# |A |B            |C |D                                  " & ControlChars.CrLf &
@@ -590,7 +611,7 @@ Namespace ExcelOpsTests.Engines
                          "38|  |             |  |                                   " & ControlChars.CrLf &
                          "39|  |             |  |                                   " & ControlChars.CrLf &
                          "40|  |=SUM(B36:B39)|  |                                   " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedMatrix)
+            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
 
             ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
@@ -602,10 +623,10 @@ Namespace ExcelOpsTests.Engines
                          "5 |Name Betrieb                |Test     |   |      |     " & ControlChars.CrLf &
                          "6 |                            |         |   |      |     " & ControlChars.CrLf &
                          "7 |Arbeitgeberanteile in %     |         |   |      |     " & ControlChars.CrLf &
-                         "8 |Chef: 14,09                 |         |   |      |     " & ControlChars.CrLf &
-                         "9 |Büroangestellte: 20,00      |         |   |      |     " & ControlChars.CrLf &
-                         "10|Produktivkraft: 25,00       |         |   |      |     " & ControlChars.CrLf &
-                         "11|Azubi / Aushilfen: 33,00    |         |   |      |     " & ControlChars.CrLf &
+                         "8 |Chef: 14▲09                 |         |   |      |     " & ControlChars.CrLf &
+                         "9 |Büroangestellte: 20▲00      |         |   |      |     " & ControlChars.CrLf &
+                         "10|Produktivkraft: 25▲00       |         |   |      |     " & ControlChars.CrLf &
+                         "11|Azubi / Aushilfen: 33▲00    |         |   |      |     " & ControlChars.CrLf &
                          "12|                            |         |   |      |     " & ControlChars.CrLf &
                          "13|Berechnung Jahresarbeitszeit|         |   |      |     " & ControlChars.CrLf &
                          "14|Tage / Jahr:                |365      |   |      |     " & ControlChars.CrLf &
@@ -613,7 +634,7 @@ Namespace ExcelOpsTests.Engines
                          "16|=Zahltage:                  |261      |   |      |     " & ControlChars.CrLf &
                          "17|Wochenarbeitszeit           |40       |   |      |     " & ControlChars.CrLf &
                          "18|Tagesarbeitszeit:           |8        |   |      |     " & ControlChars.CrLf &
-                         "19|Normallohnstunden / Jahr:   |2.088,00 |   |      |     " & ControlChars.CrLf &
+                         "19|Normallohnstunden / Jahr:   |2▪088▲00 |   |      |     " & ControlChars.CrLf &
                          "20|                            |         |   |      |     " & ControlChars.CrLf &
                          "21|                            |         |   |      |     " & ControlChars.CrLf &
                          "22|                            |         |   |      |     " & ControlChars.CrLf &
@@ -630,12 +651,12 @@ Namespace ExcelOpsTests.Engines
                          "33|11                          |November |   |      |     " & ControlChars.CrLf &
                          "34|12                          |Dezember |   |      |     " & ControlChars.CrLf &
                          "35|Zusammensetzung AG Anteile  |         |   |      |     " & ControlChars.CrLf &
-                         "36|Krankenkasse                |2,8      |   |      |     " & ControlChars.CrLf &
+                         "36|Krankenkasse                |2▲8      |   |      |     " & ControlChars.CrLf &
                          "37|Rentenkasse                 |8        |   |      |     " & ControlChars.CrLf &
-                         "38|Pflegekasse                 |1,4      |   |      |     " & ControlChars.CrLf &
-                         "39|Krankengeld                 |0,25     |   |      |     " & ControlChars.CrLf &
-                         "40|                            |12,45    |   |      |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedMatrix)
+                         "38|Pflegekasse                 |1▲4      |   |      |     " & ControlChars.CrLf &
+                         "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
+                         "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
+            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
 
             ExpectedMatrix =
                          "# |A                           |B            |C  |D                                  |E    " & ControlChars.CrLf &
@@ -647,10 +668,10 @@ Namespace ExcelOpsTests.Engines
                          "5 |Name Betrieb                |Test         |   |                                   |     " & ControlChars.CrLf &
                          "6 |                            |             |   |                                   |     " & ControlChars.CrLf &
                          "7 |Arbeitgeberanteile in %     |             |   |                                   |     " & ControlChars.CrLf &
-                         "8 |Chef: 14,09                 |             |   |                                   |     " & ControlChars.CrLf &
-                         "9 |Büroangestellte: 20,00      |             |   |                                   |     " & ControlChars.CrLf &
-                         "10|Produktivkraft: 25,00       |             |   |                                   |     " & ControlChars.CrLf &
-                         "11|Azubi / Aushilfen: 33,00    |             |   |                                   |     " & ControlChars.CrLf &
+                         "8 |Chef: 14▲09                 |             |   |                                   |     " & ControlChars.CrLf &
+                         "9 |Büroangestellte: 20▲00      |             |   |                                   |     " & ControlChars.CrLf &
+                         "10|Produktivkraft: 25▲00       |             |   |                                   |     " & ControlChars.CrLf &
+                         "11|Azubi / Aushilfen: 33▲00    |             |   |                                   |     " & ControlChars.CrLf &
                          "12|                            |             |   |                                   |     " & ControlChars.CrLf &
                          "13|Berechnung Jahresarbeitszeit|             |   |                                   |     " & ControlChars.CrLf &
                          "14|Tage / Jahr:                |365          |   |                                   |     " & ControlChars.CrLf &
@@ -675,22 +696,22 @@ Namespace ExcelOpsTests.Engines
                          "33|11                          |November     |   |                                   |     " & ControlChars.CrLf &
                          "34|12                          |Dezember     |   |                                   |     " & ControlChars.CrLf &
                          "35|Zusammensetzung AG Anteile  |             |   |                                   |     " & ControlChars.CrLf &
-                         "36|Krankenkasse                |2,8          |   |                                   |     " & ControlChars.CrLf &
+                         "36|Krankenkasse                |2▲8          |   |                                   |     " & ControlChars.CrLf &
                          "37|Rentenkasse                 |8            |   |                                   |     " & ControlChars.CrLf &
-                         "38|Pflegekasse                 |1,4          |   |                                   |     " & ControlChars.CrLf &
-                         "39|Krankengeld                 |0,25         |   |                                   |     " & ControlChars.CrLf &
+                         "38|Pflegekasse                 |1▲4          |   |                                   |     " & ControlChars.CrLf &
+                         "39|Krankengeld                 |0▲25         |   |                                   |     " & ControlChars.CrLf &
                          "40|                            |=SUM(B36:B39)|   |                                   |     " & ControlChars.CrLf
-            Me.SheetContentMatrix(eppeo, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedMatrix)
+            Me.SheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, SheetContentMatrix_ExpectedMatrixInCultureContext(ExpectedMatrix))
         End Sub
 
-        Private Sub SheetContentMatrix(eo As ExcelOps.ExcelDataOperationsBase, matrixContentType As ExcelOps.ExcelDataOperationsBase.MatrixContent, expectedMatrix As String)
+        Private Sub SheetContentMatrix(eo As ExcelOps.ExcelDataOperationsBase, sheetName As String, matrixContentType As ExcelOps.ExcelDataOperationsBase.MatrixContent, expectedMatrix As String)
             Dim MatrixContentName As String = matrixContentType.ToString
-            Dim Grunddaten As TextTable = eo.SheetContentMatrix("Grunddaten", matrixContentType)
-            Grunddaten.AutoTrim()
+            Dim SheetData As TextTable = eo.SheetContentMatrix(sheetName, matrixContentType)
+            SheetData.AutoTrim()
             Console.WriteLine("## Table " & eo.EngineName & " - " & MatrixContentName)
-            Console.WriteLine(Grunddaten.ToUIExcelTable)
+            Console.WriteLine(SheetData.ToUIExcelTable)
             Console.WriteLine("## /Table")
-            Assert.AreEqual(expectedMatrix, Grunddaten.ToUIExcelTable)
+            Assert.AreEqual(expectedMatrix, SheetData.ToUIExcelTable)
         End Sub
 
         <Test> Public Sub LookupCellValue()
