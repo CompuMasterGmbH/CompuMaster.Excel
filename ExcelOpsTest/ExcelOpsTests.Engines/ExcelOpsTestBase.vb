@@ -444,7 +444,6 @@ Namespace ExcelOpsTests.Engines
             If System.Environment.OSVersion.Platform <> PlatformID.Win32NT Then Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
 #End If
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
-            Dim mseo As ExcelOps.ExcelDataOperationsBase
 
             Dim ExpectedMatrix As String
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
