@@ -65,6 +65,8 @@ Namespace ExcelOpsTests.Engines
                 Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing))
             Catch ex As PlatformNotSupportedException
                 Assert.Ignore("Platform not supported: " & ex.Message)
+            Catch ex As CompuMaster.ComInterop.ComApplicationNotAvailableException
+                Assert.Ignore("Platform supports COM, but requested COM application not installed: " & ex.Message)
             Catch ex As System.Runtime.InteropServices.COMException
                 Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
             End Try
