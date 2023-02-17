@@ -495,10 +495,11 @@ Namespace ExcelOpsTests.Engines
         Protected Const PlaceHolderDecimalSeparator As String = "▲"c
         Protected Const PlaceHolderGroupSeparator As String = "▪"c
 
-        Private Function ExpectedResultInCultureContext(expectedRawMatrix As String) As String
+        Private Function ExpectedResultInCultureContextAndPlateformLineBreakEncoding(expectedRawMatrix As String) As String
             Return expectedRawMatrix.
                 Replace(PlaceHolderDecimalSeparator, System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator).
-                Replace(PlaceHolderGroupSeparator, System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberGroupSeparator)
+                Replace(PlaceHolderGroupSeparator, System.Threading.Thread.CurrentThread.CurrentCulture.NumberFormat.NumberGroupSeparator).
+                Replace(ControlChars.CrLf, System.Environment.NewLine)
         End Function
 
         <Test> Public Overridable Sub SheetContentMatrix_StaticOrCalculatedValues(<Values("invariant", "de-DE")> cultureName As String)
@@ -554,7 +555,7 @@ Namespace ExcelOpsTests.Engines
                          "38|Pflegekasse                 |1▲4      |   |      |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
-                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedResultInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticOrCalculatedValues, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
         End Sub
 
@@ -610,7 +611,7 @@ Namespace ExcelOpsTests.Engines
                                  "37|Rentenkasse                 |8        |   |  |     " & ControlChars.CrLf &
                                  "38|Pflegekasse                 |1▲4      |   |  |     " & ControlChars.CrLf &
                                  "39|Krankengeld                 |0▲25     |   |  |     " & ControlChars.CrLf
-                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedResultInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.StaticValues, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
         End Sub
 
@@ -667,7 +668,7 @@ Namespace ExcelOpsTests.Engines
                                  "38|  |             |  |                                   " & ControlChars.CrLf &
                                  "39|  |             |  |                                   " & ControlChars.CrLf &
                                  "40|  |=SUM(B36:B39)|  |                                   " & ControlChars.CrLf
-                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedResultInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.Formulas, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
         End Sub
 
@@ -725,7 +726,7 @@ Namespace ExcelOpsTests.Engines
                          "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
                     Assert.AreEqual(12.45.ToString, eppeo.LookupCellFormattedText(TestSheet, 40 - 1, 2 - 1))
-                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedResultInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
             System.Console.WriteLine(Console.GetConsoleLog)
         End Sub
@@ -783,7 +784,7 @@ Namespace ExcelOpsTests.Engines
                          "38|Pflegekasse                 |1▲4          |   |                                   |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0▲25         |   |                                   |     " & ControlChars.CrLf &
                          "40|                            |=SUM(B36:B39)|   |                                   |     " & ControlChars.CrLf
-                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedResultInCultureContext(ExpectedMatrix))
+                    Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
         End Sub
 
@@ -842,7 +843,7 @@ Namespace ExcelOpsTests.Engines
 
                     'A8
                     Assert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual(ExpectedResultInCultureContext("Chef: 14▲09"), eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual(ExpectedResultInCultureContextAndPlateformLineBreakEncoding("Chef: 14▲09"), eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
                     Assert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'E1
