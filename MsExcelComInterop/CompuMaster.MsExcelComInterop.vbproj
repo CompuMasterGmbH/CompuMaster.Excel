@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.14" />
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.15" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>
