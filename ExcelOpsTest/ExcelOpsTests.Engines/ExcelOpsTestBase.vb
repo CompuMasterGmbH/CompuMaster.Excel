@@ -17,10 +17,14 @@ Namespace ExcelOpsTests.Engines
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
+                ElseIf ex.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
+                    Throw
                 Else
                     Dim InnerEx As Exception = ex.InnerException
                     Do While InnerEx IsNot Nothing
                         If InnerEx.GetType() Is GetType(PlatformNotSupportedException) Then
+                            Throw InnerEx
+                        ElseIf InnerEx.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
                             Throw InnerEx
                         Else
                             InnerEx = InnerEx.InnerException
@@ -37,10 +41,14 @@ Namespace ExcelOpsTests.Engines
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
+                ElseIf ex.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
+                    Throw
                 Else
                     Dim InnerEx As Exception = ex.InnerException
                     Do While InnerEx IsNot Nothing
                         If InnerEx.GetType() Is GetType(PlatformNotSupportedException) Then
+                            Throw InnerEx
+                        ElseIf InnerEx.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
                             Throw InnerEx
                         Else
                             InnerEx = InnerEx.InnerException
@@ -440,9 +448,6 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         <Test> Public Sub SheetContentMatrix()
-#If CI_CD Then
-            If System.Environment.OSVersion.Platform <> PlatformID.Win32NT Then Throw New IgnoreException("MS Excel not supported on Non-Windows platforms")
-#End If
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
 
             Dim ExpectedMatrix As String

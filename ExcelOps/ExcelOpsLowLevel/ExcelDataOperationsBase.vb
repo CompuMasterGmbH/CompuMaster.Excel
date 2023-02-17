@@ -810,7 +810,7 @@ Namespace ExcelOps
                         Case MatrixContent.Errors
                             Result.Cell(MyRowCounter, MyColCounter) = Me.LookupCellErrorValue(sheetName, MyRowCounter, MyColCounter)
                         Case Else
-                            Throw New NotImplementedException
+                            Throw New NotImplementedException(contentType.ToString)
                     End Select
                 Next
             Next
