@@ -5,6 +5,9 @@ Option Explicit On
 'TODO: BACKPORT: ExcelCell.LocalAddress -> Public!
 'TODO: BACKPORT: ExcelRange.LocalAddress 
 
+'NOTE:    THIS FILE IS UPDATED IN DIRECTORY ExcelOps-FreeSpireXls FIRST AND COPIED TO ExcelOps-SpireXls AFTERWARDS
+'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
+
 Imports System.Data
 Imports System.ComponentModel
 Imports Spire.Xls
