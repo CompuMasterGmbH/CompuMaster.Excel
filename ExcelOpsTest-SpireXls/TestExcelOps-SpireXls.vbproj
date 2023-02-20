@@ -49,9 +49,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ExcelOpsTest\TestExcelOps.vbproj" />
-    <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />
     <ProjectReference Include="..\ExcelOps-SpireXls\ExcelOps-SpireXls.vbproj" />
-    <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
   </ItemGroup>
 
