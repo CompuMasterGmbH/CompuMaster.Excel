@@ -41,7 +41,7 @@ Namespace ExcelOps
                 Throw New NotSupportedException("Spire.Xls version not supported (validation of license failed)")
             End If
             Dim Dict As IDictionary
-            Dict = CType(GetType(Spire.License.LicenseProvider).InvokeMember(MemberName, System.Reflection.BindingFlags.GetField Or System.Reflection.BindingFlags.Static Or System.Reflection.BindingFlags.NonPublic, Nothing, Nothing, Nothing), IDictionary)
+            Dict = CompuMaster.Reflection.NonPublicStaticMembers.InvokeFieldGet(Of IDictionary)(GetType(Spire.License.LicenseProvider), MemberName)
             Return Dict IsNot Nothing AndAlso Dict.Count > 0
         End Function
 
