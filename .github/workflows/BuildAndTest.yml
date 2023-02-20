@@ -67,12 +67,12 @@ jobs:
               shell: pwsh
               run: |
                 "TEST"
-                "dir"
+                dir
 
             - name: Perform a Pester test from the Tests.ps1 file
               shell: pwsh
               run: |
-                "must-fail"
+                must-fail
           
             - name: Setup .NET Core
               uses: actions/setup-dotnet@v1
