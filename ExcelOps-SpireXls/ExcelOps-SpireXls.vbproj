@@ -4,7 +4,7 @@
     <RootNamespace>CompuMaster.Excel</RootNamespace>
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
-    <AssemblyName>CompuMaster.Excel.FreeSpireXls</AssemblyName>
+    <AssemblyName>CompuMaster.Excel.SpireXls</AssemblyName>
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
