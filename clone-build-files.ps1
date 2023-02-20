@@ -23,6 +23,16 @@ copy-item ExcelOpsTest/Console.vb ExcelOpsTest-SpireXls/
 
 "TASK 2: INCLUDE LATEST LOGIC FROM FreeSpireXls edition into SpireXls edition"
 
-(gc ExcelOps-FreeSpireXls/FreeSpireXlsDataOperations.SharedCode.vb) -replace 'Partial Public Class FreeSpireXlsDataOperations', 'Partial Public Class SpireXlsDataOperations' | Out-File -encoding UTF8 ExcelOps-SpireXls/SpireXlsDataOperations.SharedCode.vb
+$SourceCode = (gc ExcelOps-FreeSpireXls/FreeSpireXlsDataOperations.SharedCode.vb) -replace 'Partial Public Class FreeSpireXlsDataOperations', 'Partial Public Class SpireXlsDataOperations' 
+if ($PSVersionTable.PSVersion.Major -ge 7) 
+{ 
+    # "pwsh" -> force encoding UTF8BOM
+    $SourceCode | Out-File -encoding UTF8BOM ExcelOps-SpireXls/SpireXlsDataOperations.SharedCode.vb
+} 
+else 
+{ 
+    # "powershell" -> UTF8BOM not supported, but BOM added by default for UTF8
+    $SourceCode | Out-File -encoding UTF8 ExcelOps-SpireXls/SpireXlsDataOperations.SharedCode.vb
+}
 
 "TASKS COMPLETED."
