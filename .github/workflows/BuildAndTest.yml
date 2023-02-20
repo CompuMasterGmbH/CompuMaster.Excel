@@ -63,16 +63,9 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v2
 
-            - name: Perform a Pester test from the Tests.ps1 file
+            - name: Clone code+test files for subsequent projects
               shell: pwsh
-              run: |
-                "TEST"
-                dir
-
-            - name: Perform a Pester test from the Tests.ps1 file
-              shell: pwsh
-              run: |
-                must-fail
+              run: clone-build-files.ps1
           
             - name: Setup .NET Core
               uses: actions/setup-dotnet@v1
