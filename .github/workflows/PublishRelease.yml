@@ -33,6 +33,7 @@ env:
   BUILD_PROJECT_08: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT_09: CM.Data.EpplusFixCalcsEdition/CM.Data.EpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT_10: CM.Data.EpplusPolyformEdition/CM.Data.EpplusPolyformEdition.vbproj
+  BUILD_PROJECT_11: ExcelOps-SpireXls/ExcelOps-SpireXls.vbproj
   # Name of directory (e.g. "bin") containing the subdirectory (e.g. "CI_CD") with all output files (*.dll)
   BUILD_OUTPUT_BASEDIR_01: MsExcelComInterop/bin
   BUILD_OUTPUT_BASEDIR_02: Epplus-FixCalcsEdition/Epplus/bin
@@ -44,6 +45,7 @@ env:
   BUILD_OUTPUT_BASEDIR_08: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition/bin
   BUILD_OUTPUT_BASEDIR_09: CM.Data.EpplusFixCalcsEdition/bin
   BUILD_OUTPUT_BASEDIR_10: CM.Data.EpplusPolyformEdition/bin
+  BUILD_OUTPUT_BASEDIR_11: ExcelOps-SpireXls/bin
   # Name of project
   PROJECT_NAME_01: CM.MsExcelComInterop
   PROJECT_NAME_02: CM.Epplus4-FixCalcsEdition
@@ -55,6 +57,7 @@ env:
   PROJECT_NAME_08: ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition
   PROJECT_NAME_09: CM.Data.EpplusFixCalcsEdition
   PROJECT_NAME_10: CM.Data.EpplusPolyformEdition
+  PROJECT_NAME_11: ExcelOps-SpireXls
   # BinariesZipName of project artifacts
   ARTIFACTS_BIN_ZIP_01: bin-CM.MsExcelComInterop.zip
   ARTIFACTS_BIN_ZIP_02: bin-CM.Epplus4.zip
@@ -66,6 +69,7 @@ env:
   ARTIFACTS_BIN_ZIP_08: bin-CM.Excel.ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.zip
   ARTIFACTS_BIN_ZIP_09: bin-CM.Data.EpplusFixCalcsEdition.zip
   ARTIFACTS_BIN_ZIP_10: bin-CM.Data.EpplusPolyformEdition.zip
+  ARTIFACTS_BIN_ZIP_11: bin-CM.Excel.ExcelOps-SpireXls.zip
 
 
 jobs:
@@ -110,23 +114,26 @@ jobs:
             - name: Zip binaries ${{env.PROJECT_NAME_04}}
               run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_04}} ${{env.BUILD_OUTPUT_BASEDIR_04}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
-            - name: Zip binaries ${{env.PROJECT_NAME_05}}
-              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_05}} ${{env.BUILD_OUTPUT_BASEDIR_05}}/${{env.BUILD_OUTPUT_SUBDIR}}
+            #- name: Zip binaries ${{env.PROJECT_NAME_05}}
+            #  run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_05}} ${{env.BUILD_OUTPUT_BASEDIR_05}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
-            - name: Zip binaries ${{env.PROJECT_NAME_06}}
-              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_06}} ${{env.BUILD_OUTPUT_BASEDIR_06}}/${{env.BUILD_OUTPUT_SUBDIR}}
+            #- name: Zip binaries ${{env.PROJECT_NAME_06}}
+            #  run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_06}} ${{env.BUILD_OUTPUT_BASEDIR_06}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
             - name: Zip binaries ${{env.PROJECT_NAME_07}}
               run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_07}} ${{env.BUILD_OUTPUT_BASEDIR_07}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
-            - name: Zip binaries ${{env.PROJECT_NAME_08}}
-              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_08}} ${{env.BUILD_OUTPUT_BASEDIR_08}}/${{env.BUILD_OUTPUT_SUBDIR}}
+            #- name: Zip binaries ${{env.PROJECT_NAME_08}}
+            #  run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_08}} ${{env.BUILD_OUTPUT_BASEDIR_08}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
             - name: Zip binaries ${{env.PROJECT_NAME_09}}
               run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_09}} ${{env.BUILD_OUTPUT_BASEDIR_09}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
-            - name: Zip binaries ${{env.PROJECT_NAME_10}}
-              run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_10}} ${{env.BUILD_OUTPUT_BASEDIR_10}}/${{env.BUILD_OUTPUT_SUBDIR}}
+            #- name: Zip binaries ${{env.PROJECT_NAME_10}}
+            #  run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_10}} ${{env.BUILD_OUTPUT_BASEDIR_10}}/${{env.BUILD_OUTPUT_SUBDIR}}
+
+            #- name: Zip binaries ${{env.PROJECT_NAME_11}}
+            #  run: Compress-Archive -DestinationPath ${{env.ARTIFACTS_BIN_ZIP_11}} ${{env.BUILD_OUTPUT_BASEDIR_11}}/${{env.BUILD_OUTPUT_SUBDIR}}
 
             - name: Publish zipped binaries ${{env.PROJECT_NAME_01}}
               uses: softprops/action-gh-release@v1
@@ -156,19 +163,19 @@ jobs:
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Publish zipped binaries ${{env.PROJECT_NAME_05}}
-              uses: softprops/action-gh-release@v1
-              with:
-                files: ${{env.ARTIFACTS_BIN_ZIP_05}}
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            #- name: Publish zipped binaries ${{env.PROJECT_NAME_05}}
+            #  uses: softprops/action-gh-release@v1
+            #  with:
+            #    files: ${{env.ARTIFACTS_BIN_ZIP_05}}
+            #  env:
+            #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Publish zipped binaries ${{env.PROJECT_NAME_06}}
-              uses: softprops/action-gh-release@v1
-              with:
-                files: ${{env.ARTIFACTS_BIN_ZIP_06}}
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            #- name: Publish zipped binaries ${{env.PROJECT_NAME_06}}
+            #  uses: softprops/action-gh-release@v1
+            #  with:
+            #    files: ${{env.ARTIFACTS_BIN_ZIP_06}}
+            #  env:
+            #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Publish zipped binaries ${{env.PROJECT_NAME_07}}
               uses: softprops/action-gh-release@v1
@@ -177,12 +184,12 @@ jobs:
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Publish zipped binaries ${{env.PROJECT_NAME_08}}
-              uses: softprops/action-gh-release@v1
-              with:
-                files: ${{env.ARTIFACTS_BIN_ZIP_08}}
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            #- name: Publish zipped binaries ${{env.PROJECT_NAME_08}}
+            #  uses: softprops/action-gh-release@v1
+            #  with:
+            #    files: ${{env.ARTIFACTS_BIN_ZIP_08}}
+            #  env:
+            #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Publish zipped binaries ${{env.PROJECT_NAME_09}}
               uses: softprops/action-gh-release@v1
@@ -191,12 +198,19 @@ jobs:
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Publish zipped binaries ${{env.PROJECT_NAME_10}}
-              uses: softprops/action-gh-release@v1
-              with:
-                files: ${{env.ARTIFACTS_BIN_ZIP_10}}
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            #- name: Publish zipped binaries ${{env.PROJECT_NAME_10}}
+            #  uses: softprops/action-gh-release@v1
+            #  with:
+            #    files: ${{env.ARTIFACTS_BIN_ZIP_10}}
+            #  env:
+            #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            #- name: Publish zipped binaries ${{env.PROJECT_NAME_11}}
+            #  uses: softprops/action-gh-release@v1
+            #  with:
+            #    files: ${{env.ARTIFACTS_BIN_ZIP_11}}
+            #  env:
+            #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Pack ${{env.PROJECT_NAME_01}}
               run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT_01}} --output .  
@@ -228,7 +242,10 @@ jobs:
             - name: Pack ${{env.PROJECT_NAME_10}}
               run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT_10}} --output .  
 
-            - name: PushNuget ${{env.PROJECT_NAME_01}} + ${{env.PROJECT_NAME_02}} + ${{env.PROJECT_NAME_03}} + ${{env.PROJECT_NAME_04}} + ${{env.PROJECT_NAME_05}} + ${{env.PROJECT_NAME_06}} + ${{env.PROJECT_NAME_07}} + ${{env.PROJECT_NAME_08}} + ${{env.PROJECT_NAME_09}} + ${{env.PROJECT_NAME_10}}
+            - name: Pack ${{env.PROJECT_NAME_11}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT_11}} --output .  
+
+            - name: PushNuget ${{env.PROJECT_NAME_01}} + ${{env.PROJECT_NAME_02}} + ${{env.PROJECT_NAME_03}} + ${{env.PROJECT_NAME_04}} + ${{env.PROJECT_NAME_05}} + ${{env.PROJECT_NAME_06}} + ${{env.PROJECT_NAME_07}} + ${{env.PROJECT_NAME_08}} + ${{env.PROJECT_NAME_09}} + ${{env.PROJECT_NAME_10}} + ${{env.PROJECT_NAME_11}}
               run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate 
 
             - name: Publish Package Artifacts
