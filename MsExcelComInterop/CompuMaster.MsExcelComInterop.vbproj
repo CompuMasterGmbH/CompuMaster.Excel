@@ -10,6 +10,7 @@
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <Copyright>2023 CompuMaster GmbH</Copyright>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Control MS Excel via COM but without dependency to any Microsoft Interop assemblies</Description>
   </PropertyGroup>
 
   <ItemGroup>
