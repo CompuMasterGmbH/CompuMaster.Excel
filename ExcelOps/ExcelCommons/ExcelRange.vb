@@ -28,9 +28,22 @@
             Me.New(singleCell, singleCell)
         End Sub
 
+        ''' <summary>
+        ''' First cell of range
+        ''' </summary>
+        ''' <returns></returns>
         Public Property AddressStart As ExcelCell
+
+        ''' <summary>
+        ''' Last cell of range
+        ''' </summary>
+        ''' <returns></returns>
         Public Property AddressEnd As ExcelCell
 
+        ''' <summary>
+        ''' Name of sheet
+        ''' </summary>
+        ''' <returns></returns>
         Public Property SheetName As String
             Get
                 Return Me.AddressStart.SheetName
@@ -49,28 +62,61 @@
             Return Me.ToString(False)
         End Function
 
+        ''' <summary>
+        ''' An address like "Sheetname!A1:B2"
+        ''' </summary>
+        ''' <returns></returns>
+        Public Function FullAddress() As String
+            Return Me.ToString(True)
+        End Function
+
+        ''' <summary>
+        ''' A string representation of the address like "Sheetname!A1:B2"
+        ''' </summary>
+        ''' <returns></returns>
         Public Overrides Function ToString() As String
             Return Me.ToString(True)
         End Function
 
+        ''' <summary>
+        ''' A string representation of the address
+        ''' </summary>
+        ''' <param name="inclusiveSheetName"></param>
+        ''' <returns></returns>
         Public Overloads Function ToString(inclusiveSheetName As Boolean) As String
             Return Me.AddressStart.ToString(inclusiveSheetName) & ":" & Me.AddressEnd.ToString(False)
         End Function
 
+        ''' <summary>
+        ''' Number of cells in range
+        ''' </summary>
+        ''' <returns></returns>
         Public Function CellCount() As Integer
             Dim Cols As Integer = Me.AddressEnd.ColumnIndex - Me.AddressStart.ColumnIndex + 1
             Dim Rows As Integer = Me.AddressEnd.RowIndex - Me.AddressStart.RowIndex + 1
             Return Cols * Rows
         End Function
 
+        ''' <summary>
+        ''' An enumerator for a cells in this range
+        ''' </summary>
+        ''' <returns></returns>
         Public Function GetEnumerator() As IEnumerator(Of ExcelCell) Implements IEnumerable(Of ExcelCell).GetEnumerator
             Return New ExcelRangeEnum(Me.AddressStart, Me.AddressEnd)
         End Function
 
+        ''' <summary>
+        ''' An independent clone of this ExcelRange
+        ''' </summary>
+        ''' <returns></returns>
         Private Function ICloneable_Clone() As Object Implements ICloneable.Clone
             Return New ExcelRange(Me.AddressStart.Clone, Me.AddressEnd.Clone)
         End Function
 
+        ''' <summary>
+        ''' An independent clone of this ExcelRange
+        ''' </summary>
+        ''' <returns></returns>
         Public Function Clone() As ExcelRange
             Return New ExcelRange(Me.AddressStart.Clone, Me.AddressEnd.Clone)
         End Function
@@ -86,10 +132,17 @@
             Return Result
         End Function
 
+        ''' <summary>
+        ''' An enumerator for a cells in this range
+        ''' </summary>
+        ''' <returns></returns>
         Private Function IEnumerable_GetEnumerator() As IEnumerator Implements IEnumerable.GetEnumerator
             Return New ExcelRangeEnum(Me.AddressStart, Me.AddressEnd)
         End Function
 
+        ''' <summary>
+        ''' An enumerator for a cells in this range
+        ''' </summary>
         Public Class ExcelRangeEnum
             Implements IEnumerator(Of ExcelCell)
 
