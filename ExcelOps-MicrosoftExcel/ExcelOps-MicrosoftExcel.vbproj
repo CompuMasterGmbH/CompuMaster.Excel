@@ -42,7 +42,7 @@ for proper Microsoft Excel licensing, please contact Microsoft</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.15" />
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.17" />
   </ItemGroup>
 
   <ItemGroup>
