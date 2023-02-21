@@ -167,10 +167,10 @@ Namespace DataTests
             Assert.AreEqual("A2", TextTable.CellAddress(1, 0))
             Assert.AreEqual("B1", TextTable.CellAddress(0, 1))
             Assert.AreEqual("B2", TextTable.CellAddress(1, 1))
-            Assert.AreEqual("A1", ExcelOps.ExcelCell.Address(0, 0))
-            Assert.AreEqual("A2", ExcelOps.ExcelCell.Address(1, 0))
-            Assert.AreEqual("B1", ExcelOps.ExcelCell.Address(0, 1))
-            Assert.AreEqual("B2", ExcelOps.ExcelCell.Address(1, 1))
+            Assert.AreEqual("A1", ExcelOps.ExcelCell.LocalCellAddress(0, 0))
+            Assert.AreEqual("A2", ExcelOps.ExcelCell.LocalCellAddress(1, 0))
+            Assert.AreEqual("B1", ExcelOps.ExcelCell.LocalCellAddress(0, 1))
+            Assert.AreEqual("B2", ExcelOps.ExcelCell.LocalCellAddress(1, 1))
         End Sub
 
         <Test> Public Sub CompareCells()
