@@ -6,6 +6,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     ''' <summary>
     ''' An MS Excel wrapper for safe COM object handling and release
     ''' </summary>
+    ''' <remarks>
+    ''' For proper Microsoft Excel licensing, please contact Microsoft.
+    ''' </remarks>
     Public Class MsExcelApplicationWrapper
         Inherits CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
 
