@@ -3,6 +3,12 @@ Option Strict On
 
 Namespace ExcelOps
 
+    ''' <summary>
+    ''' Tools for fixing issues of workbooks between Epplus and Microsoft Excel
+    ''' </summary>
+    ''' <remarks>
+    ''' PLEASE NOTE: Considerations for server-side Automation of Office https://support.microsoft.com/en-us/topic/considerations-for-server-side-automation-of-office-48bcfe93-8a89-47f1-0bce-017433ad79e2
+    ''' </remarks>
     Public NotInheritable Class MsVsEpplusTools
 
         ''' <summary>

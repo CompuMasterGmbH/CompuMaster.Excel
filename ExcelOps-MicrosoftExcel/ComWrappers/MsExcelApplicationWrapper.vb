@@ -8,6 +8,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     ''' </summary>
     ''' <remarks>
     ''' For proper Microsoft Excel licensing, please contact Microsoft.
+    ''' PLEASE NOTE: Considerations for server-side Automation of Office https://support.microsoft.com/en-us/topic/considerations-for-server-side-automation-of-office-48bcfe93-8a89-47f1-0bce-017433ad79e2
     ''' </remarks>
     Public Class MsExcelApplicationWrapper
         Inherits CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
