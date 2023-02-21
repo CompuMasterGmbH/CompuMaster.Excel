@@ -4,6 +4,13 @@ Option Explicit On
 Imports System.ComponentModel
 
 Namespace ExcelOps
+
+    ''' <summary>
+    ''' An Excel operations engine based on Spire.Xls
+    ''' </summary>
+    ''' <remarks>
+    ''' Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/ 
+    ''' </remarks>
     Public Class SpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
@@ -14,6 +21,7 @@ Namespace ExcelOps
         ''' <param name="mode"></param>
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
+        ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
@@ -22,6 +30,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
+        ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
         Public Sub New()
             Me.New(Nothing)
         End Sub
@@ -30,6 +39,7 @@ Namespace ExcelOps
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime"></param>
+        ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")

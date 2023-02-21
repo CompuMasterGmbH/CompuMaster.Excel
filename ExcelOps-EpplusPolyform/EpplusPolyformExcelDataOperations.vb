@@ -8,6 +8,13 @@ Imports OfficeOpenXml.FormulaParsing
 Imports OfficeOpenXml.FormulaParsing.Logging
 
 Namespace ExcelOps
+
+    ''' <summary>
+    ''' An Excel operations engine based on Epplus with its Polyform license
+    ''' </summary>
+    ''' <remarks>
+    ''' Correct licensing required, see <see cref="LicenseContext"/> and https://www.epplussoftware.com/en/LicenseOverview
+    ''' </remarks>
     Public Class EpplusPolyformExcelDataOperations
         Inherits ExcelDataOperationsBase
 

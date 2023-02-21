@@ -9,16 +9,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
     ''' <summary>
     ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
     ''' </summary>
-    ''' <remarks>Use with pattern
-    ''' <code>
-    ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
-    ''' Try
-    '''    '...
-    ''' Finally
-    '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-    '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
-    ''' End Try
-    ''' </code>
+    ''' <remarks>
+    ''' For proper Microsoft Excel licensing, please contact Microsoft.
     ''' </remarks>
     Public Class MsExcelDataOperations
         Inherits ExcelDataOperationsBase

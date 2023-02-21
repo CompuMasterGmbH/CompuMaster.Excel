@@ -9,6 +9,12 @@ Imports CompuMaster.Epplus4.FormulaParsing.Logging
 
 Namespace ExcelOps
 
+    ''' <summary>
+    ''' An Excel operations engine based on Epplus 4 with its LGPL license
+    ''' </summary>
+    ''' <remarks>
+    ''' For licensing issues of origin Epplus 4 project, please see https://github.com/JanKallman/EPPlus
+    ''' </remarks>
     Public Class EpplusFreeExcelDataOperations
         Inherits ExcelDataOperationsBase
 

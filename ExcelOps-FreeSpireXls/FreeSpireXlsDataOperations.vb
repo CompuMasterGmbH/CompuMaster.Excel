@@ -9,6 +9,14 @@ Imports Spire.Xls.Charts
 Imports Spire
 
 Namespace ExcelOps
+
+    ''' <summary>
+    ''' An Excel operations engine based on FreeSpire.Xls
+    ''' </summary>
+    ''' <remarks>
+    ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+    ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+    ''' </remarks>
     Public Class FreeSpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
@@ -19,6 +27,10 @@ Namespace ExcelOps
         ''' <param name="mode"></param>
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
+        ''' <remarks>
+        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+        ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
         End Sub
@@ -26,6 +38,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
+        ''' <remarks>
+        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+        ''' </remarks>
         Public Sub New()
             Me.New(Nothing)
         End Sub
@@ -34,6 +50,10 @@ Namespace ExcelOps
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime"></param>
+        ''' <remarks>
+        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+        ''' </remarks>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
         End Sub
