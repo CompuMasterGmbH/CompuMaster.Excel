@@ -11,28 +11,6 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     Public NotInheritable Class MsExcelTools
 
         ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
-        ''' </summary>
-        ''' <remarks>Use with pattern
-        ''' <code>
-        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
-        ''' Try
-        '''    '...
-        ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
-        ''' End Try
-        ''' </code>
-        ''' </remarks>
-        Friend Shared Function CreateMsExcelAppInstance() As MsExcelApplicationWrapper
-            Try
-                Return New MsExcelApplicationWrapper
-            Catch ex As Exception
-                Throw New PlatformNotSupportedException("App and installed MS Office must both 64 bit or both 32 bit processed")
-            End Try
-        End Function
-
-        ''' <summary>
         ''' Are there any running MS Excel instances on the current system (owned by any user)
         ''' </summary>
         ''' <returns></returns>
