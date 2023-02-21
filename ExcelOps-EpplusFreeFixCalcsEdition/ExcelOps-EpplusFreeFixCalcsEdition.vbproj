@@ -9,6 +9,9 @@
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OptionStrict>On</OptionStrict>
+    <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>

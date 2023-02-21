@@ -4,10 +4,12 @@
     <RootNamespace>CompuMaster.Excel.MsExcelComInterop</RootNamespace>
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Title>CompuMaster.Excel.MsExcelComInterop</Title>
-    <OptionStrict>On</OptionStrict>
     <ImportedNamespaces>CompuMaster.ComInterop=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,CompuMaster.MsExcelComInterop=True</ImportedNamespaces>
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <OptionStrict>On</OptionStrict>
+    <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <Copyright>2023 CompuMaster GmbH</Copyright>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Control MS Excel via COM but without dependency to any Microsoft Interop assemblies</Description>

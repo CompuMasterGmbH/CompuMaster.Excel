@@ -8,6 +8,8 @@
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <OptionStrict>On</OptionStrict>
+    <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Based on Microsoft.Office.Interop.Excel v15</Description>
   </PropertyGroup>

@@ -2,15 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
     <RootNamespace>CompuMaster.Excel.MsExcelComInteropTest</RootNamespace>
-
     <Title>CompuMaster.Excel.MsExcelComInteropTest</Title>
-
     <OptionStrict>On</OptionStrict>
-
     <Configurations>Debug;Release;CI_CD</Configurations>
   </PropertyGroup>
 

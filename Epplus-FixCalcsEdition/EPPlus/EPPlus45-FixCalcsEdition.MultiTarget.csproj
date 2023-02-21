@@ -11,7 +11,8 @@
     <Description>EPPlus CompuMaster FixMsCalcs-Edition, fork of EPPlus 4.5.3.3 with features for calculation cache reset</Description>
     <AssemblyName>CompuMaster.EPPlus4</AssemblyName>
     <RootNamespace>EpplusFreeOfficeOpenXml</RootNamespace>
-    <RepositoryUrl></RepositoryUrl>
+    <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageTags>Excel Epplus</PackageTags>
     <Copyright>Jan Källman 2020, CompuMaster GmbH 2021-2023</Copyright>
     <PackageReleaseNotes>

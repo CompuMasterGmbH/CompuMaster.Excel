@@ -4,12 +4,14 @@
     <RootNamespace>CompuMaster.Excel</RootNamespace>
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Copyright>2005-2023 CompuMaster GmbH</Copyright>
-    <OptionStrict>On</OptionStrict>
     <AssemblyName>CompuMaster.Excel.ExcelOps</AssemblyName>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>logo_64x64.png</PackageIcon>
     <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OptionStrict>On</OptionStrict>
+    <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
