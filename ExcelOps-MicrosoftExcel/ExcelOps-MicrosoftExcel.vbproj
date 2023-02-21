@@ -47,19 +47,4 @@ for proper Microsoft Excel licensing, please contact Microsoft</Description>
     <PackageReference Include="CompuMaster.ComInterop" Version="1.0.17" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="libs-NonWindowsPlatforms\Microsoft.Bcl.AsyncInterfaces.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs-NonWindowsPlatforms\Microsoft.Office.Interop.Excel.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs-NonWindowsPlatforms\Microsoft.Vbe.Interop.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs-NonWindowsPlatforms\OFFICE.DLL">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
