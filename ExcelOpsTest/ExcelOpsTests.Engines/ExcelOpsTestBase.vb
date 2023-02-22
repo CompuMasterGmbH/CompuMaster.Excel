@@ -91,7 +91,9 @@ Namespace ExcelOpsTests.Engines
 
         <TearDown>
         Public Sub CommonTearDown()
+            'Dispose/Finalize/Release COM objects
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
+            'Show test details on failure (only)
             If TestContext.CurrentContext.Result.Outcome = NUnit.Framework.Interfaces.ResultState.Failure Then
                 Dim Log As String = Test.Console.GetConsoleLog
                 System.Console.WriteLine(Log)
