@@ -16,6 +16,7 @@
   <ItemGroup>
     <None Remove="test_data\ExcelOpsGrund01.xlsx" />
     <None Remove="test_data\ExcelOpsGrund02.xlsx" />
+    <None Remove="test_data\ExcelOpsMergedCells.xlsx" />
     <None Remove="test_data\ExcelOpsTestCollection.xlsx" />
     <None Remove="test_data\VbaProject.xlsm" />
   </ItemGroup>
@@ -25,6 +26,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="test_data\ExcelOpsGrund02.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelOpsMergedCells.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="test_data\ExcelOpsTestCollection.xlsx">

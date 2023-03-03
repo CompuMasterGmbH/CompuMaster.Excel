@@ -1349,6 +1349,40 @@ Namespace ExcelOps
             Me.Workbook.RemoveVBAProject()
         End Sub
 
+        Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
+            Return Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Merge
+        End Function
+
+        Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+            Me.Workbook.Worksheets(sheetName).Cells(IsMergedCellOfRange(sheetName, rowIndex, columnIndex)).Merge = False
+        End Sub
+
+        Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
+            Me.Workbook.Worksheets(sheetName).Cells(fromRowIndex + 1, fromColumnIndex + 1, toRowIndex + 1, toColumnIndex + 1).Merge = True
+        End Sub
+
+        Public Function IsMergedCellOfRange(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
+            Return Me.Workbook.Worksheets(sheetName).MergedCells(Me.Workbook.Worksheets(sheetName).GetMergeCellId(rowIndex + 1, columnIndex + 1) - 1)
+        End Function
+
+        Public Overrides Sub AutoFitColumns(sheetName As String)
+            Me.Workbook.Worksheets(sheetName).Cells.AutoFitColumns()
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
+            Me.Workbook.Worksheets(sheetName).Cells.AutoFitColumns(minimumWidth)
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
+            Me.Workbook.Worksheets(sheetName).Column(columnIndex + 1).AutoFit()
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
+            Me.Workbook.Worksheets(sheetName).Column(columnIndex + 1).AutoFit(minimumWidth)
+        End Sub
+
         Public Overrides ReadOnly Property HasVbaProject As Boolean
             Get
                 Return Me.Workbook.VbaProject IsNot Nothing

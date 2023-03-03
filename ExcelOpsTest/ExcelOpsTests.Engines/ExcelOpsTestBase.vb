@@ -358,6 +358,45 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
         End Sub
 
+        <Test> Public Sub IsMergedCell()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Const SheetName As String = "MergedCellsTest"
+            Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
+            Assert.True(eppeo.IsMergedCell(SheetName, 1, 0))
+            Assert.True(eppeo.IsMergedCell(SheetName, 0, 1))
+            Assert.True(eppeo.IsMergedCell(SheetName, 2, 0))
+            Assert.True(eppeo.IsMergedCell(SheetName, 0, 2))
+            Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
+            Assert.False(eppeo.IsMergedCell(SheetName, 3, 0))
+            Assert.False(eppeo.IsMergedCell(SheetName, 0, 3))
+        End Sub
+
+        <Test> Public Sub MergeAndUnMergedCell()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Const SheetName As String = "MergedCellsTest"
+            Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
+            Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
+            eppeo.UnMergeCells(SheetName, 1, 1)
+            Assert.False(eppeo.IsMergedCell(SheetName, 0, 0))
+            Assert.False(eppeo.IsMergedCell(SheetName, 2, 2))
+            eppeo.MergeCells(SheetName, 0, 0, 2, 2)
+            Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
+            Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
+        End Sub
+
+        <Test> Public Sub AutoFitColumns()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Const SheetName As String = "MergedCellsTest"
+            eppeo.AutoFitColumns(SheetName, 0)
+            eppeo.AutoFitColumns(SheetName)
+        End Sub
+
         <Test> Public Sub SheetNames()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
@@ -463,10 +502,38 @@ Namespace ExcelOpsTests.Engines
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
 
             Dim LastCellFound As ExcelOps.ExcelCell
+            LastCellFound = eppeo.LookupLastCell(TestSheet)
+            Assert.AreEqual("E40", LastCellFound.Address)
+            Assert.AreEqual(41, LastCellFound.RowIndex)
+            Assert.AreEqual(6, LastCellFound.ColumnIndex)
+
+            TestControllingToolFileName = TestFiles.TestFileMergedCells.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            TestSheet = "MergedCellsTest"
+            LastCellFound = eppeo.LookupLastCell(TestSheet)
+            Assert.AreEqual(2, LastCellFound.RowIndex)
+            Assert.AreEqual(2, LastCellFound.ColumnIndex)
+        End Sub
+
+        <Test> Public Sub LookupLastContentCellAddress()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
+            Dim TestSheet As String = "Grunddaten"
+
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+            Dim LastCellFound As ExcelOps.ExcelCell
             LastCellFound = eppeo.LookupLastContentCell(TestSheet)
             Assert.AreEqual("E40", LastCellFound.Address)
-            Assert.AreEqual(eppeo.LookupLastContentRowIndex(TestSheet), LastCellFound.RowIndex)
-            Assert.AreEqual(eppeo.LookupLastContentColumnIndex(TestSheet), LastCellFound.ColumnIndex)
+            Assert.AreEqual(41, eppeo.LookupLastContentRowIndex(TestSheet))
+            Assert.AreEqual(6, eppeo.LookupLastContentColumnIndex(TestSheet))
+
+            TestControllingToolFileName = TestFiles.TestFileMergedCells.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            TestSheet = "MergedCellsTest"
+            LastCellFound = eppeo.LookupLastCell(TestSheet)
+            Assert.AreEqual(2, eppeo.LookupLastContentRowIndex(TestSheet))
+            Assert.AreEqual(2, eppeo.LookupLastContentColumnIndex(TestSheet))
         End Sub
 
         Protected Delegate Sub TestInCultureContextAction()

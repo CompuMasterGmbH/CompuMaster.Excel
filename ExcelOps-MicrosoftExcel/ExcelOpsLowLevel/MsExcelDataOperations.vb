@@ -1051,6 +1051,34 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.Saved = PreservedIsSavedState
         End Sub
 
+        Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
+            Throw New NotImplementedException()
+        End Function
+
+        Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+            Throw New NotImplementedException()
+        End Sub
+
+        Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
+            Throw New NotImplementedException()
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String)
+            Throw New NotImplementedException()
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
+            Throw New NotImplementedException()
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
+            Throw New NotImplementedException()
+        End Sub
+
+        Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
+            Throw New NotImplementedException()
+        End Sub
+
     End Class
 
 End Namespace

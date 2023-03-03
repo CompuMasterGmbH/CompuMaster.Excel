@@ -14,6 +14,13 @@ Public NotInheritable Class TestFiles
         End Get
     End Property
 
+    Public Shared ReadOnly Property TestFileMergedCells As System.IO.FileInfo
+        Get
+            Return New System.IO.FileInfo(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsMergedCells.xlsx"))
+        End Get
+    End Property
+
+
     Public Shared ReadOnly Property TestFileGrund01 As System.IO.FileInfo
         Get
             Return New System.IO.FileInfo(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx"))

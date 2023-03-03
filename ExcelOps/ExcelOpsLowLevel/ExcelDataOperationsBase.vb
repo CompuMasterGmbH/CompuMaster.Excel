@@ -1162,5 +1162,31 @@ Namespace ExcelOps
 
         Public MustOverride Sub RemoveVbaProject()
 
+        Public MustOverride Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
+
+        Public Function IsMergedCell(cell As ExcelCell) As Boolean
+            Return IsMergedCell(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
+        End Function
+
+        Public MustOverride Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+
+        Public Sub UnMergeCell(cell As ExcelCell)
+            UnMergeCells(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
+        End Sub
+
+        Public MustOverride Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
+
+        Public Sub MergeCells(sheetName As String, cells As ExcelRange)
+            Me.MergeCells(sheetName, cells.AddressStart.RowIndex, cells.AddressStart.ColumnIndex, cells.AddressEnd.RowIndex, cells.AddressEnd.ColumnIndex)
+        End Sub
+
+        Public MustOverride Sub AutoFitColumns(sheetName As String)
+
+        Public MustOverride Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
+
+        Public MustOverride Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
+
+        Public MustOverride Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
+
     End Class
 End Namespace
