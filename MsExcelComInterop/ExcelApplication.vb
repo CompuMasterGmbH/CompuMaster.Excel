@@ -58,6 +58,37 @@ Public Class ExcelApplication
         End Set
     End Property
 
+    ''' <summary>
+    ''' https://learn.microsoft.com/de-de/office/vba/api/office.msoautomationsecurity
+    ''' </summary>
+    Public Enum MsoAutomationSecurity As Integer
+        ''' <summary>
+        ''' Uses the security setting specified in the Security dialog box.
+        ''' </summary>
+        msoAutomationSecurityByUI = 2
+        ''' <summary>
+        ''' Disables all macros in all files opened programmatically without showing any security alerts.
+        ''' </summary>
+        msoAutomationSecurityForceDisable = 3
+        ''' <summary>
+        ''' Enables all macros. This is the default value when the application is started.
+        ''' </summary>
+        msoAutomationSecurityLow = 1
+    End Enum
+
+    ''' <summary>
+    ''' Configure security level for macros/VBA
+    ''' </summary>
+    ''' <returns></returns>
+    Public Property AutomationSecurity As MsoAutomationSecurity
+        Get
+            Return CType(InvokePropertyGet(Of Integer)("AutomationSecurity"), MsoAutomationSecurity)
+        End Get
+        Set(value As MsoAutomationSecurity)
+            InvokePropertySet("AutomationSecurity", CType(value, Integer))
+        End Set
+    End Property
+
     Public Function Dialogs(type As Enumerations.XlBuiltInDialog) As ExcelDialog
         Return New ExcelDialog(Me, InvokePropertyGet(Of Object)("Dialogs", CType(type, Integer)))
     End Function
