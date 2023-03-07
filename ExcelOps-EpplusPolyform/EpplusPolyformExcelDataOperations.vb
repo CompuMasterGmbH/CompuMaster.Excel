@@ -52,6 +52,35 @@ Namespace ExcelOps
             ValidateLicenseContext(Me)
         End Sub
 
+        Public Overrides ReadOnly Property EngineName As String
+            Get
+                Return "Epplus (Polyform license edition)"
+            End Get
+        End Property
+
+        Private Const FULL_CALC_ON_LOAD As Boolean = True
+
+        Private _WorkbookPackage As OfficeOpenXml.ExcelPackage
+        Public ReadOnly Property WorkbookPackage As OfficeOpenXml.ExcelPackage
+            Get
+                ValidateLicenseContext(Me)
+                If Me._WorkbookPackage Is Nothing Then
+                    Throw New InvalidOperationException("Workbook has already been closed")
+                End If
+                Return Me._WorkbookPackage
+            End Get
+        End Property
+
+        Public ReadOnly Property Workbook As OfficeOpenXml.ExcelWorkbook
+            Get
+                ValidateLicenseContext(Me)
+                If Me._WorkbookPackage Is Nothing Then
+                    Throw New InvalidOperationException("Workbook has already been closed")
+                End If
+                Return Me._WorkbookPackage.Workbook
+            End Get
+        End Property
+
         'Public ReadOnly Property DrawingsCount As Integer
         '    Get
         '        Return Me.Workbook.Worksheets

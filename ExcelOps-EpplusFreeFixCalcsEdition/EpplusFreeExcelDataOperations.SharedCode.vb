@@ -16,25 +16,6 @@ Namespace ExcelOps
     Partial Public Class EpplusFreeExcelDataOperations
         Inherits ExcelDataOperationsBase
 
-        Private _WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
-        Public ReadOnly Property WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
-            Get
-                If Me._WorkbookPackage Is Nothing Then
-                    Throw New InvalidOperationException("Workbook has already been closed")
-                End If
-                Return Me._WorkbookPackage
-            End Get
-        End Property
-
-        Public ReadOnly Property Workbook As CompuMaster.Epplus4.ExcelWorkbook
-            Get
-                If Me._WorkbookPackage Is Nothing Then
-                    Throw New InvalidOperationException("Workbook has already been closed")
-                End If
-                Return Me._WorkbookPackage.Workbook
-            End Get
-        End Property
-
         Public Overrides Sub Close()
             If Me.IsClosed = False Then Me._WorkbookPackage.Dispose()
             Me._WorkbookPackage = Nothing
@@ -509,7 +490,7 @@ Namespace ExcelOps
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = False 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Me.Workbook.FullCalcOnLoad = FULL_CALC_ON_LOAD 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
             Me.Workbook.Worksheets.Add("Sheet1")
         End Sub
 
@@ -522,7 +503,7 @@ Namespace ExcelOps
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = False 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Me.Workbook.FullCalcOnLoad = FULL_CALC_ON_LOAD 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
         End Sub
 
         ''' <summary>
@@ -1011,12 +992,6 @@ Namespace ExcelOps
                     Me.Workbook.CalcMode = ExcelCalcMode.Manual
                 End If
             End Set
-        End Property
-
-        Public Overrides ReadOnly Property EngineName As String
-            Get
-                Return "Epplus 4 (LGPL)"
-            End Get
         End Property
 
         Public Overrides Function IsProtectedSheet(sheetName As String) As Boolean
