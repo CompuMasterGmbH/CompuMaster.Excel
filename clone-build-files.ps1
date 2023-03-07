@@ -23,6 +23,7 @@ copy-item ExcelOpsTest/Console.vb ExcelOpsTest-SpireXls/
 
 "TASK 2: INCLUDE LATEST LOGIC FROM FreeSpireXls edition into SpireXls edition"
 
+# clone files FreeSpireXls => SpireXls
 $SourceCode = (gc ExcelOps-FreeSpireXls/FreeSpireXlsDataOperations.SharedCode.vb) -replace 'Partial Public Class FreeSpireXlsDataOperations', 'Partial Public Class SpireXlsDataOperations' 
 if ($PSVersionTable.PSVersion.Major -ge 7) 
 { 
@@ -34,5 +35,34 @@ else
     # "powershell" -> UTF8BOM not supported, but BOM added by default for UTF8
     $SourceCode | Out-File -encoding UTF8 ExcelOps-SpireXls/SpireXlsDataOperations.SharedCode.vb
 }
+
+"TASK 3: INCLUDE LATEST LOGIC FROM XlsEpplusFixCalcsEdition edition into XlsEpplusPolyformEdition edition"
+
+# clone files XlsEpplusFixCalcsEdition => XlsEpplusPolyformEdition
+$SourceCode = (gc CM.Data.EpplusFixCalcsEdition/XlsEpplusFixCalcsEdition.vb) -replace 'Public Class XlsEpplusFixCalcsEdition', 'Public Class XlsEpplusPolyformEdition' -replace 'CompuMaster.Epplus4', 'OfficeOpenXml'
+if ($PSVersionTable.PSVersion.Major -ge 7) 
+{ 
+    # "pwsh" -> force encoding UTF8BOM
+    $SourceCode | Out-File -encoding UTF8BOM CM.Data.EpplusPolyformEdition/XlsEpplusPolyformEdition.vb
+} 
+else 
+{ 
+    # "powershell" -> UTF8BOM not supported, but BOM added by default for UTF8
+    $SourceCode | Out-File -encoding UTF8 CM.Data.EpplusPolyformEdition/XlsEpplusPolyformEdition.vb
+}
+
+# clong unit test files
+$SourceCode = (gc ExcelOpsTest/Data/CmDataXlsEpplusFixCalcsEditionTest.vb) -replace 'Public Class CmDataXlsEpplusFixCalcsEditionTest', 'Public Class CmDataXlsEpplusPolyformEditionTest' -replace 'XlsEpplusFixCalcsEdition', 'XlsEpplusPolyformEdition'
+if ($PSVersionTable.PSVersion.Major -ge 7) 
+{ 
+    # "pwsh" -> force encoding UTF8BOM
+    $SourceCode | Out-File -encoding UTF8BOM ExcelOpsTest/Data/CmDataXlsEpplusPolyformEditionTest.vb
+} 
+else 
+{ 
+    # "powershell" -> UTF8BOM not supported, but BOM added by default for UTF8
+    $SourceCode | Out-File -encoding UTF8 ExcelOpsTest/Data/CmDataXlsEpplusPolyformEditionTest.vb
+}
+
 
 "TASKS COMPLETED."

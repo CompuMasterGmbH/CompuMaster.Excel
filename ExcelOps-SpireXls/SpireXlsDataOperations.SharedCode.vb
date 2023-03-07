@@ -1,11 +1,8 @@
 ﻿Option Strict On
 Option Explicit On
 
-'TODO: FIX ExcelCell.LocalCellAddress(x,y) -> ExcelCell.LocalCellAddress(x-1,y-1)
-'TODO: BACKPORT: ExcelCell.LocalAddress -> Public!
-'TODO: BACKPORT: ExcelRange.LocalAddress 
-
 'NOTE:    THIS FILE IS UPDATED IN DIRECTORY ExcelOps-FreeSpireXls FIRST AND COPIED TO ExcelOps-SpireXls AFTERWARDS
+'SEE:     clone-build-files.cmd/.sh/.ps1
 'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
 
 Imports System.Data

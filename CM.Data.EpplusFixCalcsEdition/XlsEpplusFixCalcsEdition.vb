@@ -1,5 +1,9 @@
-Option Explicit On 
+﻿Option Explicit On
 Option Strict On
+
+'NOTE:    THIS FILE IS UPDATED IN DIRECTORY CM.Data.EpplusFixCalcsEdition FIRST AND COPIED TO CM.Data.EpplusPolyformEdition AFTERWARDS
+'SEE:     clone-build-files.cmd/.sh/.ps1
+'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
 
 Imports System.Data
 Imports System.Linq
@@ -260,8 +264,15 @@ Namespace CompuMaster.Data
             'Some parameter validation, first
             If dataTables Is Nothing Then
                 Return Nothing
-            ElseIf specialSheet = XlsEpplusFixCalcsEdition.SpecialSheet.AsDefinedInSheetNamesCollection AndAlso (sheetnames Is Nothing OrElse dataTables.Length <> sheetnames.Length) Then
-                Throw New ArgumentException("Arrays must have the same length", "sheetNames")
+            ElseIf specialSheet = SpecialSheet.AsDefinedInSheetNamesCollection AndAlso (sheetnames Is Nothing OrElse dataTables.Length <> sheetnames.Length) Then
+                Throw New ArgumentException("Arrays must have the same length", NameOf(sheetnames))
+            Else
+                Select Case specialSheet
+                    Case SpecialSheet.CurrentSheet, SpecialSheet.FirstSheet
+                        If dataTables.Length <> 1 Then
+                            Throw New ArgumentException("Tables array must contain exactly 1 item for sheet mode FirstSheet or CurrentSheet", NameOf(dataTables))
+                        End If
+                End Select
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -277,9 +288,14 @@ Namespace CompuMaster.Data
                 Dim dataTable As DataTable = dataTables(MyDataTableCounter)
                 Dim sheetName As String
                 Select Case specialSheet
-                    Case XlsEpplusFixCalcsEdition.SpecialSheet.CurrentSheet
-                        sheetName = exportWorkbook.Workbook.Worksheets(exportWorkbook.Workbook.View.ActiveTab).Name
-                    Case XlsEpplusFixCalcsEdition.SpecialSheet.FirstSheet
+                    Case SpecialSheet.CurrentSheet
+                        If exportWorkbook.Workbook.Worksheets.Count = 0 Then
+                            exportWorkbook.Workbook.Worksheets.Add(dataTable.TableName)
+                            sheetName = dataTable.TableName
+                        Else
+                            sheetName = exportWorkbook.Workbook.Worksheets(exportWorkbook.Workbook.View.ActiveTab).Name
+                        End If
+                    Case SpecialSheet.FirstSheet
                         If exportWorkbook.Workbook.Worksheets.Count > 0 Then
                             sheetName = exportWorkbook.Workbook.Worksheets(0).Name
                         Else
@@ -295,20 +311,10 @@ Namespace CompuMaster.Data
                 If SheetIndex = -1 Then
                     Dim sheet As CompuMaster.Epplus4.ExcelWorksheet
                     sheet = exportWorkbook.Workbook.Worksheets.Add(sheetName)
-                    SheetIndex = sheet.Index - 1
-                    If inputPath = Nothing AndAlso MyDataTableCounter = 0 Then
-                        'If new file, then select the new sheet "Data" instead of the empty one (only when creating the very first table)
-                        'The workbook is a new one
-                        'Sheet might contain a first sheet name at position 1 which is not our new sheet
-                        If MyDataTableCounter = 0 AndAlso exportWorkbook.Workbook.Worksheets.Count = 2 AndAlso SheetIndex = 1 Then
-                            'At position 0 is an empty sheet which should be deleted
-                            exportWorkbook.Workbook.Worksheets.Delete(1)
-                            SheetIndex -= 1
-                        End If
-                    End If
+                    SheetIndex = sheet.Index
                 End If
 
-                Dim WorkSheet As CompuMaster.Epplus4.ExcelWorksheet = exportWorkbook.Workbook.Worksheets(SheetIndex + 1) 'CType(exportWorkbook.Workbook.Worksheets(SheetIndex), EpplusFreeOfficeOpenXml.ExcelWorksheet)
+                Dim WorkSheet As CompuMaster.Epplus4.ExcelWorksheet = exportWorkbook.Workbook.Worksheets(SheetIndex) 'CType(exportWorkbook.Workbook.Worksheets(SheetIndex), EpplusFreeOfficeOpenXml.ExcelWorksheet)
                 'WorkSheet.Cells(1, 1).LoadFromDataTable(dataTable, True)
 
                 'Paste the column headers
@@ -320,7 +326,7 @@ Namespace CompuMaster.Data
                     WorkSheet.Cells(1, ColCounter + 1).Style.Border.Bottom.Color.SetColor(System.Drawing.Color.FromArgb(0, 0, 0))
                 Next
 
-                'Fehlerwert R�ckgabe von FEHLER.TYP 
+                'Fehlerwert Rückgabe von FEHLER.TYP 
                 '#NULL! 1 
                 '#DIV/0! 2  --> NaN
                 '#VALUE! 3 
@@ -517,7 +523,7 @@ Namespace CompuMaster.Data
 
             Dim Result As New DataSet
 
-            For sheetCounter As Integer = 1 To importWorkbook.Workbook.Worksheets.Count
+            For sheetCounter As Integer = 0 To importWorkbook.Workbook.Worksheets.Count - 1
                 Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
 
                 'Detect the column types which must be used
@@ -892,7 +898,7 @@ Namespace CompuMaster.Data
 
             Dim Result As New ArrayList
 
-            For sheetCounter As Integer = 1 To importWorkbook.Workbook.Worksheets.Count
+            For sheetCounter As Integer = 0 To importWorkbook.Workbook.Worksheets.Count - 1
                 Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
                 Result.Add(Sheet.Name)
             Next
