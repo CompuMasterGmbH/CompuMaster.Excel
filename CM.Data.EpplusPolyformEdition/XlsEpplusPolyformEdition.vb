@@ -406,12 +406,17 @@ Namespace CompuMaster.Data
                 Next
 
                 ' Auto size all worksheet columns which contain data
-                For MyCounter As Integer = 1 To WorkSheet.Dimension.End.Column
-                    WorkSheet.Column(MyCounter).AutoFit(0.5)
-                Next
-                'For MyCounter As Integer = 1 To WorkSheet.Dimension.End.Row
-                '    WorkSheet.Row(MyCounter).AutoFit()
-                'Next
+                Try
+                    For MyCounter As Integer = 1 To WorkSheet.Dimension.End.Column
+                        WorkSheet.Column(MyCounter).AutoFit(0.5)
+                    Next
+                    'For MyCounter As Integer = 1 To WorkSheet.Dimension.End.Row
+                    '    WorkSheet.Row(MyCounter).AutoFit()
+                    'Next
+                Catch ex As PlatformNotSupportedException
+                    'System.Drawing.Common is not supported on platform
+                    'just ignore AutoFit feature
+                End Try
             Next
 
             Return exportWorkbook

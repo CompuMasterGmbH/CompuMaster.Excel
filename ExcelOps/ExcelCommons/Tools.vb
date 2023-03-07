@@ -4,6 +4,49 @@ Option Strict On
 Namespace ExcelOps
     Public NotInheritable Class Tools
 
+        Public Enum CellAddressCombineMode As Byte
+            LeftUpperCorner = 0
+            RightLowerCorner = 1
+        End Enum
+
+        ''' <summary>
+        ''' Find the corner cell of 2 cells
+        ''' </summary>
+        ''' <param name="cell1"></param>
+        ''' <param name="cell2"></param>
+        ''' <param name="mode"></param>
+        ''' <returns></returns>
+        Public Shared Function CombineCellAddresses(cell1 As ExcelCell, cell2 As ExcelCell, mode As CellAddressCombineMode) As ExcelCell
+            If cell1.SheetName <> cell2.SheetName Then Throw New ArgumentException("Cell must be member of the same sheet as cell1", NameOf(cell2))
+            Select Case mode
+                Case CellAddressCombineMode.LeftUpperCorner
+                    Return New ExcelCell(cell1.SheetName, System.Math.Min(cell1.RowIndex, cell2.RowIndex), System.Math.Min(cell1.ColumnIndex, cell2.ColumnIndex), ExcelCell.ValueTypes.All)
+                Case CellAddressCombineMode.RightLowerCorner
+                    Return New ExcelCell(cell1.SheetName, System.Math.Max(cell1.RowIndex, cell2.RowIndex), System.Math.Max(cell1.ColumnIndex, cell2.ColumnIndex), ExcelCell.ValueTypes.All)
+                Case Else
+                    Throw New NotImplementedException
+            End Select
+        End Function
+
+        ''' <summary>
+        ''' Resolve range addresses (e.g. "A1:C3" or "A1") to cell addresses (e.g. "A1" or "C3")
+        ''' </summary>
+        ''' <param name="range">Range address (e.g. "A1:C3" or "A1")</param>
+        ''' <param name="index">0 for 1st cell address, 1 for 2nd cell address</param>
+        ''' <returns>Cell address (e.g. "A1" or "C3")</returns>
+        Public Shared Function LookupCellAddresFromRange(range As String, index As Integer) As String
+            Dim Cells As String() = range.Split(":"c)
+            If Cells.Length = 0 OrElse Cells.Length > 2 Then Throw New ArgumentException("Invalid range", NameOf(range))
+            Select Case index
+                Case 0
+                    Return Cells(0)
+                Case 1
+                    Return Cells(If(Cells.Length = 2, 1, 0))
+                Case Else
+                    Throw New ArgumentOutOfRangeException(NameOf(index))
+            End Select
+        End Function
+
         Public Shared Function ReplaceWholeValue(value As String, searchValue As String, replacementValue As String) As String
             If value = searchValue Then
                 Return replacementValue

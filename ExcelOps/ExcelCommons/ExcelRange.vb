@@ -29,6 +29,18 @@
         End Sub
 
         ''' <summary>
+        ''' Create a range from an address string
+        ''' </summary>
+        ''' <param name="sheetName"></param>
+        ''' <param name="range"></param>
+        Public Sub New(sheetName As String, range As String)
+            Me.New(
+                New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 0), ExcelCell.ValueTypes.All),
+                New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 1), ExcelCell.ValueTypes.All)
+                )
+        End Sub
+
+        ''' <summary>
         ''' First cell of range
         ''' </summary>
         ''' <returns></returns>
