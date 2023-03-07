@@ -388,13 +388,29 @@ Namespace ExcelOpsTests.Engines
             Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
         End Sub
 
+        <Test> Public Sub MergedCells()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Dim SheetName As String = "MergedCellsTest"
+            Assert.AreEqual("A1:C3", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
+
+            TestControllingToolFileName = TestFiles.TestFileGrund01.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            SheetName = "Grunddaten"
+            Assert.AreEqual("", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
+        End Sub
+
         <Test> Public Sub AutoFitColumns()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
             Const SheetName As String = "MergedCellsTest"
             Try
+                Assert.AreEqual(2, eppeo.LookupLastCell(SheetName).ColumnIndex)
+                eppeo.AutoFitColumns(SheetName, 0, 250.0)
                 eppeo.AutoFitColumns(SheetName, 0)
+                eppeo.AutoFitColumns(SheetName, 80.0)
                 eppeo.AutoFitColumns(SheetName)
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
@@ -506,22 +522,11 @@ Namespace ExcelOpsTests.Engines
             Dim TestSheet As String = "Grunddaten"
 
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-            Select Case eppeo.GetType
-                Case GetType(MsExcelDataOperations)
-                    'for some unknown reasons, MS Excel behaves differently - but it's the origin!
-                    '-> accept issue for now
-                    Assert.AreEqual("G40", eppeo.LookupLastCell(TestSheet).Address)
-                    Assert.AreEqual(39, eppeo.LookupLastRowIndex(TestSheet))
-                    Assert.AreEqual(6, eppeo.LookupLastColumnIndex(TestSheet))
-                Case Else
-                    'for some unknown reasons, all other providers seem to be more correct than MS Excel which behaves differently 
-                    '-> accept issue for now
-                    Assert.AreEqual("E40", eppeo.LookupLastCell(TestSheet).Address)
-                    Assert.AreEqual(39, eppeo.LookupLastRowIndex(TestSheet))
-                    Assert.AreEqual(4, eppeo.LookupLastColumnIndex(TestSheet))
-            End Select
+            Assert.AreEqual("E40", eppeo.LookupLastCell(TestSheet).Address)
+            Assert.AreEqual(39, eppeo.LookupLastRowIndex(TestSheet))
+            Assert.AreEqual(4, eppeo.LookupLastColumnIndex(TestSheet))
 
-            eppeo.WriteCellValue(Of String)(New ExcelCell(TestSheet, "J50", ExcelCell.ValueTypes.All), "")
+            eppeo.WriteCellValue(Of String)(New ExcelCell(TestSheet, "J50", ExcelCell.ValueTypes.All), "Content! :-)")
             Assert.AreEqual("J50", eppeo.LookupLastCell(TestSheet).Address)
             Assert.AreEqual(49, eppeo.LookupLastRowIndex(TestSheet))
             Assert.AreEqual(9, eppeo.LookupLastColumnIndex(TestSheet))

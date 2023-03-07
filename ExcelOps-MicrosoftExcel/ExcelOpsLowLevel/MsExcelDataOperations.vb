@@ -3,6 +3,7 @@ Option Strict On
 
 Imports MsExcel = Microsoft.Office.Interop.Excel
 Imports CompuMaster.Excel.MsExcelCom
+Imports Microsoft.Office.Interop.Excel
 
 Namespace Global.CompuMaster.Excel.ExcelOps
 
@@ -588,75 +589,62 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentColumnIndex(sheetName As String) As Integer
+        Protected Overrides Function LookupLastContentColumnIndex(sheetName As String, lastMergedCell As ExcelCell) As Integer
+            'INTERNAL NOTE: method override (only) for performance reasons
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
             Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
             Dim autoSuggestionLastRowIndex As Integer = LastCell.Row - 1
             Dim autoSuggestedResult As Integer = LastCell.Column - 1
-            For colCounter As Integer = autoSuggestedResult To 0 Step -1
-                For rowCounter As Integer = 0 To autoSuggestionLastRowIndex
+            Dim lastMergeCellRowIndex As Integer
+            Dim lastMergeCellColumnIndex As Integer
+            If LastMergedCell IsNot Nothing Then
+                lastMergeCellRowIndex = LastMergedCell.RowIndex
+                lastMergeCellColumnIndex = LastMergedCell.ColumnIndex
+            Else
+                lastMergeCellRowIndex = 0
+                lastMergeCellColumnIndex = 0
+            End If
+            'Find last content cell
+            For colCounter As Integer = autoSuggestedResult To lastMergeCellColumnIndex Step -1
+                For rowCounter As Integer = lastMergeCellRowIndex To autoSuggestionLastRowIndex
                     If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
-                        Return colCounter
+                        Return System.Math.Max(lastMergeCellColumnIndex, colCounter)
                     End If
                 Next
             Next
-            Return 0
+            Return System.Math.Max(lastMergeCellColumnIndex, 0)
         End Function
 
         ''' <summary>
         ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentRowIndex(sheetName As String) As Integer
+        Protected Overrides Function LookupLastContentRowIndex(sheetName As String, lastMergedCell As ExcelCell) As Integer
+            'INTERNAL NOTE: method override (only) for performance reasons
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
             Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
             Dim autoSuggestionLastColumnIndex As Integer = LastCell.Column - 1
             Dim autoSuggestedResult As Integer = LastCell.Row - 1
-            For rowCounter As Integer = autoSuggestedResult To 0 Step -1
-                For colCounter As Integer = 0 To autoSuggestionLastColumnIndex
+            Dim lastMergeCellRowIndex As Integer
+            Dim lastMergeCellColumnIndex As Integer
+            If LastMergedCell IsNot Nothing Then
+                lastMergeCellRowIndex = LastMergedCell.RowIndex
+                lastMergeCellColumnIndex = LastMergedCell.ColumnIndex
+            Else
+                lastMergeCellRowIndex = 0
+                lastMergeCellColumnIndex = 0
+            End If
+            'Find last content cell
+            For rowCounter As Integer = autoSuggestedResult To lastMergeCellRowIndex Step -1
+                For colCounter As Integer = lastMergeCellColumnIndex To autoSuggestionLastColumnIndex
                     If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
-                        Return rowCounter
+                        Return System.Math.Max(lastMergeCellRowIndex, rowCounter)
                     End If
                 Next
             Next
-            Return 0
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentCell(sheetName As String) As ExcelOps.ExcelCell
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
-            Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
-            Dim CellRowIndex As Integer = Me.LookupLastContentRowIndex(sheetName)
-            Dim CellColIndex As Integer = Me.LookupLastContentColumnIndex(sheetName)
-            Return New ExcelOps.ExcelCell(sheetName, CellRowIndex, CellColIndex, Nothing)
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content column index (zero based index)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastColumnIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
-            Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
-            Return LastCell.Column - 1
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content row index (zero based index)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastRowIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
-            Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
-            Return LastCell.Row - 1
+            Return System.Math.Max(lastMergeCellRowIndex, 0)
         End Function
 
         ''' <summary>
@@ -666,10 +654,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
-            Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
-            Dim CellRowIndex As Integer = Me.LookupLastRowIndex(sheetName)
-            Dim CellColIndex As Integer = Me.LookupLastColumnIndex(sheetName)
-            Return New ExcelOps.ExcelCell(sheetName, CellRowIndex, CellColIndex, Nothing)
+            Dim UsedRange As New ExcelOps.ExcelRange(sheetName, Sheet.UsedRange.AddressLocal(False, False))
+            Dim LastCell As New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell).AddressLocal(False, False), 1), ExcelCell.ValueTypes.All)
+            Return Tools.CombineCellAddresses(LastCell, UsedRange.AddressEnd, Tools.CellAddressCombineMode.RightLowerCorner)
         End Function
 
         ''' <summary>
@@ -935,6 +922,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Function
 
+        Private Function LookupRange(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer) As MsExcel.Range
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            Return CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Range(
+                CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells(fromRowIndex + 1, fromColumnIndex + 1),
+                CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells(toRowIndex + 1, toColumnIndex + 1)
+                )
+        End Function
+
         Private Function LookupCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As MsExcel.Range
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return CType(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range)
@@ -1051,32 +1046,66 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.Saved = PreservedIsSavedState
         End Sub
 
+        Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim FoundRanges As New Collections.Specialized.StringCollection()
+            For Each x As MsExcel.Range In Sheet.UsedRange
+                If CType(x.MergeCells, Boolean) Then
+                    Dim RangeAddress As String = x.MergeArea.AddressLocal(False, False)
+                    If FoundRanges.Contains(RangeAddress) = False Then
+                        FoundRanges.Add(RangeAddress)
+                    End If
+                End If
+            Next
+            Dim Result As New List(Of ExcelOps.ExcelRange)
+            For MyCounter As Integer = 0 To FoundRanges.Count - 1
+                Result.Add(New ExcelOps.ExcelRange(sheetName, FoundRanges(MyCounter)))
+            Next
+            Return Result
+        End Function
+
         Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
-            Throw New NotImplementedException()
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            Return CType(LookupCell(sheetName, rowIndex, columnIndex).MergeCells, Boolean)
         End Function
 
         Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Throw New NotImplementedException()
+            LookupCell(sheetName, rowIndex, columnIndex).MergeArea.UnMerge()
         End Sub
 
         Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
-            Throw New NotImplementedException()
+            LookupRange(sheetName, fromRowIndex, fromColumnIndex, toRowIndex, toColumnIndex).Merge()
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String)
-            Throw New NotImplementedException()
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Sheet.Columns.AutoFit()
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
-            Throw New NotImplementedException()
+            Dim LastColIndex As Integer = Me.LookupLastColumnIndex(sheetName)
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Sheet.Columns.AutoFit()
+            For ColumnIndex As Integer = 0 To LastColIndex
+                If CType(CType(Sheet.Columns(ColumnIndex + 1), Range).ColumnWidth, Double) < minimumWidth Then
+                    CType(Sheet.Columns(ColumnIndex + 1), Range).ColumnWidth = minimumWidth
+                End If
+            Next
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
-            Throw New NotImplementedException()
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            CType(Sheet.Columns(columnIndex + 1), Range).AutoFit()
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
-            Throw New NotImplementedException()
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            CType(Sheet.Columns(columnIndex + 1), Range).AutoFit()
+            If CType(CType(Sheet.Columns(columnIndex + 1), Range).ColumnWidth, Double) < minimumWidth Then
+                CType(Sheet.Columns(columnIndex + 1), Range).ColumnWidth = minimumWidth
+            End If
         End Sub
 
     End Class

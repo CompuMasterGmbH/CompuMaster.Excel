@@ -98,7 +98,7 @@
                 Return _Address
             End Get
             Set(value As String)
-                If IsValidAddress(value, False) = False Then Throw New ArgumentException("Must be a valid cell address e.g. like A1", NameOf(value))
+                If IsValidAddress(value, False) = False Then Throw New ArgumentException("Address """ & value & """ must be a valid cell address e.g. like A1", NameOf(value))
                 _Address = value
             End Set
         End Property

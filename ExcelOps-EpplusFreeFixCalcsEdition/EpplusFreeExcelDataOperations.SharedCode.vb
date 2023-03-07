@@ -507,90 +507,6 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastColumnIndex(sheetName As String) As Integer
-            Return Me.LookupLastCell(sheetName).ColumnIndex
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastRowIndex(sheetName As String) As Integer
-            Return Me.LookupLastCell(sheetName).RowIndex
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentColumnIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
-            Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
-            If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
-            If Sheet.Dimension Is Nothing Then Return 0
-            Dim autoSuggestionLastRowIndex As Integer = LastCell.RowIndex
-            Dim autoSuggestedResult As Integer = LastCell.ColumnIndex
-            Dim Result As Integer = 0
-            'Find last content cell
-            Do
-                For colCounter As Integer = autoSuggestedResult To 0 Step -1
-                    For rowCounter As Integer = 0 To autoSuggestionLastRowIndex
-                        If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
-                            Result = colCounter
-                            Exit Do
-                        End If
-                    Next
-                Next
-            Loop While False
-            Dim LastMergedCell = Me.FindLastMergedCellNonEmpty(sheetName)
-            If LastMergedCell IsNot Nothing Then
-                'Combine found last content cell with last merged cell with content
-                Return System.Math.Max(Result, LastCell.ColumnIndex)
-            Else
-                'Result as it is
-                Return Result
-            End If
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentRowIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
-            Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
-            If Sheet Is Nothing Then Throw New ArgumentException("Must be an existing sheet name: """ & sheetName & """", NameOf(sheetName))
-            If Sheet.Dimension Is Nothing Then Return 0
-            Dim autoSuggestionLastColumnIndex As Integer = LastCell.ColumnIndex
-            Dim autoSuggestedResult As Integer = LastCell.RowIndex
-            Dim Result As Integer = 0
-            'Find last content cell
-            Do
-                For rowCounter As Integer = autoSuggestedResult To 0 Step -1
-                    For colCounter As Integer = 0 To autoSuggestionLastColumnIndex
-                        If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
-                            Result = rowCounter
-                            Exit Do
-                        End If
-                    Next
-                Next
-            Loop While False
-            Dim LastMergedCell = Me.FindLastMergedCellNonEmpty(sheetName)
-            If LastMergedCell IsNot Nothing Then
-                'Combine found last content cell with last merged cell with content
-                Return System.Math.Max(Result, LastCell.RowIndex)
-            Else
-                'Result as it is
-                Return Result
-            End If
-        End Function
-
-        ''' <summary>
         ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
@@ -609,17 +525,6 @@ Namespace ExcelOps
                 Result = Tools.CombineCellAddresses(Result, LastMergedCell, Tools.CellAddressCombineMode.RightLowerCorner)
             End If
             Return Result
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentCell(sheetName As String) As ExcelOps.ExcelCell
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim CellRowIndex As Integer = Me.LookupLastContentRowIndex(sheetName)
-            Dim CellColIndex As Integer = Me.LookupLastContentColumnIndex(sheetName)
-            Return New ExcelOps.ExcelCell(sheetName, Me.Workbook.Worksheets(sheetName).Cells(CellRowIndex + 1, CellColIndex + 1).Address, Nothing)
         End Function
 
         ''' <summary>
@@ -1188,39 +1093,11 @@ Namespace ExcelOps
             Me.Workbook.RemoveVBAProject()
         End Sub
 
-        Friend Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
+        Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
             Dim Result As New List(Of ExcelOps.ExcelRange)
             Dim AllMergedCells = Me.Workbook.Worksheets(sheetName).MergedCells()
             For MyCounter As Integer = 0 To AllMergedCells.Count - 1
                 Result.Add(New ExcelOps.ExcelRange(sheetName, AllMergedCells(MyCounter)))
-            Next
-            Return Result
-        End Function
-
-        Private Function FindLastMergedCellNonEmpty(sheetName As String) As ExcelOps.ExcelCell
-            Dim Result As ExcelCell = Nothing
-            Dim AllMergedCells = MergedCells(sheetName)
-            For MyCounter As Integer = 0 To AllMergedCells.Count - 1
-                If IsEmptyCell(AllMergedCells(MyCounter).AddressStart) = False Then
-                    If Result Is Nothing Then
-                        Result = AllMergedCells(MyCounter).AddressEnd
-                    Else
-                        Result = Tools.CombineCellAddresses(Result, AllMergedCells(MyCounter).AddressEnd, Tools.CellAddressCombineMode.RightLowerCorner)
-                    End If
-                End If
-            Next
-            Return Result
-        End Function
-
-        Private Function FindLastMergedCell(sheetName As String) As ExcelOps.ExcelCell
-            Dim Result As ExcelCell = Nothing
-            Dim AllMergedCells = MergedCells(sheetName)
-            For MyCounter As Integer = 0 To AllMergedCells.Count - 1
-                If Result Is Nothing Then
-                    Result = AllMergedCells(MyCounter).AddressEnd
-                Else
-                    Result = Tools.CombineCellAddresses(Result, AllMergedCells(MyCounter).AddressEnd, Tools.CellAddressCombineMode.RightLowerCorner)
-                End If
             Next
             Return Result
         End Function

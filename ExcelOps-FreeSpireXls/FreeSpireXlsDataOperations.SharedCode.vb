@@ -383,86 +383,15 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastColumnIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
-            If Sheet Is Nothing Then Throw New NullReferenceException("Sheet """ & sheetName & """ doesn't exist in workbook")
-            Return Sheet.LastColumn - 1
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentColumnIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
-            If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
-            Dim autoSuggestionLastRowIndex As Integer = Sheet.LastRow - 1
-            Dim autoSuggestedResult As Integer = Sheet.LastColumn - 1
-            For colCounter As Integer = autoSuggestedResult To 0 Step -1
-                For rowCounter As Integer = 0 To autoSuggestionLastRowIndex
-                    If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
-                        Return colCounter
-                    End If
-                Next
-            Next
-            Return 0
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastRowIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
-            If Sheet Is Nothing Then Throw New NullReferenceException("Sheet """ & sheetName & """ doesn't exist in workbook")
-            Return Sheet.LastRow - 1
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentRowIndex(sheetName As String) As Integer
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
-            If Sheet Is Nothing Then Throw New ArgumentException("Must be an existing sheet name: """ & sheetName & """", NameOf(sheetName))
-            Dim autoSuggestionLastColumnIndex As Integer = Sheet.LastColumn - 1
-            Dim autoSuggestedResult As Integer = Sheet.LastRow - 1
-            For rowCounter As Integer = autoSuggestedResult To 0 Step -1
-                For colCounter As Integer = 0 To autoSuggestionLastColumnIndex
-                    If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
-                        Return rowCounter
-                    End If
-                Next
-            Next
-            Return 0
-        End Function
-
-        ''' <summary>
         ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim CellRowIndex As Integer = Me.LookupLastRowIndex(sheetName)
-            Dim CellColIndex As Integer = Me.LookupLastColumnIndex(sheetName)
-            Return New ExcelOps.ExcelCell(sheetName, CellRowIndex, CellColIndex, Nothing)
-        End Function
-
-        ''' <summary>
-        ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Function LookupLastContentCell(sheetName As String) As ExcelOps.ExcelCell
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim CellRowIndex As Integer = Me.LookupLastContentRowIndex(sheetName)
-            Dim CellColIndex As Integer = Me.LookupLastContentColumnIndex(sheetName)
+            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
+            If Sheet Is Nothing Then Throw New NullReferenceException("Sheet """ & sheetName & """ doesn't exist in workbook")
+            Dim CellRowIndex As Integer = Sheet.LastRow - 1
+            Dim CellColIndex As Integer = Sheet.LastColumn - 1
             Return New ExcelOps.ExcelCell(sheetName, CellRowIndex, CellColIndex, Nothing)
         End Function
 
@@ -848,32 +777,56 @@ Namespace ExcelOps
             Me.Workbook.IsSaved = PreservedIsSavedState
         End Sub
 
+        Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
+            Dim Result As New List(Of ExcelOps.ExcelRange)
+            Dim Sheet = Me.Workbook.Worksheets.Item(sheetName)
+            Dim AllMergedCells As CellRange()
+            Try
+                AllMergedCells = Sheet.MergedCells
+            Catch ex As NullReferenceException
+                AllMergedCells = New CellRange() {}
+            End Try
+            For MyCounter As Integer = 0 To AllMergedCells.Length - 1
+                Result.Add(New ExcelRange(sheetName, AllMergedCells(MyCounter).RangeAddressLocal))
+            Next
+            Return Result
+        End Function
+
         Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
-            Throw New NotImplementedException()
+            Return Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).HasMerged
         End Function
 
         Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Throw New NotImplementedException()
+            Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).MergeArea.UnMerge()
         End Sub
 
         Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
-            Throw New NotImplementedException()
+            Me.Workbook.Worksheets.Item(sheetName).Range(fromRowIndex + 1, fromColumnIndex + 1, toRowIndex + 1, toColumnIndex + 1).Merge(True)
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String)
-            Throw New NotImplementedException()
+            Dim LastColumnIndex = Me.LookupLastColumnIndex(sheetName)
+            For ColumnIndex As Integer = 0 To LastColumnIndex
+                Me.AutoFitColumns(sheetName, ColumnIndex)
+            Next
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
-            Throw New NotImplementedException()
+            Dim LastColumnIndex = Me.LookupLastColumnIndex(sheetName)
+            For ColumnIndex As Integer = 0 To LastColumnIndex
+                Me.AutoFitColumns(sheetName, ColumnIndex, minimumWidth)
+            Next
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
-            Throw New NotImplementedException()
+            Me.Workbook.Worksheets.Item(sheetName).AutoFitColumn(columnIndex + 1) 'NOTE: AutoFitColumn's argument "columnIndex" seems to be 1-based
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
-            Throw New NotImplementedException()
+            Me.AutoFitColumns(sheetName, columnIndex)
+            If Me.Workbook.Worksheets.Item(sheetName).Columns(columnIndex).ColumnWidth < minimumWidth Then
+                Me.Workbook.Worksheets.Item(sheetName).Columns(columnIndex).ColumnWidth = minimumWidth
+            End If
         End Sub
 
     End Class
