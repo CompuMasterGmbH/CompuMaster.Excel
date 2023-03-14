@@ -22,6 +22,27 @@ A bunch of libraries to access and edit Excel files with common interface for se
   * **CompuMaster.Excel.FreeSpireXls**
     * Use FreeSpire.Xls for solutions targetting .NET Framework 4.8 or .NET 6 or higher
 
+### Quick & dirty engine comparison / why you shouldn't use MS Excel for all situations
+
+In following a simplified comparison without any warranties. Subjects might change over time, too. Please contact the responsible manufacturerer especially for licensing issues.
+
+| Engine | Pros | Cons | Note on licensing or support | Manufacturer website |
+|--------|------|------|------------------------------|----------------------|
+| Microsoft Excel | + 100% compatibility to Micrsoft Excel ;-) | - Speed<br/>- Dependency to windows platform only (and maybe MacOS) | * licensing per user (!)<br/>* NOT recommended/supported for software deployment, for servers or for similar automation <sup>1)</sup> | https://www.microsoft.com/ |
+| Epplus 5 or higher | + Speed | - no export of chart images<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support  | * Polyform license<br/>* limited community licensing<br/>* commercial licensing available | https://www.epplussoftware.com/ |
+| Epplus 4 | + Speed | - no export of chart images<br/>- some (seldom-used) calculation functions not implemented<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup>, but workaround AVAILABLE (in this project's fork)<br/>- limited VBA/macro support | * LGPL<br/>* "free license"<br/>* no manufacturer support (end of life) | https://github.com/JanKallman/EPPlus |
+| Spire.Xls | + Speed<br/>+ Charts export (windows platform only) | - calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * commercial licensing available | https://www.e-iceblue.com/Introduce/excel-for-net-introduce.html |
+| FreeSpire.Xls | + Speed<br/>+ Charts export (windows platform only) | - Limitations by manufacturer due to free edition<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * "free license"<br/>* no official support by manufacturer | https://www.e-iceblue.com/Introduce/free-xls-component.html |
+
+PLEASE NOTE:
+
+<sup>1)</sup> A great article on Microsoft Excel for automation, inclusing licensing issues, is available at https://support.microsoft.com/en-us/topic/considerations-for-server-side-automation-of-office-48bcfe93-8a89-47f1-0bce-017433ad79e2
+
+<sup>2)</sup> calculation issue when re-opening in MS Excel: after Excel file has been written to disk, cell formulas are usually calculated and their results are buffered in the saved Excel file. In certain cases, MS Excel is not able to refresh calculated cell values when they depend (indirectly) on other cells which have changed.
+  * This issue applies for all 3rd-party engines (as far as I know)
+  * Available workaround in MS Excel: enter each single cell manually (and in correct dependency order!) and confirm its formula (and sorry, F9 for full automatic recalculation doesn't work)
+  * Available workaorund in Epplus 4 special edition (provided within this project, see CompuMaster.Excel.EpplusFreeFixCalcsEdition): Clear all cached values from cells with formulas to enforce MS Excel to recalculate them (without depending of any caches)
+
 ### Common helper libraries
 
   * **CompuMaster.Excel.EpplusFreeFixCalcsEdition** 
