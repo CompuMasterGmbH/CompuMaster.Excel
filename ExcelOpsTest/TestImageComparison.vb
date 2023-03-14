@@ -34,7 +34,7 @@ Public Class TestImageComparison
         If Not TestTools.IsWindowsPlatform Then
             Assert.Ignore("Platform not supported for image comparison feature (supported only by windows)")
         Else
-            Dim MasterImg As Image = System.Drawing.Image.FromFile(TestEnvironment.FullPathOfExistingTestFile("test_comparison_masters", "excel_test_chart_freespirexls.png"))
+            Dim MasterImg As Image = System.Drawing.Image.FromFile(TestEnvironment.FullPathOfExistingTestFile("test_comparison_masters", "excel_test_chart.png"))
             Dim ComparisonImg As New Bitmap(MasterImg)
 
             '1st: still equal
