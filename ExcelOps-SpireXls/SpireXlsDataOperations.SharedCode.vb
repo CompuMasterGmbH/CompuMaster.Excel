@@ -11,6 +11,7 @@ Imports Spire.Xls
 Imports Spire.Xls.Collections
 Imports Spire.Xls.Charts
 Imports Spire
+Imports System.Drawing
 
 Namespace ExcelOps
     Partial Public Class SpireXlsDataOperations
@@ -88,10 +89,34 @@ Namespace ExcelOps
             End Get
         End Property
 
+        ''' <summary>
+        ''' All available sheet names (work sheets + chart sheets)
+        ''' </summary>
+        ''' <returns></returns>
+        ''' <remarks>WARNING: due to lack of engine feature, the order is always: 1st work sheets, 2nd chart sheets</remarks>
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
                 Result.Add(Me.Workbook.Worksheets(MyCounter).Name)
+            Next
+            For MyCounter As Integer = 0 To Me.Workbook.Chartsheets.Count - 1
+                Result.Add(Me.Workbook.Chartsheets(MyCounter).Name)
+            Next
+            Return Result
+        End Function
+
+        Public Overrides Function WorkSheetNames() As List(Of String)
+            Dim Result As New List(Of String)
+            For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
+                Result.Add(Me.Workbook.Worksheets(MyCounter).Name)
+            Next
+            Return Result
+        End Function
+
+        Public Overrides Function ChartSheetNames() As List(Of String)
+            Dim Result As New List(Of String)
+            For MyCounter As Integer = 0 To Me.Workbook.Chartsheets.Count - 1
+                Result.Add(Me.Workbook.Chartsheets(MyCounter).Name)
             Next
             Return Result
         End Function
@@ -828,6 +853,16 @@ Namespace ExcelOps
                 Me.Workbook.Worksheets.Item(sheetName).Columns(columnIndex).ColumnWidth = minimumWidth
             End If
         End Sub
+
+        Public Overrides Function ExportChartSheetImage(chartSheetName As String) As Image
+            Dim ChartSheet = Me.Workbook.GetChartSheetByName(chartSheetName)
+            Return Workbook.SaveChartAsImage(ChartSheet)
+        End Function
+
+        Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
+            Dim WorkSheet = Me.Workbook.Worksheets(workSheetName)
+            Return Workbook.SaveChartAsImage(WorkSheet)
+        End Function
 
     End Class
 

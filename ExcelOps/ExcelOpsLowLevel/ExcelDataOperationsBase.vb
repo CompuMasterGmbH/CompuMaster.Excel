@@ -242,10 +242,49 @@ Namespace ExcelOps
         Protected MustOverride Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
         ''' <summary>
-        ''' All available sheet names
+        ''' All available sheet names (work sheets + chart sheets)
         ''' </summary>
         ''' <returns></returns>
         Public MustOverride Function SheetNames() As List(Of String)
+
+        ''' <summary>
+        ''' Lookup the (zero-based) index number of a sheet
+        ''' </summary>
+        ''' <param name="sheetName">A sheet name (work sheet or chart sheet)</param>
+        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
+        Public Overridable Function SheetIndex(ByVal sheetName As String) As Integer
+            Return Me.SheetNames.IndexOf(sheetName)
+        End Function
+
+        ''' <summary>
+        ''' All available work sheet names
+        ''' </summary>
+        ''' <returns></returns>
+        Public MustOverride Function WorkSheetNames() As List(Of String)
+
+        ''' <summary>
+        ''' Lookup the (zero-based) index number of a work sheet
+        ''' </summary>
+        ''' <param name="workSheetName">A work sheet name</param>
+        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
+        Public Function WorkSheetIndex(ByVal workSheetName As String) As Integer
+            Return Me.WorkSheetNames.IndexOf(workSheetName)
+        End Function
+
+        ''' <summary>
+        ''' All available chart sheet names
+        ''' </summary>
+        ''' <returns></returns>
+        Public MustOverride Function ChartSheetNames() As List(Of String)
+
+        ''' <summary>
+        ''' Lookup the (zero-based) index number of a chart sheet
+        ''' </summary>
+        ''' <param name="chartName">A work sheet name</param>
+        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
+        Public Function ChartSheetIndex(ByVal chartName As String) As Integer
+            Return Me.ChartSheetNames.IndexOf(chartName)
+        End Function
 
         ''' <summary>
         ''' Read a cell value
@@ -1110,15 +1149,6 @@ Namespace ExcelOps
         ''' <param name="sheetIndex"></param>
         Public MustOverride Sub SelectSheet(sheetIndex As Integer)
 
-        ''' <summary>
-        ''' Lookup the (zero-based) index number of a work sheet
-        ''' </summary>
-        ''' <param name="worksheetName">A work sheet name</param>
-        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
-        Public Function SheetIndex(ByVal worksheetName As String) As Integer
-            Return Me.SheetNames.IndexOf(worksheetName)
-        End Function
-
         Public MustOverride Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
 
         Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase)
@@ -1290,6 +1320,10 @@ Namespace ExcelOps
         Public MustOverride Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
 
         Public MustOverride Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
+
+        Public MustOverride Function ExportChartSheetImage(chartSheetName As String) As System.Drawing.Image
+
+        Public MustOverride Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
 
     End Class
 End Namespace

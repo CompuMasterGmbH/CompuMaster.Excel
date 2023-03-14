@@ -44,11 +44,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
             EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 5, 1)
 
             Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel1{0}.xlsx"
-            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_11_FixedInEpplus"))
+            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_11_FixedInEpplus"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
             'Create workbook copy, open and recalculate and save in MS Excel
-            TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_12_ReSavedByMsExcel"))
+            TestFile = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_12_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
             Try
@@ -74,7 +74,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
         Private Function CreateSheetWithReproducableBug_FormulaComplexityLevel1() As ExcelOps.ExcelDataOperationsBase
             Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel1{0}.xlsx"
-            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_01_InitialEpplus"))
+            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_01_InitialEpplus"))
             System.Console.WriteLine("Output path of test files: " & System.IO.Path.GetDirectoryName(TestFile))
             System.Console.WriteLine()
 
@@ -109,7 +109,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
             'Create workbook copy, open and recalculate and save in MS Excel
-            TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
+            TestFile = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
             Eppeo.CalculationModuleDisabled = False
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
@@ -125,7 +125,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Eppeo.WriteCellValue(Of String)(FirstSheetName, 0, 0, "Static value rewritten")
             Eppeo.WriteCellValue(Of Integer)(FirstSheetName, 0, 1, 20)
 
-            TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_03_UpdatedByEpplus"))
+            TestFile = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_03_UpdatedByEpplus"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
 
@@ -155,7 +155,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             'Solve buggy cells in whole Excel workbook with Epplus by resetting all formula cells in all worksheets
             Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel2{0}.xlsx"
             Dim TestFile As String
-            TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_12_ReSavedByMsExcel"))
+            TestFile = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_12_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation) 'solution: reset all cell values in cells with formulas
             Eppeo.Close()
 
@@ -180,7 +180,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
         Private Function CreateSheetWithReproducableBug_FormulaComplexityLevel2() As ExcelOps.ExcelDataOperationsBase
             Dim TestFilePattern As String = "MsExcelNoCalcBug_" & EngineName.ToString & "_FormulaComplexityLevel2_{0}.xlsx"
-            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_01_InitialEpplus"))
+            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_01_InitialEpplus"))
             System.Console.WriteLine("Output path of test files: " & System.IO.Path.GetDirectoryName(TestFile))
             System.Console.WriteLine()
 
@@ -214,7 +214,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
             'Create workbook copy, open and recalculate and save in MS Excel
-            TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
+            TestFile = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_02_ReSavedByMsExcel"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
             Try
@@ -229,7 +229,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Eppeo.WriteCellValue(Of Integer)(FirstSheetName, 1, 2 + 1, 0)
             Eppeo.WriteCellValue(Of Integer)(FirstSheetName, 2, 2 + 1, 0)
 
-            TestFile = TestEnvironment.FullPathOfDynTestFile(String.Format(TestFilePattern, "_03_UpdatedByEpplus"))
+            TestFile = TestEnvironment.FullPathOfDynTestFile(GetType(MsExcelCalcTestBase), String.Format(TestFilePattern, "_03_UpdatedByEpplus"))
             Eppeo.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Eppeo.Close()
 

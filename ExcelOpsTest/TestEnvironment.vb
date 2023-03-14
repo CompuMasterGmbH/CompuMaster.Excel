@@ -32,11 +32,20 @@ Public NotInheritable Class TestEnvironment
         Return Result
     End Function
 
-    Public Shared Function FullPathOfDynTestFile(ParamArray subDirsAndFile As String()) As String
+    Public Shared Function FullPathOfDynTestFile(engine As ExcelOps.ExcelDataOperationsBase, ParamArray subDirsAndFile As String()) As String
+        Return FullPathOfDynTestFile(engine.EngineName, GetCallingMethodName, subDirsAndFile)
+    End Function
+
+    Public Shared Function FullPathOfDynTestFile(testSuiteType As Type, ParamArray subDirsAndFile As String()) As String
+        Return FullPathOfDynTestFile(testSuiteType.Name, GetCallingMethodName, subDirsAndFile)
+    End Function
+
+    Public Shared Function FullPathOfDynTestFile(testSuiteName As String, callingMethodName As String, ParamArray subDirsAndFile As String()) As String
         Dim Paths As New List(Of String)(subDirsAndFile)
         Paths.Insert(0, DirectoryOfTestAssembly)
         Paths.Insert(1, "temp")
-        Paths.Insert(2, GetCallingMethodName)
+        Paths.Insert(2, testSuiteName)
+        Paths.Insert(3, callingMethodName)
         Dim Result As String = System.IO.Path.Combine(Paths.ToArray)
         Dim ParentDir As String = System.IO.Path.GetDirectoryName(Result)
         If Result.Length > 250 Then 'To prevent exceeeding issues caused by the 260 chars limit on windows platforms
@@ -54,11 +63,20 @@ Public NotInheritable Class TestEnvironment
         Return Result
     End Function
 
-    Public Shared Function FullPathOfDynTestFile_KeepExistingFile(ParamArray subDirsAndFile As String()) As String
+    Public Shared Function FullPathOfDynTestFile_KeepExistingFile(engine As ExcelOps.ExcelDataOperationsBase, ParamArray subDirsAndFile As String()) As String
+        Return FullPathOfDynTestFile_KeepExistingFile(engine.EngineName, GetCallingMethodName, subDirsAndFile)
+    End Function
+
+    Public Shared Function FullPathOfDynTestFile_KeepExistingFile(testSuiteType As Type, ParamArray subDirsAndFile As String()) As String
+        Return FullPathOfDynTestFile_KeepExistingFile(testSuiteType.Name, GetCallingMethodName, subDirsAndFile)
+    End Function
+
+    Public Shared Function FullPathOfDynTestFile_KeepExistingFile(testSuiteName As String, callingMethodName As String, ParamArray subDirsAndFile As String()) As String
         Dim Paths As New List(Of String)(subDirsAndFile)
         Paths.Insert(0, DirectoryOfTestAssembly)
         Paths.Insert(1, "temp")
-        Paths.Insert(2, GetCallingMethodName)
+        Paths.Insert(2, testSuiteName)
+        Paths.Insert(3, callingMethodName)
         Dim Result As String = System.IO.Path.Combine(Paths.ToArray)
         Dim ParentDir As String = System.IO.Path.GetDirectoryName(Result)
         If System.IO.Directory.Exists(ParentDir) = False Then

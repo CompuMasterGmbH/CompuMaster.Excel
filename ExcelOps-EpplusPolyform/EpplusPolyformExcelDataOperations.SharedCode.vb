@@ -79,6 +79,26 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        Public Overrides Function WorkSheetNames() As List(Of String)
+            Dim Result As New List(Of String)
+            For Each ws As ExcelWorksheet In Me.Workbook.Worksheets
+                If ws.GetType IsNot GetType(ExcelChartsheet) Then
+                    Result.Add(ws.Name)
+                End If
+            Next
+            Return Result
+        End Function
+
+        Public Overrides Function ChartSheetNames() As List(Of String)
+            Dim Result As New List(Of String)
+            For Each ws As ExcelWorksheet In Me.Workbook.Worksheets
+                If ws.GetType Is GetType(ExcelChartsheet) Then
+                    Result.Add(ws.Name)
+                End If
+            Next
+            Return Result
+        End Function
+
         ''' <summary>
         ''' Remove all named ranges in Excel Workbook since this feature is involved but not actively used in Master Template V15; but this feature might throw exceptions in EPPlus when removing rows
         ''' </summary>
@@ -1141,6 +1161,14 @@ Namespace ExcelOps
                 Return Me.Workbook.VbaProject IsNot Nothing
             End Get
         End Property
+
+        Public Overrides Function ExportChartSheetImage(chartSheetName As String) As System.Drawing.Image
+            Throw New NotSupportedException("Exporting drawings/charts not supported by Epplus engine")
+        End Function
+
+        Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
+            Throw New NotSupportedException("Exporting drawings/charts not supported by Epplus engine")
+        End Function
 
     End Class
 

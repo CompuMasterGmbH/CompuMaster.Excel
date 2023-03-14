@@ -186,7 +186,7 @@ Namespace ExcelOpsTests.Engines
 
             'Now, save it with password
             Wb.PasswordForOpening = "dummy"
-            Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile("PasswordProtectedFile.xlsx")
+            Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "PasswordProtectedFile.xlsx")
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             'Console.WriteLine("Saved password protected file to: " & NewXlsxTargetPath)
             Wb.Close()
@@ -226,8 +226,8 @@ Namespace ExcelOpsTests.Engines
 
         <Test> Public Sub CreateAndSaveAsAndFilePath()
             Dim Wb As T
-            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile("created-workbook.xlsx")
-            Dim TestFile2 As String = TestEnvironment.FullPathOfDynTestFile("created-workbook2.xlsx")
+            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "created-workbook.xlsx")
+            Dim TestFile2 As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "created-workbook2.xlsx")
 
             'Creating a new workbook without pre-defined file name must fail on Save(), but successful on SaveAs()
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
@@ -324,7 +324,7 @@ Namespace ExcelOpsTests.Engines
 
             TestControllingToolFileNameIn = TestFiles.TestFileGrund01.FullName
             TestControllingToolFileNameOutTemplate = TestFiles.TestFileGrund02.FullName
-            TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile("CopySheetContent_" & GetType(T).Name & ".xlsx")
+            TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "CopySheetContent_" & GetType(T).Name & ".xlsx")
             Try
                 Console.WriteLine("Test file in: " & TestControllingToolFileNameIn)
                 Console.WriteLine("Test file output template: " & TestControllingToolFileNameOutTemplate)
@@ -421,13 +421,77 @@ Namespace ExcelOpsTests.Engines
 
         <Test> Public Sub SheetNames()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
-            Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-
             Dim EppeoSheetNamesList As List(Of String)
+
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileGrund01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
             EppeoSheetNamesList = eppeo.SheetNames
+            System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
             Assert.AreEqual("Grunddaten,Kostenplanung", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+
+            TestFileName = TestFiles.TestFileChartSheet01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            EppeoSheetNamesList = eppeo.SheetNames
+            System.Console.WriteLine()
+            System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
+            System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            Assert.AreEqual("data,chart", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+        End Sub
+
+        <Test> Public Sub SheetIndex()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileChartSheet01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Assert.AreEqual(0, eppeo.SheetIndex("data"))
+            Assert.AreEqual(1, eppeo.SheetIndex("chart"))
+            Assert.AreEqual(-1, eppeo.SheetIndex("doesntexist"))
+        End Sub
+
+        <Test> Public Sub WorkSheetNames()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim EppeoSheetNamesList As List(Of String)
+
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileChartSheet01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            EppeoSheetNamesList = eppeo.WorkSheetNames
+            System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
+            System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            Assert.AreEqual("data", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+        End Sub
+
+        <Test> Public Sub WorkSheetIndex()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileChartSheet01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Assert.AreEqual(0, eppeo.WorkSheetIndex("data"))
+            Assert.AreEqual(-1, eppeo.WorkSheetIndex("chart"))
+        End Sub
+
+        <Test> Public Sub ChartSheetNames()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim EppeoSheetNamesList As List(Of String)
+
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileChartSheet01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            EppeoSheetNamesList = eppeo.ChartSheetNames
+            System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
+            System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            Assert.AreEqual("chart", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+        End Sub
+
+        <Test> Public Sub ChartSheetIndex()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileChartSheet01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Assert.AreEqual(0, eppeo.ChartSheetIndex("chart"))
+            Assert.AreEqual(-1, eppeo.ChartSheetIndex("data"))
         End Sub
 
         <Test> Public Sub AddSheet()
@@ -948,6 +1012,95 @@ Namespace ExcelOpsTests.Engines
                 End Sub)
         End Sub
 
+#Region "ExcelCharting"
+        Private Function PrepareAndFillExcelFileWithChart(variantOfImage As Byte) As ExcelOps.ExcelDataOperationsBase
+            Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileChartSheet01.FullName)
+            Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Select Case variantOfImage
+                Case 0 'master
+                    Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B1", ExcelCell.ValueTypes.All), "Sample Chart")
+                    Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B2", ExcelCell.ValueTypes.All), "Sub title")
+                    Workbook.WriteCellValue(Of Integer)(New ExcelCell("data", "B3", ExcelCell.ValueTypes.All), 2022)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "B6", ExcelCell.ValueTypes.All), 1234.56D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "C6", ExcelCell.ValueTypes.All), 2345.67D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "D6", ExcelCell.ValueTypes.All), 3456.78D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "F6", ExcelCell.ValueTypes.All), 4000)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "G6", ExcelCell.ValueTypes.All), 4444.44D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "I6", ExcelCell.ValueTypes.All), 5000D)
+                Case 1 'difference at just 1 letter (year number)
+                    Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B1", ExcelCell.ValueTypes.All), "Sample Chart")
+                    Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B2", ExcelCell.ValueTypes.All), "Sub title")
+                    Workbook.WriteCellValue(Of Integer)(New ExcelCell("data", "B3", ExcelCell.ValueTypes.All), 2023) '<-- here is the difference!
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "B6", ExcelCell.ValueTypes.All), 1234.56D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "C6", ExcelCell.ValueTypes.All), 2345.67D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "D6", ExcelCell.ValueTypes.All), 3456.78D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "F6", ExcelCell.ValueTypes.All), 4000)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "G6", ExcelCell.ValueTypes.All), 4444.44D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "I6", ExcelCell.ValueTypes.All), 5000D)
+                Case 2 'stronger difference
+                    Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B1", ExcelCell.ValueTypes.All), "Sample Chart")
+                    Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B2", ExcelCell.ValueTypes.All), "Sub title")
+                    Workbook.WriteCellValue(Of Integer)(New ExcelCell("data", "B3", ExcelCell.ValueTypes.All), 2023) '<-- here is the difference!
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "B6", ExcelCell.ValueTypes.All), 934.56D) '<-- here is the difference!
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "C6", ExcelCell.ValueTypes.All), 2345.67D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "D6", ExcelCell.ValueTypes.All), 3456.78D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "F6", ExcelCell.ValueTypes.All), 4300) '<-- here is the difference!
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "G6", ExcelCell.ValueTypes.All), 4444.44D)
+                    Workbook.WriteCellValue(Of Decimal)(New ExcelCell("data", "I6", ExcelCell.ValueTypes.All), 5000D)
+                Case Else
+                    Throw New NotImplementedException
+            End Select
+            If Workbook.CalculationModuleDisabled AndAlso Workbook.EngineName.ToLowerInvariant.Contains("epplus") Then
+                Workbook.CalculationModuleDisabled = False 'for this test, calculcation module can be re-enabled
+            End If
+            Workbook.RecalculateAll()
+            Return Workbook
+        End Function
+
+        <Test>
+        Public Sub ExportChartSheetImage()
+            Try
+                Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "excel_test_chart.png")
+                Dim MasterImg As System.Drawing.Image
+#Disable Warning CA1416
+                MasterImg = System.Drawing.Image.FromFile(TestEnvironment.FullPathOfExistingTestFile("test_comparison_masters", "excel_test_chart.png"))
+
+                Dim Workbook = PrepareAndFillExcelFileWithChart(0)
+                Assert.AreEqual(2, Workbook.SheetNames.Count) '"data","chart"
+                Dim ChartImage = Workbook.ExportChartSheetImage("chart")
+
+                ChartImage.Save(TempFilePng, System.Drawing.Imaging.ImageFormat.Png)
+                System.Console.WriteLine("PNG saved to " & TempFilePng)
+                'If Debugger.IsAttached Then IOTools.LaunchFileWithAssociatedApp(TempFilePng)
+#Enable Warning CA1416
+
+                If Workbook.EngineName = "Spire.Xls" Then
+                    TestImageComparison.AssertImagesAreEqual(MasterImg, ChartImage, 0.023) 'accept difference if it's just the evaluation note in image
+                ElseIf Workbook.EngineName = "FreeSpire.Xls" Then
+                    TestImageComparison.AssertImagesAreEqual(MasterImg, ChartImage, 0.02) 'accept difference of slightly re-located Y axis descriptions
+                Else
+                    TestImageComparison.AssertImagesAreEqual(MasterImg, ChartImage)
+                End If
+
+                'Now, do the negative test: image must be detected as "is different"
+                Dim DifferentChartImage As System.Drawing.Image
+                DifferentChartImage = PrepareAndFillExcelFileWithChart(2).ExportChartSheetImage("chart") 'stronger difference
+                Assert.Throws(Of NUnit.Framework.AssertionException)(Sub() TestImageComparison.AssertImagesAreEqual(MasterImg, DifferentChartImage))
+
+                DifferentChartImage = PrepareAndFillExcelFileWithChart(1).ExportChartSheetImage("chart") 'minor difference of just 1 letter 
+                Assert.Throws(Of NUnit.Framework.AssertionException)(Sub() TestImageComparison.AssertImagesAreEqual(MasterImg, DifferentChartImage))
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
+
+#End Region
     End Class
 
 End Namespace

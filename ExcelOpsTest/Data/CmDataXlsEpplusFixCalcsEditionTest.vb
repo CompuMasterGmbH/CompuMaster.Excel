@@ -39,12 +39,12 @@ Namespace Data
             Dim PathIn As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "SampleTable01.xlsx")
             Dim PathOut As String
 
-            PathOut = TestEnvironment.FullPathOfDynTestFile("test_data", "SampleTableDyn-5643857.xlsx")
+            PathOut = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "test_data", "SampleTableDyn-5643857.xlsx")
             System.Console.WriteLine("Writing to file: " & PathOut)
             Dim t1 = SampleTableDyn01()
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFileAndFirstSheet(PathOut, t1)
 
-            PathOut = TestEnvironment.FullPathOfDynTestFile("test_data", "SampleTable01-rewritten.xlsx")
+            PathOut = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "test_data", "SampleTable01-rewritten.xlsx")
             Dim t = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataSetFromXlsFile(PathIn, False).Tables
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFileAndFirstSheet(PathOut, t(0))
         End Sub
@@ -53,12 +53,12 @@ Namespace Data
             Dim PathIn As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "SampleTable01.xlsx")
             Dim PathOut As String
 
-            PathOut = TestEnvironment.FullPathOfDynTestFile("test_data", "SampleTableDyn-65779925.xlsx")
+            PathOut = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "test_data", "SampleTableDyn-65779925.xlsx")
             System.Console.WriteLine("Writing to file: " & PathOut)
             Dim t1 = SampleTableDyn01()
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFileAndCurrentSheet(PathOut, t1)
 
-            PathOut = TestEnvironment.FullPathOfDynTestFile("test_data", "SampleTable01-rewritten.xlsx")
+            PathOut = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "test_data", "SampleTable01-rewritten.xlsx")
             Dim t = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataSetFromXlsFile(PathIn, False).Tables
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFileAndCurrentSheet(PathOut, t(0))
         End Sub
@@ -67,14 +67,14 @@ Namespace Data
             Dim PathIn As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "SampleTable01.xlsx")
             Dim PathOut As String
 
-            PathOut = TestEnvironment.FullPathOfDynTestFile("test_data", "SampleTableDyn-97662114.xlsx")
+            PathOut = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "test_data", "SampleTableDyn-97662114.xlsx")
             System.Console.WriteLine("Writing to file: " & PathOut)
             Dim t1 = SampleTableDyn01()
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFile(PathOut, t1)
 
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFile(PathIn, PathOut, New System.Data.DataTable() {}, New String() {})
 
-            PathOut = TestEnvironment.FullPathOfDynTestFile("test_data", "SampleTable01-rewritten.xlsx")
+            PathOut = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "test_data", "SampleTable01-rewritten.xlsx")
             Dim t = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataSetFromXlsFile(PathIn, False).Tables
             CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteDataTableToXlsFileAndFirstSheet(PathOut, t(0))
         End Sub

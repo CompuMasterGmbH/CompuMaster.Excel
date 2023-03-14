@@ -336,7 +336,31 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
+            For Each s As Object In Me.Workbook.Sheets
+                If GetType(MsExcel.Worksheet).IsInstanceOfType(s) Then
+                    Dim ws = CType(s, MsExcel.Worksheet)
+                    Result.Add(ws.Name)
+                ElseIf GetType(MsExcel.Chart).IsInstanceOfType(s) Then
+                    Dim ws = CType(s, MsExcel.Chart)
+                    Result.Add(ws.Name)
+                Else
+                    Throw New NotImplementedException
+                End If
+            Next
+            Return Result
+        End Function
+
+        Public Overrides Function WorkSheetNames() As List(Of String)
+            Dim Result As New List(Of String)
             For Each ws As MsExcel.Worksheet In Me.Workbook.Worksheets
+                Result.Add(ws.Name)
+            Next
+            Return Result
+        End Function
+
+        Public Overrides Function ChartSheetNames() As List(Of String)
+            Dim Result As New List(Of String)
+            For Each ws As MsExcel.Chart In Me.Workbook.Charts
                 Result.Add(ws.Name)
             Next
             Return Result
@@ -1107,6 +1131,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 CType(Sheet.Columns(columnIndex + 1), Range).ColumnWidth = minimumWidth
             End If
         End Sub
+
+        Public Overrides Function ExportChartSheetImage(chartSheetName As String) As System.Drawing.Image
+            Throw New NotImplementedException()
+        End Function
+
+        Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
+            Throw New NotImplementedException()
+        End Function
 
     End Class
 
