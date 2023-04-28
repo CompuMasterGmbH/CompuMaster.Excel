@@ -131,6 +131,72 @@ Namespace ExcelOpsEngineTests
             Assert.AreEqual("D9", Range.Cell(6, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
             Assert.AreEqual("E9", Range.Cell(7, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
             Assert.AreEqual("F9", Range.Cell(8, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+
+            'Test case: Range of single cell
+            Range = New ExcelOps.ExcelRange("Grunddaten", "D7:D7")
+            Assert.AreEqual(1, Range.CellCount)
+
+            'Access to cells row by row
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+
+            'Access to cells column by column
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+
+            'Test case: Range in middle of a sheet, in same column
+            Range = New ExcelOps.ExcelRange("Grunddaten", "D7:D9")
+            Assert.AreEqual(3, Range.CellCount)
+
+            'Access to cells row by row
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("D8", Range.Cell(1, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("D9", Range.Cell(2, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+
+            'Access to cells column by column
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("D8", Range.Cell(1, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("D9", Range.Cell(2, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+
+            'Test case: Range in middle of a sheet, in same column
+            Range = New ExcelOps.ExcelRange("Grunddaten", "D7:F7")
+            Assert.AreEqual(3, Range.CellCount)
+
+            'Access to cells row by row
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("E7", Range.Cell(1, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("F7", Range.Cell(2, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+
+            'Access to cells column by column
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("E7", Range.Cell(1, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("F7", Range.Cell(2, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+
+            'Test case: Range in middle of a sheet, in same column
+            Range = New ExcelOps.ExcelRange("Grunddaten", "D7:F8")
+            Assert.AreEqual(6, Range.CellCount)
+
+            'Access to cells row by row
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("D8", Range.Cell(1, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("E7", Range.Cell(2, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("E8", Range.Cell(3, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("F7", Range.Cell(4, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+            Assert.AreEqual("F8", Range.Cell(5, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn).LocalAddress)
+
+            'Access to cells column by column
+            Assert.AreEqual("D7", Range.Cell(0, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("E7", Range.Cell(1, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("F7", Range.Cell(2, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("D8", Range.Cell(3, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("E8", Range.Cell(4, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+            Assert.AreEqual("F8", Range.Cell(5, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfARowThenNextRow).LocalAddress)
+
+            'Test case: Range in middle of a sheet, in same column
+            Range = New ExcelOps.ExcelRange("Grunddaten", "D7:F8")
+            Assert.AreEqual(6, Range.CellCount)
+            Assert.Throws(Of IndexOutOfRangeException)(Sub()
+                                                           Dim Dummy = Range.Cell(6, ExcelOps.ExcelRange.CellAccessDirection.AllCellsOfAColumnThenNextColumn)
+                                                       End Sub)
+
         End Sub
 
         <Test> Public Sub EqualityAndComparisons()

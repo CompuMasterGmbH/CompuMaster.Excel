@@ -163,15 +163,16 @@
         ''' <returns></returns>
         Public ReadOnly Property Cell(index As Integer, accessDirection As CellAccessDirection) As ExcelCell
             Get
+                If index < 0 OrElse index + 1 > Me.Count Then Throw New IndexOutOfRangeException("Invalid index: " & index.ToString)
                 Dim RangeRectangleRowsCount As Integer = AddressEnd.RowIndex - AddressStart.RowIndex + 1
                 Dim RangeRectangleColumnsCount As Integer = AddressEnd.ColumnIndex - AddressStart.ColumnIndex + 1
                 Dim RowIndexWithinRangeRectangle As Integer
                 Dim ColumnIndexWithinRangeRectangle As Integer
                 Select Case accessDirection
                     Case CellAccessDirection.AllCellsOfARowThenNextRow
-                        RowIndexWithinRangeRectangle = System.Math.DivRem(index, RangeRectangleRowsCount, ColumnIndexWithinRangeRectangle)
+                        RowIndexWithinRangeRectangle = System.Math.DivRem(index, RangeRectangleColumnsCount, ColumnIndexWithinRangeRectangle)
                     Case CellAccessDirection.AllCellsOfAColumnThenNextColumn
-                        ColumnIndexWithinRangeRectangle = System.Math.DivRem(index, RangeRectangleColumnsCount, RowIndexWithinRangeRectangle)
+                        ColumnIndexWithinRangeRectangle = System.Math.DivRem(index, RangeRectangleRowsCount, RowIndexWithinRangeRectangle)
                     Case Else
                         Throw New ArgumentOutOfRangeException(NameOf(accessDirection))
                 End Select
