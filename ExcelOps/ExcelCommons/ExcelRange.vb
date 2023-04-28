@@ -1,7 +1,7 @@
 ﻿Namespace ExcelOps
 
     Public Class ExcelRange
-        Implements IEnumerable(Of ExcelCell), ICloneable
+        Implements IEnumerable(Of ExcelCell), ICloneable, IEqualityComparer, IComparable
 
         ''' <summary>
         ''' Create a range from 2 cells including all cells within this rectangle
@@ -145,12 +145,117 @@
         End Function
 
         ''' <summary>
+        ''' A cell of this range
+        ''' </summary>
+        ''' <param name="index"></param>
+        ''' <returns></returns>
+        Public ReadOnly Property Cell(index As Integer) As ExcelCell
+            Get
+                Return Me.Cell(index, CellAccessDirection.AllCellsOfARowThenNextRow)
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' A cell of this range
+        ''' </summary>
+        ''' <param name="index"></param>
+        ''' <param name="accessDirection"></param>
+        ''' <returns></returns>
+        Public ReadOnly Property Cell(index As Integer, accessDirection As CellAccessDirection) As ExcelCell
+            Get
+                Dim RangeRectangleRowsCount As Integer = AddressEnd.RowIndex - AddressStart.RowIndex + 1
+                Dim RangeRectangleColumnsCount As Integer = AddressEnd.ColumnIndex - AddressStart.ColumnIndex + 1
+                Dim RowIndexWithinRangeRectangle As Integer
+                Dim ColumnIndexWithinRangeRectangle As Integer
+                Select Case accessDirection
+                    Case CellAccessDirection.AllCellsOfARowThenNextRow
+                        RowIndexWithinRangeRectangle = System.Math.DivRem(index, RangeRectangleRowsCount, ColumnIndexWithinRangeRectangle)
+                    Case CellAccessDirection.AllCellsOfAColumnThenNextColumn
+                        ColumnIndexWithinRangeRectangle = System.Math.DivRem(index, RangeRectangleColumnsCount, RowIndexWithinRangeRectangle)
+                    Case Else
+                        Throw New ArgumentOutOfRangeException(NameOf(accessDirection))
+                End Select
+                Return New ExcelCell(AddressStart.SheetName,
+                                     AddressStart.RowIndex + RowIndexWithinRangeRectangle,
+                                     AddressStart.ColumnIndex + ColumnIndexWithinRangeRectangle,
+                                     AddressStart.DataType)
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' An direction to access the cells of a range
+        ''' </summary>
+        Public Enum CellAccessDirection As Byte
+            ''' <summary>
+            ''' Row by row, column by column
+            ''' </summary>
+            ''' <remarks>In a Range with 3x3 cells, the cell at index 3 is located in the 2nd row and 1st column</remarks>
+            AllCellsOfARowThenNextRow = 0
+            ''' <summary>
+            ''' Column by column, row by row
+            ''' </summary>
+            ''' <remarks>In a Range with 3x3 cells, the cell at index 3 is located in the 2nd column and 1st row</remarks>
+            AllCellsOfAColumnThenNextColumn = 1
+        End Enum
+
+        ''' <summary>
         ''' An enumerator for a cells in this range
         ''' </summary>
         ''' <returns></returns>
         Private Function IEnumerable_GetEnumerator() As IEnumerator Implements IEnumerable.GetEnumerator
             Return New ExcelRangeEnum(Me.AddressStart, Me.AddressEnd)
         End Function
+
+#Region "Equality and comparison"
+        Private Function IEqualityComparer_Equals(x As Object, y As Object) As Boolean Implements IEqualityComparer.Equals
+            Return CType(x, ExcelRange) = CType(y, ExcelRange)
+        End Function
+
+        Public Overrides Function Equals(obj As Object) As Boolean
+            Return Me = CType(obj, ExcelRange)
+        End Function
+
+        Public Shared Operator =(x As ExcelRange, y As ExcelRange) As Boolean
+            Return x.CompareTo(y) = 0
+        End Operator
+
+        Public Shared Operator <>(x As ExcelRange, y As ExcelRange) As Boolean
+            Return x.CompareTo(y) <> 0
+        End Operator
+
+        Private Function IEqualityComparer_GetHashCode(obj As Object) As Integer Implements IEqualityComparer.GetHashCode
+            If obj Is Nothing OrElse GetType(ExcelRange).IsInstanceOfType(obj) = False Then Throw New ArgumentException("Comparison requires values of type ExcelRange")
+            Return CType(obj, ExcelRange).GetHashCode
+        End Function
+
+        Public Overrides Function GetHashCode() As Integer
+            Return Me.ToString(True).GetHashCode
+        End Function
+
+        Public Shared Operator <(x As ExcelRange, y As ExcelRange) As Boolean
+            Return x.CompareTo(y) < 0
+        End Operator
+
+        Public Shared Operator >(x As ExcelRange, y As ExcelRange) As Boolean
+            Return x.CompareTo(y) > 0
+        End Operator
+
+        Public Function CompareTo(obj As Object) As Integer Implements IComparable.CompareTo
+            If obj Is Nothing OrElse GetType(ExcelRange).IsInstanceOfType(obj) = False Then Throw New ArgumentException("Comparison requires values of type ExcelRange")
+            Dim ComparisonRange = CType(obj, ExcelRange)
+            If Me.AddressStart < ComparisonRange.AddressStart Then
+                Return -2
+            ElseIf Me.AddressStart > ComparisonRange.AddressStart Then
+                Return 2
+            ElseIf Me.CellCount < ComparisonRange.CellCount Then
+                Return -1
+            ElseIf Me.CellCount > ComparisonRange.CellCount Then
+                Return 1
+            Else
+                Return 0
+            End If
+        End Function
+#End Region
 
         ''' <summary>
         ''' An enumerator for a cells in this range

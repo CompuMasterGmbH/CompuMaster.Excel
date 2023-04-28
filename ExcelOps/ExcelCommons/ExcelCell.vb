@@ -1,7 +1,7 @@
 ﻿Namespace ExcelOps
 
     Public Class ExcelCell
-        Implements ICloneable
+        Implements ICloneable, IComparable, IEqualityComparer
 
         Public Sub New(addressWithSheetName As String, dataType As ValueTypes)
             Me.New(SheetNamePart(addressWithSheetName), LocalAddressPart(addressWithSheetName), dataType)
@@ -208,32 +208,38 @@
         ''' 0-based index
         ''' </summary>
         ''' <returns></returns>
-        Public Function RowIndex() As Integer
-            Return Me.RowNumber - 1
-        End Function
+        Public ReadOnly Property RowIndex() As Integer
+            Get
+                Return Me.RowNumber - 1
+            End Get
+        End Property
 
         ''' <summary>
         ''' 0-based index
         ''' </summary>
         ''' <returns></returns>
-        Public Function ColumnIndex() As Integer
-            Return ColumnIndex(Me.ColumnName)
-        End Function
+        Public ReadOnly Property ColumnIndex() As Integer
+            Get
+                Return CalculateColumnIndex(Me.ColumnName)
+            End Get
+        End Property
 
         ''' <summary>
         ''' 1-based index
         ''' </summary>
         ''' <returns></returns>
-        Public Function ColumnNumber() As Integer
-            Return ColumnIndex(Me.ColumnName) + 1
-        End Function
+        Public ReadOnly Property ColumnNumber() As Integer
+            Get
+                Return CalculateColumnIndex(Me.ColumnName) + 1
+            End Get
+        End Property
 
         ''' <summary>
         ''' 0-based index
         ''' </summary>
         ''' <param name="columnAddressPart">Column letters, e.g. "A", "B", ..., "AA", "AB", ...</param>
         ''' <returns></returns>
-        Public Shared Function ColumnIndex(columnAddressPart As String) As Integer
+        Public Shared Function CalculateColumnIndex(columnAddressPart As String) As Integer
             Dim Result As Integer = 0
             Dim ColName As String = columnAddressPart.ToUpperInvariant
             For MyCounter As Integer = 0 To ColName.Length - 1
@@ -286,7 +292,7 @@
                 ElseIf Integer.Parse(RowPart) < 1 Then
                     Return False 'not a valid row number
                 End If
-                If ColumnIndex(ColPart) > 16383 Then
+                If CalculateColumnIndex(ColPart) > 16383 Then
                     Return False 'column XFD is last possible column with column index 16383
                 End If
             Catch
@@ -400,6 +406,57 @@
         Public Function GoToRelativePosition(addRows As Integer, addColumns As Integer) As ExcelCell
             Return New ExcelCell(Me.SheetName, Me.RowIndex + addRows, Me.ColumnIndex + addColumns, Me.DataType)
         End Function
+
+#Region "Equality and comparison"
+        Private Function IEqualityComparer_Equals(x As Object, y As Object) As Boolean Implements IEqualityComparer.Equals
+            Return CType(x, ExcelCell) = CType(y, ExcelCell)
+        End Function
+
+        Public Overrides Function Equals(obj As Object) As Boolean
+            Return Me = CType(obj, ExcelCell)
+        End Function
+
+        Public Shared Operator =(x As ExcelCell, y As ExcelCell) As Boolean
+            Return x.CompareTo(y) = 0
+        End Operator
+
+        Public Shared Operator <>(x As ExcelCell, y As ExcelCell) As Boolean
+            Return x.CompareTo(y) <> 0
+        End Operator
+
+        Private Function IEqualityComparer_GetHashCode(obj As Object) As Integer Implements IEqualityComparer.GetHashCode
+            If obj Is Nothing OrElse GetType(ExcelCell).IsInstanceOfType(obj) = False Then Throw New ArgumentException("Comparison requires values of type ExcelCell")
+            Return CType(obj, ExcelCell).GetHashCode
+        End Function
+
+        Public Overrides Function GetHashCode() As Integer
+            Return Me.ToString(True).GetHashCode
+        End Function
+
+        Public Shared Operator <(x As ExcelCell, y As ExcelCell) As Boolean
+            Return x.CompareTo(y) < 0
+        End Operator
+
+        Public Shared Operator >(x As ExcelCell, y As ExcelCell) As Boolean
+            Return x.CompareTo(y) > 0
+        End Operator
+
+        Public Function CompareTo(obj As Object) As Integer Implements IComparable.CompareTo
+            If obj Is Nothing OrElse GetType(ExcelCell).IsInstanceOfType(obj) = False Then Throw New ArgumentException("Comparison requires values of type ExcelCell")
+            Dim ComparisonRange = CType(obj, ExcelCell)
+            If Me.RowIndex < ComparisonRange.RowIndex Then
+                Return -2
+            ElseIf Me.RowIndex > ComparisonRange.RowIndex Then
+                Return 2
+            ElseIf Me.ColumnIndex < ComparisonRange.ColumnIndex Then
+                Return -1
+            ElseIf Me.ColumnIndex > ComparisonRange.ColumnIndex Then
+                Return 1
+            Else
+                Return 0
+            End If
+        End Function
+#End Region
 
     End Class
 

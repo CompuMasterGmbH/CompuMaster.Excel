@@ -77,6 +77,40 @@ Namespace ExcelOpsEngineTests
                                                End Sub)
         End Sub
 
+        <Test> Public Sub EqualityAndComparisons()
+            Dim CellA1 = New ExcelCell("", "A1", ExcelOps.ExcelCell.ValueTypes.All)
+            Dim CellA2 = New ExcelCell("", "A2", ExcelOps.ExcelCell.ValueTypes.All)
+            Dim CellB1 = New ExcelCell("", "B1", ExcelOps.ExcelCell.ValueTypes.All)
+            Dim CellA1Dup = New ExcelCell("", "A1", ExcelOps.ExcelCell.ValueTypes.All)
+
+            Assert.IsTrue(CellA1 = CellA1Dup)
+            Assert.IsFalse(CellA1 <> CellA1Dup)
+            Assert.IsTrue(CellA1.Equals(CellA1Dup))
+            Assert.AreEqual(CellA1, CellA1Dup)
+            Assert.AreEqual(CellA1.GetHashCode, CellA1Dup.GetHashCode)
+
+            Assert.IsFalse(CellA1 = CellB1)
+            Assert.IsTrue(CellA1 <> CellB1)
+            Assert.IsFalse(CellA1.Equals(CellB1))
+            Assert.AreNotEqual(CellA1, CellB1)
+            Assert.AreNotEqual(CellA1.GetHashCode, CellB1.GetHashCode)
+
+            Assert.IsFalse(CellA1 > CellB1)
+            Assert.IsTrue(CellA1 < CellB1)
+
+            Assert.IsFalse(CellA1 > CellA2)
+            Assert.IsTrue(CellA1 < CellA2)
+
+            Assert.Negative(CellA1.CompareTo(CellB1))
+            Assert.Positive(CellB1.CompareTo(CellA1))
+
+            Assert.Negative(CellA1.CompareTo(CellA2))
+            Assert.Positive(CellA2.CompareTo(CellA1))
+
+            Assert.Zero(CellA1.CompareTo(CellA1Dup))
+            Assert.Positive(CellA2.CompareTo(CellA1Dup))
+        End Sub
+
     End Class
 
 End Namespace
