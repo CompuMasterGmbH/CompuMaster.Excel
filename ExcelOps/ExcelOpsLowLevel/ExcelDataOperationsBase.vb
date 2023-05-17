@@ -1325,5 +1325,61 @@ Namespace ExcelOps
 
         Public MustOverride Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
 
+        ''' <summary>
+        ''' Find all error cells of a workbook
+        ''' </summary>
+        ''' <param name="filterForErrorValues">The error values to find, e.g. "#REF!", "#NAME?", or null/Nothing/0-array for all types of error cells</param>
+        ''' <returns></returns>
+        ''' <remarks>
+        ''' #DIV/0! - This error occurs when you try to divide a number by zero. To fix this error, you can use an IF function to verify that the denominator is zero.
+        ''' #NAME? - This error occurs when Excel does not recognize the name of a function or range. To fix this error, check the name and make sure it is spelled correctly.
+        ''' #VALUE! - This error occurs when Excel detects an invalid data type. To fix this error, make sure that the data is in the correct form.
+        ''' #REF! - This error occurs when a cell refers to an invalid range. To fix this error, check the formula and make sure that all cell references are correct.
+        ''' #NUM! - This error occurs when a formula or function has an invalid numeric argument. To fix this error, check the formula and make sure that all arguments are valid.
+        ''' </remarks>
+        Public Function FindErrorCellsInWorkbook(ParamArray filterForErrorValues As String()) As List(Of ExcelCell)
+            Dim Result As New List(Of ExcelCell)
+            Dim AllSheets = Me.SheetNames
+            For Each SheetName As String In AllSheets
+                Result.AddRange(FindErrorCellsInSheet(SheetName, filterForErrorValues))
+            Next
+            Return Result
+        End Function
+
+        ''' <summary>
+        ''' Find all error cells of a sheet
+        ''' </summary>
+        ''' <param name="sheetName">Name of sheet</param>
+        ''' <param name="filterForErrorValues">The error values to find, e.g. "#REF!", "#NAME?", or null/Nothing/0-array for all types of error cells</param>
+        ''' <returns></returns>
+        ''' <remarks>
+        ''' #DIV/0! - This error occurs when you try to divide a number by zero. To fix this error, you can use an IF function to verify that the denominator is zero.
+        ''' #NAME? - This error occurs when Excel does not recognize the name of a function or range. To fix this error, check the name and make sure it is spelled correctly.
+        ''' #VALUE! - This error occurs when Excel detects an invalid data type. To fix this error, make sure that the data is in the correct form.
+        ''' #REF! - This error occurs when a cell refers to an invalid range. To fix this error, check the formula and make sure that all cell references are correct.
+        ''' #NUM! - This error occurs when a formula or function has an invalid numeric argument. To fix this error, check the formula and make sure that all arguments are valid.
+        ''' </remarks>
+        Public Function FindErrorCellsInSheet(sheetName As String, ParamArray filterForErrorValues As String()) As List(Of ExcelCell)
+            Dim Result As New List(Of ExcelCell)
+            Dim LastCell = Me.LookupLastCell(sheetName)
+            For RowCounter As Integer = 0 To LastCell.RowIndex
+                For ColCounter As Integer = 0 To LastCell.ColumnIndex
+                    Dim ErrorValue = Me.LookupCellErrorValue(sheetName, RowCounter, ColCounter)
+                    If ErrorValue <> Nothing Then
+                        If filterForErrorValues Is Nothing OrElse filterForErrorValues.Length = 0 Then
+                            'collect all error cells
+                            Result.Add(New ExcelCell(sheetName, RowCounter, ColCounter, ExcelCell.ValueTypes.All))
+                        ElseIf filterForErrorValues IsNot Nothing AndAlso filterForErrorValues.Length <> 0 Then
+                            'collect specified error values only
+                            If Tools.IsOneOf(Of String)(ErrorValue, filterForErrorValues) = True Then
+                                Result.Add(New ExcelCell(sheetName, RowCounter, ColCounter, ExcelCell.ValueTypes.All))
+                            End If
+                        End If
+                    End If
+                Next
+            Next
+            Return Result
+        End Function
+
     End Class
 End Namespace

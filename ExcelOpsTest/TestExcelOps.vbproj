@@ -16,6 +16,7 @@
   <ItemGroup>
     <None Remove="test_comparison_masters\excel_test_chart.png" />
     <None Remove="test_data\ChartSheet01.xlsx" />
+    <None Remove="test_data\ExcelOpsErrorValues.xlsx" />
     <None Remove="test_data\ExcelOpsGrund01.xlsx" />
     <None Remove="test_data\ExcelOpsGrund02.xlsx" />
     <None Remove="test_data\ExcelOpsMergedCells.xlsx" />
@@ -61,6 +62,12 @@
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
     <PackageReference Include="NUnit.Analyzers" Version="3.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="test_data\ExcelOpsErrorValues.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

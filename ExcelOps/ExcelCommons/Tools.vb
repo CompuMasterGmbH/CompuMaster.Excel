@@ -400,6 +400,42 @@ Namespace ExcelOps
             Return SeparatorsFromRightDirection
         End Function
 
+        ''' <summary>
+        ''' Check if a value is member of an array of values
+        ''' </summary>
+        ''' <typeparam name="T"></typeparam>
+        ''' <param name="value"></param>
+        ''' <param name="allowedValues"></param>
+        ''' <returns></returns>
+        Friend Shared Function IsOneOf(Of T)(value As T, ParamArray allowedValues As T()) As Boolean
+            Dim GType As Type = GetType(T)
+            If GType.IsArray Then
+                Throw New NotSupportedException("Arrays as generic type not supported")
+            ElseIf GType.IsInterface Then
+                Throw New NotSupportedException("Interfaces as generic type not supported")
+            ElseIf GType.IsClass AndAlso GType Is GetType(String) Then
+                If allowedValues Is Nothing OrElse allowedValues.Length = 0 Then
+                    Return False
+                Else
+                    Return allowedValues.Contains(value)
+                End If
+            ElseIf GType.IsClass Then
+                If allowedValues Is Nothing OrElse allowedValues.Length = 0 Then
+                    Return False
+                Else
+                    Return allowedValues.Contains(value)
+                End If
+            ElseIf GType.IsValueType Then
+                If allowedValues Is Nothing OrElse allowedValues.Length = 0 Then
+                    Return False
+                Else
+                    Return allowedValues.Contains(value)
+                End If
+            Else
+                Throw New NotSupportedException("Unsupported generic type " & GType.FullName & "/" & GType.GetGenericTypeDefinition.FullName)
+            End If
+        End Function
+
     End Class
 
 End Namespace
