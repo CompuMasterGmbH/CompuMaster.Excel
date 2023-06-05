@@ -38,6 +38,11 @@ Namespace ExcelOps
             End If
         End Sub
 
+        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(file, mode, Not disableInitialCalculation, False, [readOnly], passwordForOpening)
+            ValidateLicenseContext(Me)
+        End Sub
+
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
             ValidateLicenseContext(Me)

@@ -142,11 +142,33 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' </code>
         ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(file, mode, msExcelApp, unprotectWorksheets, [readOnly], passwordForOpening, False)
+        End Sub
+
+        ''' <summary>
+        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' </summary>
+        ''' <param name="disableAutoCalculation">Disable initial and auto-calculations</param>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
+        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String, disableAutoCalculation As Boolean)
 #Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
-            MyBase.New(True, False, [readOnly], passwordForOpening)
+            MyBase.New(Not disableAutoCalculation, False, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
             Me._Workbooks = New MsExcelWorkbooksWrapper(msExcelApp, msExcelApp.ComObjectStronglyTyped.Workbooks)
+            If disableAutoCalculation Then
+                Me.AutoCalculationEnabled = False
+            End If
             Select Case mode
                 Case OpenMode.OpenExistingFile
                     Me.LoadAndInitializeWorkbookFile(file)

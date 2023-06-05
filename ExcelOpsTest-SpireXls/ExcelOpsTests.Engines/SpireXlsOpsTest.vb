@@ -11,8 +11,8 @@ Namespace ExcelOpsTests.Engines
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = True
         End Sub
 
-        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.SpireXlsDataOperations
-            Return New ExcelOps.SpireXlsDataOperations(file, mode, [readOnly], passwordForOpening)
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean) As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(file, mode, [readOnly], passwordForOpening, disableInitialCalculation)
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.SpireXlsDataOperations

@@ -9,7 +9,7 @@ Namespace ExcelOpsTests.Engines
 
         Protected MustOverride Function _CreateInstance() As T
 
-        Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
+        Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableCalculationEngine As Boolean) As T
 
         ''' <summary>
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
@@ -48,8 +48,21 @@ Namespace ExcelOpsTests.Engines
         ''' <param name="passwordForOpening"></param>
         ''' <returns></returns>
         Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
+            Return Me.CreateInstance(file, mode, [readOnly], passwordForOpening, False)
+        End Function
+
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="file"></param>
+        ''' <param name="mode"></param>
+        ''' <param name="[readOnly]"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <param name="disableCalculationEngine">True to disable calculation engine, e.g. sometimes required with some excel engines to load excel workbooks with circular reference errors successfully</param>
+        ''' <returns></returns>
+        Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableCalculationEngine As Boolean) As T
             Try
-                Return _CreateInstance(file, mode, [readOnly], passwordForOpening)
+                Return _CreateInstance(file, mode, [readOnly], passwordForOpening, disableCalculationEngine)
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
@@ -1099,7 +1112,6 @@ Namespace ExcelOpsTests.Engines
                 Assert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
-
 #End Region
 
 #Region "Excel error values in cells"
@@ -1169,6 +1181,164 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
 
+#End Region
+
+#Region "Excel workbooks with embedded pictures might fail to load/save on different platforms (due to System.Drawing not being accessible, e.g. on Linux with .Net 7"
+        ''' <summary>
+        ''' Embedded "picture": a chart in diagram sheet
+        ''' </summary>
+        <Test>
+        Public Sub TestFileWithEmbeddedPicture01()
+            Try
+                Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileEmbeddedPicture01.FullName)
+                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_embeddedpicture01.xlsx")
+                Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Embedded "picture": a chart in worksheet
+        ''' </summary>
+        <Test>
+        Public Sub TestFileWithEmbeddedPicture02()
+            Try
+                Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileEmbeddedPicture02.FullName)
+                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_embeddedpicture02.xlsx")
+                Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Embedded static picture
+        ''' </summary>
+        <Test>
+        Public Sub TestFileWithEmbeddedPicture03()
+            Try
+                Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileEmbeddedPicture03.FullName)
+                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_embeddedpicture02.xlsx")
+                Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
+#End Region
+
+#Region "Circular references behaviour"
+        <Test>
+        Public Sub TestFileWithCircularReference01_LoadWithCalculationEngineDefault()
+            Try
+                Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileCircularReference01.FullName)
+                Dim Workbook As T
+
+                Dim CatchedEx As Exception = Nothing
+                Try
+                    Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Catch ex As Exception
+                    CatchedEx = ex
+                    Workbook = Me.CreateInstance()
+                End Try
+                Select Case Workbook.EngineName
+                    Case "Epplus 4 (LGPL)"
+                        Assert.AreEqual(False, Workbook.AutoCalculationOnLoad)
+                        Assert.Null(CatchedEx)
+                        Assert.NotNull(Workbook.FilePath)
+                    Case "Epplus (Polyform license edition)"
+                        Assert.Null(Workbook.FilePath)
+                        Assert.AreEqual(False, Workbook.AutoCalculationOnLoad)
+                        Assert.AreEqual("Circular Reference in cell CircularRefTest!B2", CatchedEx.Message)
+                        Assert.AreEqual("OfficeOpenXml.FormulaParsing.Exceptions.CircularReferenceException", CatchedEx.GetType.FullName)
+                    Case Else
+                        Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
+                        Assert.AreEqual(True, Workbook.AutoCalculationOnLoad)
+                        Assert.Null(CatchedEx)
+                        Assert.NotNull(Workbook.FilePath)
+                End Select
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
+
+        <Test>
+        Public Sub TestFileWithCircularReference01_LoadAndResaveWithDisabledCalculationEngine()
+            Try
+                Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileCircularReference01.FullName)
+                Dim Workbook As T = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_circularref01_rewritten.xlsx")
+                Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
+
+        <Test>
+        Public Sub TestFileWithCircularReference01_LoadAndRecalculateOnEnabledCalculationEngine()
+            Try
+                Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileCircularReference01.FullName)
+                Dim Workbook As T = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Dim CatchedEx As Exception = Nothing
+                Try
+                    If Workbook.CalculationModuleDisabled = False Then
+                        Workbook.RecalculateAll()
+                    End If
+                Catch ex As Exception
+                    CatchedEx = ex
+                End Try
+                Select Case Workbook.EngineName
+                    Case "Epplus (Polyform license edition)"
+                        Assert.AreEqual("Circular Reference in cell CircularRefTest!B2", CatchedEx.Message)
+                        Assert.AreEqual("OfficeOpenXml.FormulaParsing.Exceptions.CircularReferenceException", CatchedEx.GetType.FullName)
+                    Case Else
+                        Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
+                        Assert.Null(CatchedEx)
+                End Select
+
+            Catch ex As PlatformNotSupportedException
+                'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As NotSupportedException
+                Assert.Ignore("EngineNotSupported: " & ex.Message)
+            Catch ex As NotImplementedException
+                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+            End Try
+        End Sub
 #End Region
 
     End Class

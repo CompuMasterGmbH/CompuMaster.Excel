@@ -8,14 +8,14 @@ Namespace ExcelOpsTests.Engines
 
         Public Overrides ReadOnly Property ExpectedEngineName As String = "Microsoft Excel (2013 or higher)"
 
-        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As ExcelOps.MsExcelDataOperations
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean) As ExcelOps.MsExcelDataOperations
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
                 MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
-            Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, [readOnly], passwordForOpening)
+            Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, [readOnly], passwordForOpening) With {.AutoCalculationEnabled = Not disableInitialCalculation}
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.MsExcelDataOperations
