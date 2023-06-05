@@ -416,6 +416,10 @@ Namespace CompuMaster.Data
                 Catch ex As PlatformNotSupportedException
                     'System.Drawing.Common is not supported on platform
                     'just ignore AutoFit feature
+                Catch ex As System.TypeInitializationException
+                    'The type initializer for 'Gdip' threw an exception.
+                    '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
+                    'just ignore AutoFit feature
                 End Try
             Next
 

@@ -429,6 +429,11 @@ Namespace ExcelOpsTests.Engines
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
             End Try
         End Sub
 
@@ -1106,6 +1111,11 @@ Namespace ExcelOpsTests.Engines
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
                 Assert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
@@ -1198,6 +1208,11 @@ Namespace ExcelOpsTests.Engines
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
                 Assert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
@@ -1219,6 +1234,11 @@ Namespace ExcelOpsTests.Engines
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
                 Assert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
@@ -1238,6 +1258,11 @@ Namespace ExcelOpsTests.Engines
                 Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
@@ -1282,6 +1307,11 @@ Namespace ExcelOpsTests.Engines
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
                 Assert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
@@ -1298,6 +1328,11 @@ Namespace ExcelOpsTests.Engines
                 Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
@@ -1331,6 +1366,11 @@ Namespace ExcelOpsTests.Engines
 
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
+                'just ignore AutoFit feature
+                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+            Catch ex As System.TypeInitializationException
+                'The type initializer for 'Gdip' threw an exception.
+                '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
                 Assert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
