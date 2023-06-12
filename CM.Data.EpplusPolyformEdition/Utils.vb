@@ -41,7 +41,9 @@ Friend Class Utils
             Else
                 'Update the counter value
                 NumberCounterValue = CType(suggestedColumnName.Substring(NumberPositionIndex), Integer) + 1
+#Disable Warning CA1845 ' Use span-based 'string.Concat'
                 suggestedColumnName = suggestedColumnName.Substring(0, NumberPositionIndex) & NumberCounterValue.ToString
+#Enable Warning CA1845 ' Use span-based 'string.Concat'
             End If
 
             'Revalidate uniqueness by running recursively

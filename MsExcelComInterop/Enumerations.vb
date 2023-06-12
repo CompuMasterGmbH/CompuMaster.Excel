@@ -245,7 +245,9 @@
         xlDialogStyle = 44
         xlDialogSubscribeTo = 218
         xlDialogSubtotalCreate = 398
+#Disable Warning CA1069 ' Enums values should not be duplicated
         xlDialogSummaryInfo = 474
+#Enable Warning CA1069 ' Enums values should not be duplicated
         xlDialogTable = 41
         xlDialogTabOrder = 394
         xlDialogTextToColumns = 422

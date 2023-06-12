@@ -276,7 +276,7 @@ Namespace ExcelOps
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            If Me.Workbook.Worksheets.Item(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
+            If Me.Workbook.Worksheets.Item(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
             Return Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Value2
         End Function
 
@@ -286,7 +286,7 @@ Namespace ExcelOps
         ''' <param name="cell"></param>
         ''' <returns></returns>
         Public Overrides Function LookupCellFormula(cell As ExcelCell) As String
-            If Me.Workbook.Worksheets.Item(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & cell.SheetName, NameOf(cell))
+            If Me.Workbook.Worksheets.Item(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(cell), "Sheet not found: " & cell.SheetName)
             Dim Result As String = Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Formula)
             If Result <> Nothing Then
                 If Result(0) <> "=" Then Throw New InvalidCastException("Formula must always begin with '=' character internally")
@@ -305,9 +305,9 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public Overrides Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            If Me.Workbook.Worksheets.Item(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
-            If rowIndex < 0 Then Throw New ArgumentOutOfRangeException("RowIndex " & rowIndex & " must be equal or bigger than 0", NameOf(rowIndex))
-            If columnIndex < 0 Then Throw New ArgumentOutOfRangeException("ColumnIndex " & columnIndex & " must be equal or bigger than 0", NameOf(columnIndex))
+            If Me.Workbook.Worksheets.Item(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            If rowIndex < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rowIndex), "RowIndex " & rowIndex & " must be equal or bigger than 0")
+            If columnIndex < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columnIndex), "ColumnIndex " & columnIndex & " must be equal or bigger than 0")
             Dim Result As String = Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Formula)
             If Result <> Nothing Then
                 If Result(0) <> "=" Then Throw New InvalidCastException("Formula must always begin with '=' character internally")
@@ -482,6 +482,7 @@ Namespace ExcelOps
             Return IsEmptyCell(Sheet, rowIndex, columnIndex)
         End Function
 
+#Disable Warning CA1822 ' Member als statisch markieren
         ''' <summary>
         ''' Determine if a cell contains empty content (cells with formulas are always considered as filled cells)
         ''' </summary>
@@ -489,6 +490,7 @@ Namespace ExcelOps
         ''' <param name="rowIndex">Zero-based index</param>
         ''' <param name="columnIndex">Zero-based index</param>
         Private Overloads Function IsEmptyCell(ByVal sheet As Worksheet, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
+#Enable Warning CA1822 ' Member als statisch markieren
             If sheet.Range(rowIndex + 1, columnIndex + 1).Formula <> Nothing Then
                 Return False
             End If
@@ -809,7 +811,7 @@ Namespace ExcelOps
             Try
                 AllMergedCells = Sheet.MergedCells
             Catch ex As NullReferenceException
-                AllMergedCells = New CellRange() {}
+                AllMergedCells = Array.Empty(Of CellRange)()
             End Try
             For MyCounter As Integer = 0 To AllMergedCells.Length - 1
                 Result.Add(New ExcelRange(sheetName, AllMergedCells(MyCounter).RangeAddressLocal))

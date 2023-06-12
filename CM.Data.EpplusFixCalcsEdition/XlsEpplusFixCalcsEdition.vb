@@ -122,11 +122,11 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataTableToXlsFileAndFirstSheet(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable)
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("outputPath", "The output filename is required")
+                Throw New ArgumentNullException(NameOf(outputPath), "The output filename is required")
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
-            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, New String() {}, SpecialSheet.FirstSheet)
+            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, Array.Empty(Of String)(), SpecialSheet.FirstSheet)
             If exportWorkbook Is Nothing Then
                 Return
             End If
@@ -148,11 +148,11 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataTableToXlsFileAndCurrentSheet(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable)
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("outputPath", "The output filename is required")
+                Throw New ArgumentNullException(NameOf(outputPath), "The output filename is required")
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
-            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, New String() {}, SpecialSheet.CurrentSheet)
+            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, Array.Empty(Of String)(), SpecialSheet.CurrentSheet)
             If exportWorkbook Is Nothing Then
                 Return
             End If
@@ -210,7 +210,7 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataTableToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String())
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("outputPath", "The output filename is required")
+                Throw New ArgumentNullException(NameOf(outputPath), "The output filename is required")
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -436,6 +436,7 @@ Namespace CompuMaster.Data
             Excel2007Macro = 2
         End Enum
 
+#Disable Warning CA1822 ' Mark members as static
         ''' <summary>
         ''' Update/create an excel file, put some data into it and save the file to the output stream
         ''' </summary>
@@ -445,6 +446,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
         ''' <remarks></remarks>
         Public Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
+#Enable Warning CA1822 ' Mark members as static
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
             exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
             If exportWorkbook Is Nothing Then
@@ -522,7 +524,7 @@ Namespace CompuMaster.Data
         Public Shared Function ReadDataSetFromXlsFile(ByVal inputPath As String, ByVal firstRowContainsColumnNames As Boolean) As DataSet
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("inputPath", "The input filename is required")
+                Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             End If
 
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -646,7 +648,7 @@ Namespace CompuMaster.Data
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("inputPath", "The input filename is required")
+                Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             End If
 
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -749,7 +751,7 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("inputPath", "The input filename is required")
+                Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             End If
 
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -860,9 +862,9 @@ Namespace CompuMaster.Data
         Public Shared Sub ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("inputPath", "The input filename is required")
+                Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             ElseIf data Is Nothing Then
-                Throw New ArgumentNullException("data", "A datatable must be predefined which shall hold all the data")
+                Throw New ArgumentNullException(NameOf(data), "A datatable must be predefined which shall hold all the data")
             End If
 
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -897,7 +899,7 @@ Namespace CompuMaster.Data
         Public Shared Function ReadSheetNamesFromXlsFile(ByVal inputPath As String) As String()
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
-                Throw New ArgumentNullException("inputPath", "The input filename is required")
+                Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             End If
 
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage

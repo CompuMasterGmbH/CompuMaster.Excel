@@ -181,7 +181,7 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public Function IsMissingCalculatedCellValueFromFormulaCell(cell As ExcelCell) As Boolean
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
-            If Me.Workbook.Worksheets(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & cell.SheetName, NameOf(cell))
+            If Me.Workbook.Worksheets(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(cell), "Sheet not found: " & cell.SheetName)
             Dim CheckResult As Boolean = Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).HasMissingCachedCalculatedFormulaValue()
             If CheckResult = True AndAlso Tools.IsFormulaWithoutCellReferences(Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).Formula) Then
                 Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).Calculate
@@ -199,7 +199,7 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public Function IsMissingCalculatedCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException("Sheet not found: " & sheetName, NameOf(sheetName))
+            If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
             Dim CheckResult As Boolean = Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).HasMissingCachedCalculatedFormulaValue()
             If CheckResult = True AndAlso Tools.IsFormulaWithoutCellReferences(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Formula) Then
                 Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Calculate

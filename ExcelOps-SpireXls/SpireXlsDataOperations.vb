@@ -64,11 +64,13 @@ Namespace ExcelOps
         ''' <returns></returns>
         Friend Shared Property AllowInstancingForNonLicencedContextForTestingPurposesOnly As Boolean = False
 
+#Disable Warning CA1822 ' Mark members as static
         ''' <summary>
         ''' Is a valid Spire.Xls license assigned
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property IsLicensedContext As Boolean
+#Enable Warning CA1822 ' Mark members as static
             Get
                 Return Utils.IsLicensedContext
             End Get

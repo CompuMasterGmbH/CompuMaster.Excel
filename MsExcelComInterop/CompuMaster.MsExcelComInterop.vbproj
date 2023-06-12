@@ -15,6 +15,7 @@
     <Description>Control MS Excel via COM but without dependency to any Microsoft Interop assemblies</Description>
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <AnalysisLevel>latest-minimum</AnalysisLevel>
   </PropertyGroup>
 
   <ItemGroup>

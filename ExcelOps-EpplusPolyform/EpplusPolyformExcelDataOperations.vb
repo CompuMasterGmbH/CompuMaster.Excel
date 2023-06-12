@@ -95,6 +95,7 @@ Namespace ExcelOps
         '
         'Public ReadOnly Property Drawings As OfficeOpenXml.Drawing.ExcelPicture
 
+#Disable Warning CA1822 ' Member als statisch markieren
         ''' <summary>
         ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value
         ''' </summary>
@@ -120,6 +121,7 @@ Namespace ExcelOps
         Public Function IsMissingCalculatedCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             Return False
         End Function
+#Enable Warning CA1822 ' Member als statisch markieren
 
     End Class
 

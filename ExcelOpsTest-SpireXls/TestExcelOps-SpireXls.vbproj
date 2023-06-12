@@ -7,6 +7,7 @@
     <OptionStrict>On</OptionStrict>
     <AssemblyName>CompuMaster.Excel.TestSpireXls</AssemblyName>
     <Configurations>Debug;Release;CI_CD</Configurations>
+    <AnalysisLevel>latest-minimum</AnalysisLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='CI_CD'">

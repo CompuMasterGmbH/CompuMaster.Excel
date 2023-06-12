@@ -1051,7 +1051,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Get
                 If Me.IsClosed Then
                     Return Nothing
-                ElseIf Me.Workbook.FullName.Contains(".") = False Then 'e.g. Mappe1 --> is a name without file name extension --> indicates that it hasn't been saved, yet
+                ElseIf Me.Workbook.FullName.Contains("."c) = False Then 'e.g. Mappe1 --> is a name without file name extension --> indicates that it hasn't been saved, yet
                     Return Nothing
                 Else
                     Return Me.Workbook.FullName
