@@ -1331,7 +1331,7 @@ Namespace CompuMaster.Data
         ''' <remarks></remarks>
         Private Shared Function IsDateTimeInsteadOfNumber(ByVal cell As CompuMaster.Epplus4.ExcelRange) As Boolean
             Dim numFormat As String = cell.Style.Numberformat.Format
-            If numFormat.ToLower.Contains("y"c) > 0 OrElse numFormat.ToLower.Contains("m"c) > 0 OrElse numFormat.ToLower.Contains("d"c) > 0 OrElse numFormat.ToLower.Contains("h"c) > 0 Then
+            If numFormat.ToLowerInvariant.Contains("y"c) OrElse numFormat.ToLowerInvariant.Contains("m"c) OrElse numFormat.ToLowerInvariant.Contains("d"c) OrElse numFormat.ToLowerInvariant.Contains("h"c) Then
                 Try
                     DateTime.FromOADate(CType(cell.Value, Double))
                     Return True

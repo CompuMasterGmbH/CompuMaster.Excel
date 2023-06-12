@@ -778,7 +778,7 @@ Namespace ExcelOps
     '    ''' <remarks></remarks>
     '    Private Function IsDateTimeInsteadOfNumber(ByVal cell As OfficeOpenXml.ExcelRange) As Boolean
     '        Dim numFormat As String = cell.Style.Numberformat.Format
-    '        If numFormat.ToLower.IndexOf("y") > 0 OrElse numFormat.ToLower.IndexOf("m") > 0 OrElse numFormat.ToLower.IndexOf("d") > 0 OrElse numFormat.ToLower.IndexOf("h") > 0 Then
+    '        If numFormat.ToLowerInvariant.Contains("y"c) OrElse numFormat.ToLowerInvariant.Contains("m"c) OrElse numFormat.ToLowerInvariant.Contains("d"c) OrElse numFormat.ToLowerInvariant.Contains("h"c) Then
     '            Try
     '                DateTime.FromOADate(CType(cell.Value, Double))
     '                Return True
@@ -1037,7 +1037,7 @@ Namespace ExcelOps
                                 End If
                             End If
                         Catch ex As Exception
-                            Throw New Exception("Error writing a date/time value """ & datevalue.ToString & """ in row " & (RowCounter + 1), ex)
+                            Throw New Exception("Error writing a date/time value """ & datevalue.ToString(System.Globalization.CultureInfo.InvariantCulture) & """ in row " & (RowCounter + 1), ex)
                         End Try
                     ElseIf value.GetType Is GetType(Decimal) Then
                         Dim decimalValue As Decimal = CType(value, Decimal)

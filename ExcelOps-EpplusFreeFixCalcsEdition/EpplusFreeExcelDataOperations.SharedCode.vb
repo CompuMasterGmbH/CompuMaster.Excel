@@ -1037,7 +1037,7 @@ Namespace ExcelOps
                                 End If
                             End If
                         Catch ex As Exception
-                            Throw New Exception("Error writing a date/time value """ & datevalue.ToString & """ in row " & (RowCounter + 1), ex)
+                            Throw New Exception("Error writing a date/time value """ & datevalue.ToString(System.Globalization.CultureInfo.InvariantCulture) & """ in row " & (RowCounter + 1), ex)
                         End Try
                     ElseIf value.GetType Is GetType(Decimal) Then
                         Dim decimalValue As Decimal = CType(value, Decimal)

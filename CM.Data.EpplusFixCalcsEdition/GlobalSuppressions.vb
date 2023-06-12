@@ -10,3 +10,4 @@ Imports System.Diagnostics.CodeAnalysis
 <Assembly: SuppressMessage("Globalization", "CA1305:Specify IFormatProvider", Justification:="<Ausstehend>")>
 <Assembly: SuppressMessage("Globalization", "CA1311:Specify a culture or use an invariant version", Justification:="<Ausstehend>")>
 <Assembly: SuppressMessage("Globalization", "CA1310:Specify StringComparison for correctness", Justification:="<Ausstehend>")>
+<Assembly: SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification:="<Ausstehend>", Scope:="type", Target:="~T:CompuMaster.Data.XlsEpplusFixCalcsEdition")>

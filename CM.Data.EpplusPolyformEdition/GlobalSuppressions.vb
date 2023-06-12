@@ -6,3 +6,4 @@
 Imports System.Diagnostics.CodeAnalysis
 
 <Assembly: SuppressMessage("Globalization", "CA1305:Specify IFormatProvider", Justification:="<Ausstehend>")>
+<Assembly: SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification:="<Ausstehend>", Scope:="type", Target:="~T:CompuMaster.Data.XlsEpplusPolyformEdition")>

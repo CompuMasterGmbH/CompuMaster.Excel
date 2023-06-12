@@ -228,10 +228,10 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath"></param>
         ''' <remarks></remarks>
         Private Shared Sub SaveWorkbook(ByVal exportWorkbook As OfficeOpenXml.ExcelPackage, ByVal outputPath As String)
-            If outputPath <> Nothing AndAlso outputPath.ToLower.EndsWith(".xlsb") Then
+            If outputPath <> Nothing AndAlso outputPath.ToLowerInvariant.EndsWith(".xlsb", StringComparison.Ordinal) Then
                 'Excel 2007 binary format
                 Throw New NotSupportedException("Excel2007 binary file format not supported yet")
-            ElseIf outputPath <> Nothing AndAlso outputPath.ToLower.EndsWith(".xlsm") Then
+            ElseIf outputPath <> Nothing AndAlso outputPath.ToLowerInvariant.EndsWith(".xlsm", StringComparison.Ordinal) Then
                 'Excel 2007 macro format
                 exportWorkbook.SaveAs(New IO.FileInfo(outputPath))
             Else
@@ -1141,7 +1141,7 @@ Namespace CompuMaster.Data
         Private Shared Function IsDateTimeFormat(cellFormat As String) As Boolean
             If cellFormat = "" Then
                 Return False
-            ElseIf cellFormat.StartsWith("yyyy-MM-dd") OrElse cellFormat.StartsWith("HH:mm:ss") Then
+            ElseIf cellFormat.StartsWith("yyyy-MM-dd", StringComparison.Ordinal) OrElse cellFormat.StartsWith("HH:mm:ss", StringComparison.Ordinal) Then
                 Return True
             Else
                 Return False
@@ -1293,7 +1293,7 @@ Namespace CompuMaster.Data
             Dim sheetIndex As Integer = -1
             For MyCounter As Integer = 0 To workbook.Workbook.Worksheets.Count - 1
                 Dim sheet As OfficeOpenXml.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter)
-                If sheet.Name.ToLower = worksheetName.ToLower Then
+                If sheet.Name.ToLowerInvariant = worksheetName.ToLowerInvariant Then
                     sheetIndex = MyCounter
                 End If
             Next
@@ -1331,7 +1331,7 @@ Namespace CompuMaster.Data
         ''' <remarks></remarks>
         Private Shared Function IsDateTimeInsteadOfNumber(ByVal cell As OfficeOpenXml.ExcelRange) As Boolean
             Dim numFormat As String = cell.Style.Numberformat.Format
-            If numFormat.ToLower.IndexOf("y") > 0 OrElse numFormat.ToLower.IndexOf("m") > 0 OrElse numFormat.ToLower.IndexOf("d") > 0 OrElse numFormat.ToLower.IndexOf("h") > 0 Then
+            If numFormat.ToLowerInvariant.Contains("y"c) OrElse numFormat.ToLowerInvariant.Contains("m"c) OrElse numFormat.ToLowerInvariant.Contains("d"c) OrElse numFormat.ToLowerInvariant.Contains("h"c) Then
                 Try
                     DateTime.FromOADate(CType(cell.Value, Double))
                     Return True
