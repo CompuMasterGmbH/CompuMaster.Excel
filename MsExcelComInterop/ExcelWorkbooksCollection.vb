@@ -5,7 +5,7 @@
         MyBase.New(app, app.InvokePropertyGet(Of Object)("Workbooks"))
     End Sub
 
-    Public Workbooks As New List(Of ExcelWorkbook)
+    Public Property Workbooks As New List(Of ExcelWorkbook)
 
     Public Function Open(path As String) As ExcelWorkbook
         Dim wb As New ExcelWorkbook(Me, path)

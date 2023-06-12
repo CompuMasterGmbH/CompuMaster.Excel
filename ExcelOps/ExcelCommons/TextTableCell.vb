@@ -5,9 +5,9 @@
             Me.Address = address
             Me.CellContent = formula
         End Sub
-        Public CellContent As String
-        Public SheetName As String
-        Public Address As String
+        Public Property CellContent As String
+        Public Property SheetName As String
+        Public Property Address As String
         Public Overrides Function ToString() As String
             Return "'" & Me.SheetName & "'!" & Me.Address & ":" & Me.CellContent
         End Function

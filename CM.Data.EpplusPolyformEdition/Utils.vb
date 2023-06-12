@@ -3,7 +3,7 @@ Option Strict On
 
 Imports System.Data
 
-Friend Class Utils
+Friend NotInheritable Class Utils
 
     ''' <summary>
     '''     Lookup a new unique column name for a data table

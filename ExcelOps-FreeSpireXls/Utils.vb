@@ -1,4 +1,4 @@
-﻿Friend Class Utils
+﻿Friend NotInheritable Class Utils
 
     ''' <summary>
     '''     Return the string which is not nothing or else String.Empty

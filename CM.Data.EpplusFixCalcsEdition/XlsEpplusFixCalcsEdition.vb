@@ -1293,7 +1293,7 @@ Namespace CompuMaster.Data
             Dim sheetIndex As Integer = -1
             For MyCounter As Integer = 0 To workbook.Workbook.Worksheets.Count - 1
                 Dim sheet As CompuMaster.Epplus4.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter)
-                If sheet.Name.ToLower = worksheetName.ToLower Then
+                If sheet.Name.ToLowerInvariant = worksheetName.ToLowerInvariant Then
                     sheetIndex = MyCounter
                 End If
             Next
@@ -1316,7 +1316,7 @@ Namespace CompuMaster.Data
         Private Shared Function LookupWorksheet(ByVal workbook As CompuMaster.Epplus4.ExcelPackage, ByVal sheetName As String) As CompuMaster.Epplus4.ExcelWorksheet
             Dim resolvedIndex As Integer = ResolveWorksheetIndex(workbook, sheetName)
             If resolvedIndex = -1 Then
-                Throw New Exception("Worksheet """ & sheetName & """ hasn't been found")
+                Throw New ArgumentException("Worksheet """ & sheetName & """ hasn't been found")
             Else
                 Return workbook.Workbook.Worksheets(resolvedIndex)
             End If
@@ -1331,7 +1331,7 @@ Namespace CompuMaster.Data
         ''' <remarks></remarks>
         Private Shared Function IsDateTimeInsteadOfNumber(ByVal cell As CompuMaster.Epplus4.ExcelRange) As Boolean
             Dim numFormat As String = cell.Style.Numberformat.Format
-            If numFormat.ToLower.IndexOf("y") > 0 OrElse numFormat.ToLower.IndexOf("m") > 0 OrElse numFormat.ToLower.IndexOf("d") > 0 OrElse numFormat.ToLower.IndexOf("h") > 0 Then
+            If numFormat.ToLower.Contains("y"c) > 0 OrElse numFormat.ToLower.Contains("m"c) > 0 OrElse numFormat.ToLower.Contains("d"c) > 0 OrElse numFormat.ToLower.Contains("h"c) > 0 Then
                 Try
                     DateTime.FromOADate(CType(cell.Value, Double))
                     Return True

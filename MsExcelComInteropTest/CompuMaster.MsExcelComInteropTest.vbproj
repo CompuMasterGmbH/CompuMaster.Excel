@@ -7,7 +7,7 @@
     <Title>CompuMaster.Excel.MsExcelComInteropTest</Title>
     <OptionStrict>On</OptionStrict>
     <Configurations>Debug;Release;CI_CD</Configurations>
-    <AnalysisLevel>latest-minimum</AnalysisLevel>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='CI_CD'">

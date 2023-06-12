@@ -9,7 +9,7 @@
 
     Public ReadOnly Property Sheets() As ExcelSheetCollection
 
-    Public ReadOnly FilePath As String
+    Public ReadOnly Property FilePath As String
 
     Public ReadOnly Property Name As String
         Get

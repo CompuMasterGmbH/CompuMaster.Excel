@@ -447,7 +447,7 @@ Namespace ExcelOps
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
-            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New Exception("Specified worksheet is not a data worksheet")
+            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Sheet.DeleteRow(startRowIndex + 1, rows)
         End Sub
 

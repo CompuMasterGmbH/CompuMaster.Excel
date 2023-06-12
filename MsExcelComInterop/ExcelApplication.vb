@@ -58,6 +58,7 @@ Public Class ExcelApplication
         End Set
     End Property
 
+#Disable Warning CA1712 ' Enumerationswerten nicht den Typnamen voranstellen
     ''' <summary>
     ''' https://learn.microsoft.com/de-de/office/vba/api/office.msoautomationsecurity
     ''' </summary>
@@ -75,6 +76,7 @@ Public Class ExcelApplication
         ''' </summary>
         msoAutomationSecurityLow = 1
     End Enum
+#Enable Warning CA1712 ' Enumerationswerten nicht den Typnamen voranstellen
 
     ''' <summary>
     ''' Configure security level for macros/VBA

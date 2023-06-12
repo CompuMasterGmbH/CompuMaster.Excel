@@ -1,8 +1,8 @@
 ﻿Public Class TestTools
 
-    Public Shared Function EnumValues(Of EnumBaseType As Structure)() As List(Of EnumBaseType)
-        Dim Result As New List(Of EnumBaseType)
-        For Each Value As EnumBaseType In [Enum].GetValues(GetType(EnumBaseType))
+    Public Shared Function EnumValues(Of TEnumBaseType As Structure)() As List(Of TEnumBaseType)
+        Dim Result As New List(Of TEnumBaseType)
+        For Each Value As TEnumBaseType In [Enum].GetValues(GetType(TEnumBaseType))
             Result.Add(Value)
         Next
         Return Result

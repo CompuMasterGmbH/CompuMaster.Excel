@@ -574,7 +574,7 @@ Namespace ExcelOps
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
-            If Sheet.Dimension Is Nothing Then Throw New Exception("Specified worksheet is not a data worksheet")
+            If Sheet.Dimension Is Nothing Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Sheet.DeleteRow(startRowIndex + 1, rows)
         End Sub
 
@@ -594,7 +594,7 @@ Namespace ExcelOps
             End If
             If rangeFirstCell.SheetName = Nothing Then Throw New ArgumentNullException(NameOf(rangeFirstCell))
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
-            If Sheet.Dimension Is Nothing Then Throw New Exception("Specified worksheet is not a data worksheet")
+            If Sheet.Dimension Is Nothing Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Dim ws As ExcelWorksheet = Me.WorkbookPackage.Workbook.Worksheets.Item(rangeFirstCell.SheetName)
             ws.Cells(rangeFirstCell.Address & ":" & rangeLastCell.Address).Clear()
         End Sub

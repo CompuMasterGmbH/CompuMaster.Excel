@@ -65,7 +65,7 @@ Namespace ExcelOpsTests.Engines
             AssertNoExcelProcessesAvailable()
         End Sub
 
-        Protected AlwaysCloseAllWorkbooksInNewEngineInstances As Boolean = True
+        Protected Property AlwaysCloseAllWorkbooksInNewEngineInstances As Boolean = True
 
         ''' <summary>
         ''' Configures the environment to allow multiple workbooks in MS Excel (otherwise all workbook would get closed in test setup)
