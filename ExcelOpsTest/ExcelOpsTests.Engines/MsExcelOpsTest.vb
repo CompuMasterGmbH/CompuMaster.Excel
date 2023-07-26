@@ -49,8 +49,10 @@ Namespace ExcelOpsTests.Engines
                 If AssertionMessageWbCount <> Nothing Then AssertionMessageWbCount &= ","
                 AssertionMessageWbCount &= MsExcelInstance.Workbooks.Workbook(MyCounter + 1).Name
             Next
-            If WbCount > 1 Then
-
+            If AlwaysCloseAllWorkbooksInNewEngineInstances = False Then
+                For MyCounter As Integer = WbCount To 2 Step -1
+                    MsExcelInstance.Workbooks.Workbook(MyCounter).CloseAndDispose()
+                Next
             End If
             Assert.LessOrEqual(WbCount, 1, AssertionMessageWbCount)
             If WbCount = 1 Then
@@ -65,6 +67,10 @@ Namespace ExcelOpsTests.Engines
             AssertNoExcelProcessesAvailable()
         End Sub
 
+        ''' <summary>
+        ''' Allows multiple worksheets since 2nd CreateInstance method call doesn't close previously opened workbook(s)
+        ''' </summary>
+        ''' <returns></returns>
         Protected Property AlwaysCloseAllWorkbooksInNewEngineInstances As Boolean = True
 
         ''' <summary>

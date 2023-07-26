@@ -199,7 +199,7 @@ Namespace ExcelOpsTests.Engines
 
             'Now, save it with password
             Wb.PasswordForOpening = "dummy"
-            Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "PasswordProtectedFile.xlsx")
+            Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile(Wb, "PasswordProtectedFile.xlsx")
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             'Console.WriteLine("Saved password protected file to: " & NewXlsxTargetPath)
             Wb.Close()
@@ -329,7 +329,7 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         <Test> Public Overridable Sub CopySheetContent()
-            Dim eppeoIn As ExcelOps.ExcelDataOperationsBase
+            Dim eppeoIn As ExcelOps.ExcelDataOperationsBase = Nothing
             Dim eppeoOut As ExcelOps.ExcelDataOperationsBase = Nothing
             Dim TestControllingToolFileNameIn As String
             Dim TestControllingToolFileNameOutTemplate As String
@@ -353,6 +353,7 @@ Namespace ExcelOpsTests.Engines
                 Assert.AreEqual(eppeoIn.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
                 Assert.Pass("Required manual, optical review for comparison to check for formattings")
             Finally
+                If eppeoIn IsNot Nothing Then eppeoIn.Close()
                 If eppeoOut IsNot Nothing Then eppeoOut.Close()
             End Try
         End Sub
