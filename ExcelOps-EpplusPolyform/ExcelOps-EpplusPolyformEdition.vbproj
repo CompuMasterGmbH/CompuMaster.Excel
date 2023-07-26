@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EPPlus" Version="6.1.2" />
+    <PackageReference Include="EPPlus" Version="6.2.7" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>

@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.Data" Version="3.0.2023.103" />
+    <PackageReference Include="CompuMaster.Data" Version="3.0.2023.724" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>

@@ -2,7 +2,7 @@
 
 Namespace ExcelOps
     Public Class TextTable
-        Implements ICloneable
+        Implements ICloneable, IDisposable
 
         ''' <summary>
         ''' A new instance of TextTable
@@ -25,6 +25,7 @@ Namespace ExcelOps
         End Sub
 
         Private ReadOnly Table As DataTable
+        Private disposedValue As Boolean
 
         Public Property Cell(rowIndex As Integer, columnIndex As Integer) As String
             Get
@@ -109,7 +110,7 @@ Namespace ExcelOps
         End Function
 
         Public Function ToUITable() As String
-            Return CompuMaster.Data.DataTables.ConvertToPlainTextTableFixedColumnWidths(Me.Table, 2, 65535)
+            Return CompuMaster.Data.DataTables.ConvertToPlainTextTableFixedColumnWidths(Me.Table, New CompuMaster.Data.ConvertToPlainTextTableOptions() With {.MinimumColumnWidth = 2, .MaximumColumnWidth = 65535})
         End Function
 
         Public Function ToUIExcelTable() As String
@@ -122,7 +123,7 @@ Namespace ExcelOps
             For MyColCounter As Integer = 0 To UITable.Columns.Count - 1
                 If UITable.Columns(MyColCounter).ColumnName <> "RowNo" Then DestinationCols.Add(UITable.Columns(MyColCounter).ColumnName)
             Next
-            UITable = CompuMaster.Data.DataTables.ReArrangeDataColumns(UITable, DestinationCols.ToArray)
+            UITable = CompuMaster.Data.DataTables.CloneTableAndReArrangeDataColumns(UITable, DestinationCols.ToArray)
             'Setup column names in letters
             For MyCounter As Integer = 1 To UITable.Columns.Count - 1
                 UITable.Columns(MyCounter).Caption = ExcelColumnName(MyCounter - 1)
@@ -132,7 +133,7 @@ Namespace ExcelOps
             For MyCounter As Integer = 0 To UITable.Rows.Count - 1
                 UITable.Rows(MyCounter)(0) = MyCounter + 1
             Next
-            Return CompuMaster.Data.DataTables.ConvertToPlainTextTableFixedColumnWidths(UITable, 2, 65535)
+            Return CompuMaster.Data.DataTables.ConvertToPlainTextTableFixedColumnWidths(UITable, New CompuMaster.Data.ConvertToPlainTextTableOptions() With {.MinimumColumnWidth = 2, .MaximumColumnWidth = 65535})
         End Function
 
         Friend Shared ReadOnly Property ExcelColumnName(columnIndex As Integer) As String
@@ -471,5 +472,29 @@ Namespace ExcelOps
             Next
         End Sub
 
+        Protected Overridable Sub Dispose(disposing As Boolean)
+            If Not disposedValue Then
+                If disposing Then
+                    Me.Table.Dispose()
+                End If
+
+                ' TODO: Nicht verwaltete Ressourcen (nicht verwaltete Objekte) freigeben und Finalizer überschreiben
+                ' TODO: Große Felder auf NULL setzen
+                disposedValue = True
+            End If
+        End Sub
+
+        ' ' TODO: Finalizer nur überschreiben, wenn "Dispose(disposing As Boolean)" Code für die Freigabe nicht verwalteter Ressourcen enthält
+        ' Protected Overrides Sub Finalize()
+        '     ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in der Methode "Dispose(disposing As Boolean)" ein.
+        '     Dispose(disposing:=False)
+        '     MyBase.Finalize()
+        ' End Sub
+
+        Public Sub Dispose() Implements IDisposable.Dispose
+            ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in der Methode "Dispose(disposing As Boolean)" ein.
+            Dispose(disposing:=True)
+            GC.SuppressFinalize(Me)
+        End Sub
     End Class
 End Namespace

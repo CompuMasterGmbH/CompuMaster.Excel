@@ -90,6 +90,7 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public MustOverride Property AutoCalculationEnabled As Boolean
 
+        <CodeAnalysis.SuppressMessage("Design", "CA1051:Sichtbare Instanzfelder nicht deklarieren")>
         Protected _FilePath As String
         ''' <summary>
         ''' The file path as initialized in constructor (applies for saved files as well as for created, not-saved files with their intended file location on 1st save)
@@ -137,10 +138,10 @@ Namespace ExcelOps
             If Me.ReadOnly = True Then
                 Throw New FileReadOnlyException("File is read-only and can't be saved at same location")
             End If
-            If FilePath.ToLowerInvariant.EndsWith(".xlsx") AndAlso Me.HasVbaProject Then
+            If FilePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) AndAlso Me.HasVbaProject Then
                 Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
             End If
-            If FilePath.ToLowerInvariant.EndsWith(".xlsx") Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
+            If FilePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
                 Me.RemoveVbaProject()
             End If
             If Me.RecalculationRequired Then Me.RecalculateAll()
@@ -163,6 +164,7 @@ Namespace ExcelOps
         ''' Apply CachedCalculation setting
         ''' </summary>
         ''' <param name="cachedCalculationsOption"></param>
+        <CodeAnalysis.SuppressMessage("Naming", "CA1707:Bezeichner dürfen keine Unterstriche enthalten")>
         Protected Overridable Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.DefaultBehaviour Then
                 cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.NoReset
@@ -202,10 +204,10 @@ Namespace ExcelOps
             If Me.ReadOnly = True AndAlso Me._FilePath = filePath AndAlso Me.WorkbookFilePath <> Nothing Then
                 Throw New FileReadOnlyException("File """ & filePath & """ is read-only and can't be saved at same location")
             End If
-            If filePath.ToLowerInvariant.EndsWith(".xlsx") AndAlso Me.HasVbaProject Then
+            If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) AndAlso Me.HasVbaProject Then
                 Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
             End If
-            If filePath.ToLowerInvariant.EndsWith(".xlsx") Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
+            If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
                 Me.RemoveVbaProject()
             End If
             If Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False Then Me.RecalculateAll()
@@ -1180,7 +1182,7 @@ Namespace ExcelOps
                         targetWorkbook.AddSheet(targetSheetName)
                     End If
                 Case Else
-                    Throw New ArgumentException(NameOf(copyOption))
+                    Throw New ArgumentException("Invalid copyOption " & copyOption.ToString, NameOf(copyOption))
             End Select
             If Me.GetType IsNot targetWorkbook.GetType Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
             targetWorkbook.ClearSheet(sheetName)

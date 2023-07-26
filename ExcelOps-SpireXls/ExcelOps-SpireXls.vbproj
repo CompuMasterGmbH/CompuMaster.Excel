@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.Reflection" Version="1.0.2" />
+    <PackageReference Include="CompuMaster.Reflection" Version="1.0.4" />
     <PackageReference Include="Spire.XLS" Version="13.2.4" />
 	  <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>

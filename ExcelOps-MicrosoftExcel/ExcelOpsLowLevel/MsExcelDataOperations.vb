@@ -17,7 +17,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
     Public Class MsExcelDataOperations
         Inherits ExcelDataOperationsBase
 
-        Public Shared Property AutoKillAllExistingMsExcelInstances As Boolean = False
+        Public Shared Property AutoKillAllExistingMsExcelInstances As Boolean
 
         Public Shared Sub CheckForRunningMsExcelInstancesAndAskUserToKill()
             Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
@@ -850,16 +850,16 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Clear cell content
         ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <param name="overrideSheetName"></param>
         ''' <param name="rangeFirstCell"></param>
         ''' <param name="rangeLastCell"></param>
-        Public Overrides Sub ClearCells(sheetName As String, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
+        Public Overrides Sub ClearCells(overrideSheetName As String, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
             If rangeFirstCell.SheetName <> rangeLastCell.SheetName Then Throw New ArgumentException("Cells must be member of the same worksheet")
-            If sheetName <> Nothing Then
+            If overrideSheetName <> Nothing Then
                 rangeFirstCell = rangeFirstCell.Clone
                 rangeLastCell = rangeLastCell.Clone
-                rangeFirstCell.SheetName = sheetName
-                rangeLastCell.SheetName = sheetName
+                rangeFirstCell.SheetName = overrideSheetName
+                rangeLastCell.SheetName = overrideSheetName
             End If
             If rangeFirstCell.SheetName = Nothing Then Throw New ArgumentNullException(NameOf(rangeFirstCell))
             Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(rangeFirstCell.SheetName), MsExcel.Worksheet)
