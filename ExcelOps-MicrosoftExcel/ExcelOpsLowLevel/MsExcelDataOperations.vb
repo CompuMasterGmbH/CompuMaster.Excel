@@ -338,11 +338,19 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 If Me.MsExcelAppInstance.ComObject Is Nothing Then Throw New NullReferenceException("MsExcelAppInstance")
                 If Me.MsExcelAppInstance.IsDisposed Then Throw New NullReferenceException("MsExcelAppInstance already disposed")
                 Dim Wb As MsExcel.Workbook
-                If Me.PasswordForOpening <> Nothing Then
-                    Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
-                Else
-                    Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:="")
-                End If
+                Try
+                    If Me.PasswordForOpening <> Nothing Then
+                        Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:=Me.PasswordForOpening)
+                    Else
+                        Wb = Me.Workbooks.Open(file.FullName, UpdateLinks:=True, [ReadOnly]:=False, Editable:=False, Notify:=False, Password:="")
+                    End If
+                Catch ex As System.Runtime.InteropServices.COMException
+                    If ex.ErrorCode = &H800A03EC Then
+                        Throw New FileCorruptedOrInvalidFileFormatException(file, ex)
+                    Else
+                        Throw
+                    End If
+                End Try
                 If Wb Is Nothing Then Throw New NullReferenceException("Null result after Workbooks.Open")
                 Me._Workbook = New MsExcelWorkbookWrapper(Me._Workbooks, Wb)
             End If
