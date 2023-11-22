@@ -33,7 +33,8 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual("""A1"",""B1"",""C1"",,," & ControlChars.CrLf &
+            Assert.AreEqual(
+                        """A1"",""B1"",""C1"",,," & ControlChars.CrLf &
                         """A2"",""B2"",""C2"",""D2"",""""," & ControlChars.CrLf, Table.ToCsvTable)
 
             Table.AddRows(2)
@@ -44,7 +45,8 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual("""A1"",""B1"",""C1"",,," & ControlChars.CrLf &
+            Assert.AreEqual(
+                        """A1"",""B1"",""C1"",,," & ControlChars.CrLf &
                         """A2"",""B2"",""C2"",""D2"",""""," & ControlChars.CrLf &
                         ",,,,," & ControlChars.CrLf &
                         ",,,,," & ControlChars.CrLf, Table.ToCsvTable)
@@ -59,8 +61,26 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual("""A1"",""B1"",""C1""," & ControlChars.CrLf &
+            Assert.AreEqual(
+                        """A1"",""B1"",""C1""," & ControlChars.CrLf &
                         """A2"",""B2"",""C2"",""D2""" & ControlChars.CrLf, Table.ToCsvTable)
+        End Sub
+
+        <Test> Public Sub Cell()
+            Dim Table As New TextTable
+            Table.AddColumns("A", "B", "C", "D", "E", "F")
+            Table.AddRow("A1", "B1", "C1")
+            Table.AddRow("A2", "B2", "C2", "D2", "", Nothing)
+
+            Console.WriteLine("## UI")
+            Console.WriteLine(Table.ToUITable)
+            Console.WriteLine("## /UI")
+            Console.WriteLine()
+
+            Assert.AreEqual("A1", Table.Cell(0, 0))
+            Assert.AreEqual("A1", Table.Cell(0, "A"))
+            Assert.AreEqual("B2", Table.Cell(1, 1))
+            Assert.AreEqual("B2", Table.Cell(1, "B"))
         End Sub
 
         <Test> Public Sub ToUITable()
@@ -76,7 +96,8 @@ Namespace DataTests
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
-            Assert.AreEqual("Column1|Column2|Column3|Column4|Column5|Column6" & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "Column1|Column2|Column3|Column4|Column5|Column6" & System.Environment.NewLine &
                         "-------+-------+-------+-------+-------+-------" & System.Environment.NewLine &
                         "A1     |B1     |C1     |       |       |       " & System.Environment.NewLine &
                         "A2     |B2     |C2     |D2     |       |       " & System.Environment.NewLine,
@@ -87,7 +108,8 @@ Namespace DataTests
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual("Column1|Column2|Column3|Column4|Column5|Column6" & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "Column1|Column2|Column3|Column4|Column5|Column6" & System.Environment.NewLine &
                         "-------+-------+-------+-------+-------+-------" & System.Environment.NewLine &
                         "A1     |B1     |C1     |       |       |       " & System.Environment.NewLine &
                         "A2     |B2     |C2     |D2     |       |       " & System.Environment.NewLine &
@@ -99,7 +121,8 @@ Namespace DataTests
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
-            Assert.AreEqual("Column1|Column2|Column3|Column4" & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "Column1|Column2|Column3|Column4" & System.Environment.NewLine &
                         "-------+-------+-------+-------" & System.Environment.NewLine &
                         "A1     |B1     |C1     |       " & System.Environment.NewLine &
                         "A2     |B2     |C2     |D2     " & System.Environment.NewLine,
@@ -120,7 +143,8 @@ Namespace DataTests
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual("# |A |B |C |D |E |F " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |A1|B1|C1|  |  |  " & System.Environment.NewLine &
                         "2 |A2|B2|C2|D2|  |  " & System.Environment.NewLine,
@@ -131,7 +155,8 @@ Namespace DataTests
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual("# |A |B |C |D |E |F " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |A1|B1|C1|  |  |  " & System.Environment.NewLine &
                         "2 |A2|B2|C2|D2|  |  " & System.Environment.NewLine &
@@ -143,7 +168,8 @@ Namespace DataTests
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
-            Assert.AreEqual("# |A |B |C |D " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D " & System.Environment.NewLine &
                         "--+--+--+--+--" & System.Environment.NewLine &
                         "1 |A1|B1|C1|  " & System.Environment.NewLine &
                         "2 |A2|B2|C2|D2" & System.Environment.NewLine,
@@ -204,7 +230,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |D |  |  |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |  |  |  |D |D |D |D |  " & System.Environment.NewLine &
@@ -217,7 +244,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |E |E |E |E |E |E |E " & System.Environment.NewLine &
                         "2 |E |E |E |  |  |  |  |E " & System.Environment.NewLine &
@@ -230,7 +258,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |  |  |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |  |  |E |  |  |  |  |E " & System.Environment.NewLine &
@@ -243,7 +272,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |  |  |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |  |  |E |  |  |  |  |  " & System.Environment.NewLine &
@@ -256,7 +286,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |M |  |  |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |  |  |  |M |R |R |RC|  " & System.Environment.NewLine &
@@ -269,7 +300,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |M |  |A |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |A |  |  |A |R |R |RC|  " & System.Environment.NewLine &
@@ -281,7 +313,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |M |  |R |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |R |  |  |R |A |A |AC|  " & System.Environment.NewLine &
@@ -293,7 +326,8 @@ Namespace DataTests
             Console.WriteLine("## Table 2 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 DiffCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |D |  |  |  |  |  |  |  " & System.Environment.NewLine &
                         "2 |  |  |  |D |D |D |D |  " & System.Environment.NewLine &
@@ -306,7 +340,8 @@ Namespace DataTests
             Console.WriteLine("## Table 2 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 EqualCells - Bool")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |E |E |E |E |E |E |E " & System.Environment.NewLine &
                         "2 |E |E |E |  |  |  |  |E " & System.Environment.NewLine &
@@ -322,7 +357,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells (CSV) - Content")
             Console.WriteLine(DiffTable.ToCsvTable)
             Console.WriteLine("## /Table 1 DiffCells (CSV) - Content")
-            Assert.AreEqual("# |A |B |C |D |E |F |G  |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G  |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+---+--" & System.Environment.NewLine &
                         "1 |A1|  |  |  |  |  |   |  " & System.Environment.NewLine &
                         "2 |  |  |  |D2|  |  |New|  " & System.Environment.NewLine &
@@ -343,7 +379,8 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Content")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Content")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |B1|C1|  |  |  |  |  " & System.Environment.NewLine &
                         "2 |A2|B2|C2|  |  |  |  |  " & System.Environment.NewLine &
@@ -356,7 +393,8 @@ Namespace DataTests
             Console.WriteLine("## Table 2 DiffCells - Content")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 DiffCells - Content")
-            Assert.AreEqual("# |A        |B |C |D        |E      |F      |G  |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A        |B |C |D        |E      |F      |G  |H " & System.Environment.NewLine &
                         "--+---------+--+--+---------+-------+-------+---+--" & System.Environment.NewLine &
                         "1 |A1Changed|  |  |         |       |       |   |  " & System.Environment.NewLine &
                         "2 |         |  |  |D2Changed|Changed|Changed|New|  " & System.Environment.NewLine &
@@ -369,7 +407,8 @@ Namespace DataTests
             Console.WriteLine("## Table 2 EqualCells - Content")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 EqualCells - Content")
-            Assert.AreEqual("# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
+            Assert.AreEqual(
+                        "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |B1|C1|  |  |  |  |  " & System.Environment.NewLine &
                         "2 |A2|B2|C2|  |  |  |  |  " & System.Environment.NewLine &
