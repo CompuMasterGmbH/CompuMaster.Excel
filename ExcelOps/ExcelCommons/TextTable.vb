@@ -36,6 +36,15 @@ Namespace ExcelOps
             End Set
         End Property
 
+        Public Property Cell(rowIndex As Integer, columnName As String) As String
+            Get
+                Return CompuMaster.Data.Utils.NoDBNull(Me.Table.Rows(rowIndex)(columnName), CType(Nothing, String))
+            End Get
+            Set(value As String)
+                Me.Table.Rows(rowIndex)(columnName) = CompuMaster.Data.Utils.StringNotNothingOrDBNull(value)
+            End Set
+        End Property
+
         Public Property ColumnName(columnIndex As Integer) As String
             Get
                 Return Me.Table.Columns(columnIndex).ColumnName
@@ -48,6 +57,12 @@ Namespace ExcelOps
         Public Sub AddColumns(number As Integer)
             For MyCounter As Integer = 0 To number - 1
                 Me.Table.Columns.Add(Nothing, GetType(String))
+            Next
+        End Sub
+
+        Public Sub AddColumns(ParamArray columnNames As String())
+            For MyCounter As Integer = 0 To columnNames.Length - 1
+                Me.Table.Columns.Add(columnNames(MyCounter), GetType(String))
             Next
         End Sub
 
