@@ -373,7 +373,7 @@ Namespace CompuMaster.Data
                                 If ErrorLevel = 0 Then
                                     WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = Double.NaN
                                 Else
-                                    Throw New Exception("Error writing a date/time value """ & datevalue.ToString & """ in row " & (RowCounter + 1), ex)
+                                    Throw New InvalidOperationException("Error writing a date/time value """ & datevalue.ToString(System.Globalization.CultureInfo.InvariantCulture) & """ in row " & (RowCounter + 1), ex)
                                 End If
                             End Try
                         ElseIf value.GetType Is GetType(Decimal) Then
@@ -1293,7 +1293,7 @@ Namespace CompuMaster.Data
             Dim sheetIndex As Integer = -1
             For MyCounter As Integer = 0 To workbook.Workbook.Worksheets.Count - 1
                 Dim sheet As CompuMaster.Epplus4.ExcelWorksheet = workbook.Workbook.Worksheets(MyCounter)
-                If sheet.Name.ToLowerInvariant = worksheetName.ToLowerInvariant Then
+                If String.Equals(sheet.Name, worksheetName, StringComparison.OrdinalIgnoreCase) Then
                     sheetIndex = MyCounter
                 End If
             Next
@@ -1330,8 +1330,8 @@ Namespace CompuMaster.Data
         ''' <returns>True for DateTime, False for Number(Double)</returns>
         ''' <remarks></remarks>
         Private Shared Function IsDateTimeInsteadOfNumber(ByVal cell As CompuMaster.Epplus4.ExcelRange) As Boolean
-            Dim numFormat As String = cell.Style.Numberformat.Format
-            If numFormat.ToLowerInvariant.Contains("y"c) OrElse numFormat.ToLowerInvariant.Contains("m"c) OrElse numFormat.ToLowerInvariant.Contains("d"c) OrElse numFormat.ToLowerInvariant.Contains("h"c) Then
+            Dim numFormat As String = cell.Style.Numberformat.Format.ToLowerInvariant
+            If numFormat.Contains("y"c) OrElse numFormat.Contains("m"c) OrElse numFormat.Contains("d"c) OrElse numFormat.Contains("h"c) Then
                 Try
                     DateTime.FromOADate(CType(cell.Value, Double))
                     Return True

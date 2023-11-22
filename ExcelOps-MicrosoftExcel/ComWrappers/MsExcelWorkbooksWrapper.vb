@@ -34,18 +34,21 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Private _WorkbookWrappers As New Dictionary(Of MsExcel.Workbook, MsExcelWorkbookWrapper)
         Private Function GetWorkbookWrapper(comObject As MsExcel.Workbook) As MsExcelWorkbookWrapper
             If comObject Is Nothing Then Throw New ArgumentNullException(NameOf(comObject))
-            If Me._WorkbookWrappers.ContainsKey(comObject) AndAlso Me._WorkbookWrappers(comObject).IsClosed Then
+
+            Dim WorkbookForIsClosedCheck As MsExcelWorkbookWrapper = Nothing
+            If _WorkbookWrappers.TryGetValue(comObject, WorkbookForIsClosedCheck) AndAlso WorkbookForIsClosedCheck.IsClosed Then
                 Me._WorkbookWrappers.Remove(comObject)
             End If
-            If Not Me._WorkbookWrappers.ContainsKey(comObject) Then
-                Me._WorkbookWrappers.Add(comObject, New MsExcelWorkbookWrapper(Me, comObject))
+
+            Dim Result As MsExcelWorkbookWrapper = Nothing
+            If Not _WorkbookWrappers.TryGetValue(comObject, Result) Then
+                Result = New MsExcelWorkbookWrapper(Me, comObject)
+                Me._WorkbookWrappers.Add(comObject, Result)
             End If
-            Return Me._WorkbookWrappers(comObject)
+            Return Result
         End Function
         Friend Sub RemoveWorkbookWrapper(item As MsExcelWorkbookWrapper)
-            If Me._WorkbookWrappers.ContainsKey(item.ComObjectStronglyTyped) Then
-                Me._WorkbookWrappers.Remove(item.ComObjectStronglyTyped)
-            End If
+            Me._WorkbookWrappers.Remove(item.ComObjectStronglyTyped)
         End Sub
 
         ''' <summary>

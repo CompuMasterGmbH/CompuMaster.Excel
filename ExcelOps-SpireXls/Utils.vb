@@ -29,7 +29,7 @@ Namespace ExcelOps
                 Select Case Member.MemberType
                     Case System.Reflection.MemberTypes.Property
                     Case System.Reflection.MemberTypes.Field
-                        If CType(Member, System.Reflection.FieldInfo).FieldType.ToString.StartsWith("System.Collections.Generic.Dictionary") Then
+                        If CType(Member, System.Reflection.FieldInfo).FieldType.ToString.StartsWith("System.Collections.Generic.Dictionary", StringComparison.InvariantCulture) Then
                             MemberName = Member.Name
                             MemberField = CType(Member, System.Reflection.FieldInfo)
                             Exit For

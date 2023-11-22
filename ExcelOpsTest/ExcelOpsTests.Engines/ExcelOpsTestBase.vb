@@ -9,7 +9,9 @@ Namespace ExcelOpsTests.Engines
 
         Protected MustOverride Function _CreateInstance() As T
 
+#Disable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
         Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableCalculationEngine As Boolean) As T
+#Enable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
 
         ''' <summary>
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
@@ -1069,7 +1071,9 @@ Namespace ExcelOpsTests.Engines
                 Case Else
                     Throw New NotImplementedException
             End Select
+#Disable Warning CA1862 ' "StringComparison"-Methodenüberladungen verwenden, um Zeichenfolgenvergleiche ohne Beachtung der Groß-/Kleinschreibung durchzuführen
             If Workbook.CalculationModuleDisabled AndAlso Workbook.EngineName.ToLowerInvariant.Contains("epplus") Then
+#Enable Warning CA1862 ' "StringComparison"-Methodenüberladungen verwenden, um Zeichenfolgenvergleiche ohne Beachtung der Groß-/Kleinschreibung durchzuführen
                 Workbook.CalculationModuleDisabled = False 'for this test, calculcation module can be re-enabled
             End If
             Workbook.RecalculateAll()

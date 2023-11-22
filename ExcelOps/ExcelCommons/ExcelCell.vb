@@ -33,7 +33,7 @@
         Private Shared Function SheetNamePart(addressWithSheetName As String) As String
             If addressWithSheetName.IndexOf("!"c) >= 0 Then
                 Dim Result As String = addressWithSheetName.Substring(0, addressWithSheetName.IndexOf("!"c))
-                If Result.StartsWith("'") AndAlso Result.EndsWith("'") Then
+                If Result.StartsWith("'", StringComparison.InvariantCulture) AndAlso Result.EndsWith("'", StringComparison.InvariantCulture) Then
                     Result = Result.Substring(1, Result.Length - 2)
                 End If
                 Return Result
@@ -264,18 +264,18 @@
         ''' <returns></returns>
         Public Shared Function IsValidAddress(ByVal cellAddress As String, allowAbsoluteAddressing As Boolean) As Boolean
             If cellAddress = Nothing Then Return False
-            If cellAddress.StartsWith("""") Then Return False 'invalid address - is a string
-            If cellAddress.EndsWith("""") Then Return False 'invalid address - is a string
+            If cellAddress.StartsWith("""", StringComparison.InvariantCulture) Then Return False 'invalid address - is a string
+            If cellAddress.EndsWith("""", StringComparison.InvariantCulture) Then Return False 'invalid address - is a string
             If cellAddress.IndexOf("!"c) >= 0 Then
                 Dim SheetNamePart As String = cellAddress.Substring(0, cellAddress.IndexOf("!"c))
-                If SheetNamePart.StartsWith("'") Xor SheetNamePart.EndsWith("'") Then
+                If SheetNamePart.StartsWith("'", StringComparison.InvariantCulture) Xor SheetNamePart.EndsWith("'", StringComparison.InvariantCulture) Then
                     Return False 'invalid address - invalid sheet name, must be either with "'" at start and end or without any "'"
                 End If
                 'drop sheet name part
                 cellAddress = cellAddress.Substring(cellAddress.IndexOf("!"c) + 1)
             End If
             If allowAbsoluteAddressing Then
-                If cellAddress.StartsWith("$") Then
+                If cellAddress.StartsWith("$", StringComparison.InvariantCulture) Then
                     cellAddress = cellAddress.Substring(1)
                 End If
             End If
@@ -326,8 +326,10 @@
             End Get
         End Property
 
+        Private Shared ReadOnly AddressRowNumberStartIndex_AnyOf As Char() = New Char() {"1"c, "2"c, "3"c, "4"c, "5"c, "6"c, "7"c, "8"c, "9"c, "0"c}
+
         Private Shared Function AddressRowNumberStartIndex(address As String) As Integer
-            Return address.IndexOfAny(New Char() {"1"c, "2"c, "3"c, "4"c, "5"c, "6"c, "7"c, "8"c, "9"c, "0"c})
+            Return address.IndexOfAny(AddressRowNumberStartIndex_AnyOf)
         End Function
 
         Private Function AddressRowNumberStartIndex() As Integer

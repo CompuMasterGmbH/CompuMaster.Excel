@@ -1,4 +1,5 @@
-﻿Public Class ExcelSheetCollection
+﻿<CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
+Public Class ExcelSheetCollection
     Inherits ComChildObject(Of ExcelWorkbook, Object)
 
     Public Sub New(parent As ExcelWorkbook)

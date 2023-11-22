@@ -266,6 +266,7 @@
         ''' <summary>
         ''' An enumerator for a cells in this range
         ''' </summary>
+        <CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
         Public Class ExcelRangeEnum
             Implements IEnumerator(Of ExcelCell)
 

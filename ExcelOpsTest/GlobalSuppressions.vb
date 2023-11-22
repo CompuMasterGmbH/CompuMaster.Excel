@@ -11,3 +11,4 @@ Imports System.Diagnostics.CodeAnalysis
 <Assembly: SuppressMessage("CodeQuality", "IDE0079:Unnötige Unterdrückung entfernen", Justification:="<Ausstehend>")>
 <Assembly: SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification:="<Ausstehend>")>
 <Assembly: SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification:="<Ausstehend>")>
+<Assembly: SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>

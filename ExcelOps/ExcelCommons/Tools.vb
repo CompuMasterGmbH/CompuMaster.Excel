@@ -61,7 +61,7 @@ Namespace ExcelOps
         ''' <param name="formula"></param>
         ''' <returns></returns>
         Public Shared Function IsFormulaWithoutCellReferences(formula As String) As Boolean
-            Dim Parts As String() = formula.Split(New Char() {":"c, "+"c, "-"c, "*"c, "/"c, "^"c, "("c, ")"c, ","c})
+            Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators)
             For Each Part As String In Parts
                 If ExcelCell.IsValidAddress(Part, True) = True Then
                     Return False
@@ -76,7 +76,7 @@ Namespace ExcelOps
         ''' <param name="formula"></param>
         ''' <returns></returns>
         Public Shared Function IsFormulaWithoutCellReferencesOrCellReferenceInSameRow(formula As String, rowIndex As Integer) As Boolean
-            Dim Parts As String() = formula.Split(New Char() {":"c, "+"c, "-"c, "*"c, "/"c, "^"c, "("c, ")"c, ","c})
+            Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators)
             For Each Part As String In Parts
                 If ExcelCell.IsValidAddress(Part, True) = True Then
                     Dim Cell As New ExcelCell(Part, ExcelCell.ValueTypes.All)
@@ -99,16 +99,19 @@ Namespace ExcelOps
             Return ExcelCell.IsValidAddress(formula, True)
         End Function
 
+        Private Shared ReadOnly IsFormulaSimpleSumFunction_Separators As Char() = New Char() {":"c, "("c, ")"c}
+        Private Shared ReadOnly IsFormulaWithoutCellReferences_Separators As Char() = New Char() {":"c, "+"c, "-"c, "*"c, "/"c, "^"c, "("c, ")"c, ","c}
+
         ''' <summary>
         ''' Formula is just a simple SUM function with a cell range
         ''' </summary>
         ''' <param name="formula"></param>
         ''' <returns></returns>
         Public Shared Function IsFormulaSimpleSumFunction(formula As String) As Boolean
-            If formula.StartsWith("SUM(") = False Then
+            If formula.StartsWith("SUM(", StringComparison.Ordinal) = False Then
                 Return False
             End If
-            Dim Parts As String() = formula.Substring(3).Split(New Char() {":"c, "("c, ")"c}, StringSplitOptions.RemoveEmptyEntries)
+            Dim Parts As String() = formula.Substring(3).Split(IsFormulaSimpleSumFunction_Separators, StringSplitOptions.RemoveEmptyEntries)
             If Parts.Length = 0 OrElse Parts.Length > 2 Then
                 Return False
             End If

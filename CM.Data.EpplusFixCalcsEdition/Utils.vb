@@ -15,8 +15,9 @@ Friend NotInheritable Class Utils
 
         Dim ColumnNameAlreadyExistant As Boolean = False
         For MyCounter As Integer = 0 To dataTable.Columns.Count - 1
-            If String.Compare(suggestedColumnName, dataTable.Columns(MyCounter).ColumnName, True) = 0 Then
+            If String.Equals(suggestedColumnName, dataTable.Columns(MyCounter).ColumnName, StringComparison.OrdinalIgnoreCase) Then
                 ColumnNameAlreadyExistant = True
+                Exit For
             End If
         Next
 
