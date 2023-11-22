@@ -1,6 +1,11 @@
 ﻿Namespace ExcelOps
 
+#If NETFRAMEWORK Then
+    <CodeAnalysis.SuppressMessage("Naming", "CA1708:Bezeichner dürfen sich nicht nur durch die Groß-/Kleinschreibung unterscheiden", Justification:=".NET 8 doesn't implement this rule any more, so might be applicable for .NET Framework only, but .NET 4.8 seems to handle everything correctly")>
     Public Class ExcelRange
+#Else
+    Public Class ExcelRange
+#End If
         Implements IEnumerable(Of ExcelCell), ICloneable, IEqualityComparer, IComparable
 
         ''' <summary>
@@ -35,9 +40,9 @@
         ''' <param name="range"></param>
         Public Sub New(sheetName As String, range As String)
             Me.New(
-                New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 0), ExcelCell.ValueTypes.All),
-                New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 1), ExcelCell.ValueTypes.All)
-                )
+                    New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 0), ExcelCell.ValueTypes.All),
+                    New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 1), ExcelCell.ValueTypes.All)
+                    )
         End Sub
 
         ''' <summary>
@@ -177,9 +182,9 @@
                         Throw New ArgumentOutOfRangeException(NameOf(accessDirection))
                 End Select
                 Return New ExcelCell(AddressStart.SheetName,
-                                     AddressStart.RowIndex + RowIndexWithinRangeRectangle,
-                                     AddressStart.ColumnIndex + ColumnIndexWithinRangeRectangle,
-                                     AddressStart.DataType)
+                                         AddressStart.RowIndex + RowIndexWithinRangeRectangle,
+                                         AddressStart.ColumnIndex + ColumnIndexWithinRangeRectangle,
+                                         AddressStart.DataType)
             End Get
         End Property
 

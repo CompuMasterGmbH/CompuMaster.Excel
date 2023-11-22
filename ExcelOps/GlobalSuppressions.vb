@@ -10,3 +10,4 @@ Imports System.Diagnostics.CodeAnalysis
 <Assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification:="<Ausstehend>")>
 <Assembly: SuppressMessage("CodeQuality", "IDE0079:Unnötige Unterdrückung entfernen", Justification:="<Ausstehend>")>
 <Assembly: SuppressMessage("Globalization", "CA1305:IFormatProvider angeben", Justification:="<Ausstehend>")>
+<Assembly: SuppressMessage("Maintainability", "CA1510:ArgumentNullException-Throw-Hilfsprogramm verwenden", Justification:="Alternative implementations wouldn't be supported by legacy .NET Framework")>

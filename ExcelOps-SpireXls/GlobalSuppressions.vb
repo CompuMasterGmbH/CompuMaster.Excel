@@ -6,3 +6,4 @@
 Imports System.Diagnostics.CodeAnalysis
 
 <Assembly: SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification:="<Ausstehend>")>
+<Assembly: SuppressMessage("Maintainability", "CA1510:ArgumentNullException-Throw-Hilfsprogramm verwenden", Justification:="Alternative implementations wouldn't be supported by legacy .NET Framework")>

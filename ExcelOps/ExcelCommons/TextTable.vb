@@ -1,7 +1,12 @@
 ﻿Imports System.Data
 
 Namespace ExcelOps
+#If NETFRAMEWORK Then
+    <CodeAnalysis.SuppressMessage("Naming", "CA1708:Bezeichner dürfen sich nicht nur durch die Groß-/Kleinschreibung unterscheiden", Justification:=".NET 8 doesn't implement this rule any more, so might be applicable for .NET Framework only, but .NET 4.8 seems to handle everything correctly")>
     Public Class TextTable
+#Else
+    Public Class TextTable
+#End If
         Implements ICloneable, IDisposable
 
         ''' <summary>
