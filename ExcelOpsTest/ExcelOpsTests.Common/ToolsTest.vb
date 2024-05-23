@@ -162,7 +162,22 @@ Namespace ExcelOpsEngineTests
             Assert.IsTrue(ExcelOps.Tools.HasLeadingDigitsAsWellAs3FollowingDigitsBeforeEndOrNextSeparator("1,000.", New KeyValuePair(Of Char, Integer)(","c, 1)))
             Assert.IsFalse(ExcelOps.Tools.HasLeadingDigitsAsWellAs3FollowingDigitsBeforeEndOrNextSeparator("1,0000", New KeyValuePair(Of Char, Integer)(","c, 1)))
             Assert.IsFalse(ExcelOps.Tools.HasLeadingDigitsAsWellAs3FollowingDigitsBeforeEndOrNextSeparator("1,00000", New KeyValuePair(Of Char, Integer)(","c, 1)))
+        End Sub
 
+        <Test> Public Sub DetectXlsxDateSystem()
+            'default file
+            Assert.AreEqual(ExcelOps.Tools.XlsxDateSystem.Date1900, ExcelOps.Tools.DetectXlsxDateSystem(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelBaseDateSystem_windows_1900.xlsx")))
+
+            'created manually by hardcoding the date1904 attribute in the zip's workbook.xml
+            Assert.AreEqual(ExcelOps.Tools.XlsxDateSystem.Date1904, ExcelOps.Tools.DetectXlsxDateSystem(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelBaseDateSystem_mac_1904.xlsx")))
+
+            'created by Excel 16.0 (MS Office 365, 2024-05)
+            Assert.AreEqual(ExcelOps.Tools.XlsxDateSystem.Date1904, ExcelOps.Tools.DetectXlsxDateSystem(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelBaseDateSystem_mac_1904b.xlsx")))
+        End Sub
+
+        <Test> Public Sub ConvertExcelDateToDateTime()
+            Assert.AreEqual(New DateTime(1900, 1, 1), ExcelOps.Tools.ConvertExcelDateToDateTime(2.0, ExcelOps.Tools.XlsxDateSystem.Date1900))
+            Assert.AreEqual(New DateTime(1904, 1, 1), ExcelOps.Tools.ConvertExcelDateToDateTime(0.0, ExcelOps.Tools.XlsxDateSystem.Date1904))
         End Sub
 
     End Class

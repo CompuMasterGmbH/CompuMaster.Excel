@@ -1,5 +1,8 @@
 ﻿Option Explicit On
 Option Strict On
+Imports System.IO
+Imports System.IO.Compression
+Imports System.Xml
 
 Namespace ExcelOps
     Public NotInheritable Class Tools
@@ -436,6 +439,89 @@ Namespace ExcelOps
                 End If
             Else
                 Throw New NotSupportedException("Unsupported generic type " & GType.FullName & "/" & GType.GetGenericTypeDefinition.FullName)
+            End If
+        End Function
+
+        ''' <summary>
+        ''' Convert a Double value from Excel to a DateTime value
+        ''' </summary>
+        ''' <param name="excelDate"></param>
+        ''' <param name="baseDateValue"></param>
+        ''' <returns></returns>
+        Public Shared Function ConvertExcelDateToDateTime(excelDate As Double, baseDateValue As XlsxDateSystem) As DateTime
+            Dim baseDate As DateTime
+            Select Case baseDateValue
+                Case XlsxDateSystem.Date1900
+                    ' Basisdatum für Windows Excel (30. Dezember 1899)
+                    baseDate = New DateTime(1899, 12, 30)
+                Case XlsxDateSystem.Date1904
+                    ' Basisdatum für Mac Excel (1. Januar 1904)
+                    baseDate = New DateTime(1904, 1, 1)
+                Case Else
+                    Throw New NotSupportedException("Unsupported base date value: " & baseDateValue)
+            End Select
+
+            ' Excel-Datumswerte als Double umwandeln in DateTime
+            Dim dateTimeValue As DateTime = baseDate.AddDays(excelDate)
+            Return dateTimeValue
+        End Function
+
+        ''' <summary>
+        ''' The base date for Excel date values
+        ''' </summary>
+        Public Enum XlsxDateSystem
+            ''' <summary>
+            ''' The 1900 date system is used
+            ''' </summary>
+            Date1900 = 1
+            ''' <summary>
+            ''' The 1904 date system is used
+            ''' </summary>
+            ''' <remarks>
+            ''' This flag is often used in Excel for Macintosh versions 2004 and earlier or when the 1904 date system is enabled for the workbook in Excel for Windows
+            ''' </remarks>
+            Date1904 = 2
+        End Enum
+
+        ''' <summary>
+        ''' Determines whether the 1904 date system is used in an XLSX file
+        ''' </summary>
+        ''' <param name="xlsxFilePath">The path to the XLSX file</param>
+        ''' <returns>A value of <see cref="XlsxDateSystem">XlsxDateSystem</see></returns>
+        Public Shared Function DetectXlsxDateSystem(xlsxFilePath As String) As XlsxDateSystem
+            ' Überprüfen, ob die XLSX-Datei existiert
+            If File.Exists(xlsxFilePath) Then
+                ' XLSX-Datei als ZIP-Archiv öffnen
+                Using archive As ZipArchive = ZipFile.OpenRead(xlsxFilePath)
+                    ' nach der Datei "workbook.xml" im ZIP-Archiv suchen
+                    Dim workbookEntry As ZipArchiveEntry = archive.GetEntry("xl/workbook.xml")
+                    If workbookEntry IsNot Nothing Then
+                        ' XML-Dokument laden
+                        Dim xmlDoc As New XmlDocument()
+                        Using reader As Stream = workbookEntry.Open()
+                            xmlDoc.Load(reader)
+                        End Using
+
+                        ' Namespace-Manager für XPath-Abfrage
+                        Dim nsmgr As New XmlNamespaceManager(xmlDoc.NameTable)
+                        nsmgr.AddNamespace("d", "http://schemas.openxmlformats.org/spreadsheetml/2006/main")
+
+                        ' Überprüfen, ob das Datumssystem auf 1904 gesetzt ist
+                        Dim node As XmlNode = xmlDoc.SelectSingleNode("//d:workbookPr", nsmgr)
+                        If node IsNot Nothing AndAlso node.Attributes("date1904") IsNot Nothing Then
+                            Dim Uses1904DateSystem = (node.Attributes("date1904").Value = "1")
+                            If Uses1904DateSystem Then
+                                Return XlsxDateSystem.Date1904
+                            Else
+                                Return XlsxDateSystem.Date1900
+                            End If
+                        End If
+                    End If
+                End Using
+                ' Standardwert zurückgeben
+                Return XlsxDateSystem.Date1900
+            Else
+                Throw New System.IO.FileNotFoundException("The file does not exist: " & xlsxFilePath, xlsxFilePath)
             End If
         End Function
 
