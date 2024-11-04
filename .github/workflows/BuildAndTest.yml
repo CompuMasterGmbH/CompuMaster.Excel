@@ -228,35 +228,35 @@ jobs:
                 report_individual_runs: true
       
             #- name: Publish Unit Test Results
-            #  uses: actions/upload-artifact@v2
+            #  uses: actions/upload-artifact@v4
             #  if: always()
             #  with:
             #    name: NUnit Test Results ${{ matrix.os }}
             #    path: test-results/TestResults.xml
 
             - name: Publish Unit Test Results
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               if: always()
               with:
                 name: NUnit Test Results ${{ matrix.os }}
                 path: "test-results-CompuMaster.MsExcelComInteropTest.dll/TestResults.xml"
 
             - name: Publish Unit Test Results
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               if: always()
               with:
                 name: NUnit Test Results ${{ matrix.os }}
                 path: "test-results-CompuMaster.Excel.Test.dll/TestResults.xml"
 
             - name: Publish Unit Test Results
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               if: always()
               with:
                 name: NUnit Test Results ${{ matrix.os }}
                 path: "test-results-CompuMaster.Excel.TestFreeSpireXls.dll/TestResults.xml"
 
             - name: Publish Unit Test Results
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               if: always()
               with:
                 name: NUnit Test Results ${{ matrix.os }}
