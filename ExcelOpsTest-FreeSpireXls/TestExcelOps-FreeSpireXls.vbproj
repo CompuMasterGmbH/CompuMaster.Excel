@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <RootNamespace>CompuMaster.Excel.TestFreeSpireXls</RootNamespace>
-    <TargetFrameworks>net48;net7.0</TargetFrameworks>
-    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <Copyright>2005-2024 CompuMaster GmbH</Copyright>
     <OptionStrict>On</OptionStrict>
     <AssemblyName>CompuMaster.Excel.TestFreeSpireXls</AssemblyName>
     <Configurations>Debug;Release;CI_CD</Configurations>

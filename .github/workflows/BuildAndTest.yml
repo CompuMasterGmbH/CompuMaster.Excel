@@ -70,7 +70,7 @@ jobs:
             - name: Setup .NET Core
               uses: actions/setup-dotnet@v1
               with:
-                 dotnet-version: 7.0.x
+                 dotnet-version: 8.0.x
 
             - name: Dir Listing (Win)
               if: startsWith(matrix.os, 'windows')
@@ -91,19 +91,19 @@ jobs:
               run: dotnet build --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} --no-restore 
 
             #- name: Run Unit Tests
-            #  run: dotnet test --framework net7.0 --results-directory test-results --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} --no-restore 
+            #  run: dotnet test --framework net8.0 --results-directory test-results --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} --no-restore 
 
             - name: Run Unit Tests CompuMaster.MsExcelComInteropTest.dll
-              run: dotnet test --framework net7.0 --results-directory test-results-CompuMaster.MsExcelComInteropTest.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} MsExcelComInteropTest/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net7.0/CompuMaster.MsExcelComInteropTest.dll
+              run: dotnet test --framework net8.0 --results-directory test-results-CompuMaster.MsExcelComInteropTest.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} MsExcelComInteropTest/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net8.0/CompuMaster.MsExcelComInteropTest.dll
 
             - name: Run Unit Tests CompuMaster.Excel.Test.dll
-              run: dotnet test --framework net7.0 --results-directory test-results-CompuMaster.Excel.Test.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} ExcelOpsTest/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net7.0/CompuMaster.Excel.Test.dll
+              run: dotnet test --framework net8.0 --results-directory test-results-CompuMaster.Excel.Test.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} ExcelOpsTest/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net8.0/CompuMaster.Excel.Test.dll
 
             - name: Run Unit Tests CompuMaster.Excel.TestFreeSpireXls.dll
-              run: dotnet test --framework net7.0 --results-directory test-results-CompuMaster.Excel.TestFreeSpireXls.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} ExcelOpsTest-FreeSpireXls/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net7.0/CompuMaster.Excel.TestFreeSpireXls.dll
+              run: dotnet test --framework net8.0 --results-directory test-results-CompuMaster.Excel.TestFreeSpireXls.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} ExcelOpsTest-FreeSpireXls/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net8.0/CompuMaster.Excel.TestFreeSpireXls.dll
 
             - name: Run Unit Tests CompuMaster.Excel.TestSpireXls.dll
-              run: dotnet test --framework net7.0 --results-directory test-results-CompuMaster.Excel.TestSpireXls.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} ExcelOpsTest-SpireXls/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net7.0/CompuMaster.Excel.TestSpireXls.dll
+              run: dotnet test --framework net8.0 --results-directory test-results-CompuMaster.Excel.TestSpireXls.dll --logger junit --configuration=${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}} ExcelOpsTest-SpireXls/bin/${{env.BUILD_CONFIGURATION}}${{matrix.build_configuration_suffix}}/net8.0/CompuMaster.Excel.TestSpireXls.dll
 
             #- name: Dir Listing (Win) test-results
             #  if: startsWith(matrix.os, 'windows')

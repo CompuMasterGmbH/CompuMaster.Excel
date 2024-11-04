@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RootNamespace>CompuMaster.Excel</RootNamespace>
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
-    <Copyright>2005-2023 CompuMaster GmbH</Copyright>
+    <Copyright>2005-2024 CompuMaster GmbH</Copyright>
     <AssemblyName>CompuMaster.Excel.EpplusFreeFixCalcsEdition</AssemblyName>
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
     <PackageIcon>logo_64x64.png</PackageIcon>
