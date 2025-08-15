@@ -2,6 +2,7 @@
 Option Explicit On
 
 Imports System.ComponentModel
+Imports Spire.Xls
 
 Namespace ExcelOps
 
@@ -92,6 +93,32 @@ Namespace ExcelOps
             Dim CopyRange As New ExcelRange(New ExcelCell(sheetName, 1, 1, ExcelCell.ValueTypes.All), New ExcelCell(sheetName, LastCell.RowIndex + 1, LastCell.ColumnIndex + 1, ExcelCell.ValueTypes.All))
             Me.Workbook.Worksheets.Item(sheetName).Range(CopyRange.LocalAddress).Copy(CType(targetWorkbook, SpireXlsDataOperations).Workbook.Worksheets.Item(targetSheetName).Range(CopyRange.LocalAddress))
             'Me.Workbook.Worksheets.Item(sheetName).Cells.Copy(CType(targetWorkbook, EpplusExcelDataOperations).Workbook.Worksheets.Item(targetSheetName).Cells)
+        End Sub
+
+        Public Sub SaveToHtml(fileName As String, skipHiddenSheets As Boolean)
+            Me._Workbook.SaveToHtml(fileName, skipHiddenSheets)
+        End Sub
+
+        Public Sub SaveWorksheetToHtml(worksheetName As String, fileName As String)
+            Dim Options As New Core.Spreadsheet.HTMLOptions With {
+                .ImageEmbedded = True,
+                .IsFixedTableColWidth = False,
+                .StyleDefine = Core.Spreadsheet.HTMLOptions.StyleDefineType.Head,
+                .TextMode = Core.Spreadsheet.HTMLOptions.GetText.NumberText
+            }
+            Dim Worksheet As Worksheet = Me._Workbook.Worksheets()(worksheetName)
+            Worksheet.SaveToHtml(fileName, Options)
+        End Sub
+
+        Public Sub SaveWorksheetToHtml(worksheetName As String, stream As System.IO.Stream)
+            Dim Options As New Core.Spreadsheet.HTMLOptions With {
+                .ImageEmbedded = True,
+                .IsFixedTableColWidth = False,
+                .StyleDefine = Core.Spreadsheet.HTMLOptions.StyleDefineType.Head,
+                .TextMode = Core.Spreadsheet.HTMLOptions.GetText.NumberText
+            }
+            Dim Worksheet As Worksheet = Me._Workbook.Worksheets()(worksheetName)
+            Worksheet.SaveToHtml(stream, Options)
         End Sub
 
     End Class
