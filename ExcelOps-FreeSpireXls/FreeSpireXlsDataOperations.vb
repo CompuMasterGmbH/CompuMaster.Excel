@@ -91,10 +91,22 @@ Namespace ExcelOps
             'Me.Workbook.Worksheets.Item(sheetName).Cells.Copy(CType(targetWorkbook, EpplusExcelDataOperations).Workbook.Worksheets.Item(targetSheetName).Cells)
         End Sub
 
+        ''' <summary>
+        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="fileName"></param>
+        ''' <param name="skipHiddenSheets"></param>
+        ''' <remarks>Supported on Windows platforms only, e.g. Linux is known to throw TypeInitializationExceptions</remarks>
         Public Sub SaveToHtml(fileName As String, skipHiddenSheets As Boolean)
             Me._Workbook.SaveToHtml(fileName, skipHiddenSheets)
         End Sub
 
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="fileName"></param>
+        ''' <remarks>Supported on Windows platforms only, e.g. Linux is known to throw TypeInitializationExceptions</remarks>
         Public Sub SaveWorksheetToHtml(worksheetName As String, fileName As String)
             Dim Options As New Core.Spreadsheet.HTMLOptions With {
                 .ImageEmbedded = True,
@@ -105,6 +117,12 @@ Namespace ExcelOps
             Worksheet.SaveToHtml(fileName, Options)
         End Sub
 
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="stream"></param>
+        ''' <remarks>Supported on Windows platforms only, e.g. Linux is known to throw TypeInitializationExceptions</remarks>
         Public Sub SaveWorksheetToHtml(worksheetName As String, stream As System.IO.Stream)
             Dim Options As New Core.Spreadsheet.HTMLOptions With {
                 .ImageEmbedded = True,
