@@ -14,6 +14,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2DB8DAF8-BAB2-4A5B-A538-36B5F7257C82}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		clone-build-files.cmd = clone-build-files.cmd
+		clone-build-files.ps1 = clone-build-files.ps1
+		clone-build-files.sh = clone-build-files.sh
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "ExcelOps-FreeSpireXls", "ExcelOps-FreeSpireXls\ExcelOps-FreeSpireXls.vbproj", "{10E9FEF2-C5AD-4834-B0CA-5CA8F27023CD}"

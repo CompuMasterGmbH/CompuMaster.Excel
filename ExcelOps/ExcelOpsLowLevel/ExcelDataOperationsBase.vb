@@ -1142,6 +1142,12 @@ Namespace ExcelOps
         Public MustOverride Sub ClearSheet(sheetName As String)
 
         ''' <summary>
+        ''' The currently selected sheet name
+        ''' </summary>
+        ''' <returns></returns>
+        Public MustOverride Function SelectedSheetName() As String
+
+        ''' <summary>
         ''' Select a worksheet
         ''' </summary>
         ''' <param name="sheetName"></param>
@@ -1435,17 +1441,9 @@ Namespace ExcelOps
         ''' <param name="options"></param>
         Public Function ExportWorkbookToHtml(options As HtmlWorkbookExportOptions) As System.Text.StringBuilder
             Dim Result As New System.Text.StringBuilder(128 * 1024)
-            If options.HtmlBefore IsNot Nothing Then
-                Result.Append(options.HtmlBefore)
-            Else
-                Result.Append(options.DefaultHtmlBefore)
-            End If
+            Result.AppendLine(options.EffectiveHtmlDocumentHeaderAndBody)
 
-            'options.SheetNavigationPosition
-            'options.SheetNavigationAlwaysVisible
-            'options.SheetNavigationActionStyle
-            Throw New NotImplementedException
-
+            Dim ExportSheetNames As New List(Of String)
             For Each MySheetName As String In SheetNames()
                 Dim DoExport = False
                 If Me.SheetType(MySheetName) = ExcelSheetTypes.ChartSheet AndAlso options.ExportChartSheets = True Then
@@ -1458,29 +1456,42 @@ Namespace ExcelOps
                 End If
 
                 If DoExport Then
-                    'options.ExportSheetNameAsTitle
-                    Throw New NotImplementedException
-
-                    ExportSheetToHtml(MySheetName, Result, options)
+                    ExportSheetNames.Add(MySheetName)
                 End If
             Next
 
-            If options.HtmlBehind IsNot Nothing Then
-                Result.Append(options.HtmlBehind)
-            Else
-                Result.Append(options.DefaultHtmlBehind)
+            If options.SheetNavigationPosition = HtmlWorkbookExportOptions.SheetNavigationPositions.Top Then
+                options.GenerateWorkbookSubNavigation(Result, ExportSheetNames, options)
             End If
+
+            Dim ExportAnchorNames = HtmlWorkbookExportOptions.CreateUniqueAnchorNames(ExportSheetNames)
+            Dim ActiveSheetName = Me.SelectedSheetName
+            If ExportSheetNames.Contains(ActiveSheetName) = False Then
+                ActiveSheetName = ExportSheetNames.First
+            End If
+            For SheetCounter As Integer = 0 To ExportSheetNames.Count - 1
+                Dim MySheetName As String = ExportSheetNames(SheetCounter)
+                Dim MyAnchorName As String = ExportSheetNames(SheetCounter)
+                Dim IsSelected As Boolean = (MySheetName = ActiveSheetName)
+                ExportSheetToHtml(MySheetName, MyAnchorName, IsSelected, Result, options, HtmlDocumentExportParts.ContentOnly)
+            Next
+
+            If options.SheetNavigationPosition = HtmlWorkbookExportOptions.SheetNavigationPositions.Bottom Then
+                options.GenerateWorkbookSubNavigation(Result, ExportSheetNames, options)
+            End If
+
+            Result.AppendLine().AppendLine(options.EffectiveHtmlDocumentEnd)
             Return Result
         End Function
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Save single worksheet to HTML (including HTML document header/footer, images as HTML inline data)
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="fileName"></param>
         Public Sub ExportSheetToHtml(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
             Dim Html As New System.Text.StringBuilder(128 * 1024)
-            ExportSheetToHtml(worksheetName, Html, options)
+            ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, Html, options, HtmlDocumentExportParts.FullHtmlDocument)
 #If NETFRAMEWORK Then
             System.IO.File.WriteAllText(fileName, Html.ToString, System.Text.Encoding.UTF8)
 #Else
@@ -1499,7 +1510,7 @@ Namespace ExcelOps
         ''' <param name="fileName"></param>
         Public Async Sub ExportSheetToHtmlAsync(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
             Dim Html As New System.Text.StringBuilder(128 * 1024)
-            ExportSheetToHtml(worksheetName, Html, options)
+            ExportSheetToHtmlInternal(worksheetName, Html, options)
             Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
                 Await w.WriteAsync(Html)  ' asynchron
             End Using
@@ -1507,11 +1518,53 @@ Namespace ExcelOps
 #End If
 
         ''' <summary>
+        ''' Save single worksheet to HTML (including HTML document header/footer, images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        Public Function ExportSheetToHtml(worksheetName As String, options As HtmlSheetExportOptions) As System.Text.StringBuilder
+            Dim sb As New System.Text.StringBuilder
+            ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, sb, options, HtmlDocumentExportParts.FullHtmlDocument)
+            Return sb
+        End Function
+
+        ''' <summary>
         ''' Save worksheet to HTML (including images as HTML inline data)
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="sb"></param>
-        Public MustOverride Sub ExportSheetToHtml(worksheetName As String, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions)
+        Public Sub ExportSheetToHtml(worksheetName As String, anchorName As String, initiallyVisible As Boolean, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions, exportedHtmlDocumentParts As HtmlDocumentExportParts)
+            Select Case exportedHtmlDocumentParts
+                Case HtmlDocumentExportParts.FullHtmlDocument
+                    sb.AppendLine(options.EffectiveHtmlDocumentHeaderAndBody)
+                    options.GenerateBeginSheetSection(sb, anchorName, initiallyVisible)
+                    options.GenerateSheetSectionTitle(sb, worksheetName)
+                    ExportSheetToHtmlInternal(worksheetName, sb, options)
+                    options.GenerateEndSheetSection(sb)
+                    sb.AppendLine().AppendLine(options.EffectiveHtmlDocumentEnd)
+                Case HtmlDocumentExportParts.ContentOnly
+                    ExportSheetToHtmlInternal(worksheetName, sb, options)
+                Case Else
+                    Throw New ArgumentOutOfRangeException(NameOf(exportedHtmlDocumentParts))
+            End Select
+        End Sub
+
+        Public Enum HtmlDocumentExportParts As Byte
+            ''' <summary>
+            ''' Create a full HTML document with header tags, style tags, etc.
+            ''' </summary>
+            FullHtmlDocument = 1
+            ''' <summary>
+            ''' Export HTML table code only
+            ''' </summary>
+            ContentOnly = 2
+        End Enum
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Protected MustOverride Sub ExportSheetToHtmlInternal(worksheetName As String, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions)
 
     End Class
 End Namespace

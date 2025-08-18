@@ -901,6 +901,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(AddedSheet, MsExcel.Worksheet).Name = sheetName
         End Sub
 
+        Public Overrides Function SelectedSheetName() As String
+            Return CType(Me.Workbook.ActiveSheet, MsExcel.Worksheet).Name
+        End Function
+
         ''' <summary>
         ''' Select a worksheet
         ''' </summary>
@@ -1176,7 +1180,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="sb"></param>
-        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+        Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
             Throw New NotImplementedException
         End Sub
 

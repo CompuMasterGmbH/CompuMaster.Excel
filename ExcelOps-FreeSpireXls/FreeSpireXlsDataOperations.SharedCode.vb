@@ -607,6 +607,10 @@ Namespace ExcelOps
             End If
         End Sub
 
+        Public Overrides Function SelectedSheetName() As String
+            Return Me.Workbook.ActiveSheet.Name
+        End Function
+
         ''' <summary>
         ''' Select a worksheet
         ''' </summary>

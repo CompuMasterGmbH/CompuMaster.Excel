@@ -5,12 +5,13 @@ Option Explicit On
 'SEE:     clone-build-files.cmd/.sh/.ps1
 'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
 
-Imports System.Data
 Imports System.ComponentModel
+Imports System.Data
+Imports System.Net
+Imports System.Text
 Imports OfficeOpenXml
 Imports OfficeOpenXml.FormulaParsing
 Imports OfficeOpenXml.FormulaParsing.Logging
-Imports System.Text
 
 Namespace ExcelOps
 
@@ -938,6 +939,10 @@ Namespace ExcelOps
             If beforeSheetName <> Nothing Then Me.Workbook.Worksheets.MoveBefore(sheetName, beforeSheetName)
         End Sub
 
+        Public Overrides Function SelectedSheetName() As String
+            Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
+        End Function
+
         ''' <summary>
         ''' Select a worksheet
         ''' </summary>
@@ -1178,15 +1183,139 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="sb"></param>
-        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
-            Select Case options.ExportSheetNameAsTitle
-                Case HtmlSheetExportOptions.SheetTitleStyles.None
-                    'do nothing
-                Case Else
-                    Throw New NotImplementedException(NameOf(options.ExportSheetNameAsTitle))
-            End Select
-            sb.AppendLine(EpplusHtmlRenderer.XlsxToHtmlString(Me.Workbook.Worksheets(worksheetName)))
+        Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+            ExportSheetToHtmlInternal(Me.Workbook.Worksheets(worksheetName), sb, options)
         End Sub
+
+#Region "HTML Export"
+
+        ''' <summary>
+        ''' Rendert ein einzelnes Worksheet als vollständiges HTML-Dokument (UTF-8).
+        ''' Kompatibel zu EPPlus 4.5.x (kein Lizenz-Setup nötig).
+        ''' </summary>
+        Friend Overloads Shared Sub ExportSheetToHtmlInternal(ws As ExcelWorksheet, sb As StringBuilder, options As HtmlSheetExportOptions)
+
+            If ws Is Nothing OrElse ws.Dimension Is Nothing Then
+                sb.AppendLine(options.HtmlForEmptySheet)
+                Return
+            End If
+
+            Dim firstRow = ws.Dimension.Start.Row
+            Dim lastRow = ws.Dimension.End.Row
+            Dim firstCol = ws.Dimension.Start.Column
+            Dim lastCol = ws.Dimension.End.Column
+
+            ' --- Merge-Map vorbereiten ---
+            Dim mergeTopLeft As New Dictionary(Of String, (RowSpan As Integer, ColSpan As Integer))()
+            Dim covered As New HashSet(Of String)()
+            For Each addr In ws.MergedCells
+                Dim range = ws.Cells(addr)
+                Dim r1 = range.Start.Row, c1 = range.Start.Column
+                Dim r2 = range.End.Row, c2 = range.End.Column
+                Dim keyTL = Key(r1, c1)
+                mergeTopLeft(keyTL) = ((r2 - r1 + 1), (c2 - c1 + 1))
+                For rr = r1 To r2
+                    For cc = c1 To c2
+                        If Not (rr = r1 AndAlso cc = c1) Then covered.Add(Key(rr, cc))
+                    Next
+                Next
+            Next
+
+            ' --- Minimal-CSS (neutral, dunkelgraue Rahmen) ---
+            Dim tableCssClass As String = options.TableCssClassName
+
+
+            sb.Append("<table class=""" & tableCssClass & """>")
+
+            For r = firstRow To lastRow
+                sb.Append("<tr>")
+                For c = firstCol To lastCol
+                    Dim k = Key(r, c)
+                    If covered.Contains(k) Then
+                        ' Teil eines Merge-Bereichs, aber nicht Top-Left => überspringen
+                        Continue For
+                    End If
+
+                    Dim cell = ws.Cells(r, c)
+                    Dim tag As String = If(options.ConsiderRowIndexesAsTableHeader.Contains(r), "th", "td")
+
+                    ' --- Merge-Attribute ---
+                    Dim rowspan As Integer = 1, colspan As Integer = 1
+                    If mergeTopLeft.ContainsKey(k) Then
+                        rowspan = mergeTopLeft(k).RowSpan
+                        colspan = mergeTopLeft(k).ColSpan
+                    End If
+
+                    ' --- Styles extrahieren ---
+                    Dim styles As New List(Of String)
+
+                    ' Horizontal-Align
+                    Select Case cell.Style.HorizontalAlignment
+                        Case Style.ExcelHorizontalAlignment.Center : styles.Add("text-align:center")
+                        Case Style.ExcelHorizontalAlignment.Right : styles.Add("text-align:right")
+                        Case Style.ExcelHorizontalAlignment.Justify : styles.Add("text-align:justify")
+                        Case Else : styles.Add("text-align:left")
+                    End Select
+
+                    ' Font
+                    If cell.Style.Font IsNot Nothing Then
+                        If cell.Style.Font.Bold Then styles.Add("font-weight:bold")
+                        If cell.Style.Font.Italic Then styles.Add("font-style:italic")
+                        If cell.Style.Font.UnderLine Then styles.Add("text-decoration:underline")
+                        Dim fc = HtmlSafeRgb(cell.Style.Font.Color)
+                        If fc IsNot Nothing Then styles.Add("color:" & fc)
+                    End If
+
+                    ' Hintergrund
+                    If cell.Style.Fill IsNot Nothing AndAlso cell.Style.Fill.PatternType <> Style.ExcelFillStyle.None Then
+                        Dim bg = HtmlSafeRgb(cell.Style.Fill.BackgroundColor)
+                        If bg IsNot Nothing Then styles.Add("background-color:" & bg)
+                    End If
+
+                    ' Zeilenumbruch
+                    If cell.Style.WrapText Then styles.Add("white-space:pre-wrap")
+
+                    Dim styleAttr As String = If(styles.Count > 0, $" style=""{String.Join(";", styles)}""", "")
+
+                    ' Inhalt (Text = bereits nach NumberFormat formatiert)
+                    Dim content As String = cell.Text
+                    If String.IsNullOrEmpty(content) Then content = " "
+                    content = System.Net.WebUtility.HtmlEncode(content)
+
+                    ' Zelle schreiben
+                    sb.Append("<" & tag)
+                    If rowspan > 1 Then sb.Append(" rowspan=""" & rowspan & """")
+                    If colspan > 1 Then sb.Append(" colspan=""" & colspan & """")
+                    sb.Append(styleAttr)
+                    sb.Append(">"c)
+                    sb.Append(content)
+                    sb.Append("</" & tag & ">")
+                Next
+                sb.AppendLine("</tr>")
+            Next
+
+            sb.AppendLine("</table></body></html>")
+        End Sub
+
+        ' ---------- Helpers ----------
+
+        Private Shared Function Key(r As Integer, c As Integer) As String
+            Return r.ToString() & "|" & c.ToString()
+        End Function
+
+        ''' <summary>
+        ''' Liefert ein CSS-#RRGGBB aus einer EPPlus-Farbquelle (ARGB → RRGGBB).
+        ''' </summary>
+        Private Shared Function HtmlSafeRgb(color As OfficeOpenXml.Style.ExcelColor) As String
+            If color Is Nothing Then Return Nothing
+            ' EPPlus 4.5 nutzt bevorzugt .Rgb (8-stellig ARGB). Theme/Indexed werden hier ausgelassen.
+            If Not String.IsNullOrEmpty(color.Rgb) AndAlso color.Rgb.Length = 8 Then
+                Dim rgb = "#" & color.Rgb.Substring(2) ' ARGB → RRGGBB
+                Return rgb
+            End If
+            Return Nothing
+        End Function
+#End Region
 
     End Class
 

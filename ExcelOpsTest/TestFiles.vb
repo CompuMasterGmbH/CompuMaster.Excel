@@ -80,6 +80,12 @@ Public NotInheritable Class TestFiles
         End Get
     End Property
 
+    Public Shared ReadOnly Property TestFileGrund03 As System.IO.FileInfo
+        Get
+            Return New System.IO.FileInfo(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund03.xlsx"))
+        End Get
+    End Property
+
     Public Shared ReadOnly Property TestFileExcelOpsTestCollection As System.IO.FileInfo
         Get
             Return New System.IO.FileInfo(TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsTestCollection.xlsx"))

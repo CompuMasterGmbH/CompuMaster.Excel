@@ -124,15 +124,6 @@ Namespace ExcelOps
         End Function
 #Enable Warning CA1822 ' Member als statisch markieren
 
-        ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
-        ''' </summary>
-        ''' <param name="worksheetName"></param>
-        ''' <param name="sb"></param>
-        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
-            Throw New NotImplementedException
-        End Sub
-
     End Class
 
 End Namespace

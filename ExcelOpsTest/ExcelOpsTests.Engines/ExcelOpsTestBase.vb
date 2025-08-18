@@ -502,6 +502,54 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(-1, eppeo.WorkSheetIndex("chart"))
         End Sub
 
+        <Test> Public Sub SelectedSheetName()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileGrund03.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
+
+            eppeo.SelectSheet("Grunddaten")
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Grunddaten.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+
+            eppeo.SelectSheet(0)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+
+            eppeo.SelectSheet(1)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
+
+            eppeo.SelectSheet(2)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
+
+            eppeo.SelectSheet("Kostenplanung")
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Kostenplanung.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
+
+        End Sub
+
+        <Test> Public Sub SelectedSheetName2()
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase
+
+            Dim TestFileName As String
+            TestFileName = TestFiles.TestFileHtmlExport01.FullName
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Onboarding offen"))
+            eppeo.SelectSheet("Upload erledigt")
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Upload erledigt"))
+        End Sub
+
         <Test> Public Sub ChartSheetNames()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim EppeoSheetNamesList As List(Of String)

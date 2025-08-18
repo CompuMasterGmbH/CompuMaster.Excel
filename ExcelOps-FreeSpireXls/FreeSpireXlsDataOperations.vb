@@ -139,7 +139,7 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="sb"></param>
-        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+        Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
             Throw New NotImplementedException
         End Sub
 
