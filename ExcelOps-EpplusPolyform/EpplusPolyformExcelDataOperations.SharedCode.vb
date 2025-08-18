@@ -10,6 +10,7 @@ Imports System.ComponentModel
 Imports OfficeOpenXml
 Imports OfficeOpenXml.FormulaParsing
 Imports OfficeOpenXml.FormulaParsing.Logging
+Imports System.Text
 
 Namespace ExcelOps
 
@@ -1171,6 +1172,21 @@ Namespace ExcelOps
         Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
             Throw New NotSupportedException("Exporting drawings/charts not supported by Epplus engine")
         End Function
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+            Select Case options.ExportSheetNameAsTitle
+                Case HtmlSheetExportOptions.SheetTitleStyles.None
+                    'do nothing
+                Case Else
+                    Throw New NotImplementedException(NameOf(options.ExportSheetNameAsTitle))
+            End Select
+            sb.AppendLine(EpplusHtmlRenderer.XlsxToHtmlString(Me.Workbook.Worksheets(worksheetName)))
+        End Sub
 
     End Class
 

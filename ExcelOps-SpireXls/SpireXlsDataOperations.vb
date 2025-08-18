@@ -2,6 +2,7 @@
 Option Explicit On
 
 Imports System.ComponentModel
+Imports System.Text
 Imports Spire.Xls
 
 Namespace ExcelOps
@@ -137,6 +138,15 @@ Namespace ExcelOps
             }
             Dim Worksheet As Worksheet = Me._Workbook.Worksheets()(worksheetName)
             Worksheet.SaveToHtml(stream, Options)
+        End Sub
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+            Throw New NotImplementedException
         End Sub
 
     End Class

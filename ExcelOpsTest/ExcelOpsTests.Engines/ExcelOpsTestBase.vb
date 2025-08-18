@@ -1,4 +1,7 @@
-﻿Imports NUnit.Framework
+﻿Option Strict On
+Option Explicit On
+
+Imports NUnit.Framework
 Imports CompuMaster.Excel.ExcelOps
 Imports NUnit.Framework.Interfaces
 
@@ -6,6 +9,12 @@ Namespace ExcelOpsTests.Engines
 
     <NonParallelizable>
     Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
+
+#If CI_CD Then
+        Private Const OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = False
+#Else
+        Private Const OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = True
+#End If
 
         Protected MustOverride Function _CreateInstance() As T
 
@@ -1383,6 +1392,117 @@ Namespace ExcelOpsTests.Engines
             Catch ex As NotImplementedException
                 Assert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
+        End Sub
+#End Region
+
+#Region "HTML exports"
+        <Test>
+        Public Sub HtmlExportWorkbookGrunddaten01()
+            Dim TestXlsxFile = TestFiles.TestFileGrund01()
+            System.Console.WriteLine("TEST IN FILE: " & TestXlsxFile.FullName)
+
+            Try
+                Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".html")
+                System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
+                Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
+                If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
+                    Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
+                .UseShellExecute = True,
+                .FileName = TestHtmlOutputFile
+                })
+                End If
+            Catch ex As NotImplementedException
+                Assert.Ignore("Not implemented for this Excel engine")
+            Catch ex As TypeInitializationException
+                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+            End Try
+
+        End Sub
+
+        <Test>
+        Public Sub HtmlExportWorkbookHtmlExport01()
+            Dim TestXlsxFile = TestFiles.TestFileHtmlExport01()
+            System.Console.WriteLine("TEST IN FILE: " & TestXlsxFile.FullName)
+
+            Try
+                With Nothing
+                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                    Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor.html")
+                    System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
+                    Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
+                    If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
+                        Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
+                            .UseShellExecute = True,
+                            .FileName = TestHtmlOutputFile
+                            })
+                    End If
+                End With
+                With Nothing
+                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                    Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-switch.html")
+                    System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
+                    Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.SwitchVisibleSheet})
+                    If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
+                        Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
+                            .UseShellExecute = True,
+                            .FileName = TestHtmlOutputFile
+                            })
+                    End If
+                End With
+            Catch ex As NotImplementedException
+                Assert.Ignore("Not implemented for this Excel engine")
+            Catch ex As TypeInitializationException
+                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+            End Try
+
+        End Sub
+
+        <Test>
+        Public Sub HtmlExportWorksheetGrunddatenV19()
+            Dim TestXlsxFile = TestFiles.TestFileGrund01()
+            System.Console.WriteLine("TEST IN FILE: " & TestXlsxFile.FullName)
+
+            Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "excel_test_chart.png")
+            Dim Workbook = PrepareAndFillExcelFileWithChart(0)
+
+            Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Nothing
+            Try
+                Wb = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+            Catch ex As TypeInitializationException
+                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+            End Try
+            For Each WorkSheetName In Wb.WorkSheetNames
+                System.Console.WriteLine("FOUND WORKSHEET: " & WorkSheetName)
+            Next
+            Try
+                For Each WorkSheetName In Wb.WorkSheetNames
+                    With Nothing
+                        Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, TestXlsxFile.Name & "." & WorkSheetName & ".no-title.html")
+                        System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
+                        Wb.ExportSheetToHtml(WorkSheetName, TestHtmlOutputFile, New HtmlSheetExportOptions)
+                        If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
+                            Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
+                        .UseShellExecute = True,
+                        .FileName = TestHtmlOutputFile
+                        })
+                        End If
+                    End With
+                    With Nothing
+                        Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, TestXlsxFile.Name & "." & WorkSheetName & ".h2.html")
+                        Wb.ExportSheetToHtml(WorkSheetName, TestHtmlOutputFile, New HtmlSheetExportOptions() With {.ExportSheetNameAsTitle = HtmlSheetExportOptions.SheetTitleStyles.H2})
+                        If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
+                            Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
+                        .UseShellExecute = True,
+                        .FileName = TestHtmlOutputFile
+                        })
+                        End If
+                    End With
+                Next
+            Catch ex As NotImplementedException
+                Assert.Ignore("Not implemented for this Excel engine")
+            End Try
+
         End Sub
 #End Region
 

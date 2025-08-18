@@ -228,10 +228,10 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath"></param>
         ''' <remarks></remarks>
         Private Shared Sub SaveWorkbook(ByVal exportWorkbook As OfficeOpenXml.ExcelPackage, ByVal outputPath As String)
-            If outputPath <> Nothing AndAlso outputPath.ToLowerInvariant.EndsWith(".xlsb", StringComparison.Ordinal) Then
+            If outputPath <> Nothing AndAlso outputPath.ToLower.EndsWith(".xlsb") Then
                 'Excel 2007 binary format
                 Throw New NotSupportedException("Excel2007 binary file format not supported yet")
-            ElseIf outputPath <> Nothing AndAlso outputPath.ToLowerInvariant.EndsWith(".xlsm", StringComparison.Ordinal) Then
+            ElseIf outputPath <> Nothing AndAlso outputPath.ToLower.EndsWith(".xlsm") Then
                 'Excel 2007 macro format
                 exportWorkbook.SaveAs(New IO.FileInfo(outputPath))
             Else
@@ -1141,7 +1141,7 @@ Namespace CompuMaster.Data
         Private Shared Function IsDateTimeFormat(cellFormat As String) As Boolean
             If cellFormat = "" Then
                 Return False
-            ElseIf cellFormat.StartsWith("yyyy-MM-dd", StringComparison.Ordinal) OrElse cellFormat.StartsWith("HH:mm:ss", StringComparison.Ordinal) Then
+            ElseIf cellFormat.StartsWith("yyyy-MM-dd") OrElse cellFormat.StartsWith("HH:mm:ss") Then
                 Return True
             Else
                 Return False

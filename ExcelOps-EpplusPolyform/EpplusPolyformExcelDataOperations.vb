@@ -1,8 +1,9 @@
 ﻿Option Strict On
 Option Explicit On
 
-Imports System.Data
 Imports System.ComponentModel
+Imports System.Data
+Imports System.Text
 Imports OfficeOpenXml
 Imports OfficeOpenXml.FormulaParsing
 Imports OfficeOpenXml.FormulaParsing.Logging
@@ -122,6 +123,15 @@ Namespace ExcelOps
             Return False
         End Function
 #Enable Warning CA1822 ' Member als statisch markieren
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+            Throw New NotImplementedException
+        End Sub
 
     End Class
 

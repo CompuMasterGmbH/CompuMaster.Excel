@@ -1,9 +1,10 @@
 ﻿Option Explicit On
 Option Strict On
 
-Imports MsExcel = Microsoft.Office.Interop.Excel
+Imports System.Text
 Imports CompuMaster.Excel.MsExcelCom
 Imports Microsoft.Office.Interop.Excel
+Imports MsExcel = Microsoft.Office.Interop.Excel
 
 Namespace Global.CompuMaster.Excel.ExcelOps
 
@@ -1169,6 +1170,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
             Throw New NotImplementedException()
         End Function
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+            Throw New NotImplementedException
+        End Sub
 
     End Class
 

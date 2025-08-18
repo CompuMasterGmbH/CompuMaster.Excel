@@ -1,5 +1,7 @@
 ﻿Option Explicit On
 Option Strict On
+Imports System.IO
+Imports System.Text
 
 Namespace ExcelOps
 
@@ -502,9 +504,9 @@ Namespace ExcelOps
             Dim autoSuggestedResult As Integer = LastCell.ColumnIndex
             Dim lastMergeCellRowIndex As Integer
             Dim lastMergeCellColumnIndex As Integer
-            If LastMergedCell IsNot Nothing Then
-                lastMergeCellRowIndex = LastMergedCell.RowIndex
-                lastMergeCellColumnIndex = LastMergedCell.ColumnIndex
+            If lastMergedCell IsNot Nothing Then
+                lastMergeCellRowIndex = lastMergedCell.RowIndex
+                lastMergeCellColumnIndex = lastMergedCell.ColumnIndex
             Else
                 lastMergeCellRowIndex = 0
                 lastMergeCellColumnIndex = 0
@@ -539,9 +541,9 @@ Namespace ExcelOps
             Dim autoSuggestedResult As Integer = LastCell.RowIndex
             Dim lastMergeCellRowIndex As Integer
             Dim lastMergeCellColumnIndex As Integer
-            If LastMergedCell IsNot Nothing Then
-                lastMergeCellRowIndex = LastMergedCell.RowIndex
-                lastMergeCellColumnIndex = LastMergedCell.ColumnIndex
+            If lastMergedCell IsNot Nothing Then
+                lastMergeCellRowIndex = lastMergedCell.RowIndex
+                lastMergeCellColumnIndex = lastMergedCell.ColumnIndex
             Else
                 lastMergeCellRowIndex = 0
                 lastMergeCellColumnIndex = 0
@@ -1382,6 +1384,134 @@ Namespace ExcelOps
             Next
             Return Result
         End Function
+
+        Public Enum ExcelSheetTypes As Byte
+            WorkSheet = 1
+            ChartSheet = 2
+        End Enum
+
+        Public Function SheetType(sheetName As String) As ExcelSheetTypes
+            If Me.ChartSheetNames.Contains(sheetName) Then
+                Return ExcelSheetTypes.ChartSheet
+            Else
+                Return ExcelSheetTypes.WorkSheet
+            End If
+        End Function
+
+        ''' <summary>
+        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="fileName"></param>
+        ''' <param name="options"></param>
+        Public Sub ExportWorkbookToHtml(fileName As String, options As HtmlWorkbookExportOptions)
+            Dim Html = ExportWorkbookToHtml(options)
+#If NETFRAMEWORK Then
+            System.IO.File.WriteAllText(fileName, Html.ToString, System.Text.Encoding.UTF8)
+#Else
+            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
+                w.Write(Html)              ' synchron
+            End Using
+
+#End If
+        End Sub
+
+#If Not NETFRAMEWORK Then
+        ''' <summary>
+        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="fileName"></param>
+        ''' <param name="options"></param>
+        Public Async Sub ExportWorkbookToHtmlAsync(fileName As String, options As HtmlWorkbookExportOptions)
+            Dim Html = ExportWorkbookToHtml(options)
+            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
+                Await w.WriteAsync(Html)  ' asynchron
+            End Using
+        End Sub
+#End If
+
+        ''' <summary>
+        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="options"></param>
+        Public Function ExportWorkbookToHtml(options As HtmlWorkbookExportOptions) As System.Text.StringBuilder
+            Dim Result As New System.Text.StringBuilder(128 * 1024)
+            If options.HtmlBefore IsNot Nothing Then
+                Result.Append(options.HtmlBefore)
+            Else
+                Result.Append(options.DefaultHtmlBefore)
+            End If
+
+            'options.SheetNavigationPosition
+            'options.SheetNavigationAlwaysVisible
+            'options.SheetNavigationActionStyle
+            Throw New NotImplementedException
+
+            For Each MySheetName As String In SheetNames()
+                Dim DoExport = False
+                If Me.SheetType(MySheetName) = ExcelSheetTypes.ChartSheet AndAlso options.ExportChartSheets = True Then
+                    DoExport = True
+                ElseIf Me.SheetType(MySheetName) = ExcelSheetTypes.WorkSheet AndAlso options.ExportWorkSheets = True Then
+                    DoExport = True
+                End If
+                If Me.IsHiddenSheet(MySheetName) AndAlso options.ExportHiddenSheets = False Then
+                    DoExport = False
+                End If
+
+                If DoExport Then
+                    'options.ExportSheetNameAsTitle
+                    Throw New NotImplementedException
+
+                    ExportSheetToHtml(MySheetName, Result, options)
+                End If
+            Next
+
+            If options.HtmlBehind IsNot Nothing Then
+                Result.Append(options.HtmlBehind)
+            Else
+                Result.Append(options.DefaultHtmlBehind)
+            End If
+            Return Result
+        End Function
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="fileName"></param>
+        Public Sub ExportSheetToHtml(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
+            Dim Html As New System.Text.StringBuilder(128 * 1024)
+            ExportSheetToHtml(worksheetName, Html, options)
+#If NETFRAMEWORK Then
+            System.IO.File.WriteAllText(fileName, Html.ToString, System.Text.Encoding.UTF8)
+#Else
+            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
+                w.Write(Html)              ' synchron
+            End Using
+
+#End If
+        End Sub
+
+#If Not NETFRAMEWORK Then
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="fileName"></param>
+        Public Async Sub ExportSheetToHtmlAsync(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
+            Dim Html As New System.Text.StringBuilder(128 * 1024)
+            ExportSheetToHtml(worksheetName, Html, options)
+            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
+                Await w.WriteAsync(Html)  ' asynchron
+            End Using
+        End Sub
+#End If
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Public MustOverride Sub ExportSheetToHtml(worksheetName As String, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions)
 
     End Class
 End Namespace

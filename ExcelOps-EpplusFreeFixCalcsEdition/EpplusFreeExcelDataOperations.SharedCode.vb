@@ -10,6 +10,7 @@ Imports System.ComponentModel
 Imports CompuMaster.Epplus4
 Imports CompuMaster.Epplus4.FormulaParsing
 Imports CompuMaster.Epplus4.FormulaParsing.Logging
+Imports System.Text
 
 Namespace ExcelOps
 
@@ -778,7 +779,7 @@ Namespace ExcelOps
     '    ''' <remarks></remarks>
     '    Private Function IsDateTimeInsteadOfNumber(ByVal cell As OfficeOpenXml.ExcelRange) As Boolean
     '        Dim numFormat As String = cell.Style.Numberformat.Format
-    '        If numFormat.ToLower.IndexOf("y") > 0 OrElse numFormat.ToLower.IndexOf("m") > 0 OrElse numFormat.ToLower.IndexOf("d") > 0 OrElse numFormat.ToLower.IndexOf("h") > 0 Then
+    '        If numFormat.ToLowerInvariant.Contains("y"c) OrElse numFormat.ToLowerInvariant.Contains("m"c) OrElse numFormat.ToLowerInvariant.Contains("d"c) OrElse numFormat.ToLowerInvariant.Contains("h"c) Then
     '            Try
     '                DateTime.FromOADate(CType(cell.Value, Double))
     '                Return True
@@ -1171,6 +1172,21 @@ Namespace ExcelOps
         Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
             Throw New NotSupportedException("Exporting drawings/charts not supported by Epplus engine")
         End Function
+
+        ''' <summary>
+        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' </summary>
+        ''' <param name="worksheetName"></param>
+        ''' <param name="sb"></param>
+        Public Overrides Sub ExportSheetToHtml(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
+            Select Case options.ExportSheetNameAsTitle
+                Case HtmlSheetExportOptions.SheetTitleStyles.None
+                    'do nothing
+                Case Else
+                    Throw New NotImplementedException(NameOf(options.ExportSheetNameAsTitle))
+            End Select
+            sb.AppendLine(EpplusHtmlRenderer.XlsxToHtmlString(Me.Workbook.Worksheets(worksheetName)))
+        End Sub
 
     End Class
 
