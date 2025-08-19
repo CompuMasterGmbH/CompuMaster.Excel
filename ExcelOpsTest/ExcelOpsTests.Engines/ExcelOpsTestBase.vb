@@ -7,6 +7,7 @@ Imports NUnit.Framework.Interfaces
 
 Namespace ExcelOpsTests.Engines
 
+    <Apartment(Threading.ApartmentState.STA)>
     <NonParallelizable>
     Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
@@ -511,28 +512,31 @@ Namespace ExcelOpsTests.Engines
 
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
-            eppeo.SelectSheet("Grunddaten")
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Grunddaten.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-            System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
-
             eppeo.SelectSheet(0)
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
             eppeo.SelectSheet(1)
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
             eppeo.SelectSheet(2)
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
 
+            eppeo.SelectSheet("Grunddaten")
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
             eppeo.SelectSheet("Kostenplanung")
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "SelectedSheet.Kostenplanung.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
 
@@ -1479,6 +1483,18 @@ Namespace ExcelOpsTests.Engines
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
+                    If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
+                        Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
+                            .UseShellExecute = True,
+                            .FileName = TestHtmlOutputFile
+                            })
+                    End If
+                End With
+                With Nothing
+                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                    Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor-fixed-on-top.html")
+                    System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
+                    Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor, .SheetNavigationAlwaysVisible = True})
                     If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
                         Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
                             .UseShellExecute = True,

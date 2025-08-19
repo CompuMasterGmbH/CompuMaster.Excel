@@ -1471,7 +1471,7 @@ Namespace ExcelOps
             End If
             For SheetCounter As Integer = 0 To ExportSheetNames.Count - 1
                 Dim MySheetName As String = ExportSheetNames(SheetCounter)
-                Dim MyAnchorName As String = ExportSheetNames(SheetCounter)
+                Dim MyAnchorName As String = ExportAnchorNames(SheetCounter)
                 Dim IsSelected As Boolean = (MySheetName = ActiveSheetName)
                 ExportSheetToHtml(MySheetName, MyAnchorName, IsSelected, Result, options, HtmlDocumentExportParts.ContentOnly)
             Next
@@ -1542,7 +1542,10 @@ Namespace ExcelOps
                     options.GenerateEndSheetSection(sb)
                     sb.AppendLine().AppendLine(options.EffectiveHtmlDocumentEnd)
                 Case HtmlDocumentExportParts.ContentOnly
+                    options.GenerateBeginSheetSection(sb, anchorName, initiallyVisible)
+                    options.GenerateSheetSectionTitle(sb, worksheetName)
                     ExportSheetToHtmlInternal(worksheetName, sb, options)
+                    options.GenerateEndSheetSection(sb)
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(exportedHtmlDocumentParts))
             End Select

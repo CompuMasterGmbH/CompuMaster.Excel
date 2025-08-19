@@ -90,7 +90,7 @@ Namespace ExcelOps
         Public Overridable Function EffectiveWorksheetsNavigationCssStyleHtml() As String
             Dim sb As New System.Text.StringBuilder(1024)
             sb.AppendLine("<style>")
-            sb.AppendLine("." & Me.WorksheetsNavigationCssClassName & "{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.4rem .8rem;background:#f8f9fa;border-bottom:1px solid #ddd;z-index:1000;font-size:.95rem;}")
+            sb.AppendLine("." & Me.WorksheetsNavigationCssClassName & " {display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.4rem .8rem;background:#f8f9fa;border-bottom:1px solid #ddd;z-index:1000;font-family:Segoe UI,Arial,sans-serif;font-size:1.25rem;}")
             sb.AppendLine("." & Me.WorksheetsNavigationCssClassName & ".sticky-top{position:sticky;top:0;}")
             sb.AppendLine("." & Me.WorksheetsNavigationCssClassName & ".sticky-bottom{position:sticky;bottom:0;border-top:1px solid #ddd;border-bottom:none;}")
             sb.AppendLine("." & Me.WorksheetsNavigationCssClassName & " ul{list-style:none;margin:0;padding:0;display:flex;gap:.4rem;flex-wrap:wrap;}")
@@ -169,12 +169,15 @@ Namespace ExcelOps
             End If
 
             Dim stickyClass As String = String.Empty
+            Dim restoreMarginTop As String = String.Empty
             If options.SheetNavigationAlwaysVisible Then
                 Select Case options.SheetNavigationPosition
                     Case HtmlWorkbookExportOptions.SheetNavigationPositions.Top
                         stickyClass = " sticky-top"
+                        restoreMarginTop = "<br /><br />"
                     Case HtmlWorkbookExportOptions.SheetNavigationPositions.Bottom
                         stickyClass = " sticky-bottom"
+                        restoreMarginTop = "<br /><br />"
                 End Select
             End If
 
@@ -214,6 +217,9 @@ Namespace ExcelOps
                 End Select
             Next
             sb.Append("</ul></nav>")
+            sb.AppendLine(restoreMarginTop)
+            sb.AppendLine()
+            sb.AppendLine()
 
             ' Bei SwitchVisibleSheet: Sheet-CSS + JS einbetten (einmalig pro Seite ist ausreichend)
             If options.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.SwitchVisibleSheet Then

@@ -159,7 +159,7 @@ Namespace ExcelOps
         Public Overridable Function EffectiveTableCssClassStyleHtml() As String
             Dim sb As New System.Text.StringBuilder(1024)
             sb.AppendLine("<style>")
-            sb.AppendLine("table." & Me.TableCssClassName & " {border-collapse:collapse; border:1px solid #ccc; font-family:Segoe UI,Arial,sans-serif; font-size:14px;}")
+            sb.AppendLine("table." & Me.TableCssClassName & " {border-collapse:collapse; border:1px solid #ccc; font-family:Segoe UI,Arial,sans-serif;}")
             sb.AppendLine("table." & Me.TableCssClassName & " th, table." & Me.TableCssClassName & " td {border:1px solid #ddd; padding:4px 6px; vertical-align:top;}")
             sb.AppendLine("table." & Me.TableCssClassName & " td {white-space:pre-wrap;}")
             sb.AppendLine("</style>")
@@ -184,6 +184,7 @@ Namespace ExcelOps
                Append(""">")
             ' Kompatibel zu älteren Ankernamen
             sb.Append("<a name=""").Append(System.Net.WebUtility.HtmlEncode(anchorName)).Append("""></a>")
+            sb.AppendLine()
         End Sub
 
         Public Property WorksheetTitleCssClassName As String = "cm-wb-sheet-title"
@@ -196,17 +197,18 @@ Namespace ExcelOps
             If Me.ExportSheetNameAsTitle = SheetTitleStyles.None Then Return
             Dim TagName As String = Me.ExportSheetNameAsTitle.ToString
             sb.Append("<"c).Append(TagName).
-               Append(""" class=""" & WorksheetTitleCssClassName & """").
+               Append(" class=""" & WorksheetTitleCssClassName & """").
                Append(""">").
                Append(System.Net.WebUtility.HtmlEncode(title)).
-               AppendLine("</").Append(TagName).Append(">"c)
+               Append("</").Append(TagName).Append(">"c)
+            sb.AppendLine()
         End Sub
 
         ''' <summary>
         ''' Schließenden Wrapper für ein Sheet ausgeben.
         ''' </summary>
         Public Overridable Sub GenerateEndSheetSection(sb As StringBuilder)
-            sb.Append("</section>")
+            sb.Append("</section>").AppendLine.AppendLine()
         End Sub
 
     End Class
