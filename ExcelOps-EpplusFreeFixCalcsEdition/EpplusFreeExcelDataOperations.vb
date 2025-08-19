@@ -208,6 +208,42 @@ Namespace ExcelOps
             Return CheckResult
         End Function
 
+        Public Overrides Function SelectedSheetName() As String
+            Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
+        End Function
+
+        ''' <summary>
+        ''' Select a worksheet
+        ''' </summary>
+        ''' <param name="sheetName"></param>
+        Public Overrides Sub SelectSheet(sheetName As String)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            Dim CurrentSheetNames = Me.SheetNames
+            If CurrentSheetNames.Contains(sheetName) = False Then
+                Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet name not found: " & sheetName)
+            End If
+            Dim RequestedSheetIndex As Integer = CurrentSheetNames.IndexOf(sheetName)
+            'Me.SelectSheet(RequestedSheetIndex)
+            Me.Workbook.Worksheets(sheetName).Select()
+            'Me.Workbook.Worksheets(RequestedSheetIndex).Select()
+            'If Me.SelectedSheetName <> sheetName Then
+            '    Throw New InvalidOperationException("Sheet selection requested for """ & sheetName & """, but after selection the active tab was """ & Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name & """")
+            'End If
+        End Sub
+
+        ''' <summary>
+        ''' Select a worksheet
+        ''' </summary>
+        ''' <param name="sheetIndex"></param>
+        Public Overrides Sub SelectSheet(sheetIndex As Integer)
+            Me.SelectSheet(Me.SheetNames(sheetIndex))
+            Return
+            Me.Workbook.Worksheets(sheetIndex + 1).Select() 'Worksheets collection always uses 1-based index (independent of Epplus compatibility setting)
+            If Me.Workbook.View.ActiveTab <> sheetIndex Then
+                Throw New InvalidOperationException("Sheet selection requested for index """ & sheetIndex & """, but after selection the active tab was """ & Me.Workbook.View.ActiveTab & """")
+            End If
+        End Sub
+
     End Class
 
 End Namespace

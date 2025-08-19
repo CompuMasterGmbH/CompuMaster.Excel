@@ -939,27 +939,6 @@ Namespace ExcelOps
             If beforeSheetName <> Nothing Then Me.Workbook.Worksheets.MoveBefore(sheetName, beforeSheetName)
         End Sub
 
-        Public Overrides Function SelectedSheetName() As String
-            Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
-        End Function
-
-        ''' <summary>
-        ''' Select a worksheet
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        Public Overrides Sub SelectSheet(sheetName As String)
-            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Me.Workbook.Worksheets(sheetName).Select()
-        End Sub
-
-        ''' <summary>
-        ''' Select a worksheet
-        ''' </summary>
-        ''' <param name="sheetIndex"></param>
-        Public Overrides Sub SelectSheet(sheetIndex As Integer)
-            Me.SelectSheet(Me.SheetNames(sheetIndex))
-        End Sub
-
         Public Overrides Sub CloseExcelAppInstance()
             Me.Close()
             'No external excel engine application to close
@@ -1237,7 +1216,7 @@ Namespace ExcelOps
                     End If
 
                     Dim cell = ws.Cells(r, c)
-                    Dim tag As String = If(options.ConsiderRowIndexesAsTableHeader.Contains(r), "th", "td")
+                    Dim tag As String = If(options.ConsiderRowIndexesAsTableHeader?.Contains(r), "th", "td")
 
                     ' --- Merge-Attribute ---
                     Dim rowspan As Integer = 1, colspan As Integer = 1
@@ -1294,7 +1273,7 @@ Namespace ExcelOps
                 sb.AppendLine("</tr>")
             Next
 
-            sb.AppendLine("</table></body></html>")
+            sb.AppendLine("</table>")
         End Sub
 
         ' ---------- Helpers ----------
