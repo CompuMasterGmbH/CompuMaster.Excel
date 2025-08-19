@@ -23,6 +23,14 @@ Namespace ExcelOpsTests.Engines
             MyBase.TestInCultureContext_AssignCurrentThreadCulture()
         End Sub
 
+        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        End Function
+
+        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        End Function
+
     End Class
 
 End Namespace

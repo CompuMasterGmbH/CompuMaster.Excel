@@ -50,6 +50,14 @@ Namespace ExcelOpsTests.Engines
             Assert.False(CompuMaster.Excel.ExcelOps.Utils.IsLicensedContext)
         End Sub
 
+        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        End Function
+
+        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        End Function
+
     End Class
 
 End Namespace

@@ -21,6 +21,8 @@ Namespace ExcelOpsTests.Engines
 
 #Disable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
         Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableCalculationEngine As Boolean) As T
+        Protected MustOverride Function _CreateInstance(data As Byte(), passwordForOpening As String, disableCalculationEngine As Boolean) As T
+        Protected MustOverride Function _CreateInstance(data As System.IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As T
 #Enable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
 
         ''' <summary>
@@ -61,6 +63,88 @@ Namespace ExcelOpsTests.Engines
         ''' <returns></returns>
         Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
             Return Me.CreateInstance(file, mode, [readOnly], passwordForOpening, False)
+        End Function
+
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <returns></returns>
+        Protected Function CreateInstance(data As Byte(), passwordForOpening As String) As T
+            Return Me.CreateInstance(data, passwordForOpening, False)
+        End Function
+
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <param name="disableCalculationEngine"></param>
+        ''' <returns></returns>
+        Protected Function CreateInstance(data As Byte(), passwordForOpening As String, disableCalculationEngine As Boolean) As T
+            Try
+                Return _CreateInstance(data, passwordForOpening, disableCalculationEngine)
+            Catch ex As Exception
+                If ex.GetType() Is GetType(PlatformNotSupportedException) Then
+                    Throw
+                ElseIf ex.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
+                    Throw
+                Else
+                    Dim InnerEx As Exception = ex.InnerException
+                    Do While InnerEx IsNot Nothing
+                        If InnerEx.GetType() Is GetType(PlatformNotSupportedException) Then
+                            Throw InnerEx
+                        ElseIf InnerEx.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
+                            Throw InnerEx
+                        Else
+                            InnerEx = InnerEx.InnerException
+                        End If
+                    Loop
+                End If
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <returns></returns>
+        Protected Function CreateInstance(data As System.IO.Stream, passwordForOpening As String) As T
+            Return Me.CreateInstance(data, passwordForOpening, False)
+        End Function
+
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <param name="disableCalculationEngine"></param>
+        ''' <returns></returns>
+        Protected Function CreateInstance(data As System.IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As T
+            Try
+                Return _CreateInstance(data, passwordForOpening, disableCalculationEngine)
+            Catch ex As Exception
+                If ex.GetType() Is GetType(PlatformNotSupportedException) Then
+                    Throw
+                ElseIf ex.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
+                    Throw
+                Else
+                    Dim InnerEx As Exception = ex.InnerException
+                    Do While InnerEx IsNot Nothing
+                        If InnerEx.GetType() Is GetType(PlatformNotSupportedException) Then
+                            Throw InnerEx
+                        ElseIf InnerEx.GetType() Is GetType(CompuMaster.ComInterop.ComApplicationNotAvailableException) Then
+                            Throw InnerEx
+                        Else
+                            InnerEx = InnerEx.InnerException
+                        End If
+                    Loop
+                End If
+                Throw
+            End Try
         End Function
 
         ''' <summary>
@@ -200,6 +284,40 @@ Namespace ExcelOpsTests.Engines
             Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
             Assert.False(Wb.HasVbaProject)
 
+        End Sub
+
+        <Test> Public Sub LoadFileFromByteArray()
+            Dim Wb As T
+            'Testfile without password
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
+            Dim Data As Byte() = System.IO.File.ReadAllBytes(TestFile)
+            If GetType(T) Is GetType(MsExcelDataOperations) Then
+                'known to fail because no support for reading files from in-memory
+                Assert.Throws(Of NotSupportedException)(Sub()
+                                                            Me.CreateInstance(Data, "")
+                                                        End Sub)
+            Else
+                Wb = Me.CreateInstance(Data, "")
+                Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
+                Assert.That(Wb.ReadOnly, [Is].True)
+            End If
+        End Sub
+
+        <Test> Public Sub LoadFileFromStream()
+            Dim Wb As T
+            'Testfile without password
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
+            Dim Data As System.IO.Stream = New System.IO.FileStream(TestFile, System.IO.FileMode.Open)
+            If GetType(T) Is GetType(MsExcelDataOperations) Then
+                'known to fail because no support for reading files from in-memory
+                Assert.Throws(Of NotSupportedException)(Sub()
+                                                            Me.CreateInstance(Data, "")
+                                                        End Sub)
+            Else
+                Wb = Me.CreateInstance(Data, "")
+                Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
+                Assert.That(Wb.ReadOnly, [Is].True)
+            End If
         End Sub
 
         <Test> Public Sub PasswordForOpening()
@@ -518,23 +636,23 @@ Namespace ExcelOpsTests.Engines
             End If
 
             eppeo.SelectSheet(0)
-                eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                System.Console.WriteLine("OUT: " & eppeo.FilePath)
-                Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
-                eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-                eppeo.SelectSheet(1)
-                eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                System.Console.WriteLine("OUT: " & eppeo.FilePath)
-                Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo.SelectSheet(1)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
-                eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-                eppeo.SelectSheet(2)
-                eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                System.Console.WriteLine("OUT: " & eppeo.FilePath)
-                Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo.SelectSheet(2)
+            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+            System.Console.WriteLine("OUT: " & eppeo.FilePath)
+            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
 
-                eppeo.SelectSheet("Grunddaten")
+            eppeo.SelectSheet("Grunddaten")
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))

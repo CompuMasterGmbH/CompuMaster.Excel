@@ -119,6 +119,13 @@ Namespace ExcelOpsTests.Engines
             MsExcelInstance.SetCultureContext(System.Threading.Thread.CurrentThread.CurrentCulture)
         End Sub
 
+        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.MsExcelDataOperations
+            Throw New NotSupportedException
+        End Function
+
+        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.MsExcelDataOperations
+            Throw New NotSupportedException
+        End Function
     End Class
 
 End Namespace

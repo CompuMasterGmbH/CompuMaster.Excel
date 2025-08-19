@@ -49,6 +49,26 @@ Namespace ExcelOps
             ValidateLicenseContext(Me)
         End Sub
 
+        Public Sub New(data As Byte(), passwordForOpening As String)
+            MyBase.New(data, True, False, passwordForOpening)
+            ValidateLicenseContext(Me)
+        End Sub
+
+        Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
+            ValidateLicenseContext(Me)
+        End Sub
+
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String)
+            MyBase.New(data, True, False, passwordForOpening)
+            ValidateLicenseContext(Me)
+        End Sub
+
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
+            ValidateLicenseContext(Me)
+        End Sub
+
         Public Sub New()
             Me.New(Nothing)
         End Sub

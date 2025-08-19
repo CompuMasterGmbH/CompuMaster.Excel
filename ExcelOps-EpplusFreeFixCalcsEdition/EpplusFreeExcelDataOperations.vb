@@ -22,6 +22,22 @@ Namespace ExcelOps
             MyBase.New(file, mode, False, True, [readOnly], passwordForOpening)
         End Sub
 
+        Public Sub New(data As Byte(), passwordForOpening As String)
+            MyBase.New(data, False, True, passwordForOpening)
+        End Sub
+
+        Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, True, passwordForOpening)
+        End Sub
+
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String)
+            MyBase.New(data, False, True, passwordForOpening)
+        End Sub
+
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, True, passwordForOpening)
+        End Sub
+
         Public Sub New()
             Me.New(Nothing)
         End Sub

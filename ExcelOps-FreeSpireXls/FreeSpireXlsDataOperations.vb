@@ -51,6 +51,22 @@ Namespace ExcelOps
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
         End Sub
 
+        Public Sub New(data As Byte(), passwordForOpening As String)
+            MyBase.New(data, True, False, passwordForOpening)
+        End Sub
+
+        Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
+        End Sub
+
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String)
+            MyBase.New(data, True, False, passwordForOpening)
+        End Sub
+
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
+        End Sub
+
         ''' <summary>
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
