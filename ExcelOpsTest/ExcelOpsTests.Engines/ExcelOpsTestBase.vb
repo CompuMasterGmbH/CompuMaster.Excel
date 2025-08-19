@@ -512,24 +512,29 @@ Namespace ExcelOpsTests.Engines
 
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
+            If eppeo.EngineName = "Spire.Xls" Then
+                'known to insert sheet "Evaluation Warning" --> do not test
+                Assert.Ignore("Testing must fail because of added sheet ""Evaluation Warning""")
+            End If
+
             eppeo.SelectSheet(0)
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-            System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+                eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                System.Console.WriteLine("OUT: " & eppeo.FilePath)
+                Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-            eppeo.SelectSheet(1)
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-            System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
+                eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                eppeo.SelectSheet(1)
+                eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                System.Console.WriteLine("OUT: " & eppeo.FilePath)
+                Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-            eppeo.SelectSheet(2)
-            eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-            System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
+                eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                eppeo.SelectSheet(2)
+                eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                System.Console.WriteLine("OUT: " & eppeo.FilePath)
+                Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
 
-            eppeo.SelectSheet("Grunddaten")
+                eppeo.SelectSheet("Grunddaten")
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
