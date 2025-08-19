@@ -5,13 +5,14 @@ Option Explicit On
 'SEE:     clone-build-files.cmd/.sh/.ps1
 'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
 
-Imports System.Data
 Imports System.ComponentModel
-Imports Spire.Xls
-Imports Spire.Xls.Collections
-Imports Spire.Xls.Charts
-Imports Spire
+Imports System.Data
 Imports System.Drawing
+Imports System.IO
+Imports Spire
+Imports Spire.Xls
+Imports Spire.Xls.Charts
+Imports Spire.Xls.Collections
 
 Namespace ExcelOps
     Partial Public Class FreeSpireXlsDataOperations
@@ -405,6 +406,19 @@ Namespace ExcelOps
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.OpenPassword = Me.PasswordForOpening
             Me.Workbook.LoadFromFile(file.FullName)
+        End Sub
+
+        Protected Overrides Sub LoadWorkbook(data() As Byte)
+            Dim ms As New MemoryStream()
+            ms.Write(data, 0, data.Length)
+            ms.Position = 0
+            Me.LoadWorkbook(ms)
+        End Sub
+
+        Protected Overrides Sub LoadWorkbook(data As IO.Stream)
+            Me._Workbook = New Spire.Xls.Workbook
+            Me.Workbook.OpenPassword = Me.PasswordForOpening
+            Me.Workbook.LoadFromStream(data)
         End Sub
 
         ''' <summary>

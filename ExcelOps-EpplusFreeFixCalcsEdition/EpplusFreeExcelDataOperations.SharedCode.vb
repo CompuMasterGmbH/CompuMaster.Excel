@@ -7,6 +7,7 @@ Option Explicit On
 
 Imports System.ComponentModel
 Imports System.Data
+Imports System.IO
 Imports System.Net
 Imports System.Text
 Imports CompuMaster.Epplus4
@@ -521,6 +522,25 @@ Namespace ExcelOps
                 Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file, Me.PasswordForOpening)
             Else
                 Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file)
+            End If
+            Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
+
+            'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
+            Me.Workbook.FullCalcOnLoad = FULL_CALC_ON_LOAD 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+        End Sub
+
+        Protected Overrides Sub LoadWorkbook(data As Byte())
+            Dim ms As New MemoryStream()
+            ms.Write(data, 0, data.Length)
+            ms.Position = 0
+            Me.LoadWorkbook(ms)
+        End Sub
+
+        Protected Overrides Sub LoadWorkbook(data As System.IO.Stream)
+            If Me.PasswordForOpening <> Nothing Then
+                Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(data, Me.PasswordForOpening)
+            Else
+                Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(data)
             End If
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 

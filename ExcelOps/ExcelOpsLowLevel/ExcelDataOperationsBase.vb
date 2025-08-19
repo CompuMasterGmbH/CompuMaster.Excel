@@ -43,6 +43,40 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="autoCalculationOnLoad"></param>
+        ''' <param name="calculationModuleDisabled"></param>
+        ''' <param name="passwordForOpening"></param>
+        Protected Sub New(data As Byte(), autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
+            If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
+            Me.AutoCalculationOnLoad = autoCalculationOnLoad
+            Me.CalculationModuleDisabled = calculationModuleDisabled
+            Me.ReadOnly = True
+            'OpenMode.OpenExistingFile
+            Me.PasswordForOpening = passwordForOpening
+            Me.LoadAndInitializeWorkbookFile(data)
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="autoCalculationOnLoad"></param>
+        ''' <param name="calculationModuleDisabled"></param>
+        ''' <param name="passwordForOpening"></param>
+        Protected Sub New(data As System.IO.Stream, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
+            If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
+            Me.AutoCalculationOnLoad = autoCalculationOnLoad
+            Me.CalculationModuleDisabled = calculationModuleDisabled
+            Me.ReadOnly = True
+            'OpenMode.OpenExistingFile
+            Me.PasswordForOpening = passwordForOpening
+            Me.LoadAndInitializeWorkbookFile(data)
+        End Sub
+
+        ''' <summary>
         ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
@@ -453,6 +487,34 @@ Namespace ExcelOps
                 Throw New System.IO.FileNotFoundException("Missing file: " & file.ToString, file.ToString)
             End If
             Me.LoadWorkbook(file)
+            Me.AutoCalculationEnabled = False
+            If Me.AutoCalculationOnLoad Then
+                Me.RecalculateAll()
+            End If
+        End Sub
+
+        Protected MustOverride Sub LoadWorkbook(data As Byte())
+
+        Protected Sub LoadAndInitializeWorkbookFile(data As Byte())
+            '1st, close an exsting workbook instance
+            If Me.IsClosed = False Then Me.Close()
+            'Load the changed worksheet
+            Me._FilePath = Nothing
+            Me.LoadWorkbook(data)
+            Me.AutoCalculationEnabled = False
+            If Me.AutoCalculationOnLoad Then
+                Me.RecalculateAll()
+            End If
+        End Sub
+
+        Protected MustOverride Sub LoadWorkbook(data As System.IO.Stream)
+
+        Protected Sub LoadAndInitializeWorkbookFile(data As System.IO.Stream)
+            '1st, close an exsting workbook instance
+            If Me.IsClosed = False Then Me.Close()
+            'Load the changed worksheet
+            Me._FilePath = Nothing
+            Me.LoadWorkbook(data)
             Me.AutoCalculationEnabled = False
             If Me.AutoCalculationOnLoad Then
                 Me.RecalculateAll()

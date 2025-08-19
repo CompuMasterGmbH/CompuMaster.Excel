@@ -361,6 +361,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.EnableAutoRecover = False
         End Sub
 
+        Protected Overrides Sub LoadWorkbook(data() As Byte)
+            Throw New NotSupportedException()
+        End Sub
+
+        Protected Overrides Sub LoadWorkbook(data As IO.Stream)
+            Throw New NotSupportedException()
+        End Sub
+
         Public Overrides Sub CleanupRangeNames()
             'do nothing - just needs to be done once, see Epplus implementation
         End Sub
