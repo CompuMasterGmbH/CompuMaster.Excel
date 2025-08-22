@@ -1631,5 +1631,149 @@ Namespace ExcelOps
         ''' <param name="sb"></param>
         Protected MustOverride Sub ExportSheetToHtmlInternal(worksheetName As String, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions)
 
+#Region "Colors and Theming (Helpers for e.g. ExcelColorToCssHex() in depending classes)"
+        ''' <summary>
+        ''' Default-Office-Theme (Office-Standard „Office“)
+        ''' </summary>
+        ''' <param name="themeIndex"></param>
+        ''' <returns></returns>
+        ''' <remarks>
+        ''' 0=Background1, 1=Text1, 2=Background2, 3=Text2,
+        ''' 4..9=Accent1..Accent6, 10=Hyperlink, 11=FollowedHyperlink
+        ''' </remarks>
+        Protected Shared Function DefaultOfficeTheme(themeIndex As Integer) As String
+            Select Case themeIndex
+                Case 0 : Return "#FFFFFF" ' lt1
+                Case 1 : Return "#000000" ' dk1
+                Case 2 : Return "#EEECE1" ' lt2
+                Case 3 : Return "#1F497D" ' dk2
+                Case 4 : Return "#4F81BD" ' Accent1
+                Case 5 : Return "#C0504D" ' Accent2
+                Case 6 : Return "#9BBB59" ' Accent3
+                Case 7 : Return "#8064A2" ' Accent4
+                Case 8 : Return "#4BACC6" ' Accent5
+                Case 9 : Return "#F79646" ' Accent6
+                Case 10 : Return "#0000FF" ' Hyperlink
+                Case 11 : Return "#800080" ' FollowedHyperlink (ungefähr)
+                Case Else
+                    Return Nothing
+            End Select
+        End Function
+
+        ''' <summary>
+        ''' Excel-Tint-Regel (heller/dunkler)
+        ''' </summary>
+        ''' <param name="hex"></param>
+        ''' <param name="tint"></param>
+        ''' <returns></returns>
+        Protected Shared Function ApplyTint(hex As String, tint As Double) As String
+            ' hex "#RRGGBB"
+            Dim r = Convert.ToInt32(hex.Substring(1, 2), 16)
+            Dim g = Convert.ToInt32(hex.Substring(3, 2), 16)
+            Dim b = Convert.ToInt32(hex.Substring(5, 2), 16)
+
+            Dim adj As Func(Of Integer, Integer) =
+                Function(ch As Integer)
+                    Dim v As Double
+                    If tint < 0 Then
+                        v = ch * (1.0 + tint)                   ' dunkler
+                    Else
+                        v = ch * (1.0 - tint) + 255.0 * tint    ' heller
+                    End If
+                    Return Math.Max(0, Math.Min(255, CInt(Math.Round(v))))
+                End Function
+
+            Return $"#{adj(r):X2}{adj(g):X2}{adj(b):X2}"
+        End Function
+
+        ''' <summary>
+        ''' Vollständiges Mapping der Excel-Standardpalette (Indexed 0..63).
+        ''' </summary>
+        ''' <remarks>
+        ''' 64=System Foreground, 65=System Background → kein Hex.
+        ''' Quelle: OpenXML "indexedColors" Default-Mapping.
+        ''' </remarks>
+        Protected Shared Function IndexedColor(index As Integer) As String
+            Select Case index
+                Case 0 : Return "#000000" ' Black (dup. von 8)
+                Case 1 : Return "#FFFFFF" ' White (dup. von 9)
+                Case 2 : Return "#FF0000" ' Red   (dup. von 10)
+                Case 3 : Return "#00FF00" ' Green (dup. von 11)
+                Case 4 : Return "#0000FF" ' Blue  (dup. von 12)
+                Case 5 : Return "#FFFF00" ' Yellow (dup. von 13)
+                Case 6 : Return "#FF00FF" ' Magenta (dup. von 14)
+                Case 7 : Return "#00FFFF" ' Cyan (dup. von 15)
+
+                Case 8 : Return "#000000" ' Black
+                Case 9 : Return "#FFFFFF" ' White
+                Case 10 : Return "#FF0000" ' Red
+                Case 11 : Return "#00FF00" ' Lime
+                Case 12 : Return "#0000FF" ' Blue
+                Case 13 : Return "#FFFF00" ' Yellow
+                Case 14 : Return "#FF00FF" ' Magenta
+                Case 15 : Return "#00FFFF" ' Aqua
+
+                Case 16 : Return "#800000" ' Maroon
+                Case 17 : Return "#008000" ' Green
+                Case 18 : Return "#000080" ' Navy
+                Case 19 : Return "#808000" ' Olive
+                Case 20 : Return "#800080" ' Purple
+                Case 21 : Return "#008080" ' Teal
+                Case 22 : Return "#C0C0C0" ' Silver
+                Case 23 : Return "#808080" ' Gray
+
+                Case 24 : Return "#9999FF"
+                Case 25 : Return "#993366"
+                Case 26 : Return "#FFFFCC"
+                Case 27 : Return "#CCFFFF"
+                Case 28 : Return "#660066"
+                Case 29 : Return "#FF8080"
+                Case 30 : Return "#0066CC"
+                Case 31 : Return "#CCCCFF"
+
+                Case 32 : Return "#000080"
+                Case 33 : Return "#FF00FF"
+                Case 34 : Return "#FFFF00"
+                Case 35 : Return "#00FFFF"
+                Case 36 : Return "#800080"
+                Case 37 : Return "#800000"
+                Case 38 : Return "#008080"
+                Case 39 : Return "#0000FF"
+
+                Case 40 : Return "#00CCFF"
+                Case 41 : Return "#CCFFFF"
+                Case 42 : Return "#CCFFCC"
+                Case 43 : Return "#FFFF99"
+                Case 44 : Return "#99CCFF"
+                Case 45 : Return "#FF99CC"
+                Case 46 : Return "#CC99FF"
+                Case 47 : Return "#FFCC99"
+
+                Case 48 : Return "#3366FF"
+                Case 49 : Return "#33CCCC"
+                Case 50 : Return "#99CC00"
+                Case 51 : Return "#FFCC00"
+                Case 52 : Return "#FF9900"
+                Case 53 : Return "#FF6600"
+                Case 54 : Return "#666699"
+                Case 55 : Return "#969696"
+
+                Case 56 : Return "#003366"
+                Case 57 : Return "#339966"
+                Case 58 : Return "#003300"
+                Case 59 : Return "#333300"
+                Case 60 : Return "#993300"
+                Case 61 : Return "#993366"
+                Case 62 : Return "#333399"
+                Case 63 : Return "#333333"
+
+                Case 64 : Return Nothing   ' System Foreground
+                Case 65 : Return Nothing   ' System Background
+                Case Else
+                    Return Nothing
+            End Select
+        End Function
+#End Region
+
     End Class
 End Namespace

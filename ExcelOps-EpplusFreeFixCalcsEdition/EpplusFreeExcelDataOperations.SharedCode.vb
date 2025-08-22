@@ -1204,45 +1204,42 @@ Namespace ExcelOps
             Dim firstCol = ws.Dimension.Start.Column
             Dim lastCol = ws.Dimension.End.Column
 
+            ' --- Cache für Farbauflösungen (pro Methodenaufruf) ---
+            Dim colorCache As New Dictionary(Of String, String)(StringComparer.Ordinal)
+
             ' --- Merge-Map vorbereiten ---
             Dim mergeTopLeft As New Dictionary(Of String, (RowSpan As Integer, ColSpan As Integer))()
-            Dim covered As New HashSet(Of String)()
+            Dim coveredByMergedCellsMasterCell As New HashSet(Of String)()
             For Each addr In ws.MergedCells
                 Dim range = ws.Cells(addr)
-                Dim r1 = range.Start.Row, c1 = range.Start.Column
-                Dim r2 = range.End.Row, c2 = range.End.Column
-                Dim keyTL = Key(r1, c1)
-                mergeTopLeft(keyTL) = ((r2 - r1 + 1), (c2 - c1 + 1))
-                For rr = r1 To r2
-                    For cc = c1 To c2
-                        If Not (rr = r1 AndAlso cc = c1) Then covered.Add(Key(rr, cc))
+                Dim RowStartIndex As Integer = range.Start.Row, ColumnStartIndex = range.Start.Column
+                Dim RowEndIndex As Integer = range.End.Row, ColumnEndIndex = range.End.Column
+                Dim keyTL = ExportSheetToHtmlInternal_CellAddressKey(RowStartIndex, ColumnStartIndex)
+                mergeTopLeft(keyTL) = ((RowEndIndex - RowStartIndex + 1), (ColumnEndIndex - ColumnStartIndex + 1))
+                For RowIndex As Integer = RowStartIndex To RowEndIndex
+                    For ColumnIndex = ColumnStartIndex To ColumnEndIndex
+                        If Not (RowIndex = RowStartIndex AndAlso ColumnIndex = ColumnStartIndex) Then coveredByMergedCellsMasterCell.Add(ExportSheetToHtmlInternal_CellAddressKey(RowIndex, ColumnIndex))
                     Next
                 Next
             Next
 
-            ' --- Minimal-CSS (neutral, dunkelgraue Rahmen) ---
             Dim tableCssClass As String = options.TableCssClassName
-
-
             sb.Append("<table class=""" & tableCssClass & """>")
 
-            For r = firstRow To lastRow
+            For RowIndex = firstRow To lastRow
                 sb.Append("<tr>")
-                For c = firstCol To lastCol
-                    Dim k = Key(r, c)
-                    If covered.Contains(k) Then
-                        ' Teil eines Merge-Bereichs, aber nicht Top-Left => überspringen
-                        Continue For
-                    End If
+                For ColumnIndex = firstCol To lastCol
+                    Dim CellAddressKey = ExportSheetToHtmlInternal_CellAddressKey(RowIndex, ColumnIndex)
+                    If coveredByMergedCellsMasterCell.Contains(CellAddressKey) Then Continue For
 
-                    Dim cell = ws.Cells(r, c)
-                    Dim tag As String = If(options.ConsiderRowIndexesAsTableHeader?.Contains(r), "th", "td")
+                    Dim cell = ws.Cells(RowIndex, ColumnIndex)
+                    Dim tag As String = If(options.ConsiderRowIndexesAsTableHeader?.Contains(RowIndex), "th", "td")
 
                     ' --- Merge-Attribute ---
                     Dim rowspan As Integer = 1, colspan As Integer = 1
-                    If mergeTopLeft.ContainsKey(k) Then
-                        rowspan = mergeTopLeft(k).RowSpan
-                        colspan = mergeTopLeft(k).ColSpan
+                    If mergeTopLeft.ContainsKey(CellAddressKey) Then
+                        rowspan = mergeTopLeft(CellAddressKey).RowSpan
+                        colspan = mergeTopLeft(CellAddressKey).ColSpan
                     End If
 
                     ' --- Styles extrahieren ---
@@ -1261,14 +1258,26 @@ Namespace ExcelOps
                         If cell.Style.Font.Bold Then styles.Add("font-weight:bold")
                         If cell.Style.Font.Italic Then styles.Add("font-style:italic")
                         If cell.Style.Font.UnderLine Then styles.Add("text-decoration:underline")
-                        Dim fc = HtmlSafeRgb(cell.Style.Font.Color)
-                        If fc IsNot Nothing Then styles.Add("color:" & fc)
+                        Dim fc = ExcelColorToCssHex(cell.Style.Font.Color, colorCache)
+                        If Not String.IsNullOrEmpty(fc) Then styles.Add("color:" & fc)
                     End If
 
-                    ' Hintergrund
+                    ' Hintergrund (PatternColor bevorzugen, dann BackgroundColor)
                     If cell.Style.Fill IsNot Nothing AndAlso cell.Style.Fill.PatternType <> Style.ExcelFillStyle.None Then
-                        Dim bg = HtmlSafeRgb(cell.Style.Fill.BackgroundColor)
-                        If bg IsNot Nothing Then styles.Add("background-color:" & bg)
+                        Dim bg As String = Nothing
+                        If cell.Style.Fill.PatternType = Style.ExcelFillStyle.Solid Then
+                            bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache)
+                            If String.IsNullOrEmpty(bg) Then
+                                bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache)
+                            End If
+                        Else
+                            ' bei anderen Pattern-Typen beide prüfen
+                            bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache)
+                            If String.IsNullOrEmpty(bg) Then
+                                bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache)
+                            End If
+                        End If
+                        If Not String.IsNullOrEmpty(bg) Then styles.Add("background-color:" & bg)
                     End If
 
                     ' Zeilenumbruch
@@ -1298,22 +1307,110 @@ Namespace ExcelOps
 
         ' ---------- Helpers ----------
 
-        Private Shared Function Key(r As Integer, c As Integer) As String
+        Private Shared Function ExportSheetToHtmlInternal_CellAddressKey(r As Integer, c As Integer) As String
             Return r.ToString() & "|" & c.ToString()
         End Function
 
         ''' <summary>
-        ''' Liefert ein CSS-#RRGGBB aus einer EPPlus-Farbquelle (ARGB → RRGGBB).
+        ''' Zentrale Farbauflösung inkl. Cache
         ''' </summary>
-        Private Shared Function HtmlSafeRgb(color As CompuMaster.Epplus4.Style.ExcelColor) As String
+        ''' <remarks>
+        ''' Die Farbauflösung erfolgt inkl. Cache für:
+        ''' <list type="bullet">
+        ''' <item>Rgb (ARGB oder RGB)</item>
+        ''' <item>Theme (0..11) mit Tint</item>
+        ''' <item>Indexed (kleine Palette, 64=auto)</item>
+        ''' </list>
+        ''' </remarks>
+        ''' <returns>Gibt "#RRGGBB" oder Nothing zurück.</returns>
+        Private Shared Function ExcelColorToCssHex(color As CompuMaster.Epplus4.Style.ExcelColor,
+                                                   cache As IDictionary(Of String, String)) As String
             If color Is Nothing Then Return Nothing
-            ' EPPlus 4.5 nutzt bevorzugt .Rgb (8-stellig ARGB). Theme/Indexed werden hier ausgelassen.
-            If Not String.IsNullOrEmpty(color.Rgb) AndAlso color.Rgb.Length = 8 Then
-                Dim rgb = "#" & color.Rgb.Substring(2) ' ARGB → RRGGBB
-                Return rgb
+
+            Dim ColorCacheKeyName As String = BuildColorCacheKey(color)
+            Dim hex As String = Nothing
+
+            If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso cache.TryGetValue(ColorCacheKeyName, hex) Then
+                Return hex
             End If
+
+            ' 1) Direkter RGB/ARGB?
+            If Not String.IsNullOrEmpty(color.Rgb) Then
+                Dim v = color.Rgb.Trim()
+                If v.Length = 8 Then
+                    hex = "#" & v.Substring(2) ' ARGB -> RRGGBB
+                ElseIf v.Length = 6 Then
+                    hex = "#" & v
+                End If
+                'Add to cache if valid and return hex
+                If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                    cache(ColorCacheKeyName) = hex
+                End If
+                Return hex
+            End If
+
+            ' 2) Theme-Farbe (0..11) + Tint
+            Dim themeIdx As Integer
+            If Not String.IsNullOrEmpty(color.Theme) AndAlso Integer.TryParse(color.Theme, themeIdx) Then
+                hex = DefaultOfficeTheme(themeIdx)
+                If Not String.IsNullOrEmpty(hex) Then
+                    Dim tint As Double = 0
+                    ' Tint kann je nach EPPlus-Version Double sein; defensiv parsen:
+                    Double.TryParse(Convert.ToString(color.Tint, Globalization.CultureInfo.InvariantCulture), tint)
+                    If Math.Abs(tint) > Double.Epsilon Then
+                        hex = ApplyTint(hex, tint)
+                    End If
+                    'Add to cache if valid and return hex
+                    If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                        cache(ColorCacheKeyName) = hex
+                    End If
+                    Return hex
+                End If
+            End If
+
+            ' 3) Indexed-Farben (kleine, praxisnahe Palette)
+            Dim idx As Integer = color.Indexed
+            If idx > 0 AndAlso idx <> 64 Then
+                hex = IndexedColor(idx)
+                If Not String.IsNullOrEmpty(hex) Then
+                    'Add to cache if valid and return hex
+                    If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                        cache(ColorCacheKeyName) = hex
+                    End If
+                    Return hex
+                End If
+            End If
+
+            ' nichts gefunden
+            Return Nothing
+
+        End Function
+
+        ''' <summary>
+        ''' Konstruiert einen stabilen Schlüssel für die Cache-Map
+        ''' </summary>
+        ''' <param name="color"></param>
+        ''' <returns></returns>
+        Private Shared Function BuildColorCacheKey(color As CompuMaster.Epplus4.Style.ExcelColor) As String
+            If color Is Nothing Then Return Nothing
+
+            If Not String.IsNullOrEmpty(color.Rgb) Then
+                Return "rgb:" & color.Rgb
+            End If
+
+            If Not String.IsNullOrEmpty(color.Theme) Then
+                Dim tintStr As String = Convert.ToString(color.Tint, Globalization.CultureInfo.InvariantCulture)
+                Return "theme:" & color.Theme & ":" & tintStr
+            End If
+
+            If color.Indexed <> 0 Then
+                Return "idx:" & color.Indexed
+            End If
+
+            ' Kein stabiler Key
             Return Nothing
         End Function
+
 #End Region
 
     End Class
