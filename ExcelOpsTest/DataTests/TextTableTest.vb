@@ -177,14 +177,20 @@ Namespace DataTests
         End Sub
 
         <Test> Public Sub ExcelColumnName()
-            Assert.AreEqual("A", TextTable.ExcelColumnName(0))
-            Assert.AreEqual("Z", TextTable.ExcelColumnName(25))
-            Assert.AreEqual("AA", TextTable.ExcelColumnName(26))
-            Assert.AreEqual("XFD", TextTable.ExcelColumnName(16383))
-            Assert.AreEqual("A", ExcelOps.ExcelCell.ExcelColumnName(0))
-            Assert.AreEqual("Z", ExcelOps.ExcelCell.ExcelColumnName(25))
-            Assert.AreEqual("AA", ExcelOps.ExcelCell.ExcelColumnName(26))
-            Assert.AreEqual("XFD", ExcelOps.ExcelCell.ExcelColumnName(16383))
+            Assert.Multiple(
+                Sub()
+                    Assert.AreEqual("A", TextTable.ExcelColumnName(0))
+                    Assert.AreEqual("Z", TextTable.ExcelColumnName(25))
+                    Assert.AreEqual("AA", TextTable.ExcelColumnName(26))
+                    Assert.AreEqual("XFD", TextTable.ExcelColumnName(16383))
+                    Assert.AreEqual("A", ExcelOps.ExcelCell.ExcelColumnName(0))
+                    Assert.AreEqual("Z", ExcelOps.ExcelCell.ExcelColumnName(25))
+                    Assert.AreEqual("AA", ExcelOps.ExcelCell.ExcelColumnName(26))
+                    Assert.AreEqual("XFD", ExcelOps.ExcelCell.ExcelColumnName(16383))
+                    Assert.AreEqual("BY", ExcelCell.ExcelColumnName(76)) 'Not: "C@"
+                    Assert.AreEqual("BZ", ExcelCell.ExcelColumnName(77)) 'Not: "C@"
+                    Assert.AreEqual("CA", ExcelCell.ExcelColumnName(78)) 'Not: "C@"
+                End Sub)
         End Sub
 
         <Test> Public Sub CellAddress()

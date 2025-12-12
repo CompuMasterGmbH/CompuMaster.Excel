@@ -201,11 +201,16 @@
             Get
                 If columnIndex < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columnIndex), "Must be a positive value")
                 Dim x As Integer = columnIndex + 1
-                If x >= 1 And x <= 26 Then
+                If x <= 26 Then
                     Return Chr(x + 64)
-                Else
-                    Return ExcelColumnName(CType(((x - x Mod 26) / 26), Integer) - 1) & Chr((x Mod 26) + 64)
                 End If
+                Dim quotient As Integer = x \ 26
+                Dim remainder As Integer = x Mod 26
+                If remainder = 0 Then
+                    remainder = 26
+                    quotient -= 1
+                End If
+                Return ExcelColumnName(quotient - 1) & Chr(remainder + 64)
             End Get
         End Property
 
