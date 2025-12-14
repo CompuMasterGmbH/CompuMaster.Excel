@@ -42,40 +42,65 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <summary>
+        ''' Create or open a workbook
+        ''' </summary>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(file, mode, Not disableInitialCalculation, False, [readOnly], passwordForOpening)
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <summary>
+        ''' Create or open a workbook
+        ''' </summary>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <summary>
+        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' </summary>
         Public Sub New()
             Me.New(Nothing)
         End Sub
 
+        ''' <summary>
+        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' </summary>
+        ''' <param name="passwordForOpeningOnNextTime">Pre-define encryption password on future save actions</param>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(False, True, True, passwordForOpeningOnNextTime)
             ValidateLicenseContext(Me)
