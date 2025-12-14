@@ -166,6 +166,12 @@ namespace CompuMaster.Epplus4.Style
         {
             _parent.Index = index;
         }
+
+        public int GetIndex()
+        {
+            return _parent.Index;
+        }
+
         /// <summary>
         /// Return the RGB value for the Indexed or Tint property
         /// </summary>
@@ -268,7 +274,7 @@ namespace CompuMaster.Epplus4.Style
             {
                 // coloring by shades of grey (-1 -> 0)
                 iTint = ((int)(theColor.Tint * 160) + 0x80);
-                translatedRGB = ((int)(Math.Round(theColor.Tint * -512))).ToString("X");
+                translatedRGB = ((int)(Math.Round(theColor.Tint * -512))).ToString("X2");
                 translatedRGB = "#FF" + translatedRGB + translatedRGB + translatedRGB;
             }
 

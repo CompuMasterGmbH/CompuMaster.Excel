@@ -3,7 +3,10 @@ Option Explicit On
 
 Imports System.ComponentModel
 Imports System.Data
+Imports System.Globalization
+Imports System.Reflection
 Imports System.Text
+Imports System.Windows.Input
 Imports CompuMaster.Epplus4
 Imports CompuMaster.Epplus4.FormulaParsing
 Imports CompuMaster.Epplus4.FormulaParsing.Logging
@@ -262,6 +265,13 @@ Namespace ExcelOps
         End Sub
 
 #Region "Colors and Theming (Helpers for e.g. ExportSheetToHtmlInternal)"
+
+        Public Function ExcelColorToCssHex(sheetName As String, address As String) As String
+            Dim cell As CompuMaster.Epplus4.ExcelRange = Me.Workbook.Worksheets(sheetName).Cells(address)
+            Dim color As CompuMaster.Epplus4.Style.ExcelColor = cell.Style.Fill.BackgroundColor
+            Return ExcelColorToCssHex(Nothing, color, New Dictionary(Of String, String))
+        End Function
+
         ''' <summary>
         ''' Zentrale Farbauflösung inkl. Cache
         ''' </summary>
@@ -274,7 +284,7 @@ Namespace ExcelOps
         ''' </list>
         ''' </remarks>
         ''' <returns>Gibt "#RRGGBB" oder Nothing zurück.</returns>
-        Private Shared Function ExcelColorToCssHex(color As CompuMaster.Epplus4.Style.ExcelColor,
+        Private Shared Function ExcelColorToCssHex(cell As CompuMaster.Epplus4.ExcelRange, color As CompuMaster.Epplus4.Style.ExcelColor,
                                                    cache As IDictionary(Of String, String)) As String
             If color Is Nothing Then Return Nothing
 
@@ -301,6 +311,24 @@ Namespace ExcelOps
             End If
 
             ' 2) Theme-Farbe (0..11) + Tint
+#If False Then
+            ' 2) EPPlus-intern auflösen (Theme/Indexed/Tint)
+            Dim resolved = color.LookupColor() ' → "#FFAABBCC" laut Doku
+            If Not String.IsNullOrEmpty(resolved) Then
+                resolved = resolved.Trim()
+                If resolved(0) = "#"c AndAlso resolved.Length = 9 Then
+                    hex = "#" & resolved.Substring(3) ' #AARRGGBB → #RRGGBB
+                ElseIf resolved(0) = "#"c AndAlso resolved.Length = 7 Then
+                    hex = resolved
+                End If
+                'Add to cache if valid and return hex
+                If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                    cache(ColorCacheKeyName) = hex
+                End If
+                Return hex
+            End If
+#ElseIf True Then
+            ' 2) Theme + Tint
             Dim themeIdx As Integer
             If Not String.IsNullOrEmpty(color.Theme) AndAlso Integer.TryParse(color.Theme, themeIdx) Then
                 hex = DefaultOfficeTheme(themeIdx)
@@ -318,10 +346,39 @@ Namespace ExcelOps
                     Return hex
                 End If
             End If
+#Else
+            ' 2) Theme (egal ob String oder Enum)
+            Dim themeIdx As Integer
+            If TryGetThemeIndex(color, themeIdx) Then
+                hex = DefaultOfficeTheme(themeIdx)
+                If Not String.IsNullOrEmpty(hex) Then
+                    Dim tint As Double
+                    Dim tintStr = Convert.ToString(color.Tint, CultureInfo.InvariantCulture)
+                    If Double.TryParse(tintStr, NumberStyles.Float, CultureInfo.InvariantCulture, tint) AndAlso Math.Abs(tint) > Double.Epsilon Then
+                        hex = ApplyTint(hex, tint)
+                    End If
+                    'Add to cache if valid and return hex
+                    If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                        cache(ColorCacheKeyName) = hex
+                    End If
+                    Return hex
+                End If
+            End If
+#End If
 
             ' 3) Indexed-Farben (kleine, praxisnahe Palette)
             Dim idx As Integer = color.Indexed
             If idx > 0 AndAlso idx <> 64 Then
+                hex = IndexedColor(idx)
+                If Not String.IsNullOrEmpty(hex) Then
+                    'Add to cache if valid and return hex
+                    If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                        cache(ColorCacheKeyName) = hex
+                    End If
+                    Return hex
+                End If
+            ElseIf idx = 64 Then
+                idx = color.GetIndex
                 hex = IndexedColor(idx)
                 If Not String.IsNullOrEmpty(hex) Then
                     'Add to cache if valid and return hex
@@ -361,6 +418,41 @@ Namespace ExcelOps
             ' Kein stabiler Key
             Return Nothing
         End Function
+
+        ''' <summary>
+        ''' Liefert True + ThemeIndex (0..11), egal ob Theme eine Zahl (v4.5) oder ein Enum/NullableEnum (v5+) ist.
+        ''' </summary>
+        ''' <param name="col"></param>
+        ''' <param name="index"></param>
+        ''' <returns></returns>
+        Private Shared Function TryGetThemeIndex(col As CompuMaster.Epplus4.Style.ExcelColor, ByRef index As Integer) As Boolean
+            If col Is Nothing Then Return False
+
+            Dim p As PropertyInfo = col.GetType().GetProperty("Theme", BindingFlags.Public Or BindingFlags.Instance)
+            If p Is Nothing Then Return False
+
+            Dim raw As Object = p.GetValue(col, Nothing)
+            If raw Is Nothing Then Return False
+
+            Dim s As String = Convert.ToString(raw, CultureInfo.InvariantCulture) ' z.B. "8" oder "Accent5" oder "Dark1"
+            Dim tmp As Integer
+
+            ' Alter EPPlus-Pfad: meist "0".."11"
+            If Integer.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, tmp) Then
+                index = tmp
+                Return True
+            End If
+
+            ' Neuer EPPlus-Pfad: Enum-Namen abbilden
+            tmp = MapThemeNameToIndex(s)
+            If tmp >= 0 Then
+                index = tmp
+                Return True
+            End If
+
+            Return False
+        End Function
+
 #End Region
 
 #Region "HTML Export"
@@ -435,25 +527,38 @@ Namespace ExcelOps
                         If cell.Style.Font.Bold Then styles.Add("font-weight:bold")
                         If cell.Style.Font.Italic Then styles.Add("font-style:italic")
                         If cell.Style.Font.UnderLine Then styles.Add("text-decoration:underline")
-                        Dim fc = ExcelColorToCssHex(cell.Style.Font.Color, colorCache)
+                        Dim fc = ExcelColorToCssHex(cell, cell.Style.Font.Color, colorCache)
                         If Not String.IsNullOrEmpty(fc) Then styles.Add("color:" & fc)
                     End If
 
                     ' Hintergrund (PatternColor bevorzugen, dann BackgroundColor)
                     If cell.Style.Fill IsNot Nothing AndAlso cell.Style.Fill.PatternType <> Style.ExcelFillStyle.None Then
                         Dim bg As String = Nothing
+#If False Then
                         If cell.Style.Fill.PatternType = Style.ExcelFillStyle.Solid Then
-                            bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache)
+                            bg = ExcelColorToCssHex(cell, cell.Style.Fill.PatternColor, colorCache)
                             If String.IsNullOrEmpty(bg) Then
-                                bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache)
+                                bg = ExcelColorToCssHex(cell, cell.Style.Fill.BackgroundColor, colorCache)
                             End If
                         Else
                             ' bei anderen Pattern-Typen beide prüfen
-                            bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache)
+                            bg = ExcelColorToCssHex(cell, cell.Style.Fill.BackgroundColor, colorCache)
                             If String.IsNullOrEmpty(bg) Then
-                                bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache)
+                                bg = ExcelColorToCssHex(cell, cell.Style.Fill.PatternColor, colorCache)
                             End If
                         End If
+#Else
+                        bg = ExcelColorToCssHex(cell, cell.Style.Fill.BackgroundColor, colorCache)
+                        If String.IsNullOrEmpty(bg) Then
+                            bg = ExcelColorToCssHex(cell, cell.Style.Fill.PatternColor, colorCache)
+                        End If
+                        If bg = Nothing AndAlso cell.Style.Fill.PatternType = Style.ExcelFillStyle.Solid Then
+                            bg = ExcelColorToCssHex(cell, cell.Style.Fill.PatternColor, colorCache)
+                            If String.IsNullOrEmpty(bg) Then
+                                bg = ExcelColorToCssHex(cell, cell.Style.Fill.BackgroundColor, colorCache)
+                            End If
+                        End If
+#End If
                         If Not String.IsNullOrEmpty(bg) Then styles.Add("background-color:" & bg)
                     End If
 

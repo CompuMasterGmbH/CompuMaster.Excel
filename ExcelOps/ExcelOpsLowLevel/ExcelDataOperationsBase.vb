@@ -1773,6 +1773,28 @@ Namespace ExcelOps
                     Return Nothing
             End Select
         End Function
+
+        ' Mappt Enum-/Namen auf 0..11 (kompatibel zu Ihrer DefaultOfficeTheme-Tabelle)
+        Protected Shared Function MapThemeNameToIndex(themeName As String) As Integer
+            If String.IsNullOrEmpty(themeName) Then Return -1
+            Dim s = themeName.Trim().ToLowerInvariant()
+
+            Select Case s
+                Case "background1", "light1", "lt1", "bg1" : Return 0
+                Case "text1", "dark1", "dk1" : Return 1
+                Case "background2", "light2", "lt2", "bg2" : Return 2
+                Case "text2", "dark2", "dk2" : Return 3
+                Case "accent1" : Return 4
+                Case "accent2" : Return 5
+                Case "accent3" : Return 6
+                Case "accent4" : Return 7
+                Case "accent5" : Return 8
+                Case "accent6" : Return 9
+                Case "hyperlink", "hlink" : Return 10
+                Case "followedhyperlink", "folhlink" : Return 11
+                Case Else : Return -1
+            End Select
+        End Function
 #End Region
 
     End Class

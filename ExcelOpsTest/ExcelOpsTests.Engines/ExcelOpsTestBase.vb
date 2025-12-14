@@ -1650,9 +1650,6 @@ Namespace ExcelOpsTests.Engines
             Dim TestXlsxFile = TestFiles.TestFileGrund01()
             System.Console.WriteLine("TEST IN FILE: " & TestXlsxFile.FullName)
 
-            Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "excel_test_chart.png")
-            Dim Workbook = PrepareAndFillExcelFileWithChart(0)
-
             Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Nothing
             Try
                 Wb = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
@@ -1690,6 +1687,37 @@ Namespace ExcelOpsTests.Engines
                 Assert.Ignore("Not implemented for this Excel engine")
             End Try
 
+        End Sub
+#End Region
+
+#Region "Coloring and theming"
+        <Test> Public Sub ColorLookup()
+            Dim TestXlsxFile1 = TestFiles.TestFileHtmlExport01()
+            Dim TestXlsxFile2 = TestFiles.TestFileHtmlExport02()
+            System.Console.WriteLine("TEST IN FILE 1: " & TestXlsxFile1.FullName)
+            System.Console.WriteLine("TEST IN FILE 2: " & TestXlsxFile2.FullName)
+
+            Dim Wb1 As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Nothing
+            Dim Wb2 As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Nothing
+            Try
+                Wb1 = Me.CreateInstance(TestXlsxFile1.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Wb2 = Me.CreateInstance(TestXlsxFile2.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+            Catch ex As TypeInitializationException
+                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+            End Try
+
+            If GetType(EpplusFreeExcelDataOperations).IsInstanceOfType(Wb1) Then
+                Dim Wb1E As EpplusFreeExcelDataOperations = CType(Wb1, EpplusFreeExcelDataOperations)
+                Dim Wb2E As EpplusFreeExcelDataOperations = CType(Wb2, EpplusFreeExcelDataOperations)
+                Dim Wb1ColorFound As String = Wb1E.ExcelColorToCssHex("Onboarding offen", "E3")
+                Dim Wb2ColorFound As String = Wb2E.ExcelColorToCssHex("Onboarding offen", "E3")
+                System.Console.WriteLine("Color found in Wb1: " & Wb1ColorFound)
+                System.Console.WriteLine("Color found in Wb2: " & Wb2ColorFound)
+                Assert.That(Wb1ColorFound, [Is].EqualTo("#FF0000"), "Color found in Wb1 should be red")
+                Assert.That(Wb2ColorFound, [Is].Not.EqualTo("#FF0000"), "Color found in Wb1 should be NOT red")
+            Else
+                Assert.Ignore("Not implemented/supported yet")
+            End If
         End Sub
 #End Region
 

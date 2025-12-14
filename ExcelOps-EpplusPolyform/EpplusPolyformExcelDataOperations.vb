@@ -216,6 +216,23 @@ Namespace ExcelOps
                 Return hex
             End If
 
+#If False Then
+            ' 2) EPPlus-intern auflösen (Theme/Indexed/Tint)
+            Dim resolved = color.LookupColor() ' → "#FFAABBCC" laut Doku
+            If Not String.IsNullOrEmpty(resolved) Then
+                resolved = resolved.Trim()
+                If resolved(0) = "#"c AndAlso resolved.Length = 9 Then
+                    hex = "#" & resolved.Substring(3) ' #AARRGGBB → #RRGGBB
+                ElseIf resolved(0) = "#"c AndAlso resolved.Length = 7 Then
+                    hex = resolved
+                End If
+                'Add to cache if valid and return hex
+                If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
+                    cache(ColorCacheKeyName) = hex
+                End If
+                Return hex
+            End If
+#Else
             ' 2) Theme + Tint
             If color.Theme.HasValue Then
                 Dim ThemeMappedToIndex = MapThemeToIndex(color.Theme.Value)
@@ -225,14 +242,10 @@ Namespace ExcelOps
                         If Math.Abs(color.Tint) > Double.Epsilon Then
                             hex = ApplyTint(hex, color.Tint)
                         End If
-                        'Add to cache if valid and return hex
-                        If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
-                            cache(ColorCacheKeyName) = hex
-                        End If
-                        Return hex
                     End If
                 End If
             End If
+#End If
 
             ' 3) Indexed-Farben (kleine, praxisnahe Palette)
             Dim idx As Integer = color.Indexed
