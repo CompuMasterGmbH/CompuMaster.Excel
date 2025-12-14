@@ -12,6 +12,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
     Public Class MsExcelCalcTestEpplusPolyform
         Inherits MsExcelCalcTestBase
 
+        <OneTimeSetUp>
+        Public Sub InitializeLicenseContext()
+            ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial
+        End Sub
+
         Protected Overrides ReadOnly Property EngineName As String
             Get
                 Static Result As String
