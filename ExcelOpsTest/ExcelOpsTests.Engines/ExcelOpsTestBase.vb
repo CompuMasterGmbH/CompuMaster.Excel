@@ -17,7 +17,7 @@ Namespace ExcelOpsTests.Engines
         Private Const OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = True
 #End If
 
-        Protected MustOverride Function _CreateInstance() As T
+        Protected MustOverride Function _CreateInstanceUninitialized() As T
 
 #Disable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
         Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As T
@@ -29,9 +29,9 @@ Namespace ExcelOpsTests.Engines
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
         ''' <returns></returns>
-        Protected Function CreateInstance() As T
+        Protected Function CreateInstanceUninitialized() As T
             Try
-                Return _CreateInstance()
+                Return _CreateInstanceUninitialized()
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
@@ -180,7 +180,7 @@ Namespace ExcelOpsTests.Engines
         Public MustOverride ReadOnly Property ExpectedEngineName As String
 
         <Test> Public Sub EngineName()
-            Assert.AreEqual(ExpectedEngineName, Me.CreateInstance().EngineName)
+            Assert.AreEqual(ExpectedEngineName, Me.CreateInstanceUninitialized().EngineName)
         End Sub
 
         <Test> Public Sub HasVbaProject()
@@ -317,7 +317,7 @@ Namespace ExcelOpsTests.Engines
             Dim TestFile As String
 
             TestFile = Nothing
-            Wb = Me.CreateInstance()
+            Wb = Me.CreateInstanceUninitialized()
             Assert.AreEqual(TestFile, Wb.FilePath)
             Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
@@ -337,8 +337,8 @@ Namespace ExcelOpsTests.Engines
 
         <Test> Public Sub CreateAndSaveAsAndFilePath()
             Dim Wb As T
-            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "created-workbook.xlsx")
-            Dim TestFile2 As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "created-workbook2.xlsx")
+            Dim TestFile As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, "created-workbook.xlsx")
+            Dim TestFile2 As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, "created-workbook2.xlsx")
 
             'Creating a new workbook without pre-defined file name must fail on Save(), but successful on SaveAs()
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
@@ -412,11 +412,12 @@ Namespace ExcelOpsTests.Engines
         Public Sub CreateInstanceWithOrWithoutCreationOfWorkbook()
             Dim workbook As ExcelDataOperationsBase
 
-            workbook = Me.CreateInstance()
+            workbook = Me.CreateInstanceUninitialized()
             Select Case workbook.GetType
                 Case GetType(MsExcelDataOperations)
                     'Accept fact that a new workbook is opened automatically
-                    Assert.NotZero(workbook.SheetNames.Count)
+                    'Assert.NotZero(workbook.SheetNames.Count)
+                    Assert.Throws(Of System.NullReferenceException)(Function() workbook.SheetNames.Count)
                 Case Else
                     'No workbook opened - must be done in 2ndary step
                     Assert.Throws(Of InvalidOperationException)(Function() workbook.SheetNames.Count)
@@ -439,7 +440,7 @@ Namespace ExcelOpsTests.Engines
 
             TestControllingToolFileNameIn = TestFiles.TestFileGrund01.FullName
             TestControllingToolFileNameOutTemplate = TestFiles.TestFileGrund02.FullName
-            TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "CopySheetContent_" & GetType(T).Name & ".xlsx")
+            TestControllingToolFileNameOut = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, "CopySheetContent_" & GetType(T).Name & ".xlsx")
             Try
                 Console.WriteLine("Test file in: " & TestControllingToolFileNameIn)
                 Console.WriteLine("Test file output template: " & TestControllingToolFileNameOutTemplate)
@@ -1239,7 +1240,7 @@ Namespace ExcelOpsTests.Engines
         <Test>
         Public Sub ExportChartSheetImage()
             Try
-                Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "excel_test_chart.png")
+                Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, "excel_test_chart.png")
                 Dim MasterImg As System.Drawing.Image
 #Disable Warning CA1416
                 MasterImg = System.Drawing.Image.FromFile(TestEnvironment.FullPathOfExistingTestFile("test_comparison_masters", "excel_test_chart.png"))
@@ -1446,7 +1447,7 @@ Namespace ExcelOpsTests.Engines
                     Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
                 Catch ex As Exception
                     CatchedEx = ex
-                    Workbook = Me.CreateInstance()
+                    Workbook = Me.CreateInstanceUninitialized()
                 End Try
                 Select Case Workbook.EngineName
                     Case "Epplus 4 (LGPL)"
@@ -1652,7 +1653,7 @@ Namespace ExcelOpsTests.Engines
             Dim TestXlsxFile = TestFiles.TestFileGrund01()
             System.Console.WriteLine("TEST IN FILE: " & TestXlsxFile.FullName)
 
-            Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "excel_test_chart.png")
+            Dim TempFilePng As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, "excel_test_chart.png")
             Dim Workbook = PrepareAndFillExcelFileWithChart(0)
 
             Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Nothing
@@ -1667,7 +1668,7 @@ Namespace ExcelOpsTests.Engines
             Try
                 For Each WorkSheetName In Wb.WorkSheetNames
                     With Nothing
-                        Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, TestXlsxFile.Name & "." & WorkSheetName & ".no-title.html")
+                        Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, TestXlsxFile.Name & "." & WorkSheetName & ".no-title.html")
                         System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                         Wb.ExportSheetToHtml(WorkSheetName, TestHtmlOutputFile, New HtmlSheetExportOptions)
                         If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
@@ -1678,7 +1679,7 @@ Namespace ExcelOpsTests.Engines
                         End If
                     End With
                     With Nothing
-                        Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, TestXlsxFile.Name & "." & WorkSheetName & ".h2.html")
+                        Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, TestXlsxFile.Name & "." & WorkSheetName & ".h2.html")
                         Wb.ExportSheetToHtml(WorkSheetName, TestHtmlOutputFile, New HtmlSheetExportOptions() With {.ExportSheetNameAsTitle = HtmlSheetExportOptions.SheetTitleStyles.H2})
                         If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
                             Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {

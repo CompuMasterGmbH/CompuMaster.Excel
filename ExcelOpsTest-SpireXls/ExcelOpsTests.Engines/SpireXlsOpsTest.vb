@@ -16,7 +16,7 @@ Namespace ExcelOpsTests.Engines
             Return New ExcelOps.SpireXlsDataOperations(file, mode, options)
         End Function
 
-        Protected Overrides Function _CreateInstance() As ExcelOps.SpireXlsDataOperations
+        Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.SpireXlsDataOperations
             Return New ExcelOps.SpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
@@ -37,12 +37,12 @@ Namespace ExcelOpsTests.Engines
         Public Sub IsLicensedContext()
             'Simulation: license assigned
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = True
-            Assert.NotNull(Me.CreateInstance)
+            Assert.NotNull(Me.CreateInstanceUninitialized)
             Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)))
 
             'No license assigned -> instancing must fail
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = False
-            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance())
+            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstanceUninitialized())
             Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)))
         End Sub
 

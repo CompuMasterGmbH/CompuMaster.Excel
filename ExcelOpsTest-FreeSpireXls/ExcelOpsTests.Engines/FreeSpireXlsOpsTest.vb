@@ -12,7 +12,7 @@ Namespace ExcelOpsTests.Engines
             Return New ExcelOps.FreeSpireXlsDataOperations(file, mode, options)
         End Function
 
-        Protected Overrides Function _CreateInstance() As ExcelOps.FreeSpireXlsDataOperations
+        Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.FreeSpireXlsDataOperations
             Return New ExcelOps.FreeSpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 

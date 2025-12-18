@@ -35,6 +35,16 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options</param>
         Protected Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             Me.New(options)
+            Me.ExecuteOpenModeActions(file, mode, options)
+        End Sub
+
+        ''' <summary>
+        ''' Initialize engine, open file or create new workbook
+        ''' </summary>
+        ''' <param name="file"></param>
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        Protected Sub ExecuteOpenModeActions(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             Select Case mode
                 Case OpenMode.OpenExistingFile
                     If file = Nothing Then Throw New ArgumentNullException(NameOf(file), "File path must be provided when opening an existing file")

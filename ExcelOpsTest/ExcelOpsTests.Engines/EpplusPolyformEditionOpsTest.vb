@@ -20,7 +20,7 @@ Namespace ExcelOpsTests.Engines
             Return New ExcelOps.EpplusPolyformExcelDataOperations(file, mode, options)
         End Function
 
-        Protected Overrides Function _CreateInstance() As ExcelOps.EpplusPolyformExcelDataOperations
+        Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.EpplusPolyformExcelDataOperations
             Return New ExcelOps.EpplusPolyformExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 

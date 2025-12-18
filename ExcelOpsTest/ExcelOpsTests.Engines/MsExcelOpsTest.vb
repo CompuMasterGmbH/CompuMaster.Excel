@@ -19,7 +19,7 @@ Namespace ExcelOpsTests.Engines
             Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, options)
         End Function
 
-        Protected Overrides Function _CreateInstance() As ExcelOps.MsExcelDataOperations
+        Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.MsExcelDataOperations
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper

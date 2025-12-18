@@ -2,6 +2,7 @@
 Option Strict On
 
 Imports System.Text
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
 Imports CompuMaster.Excel.MsExcelCom
 Imports Microsoft.Office.Interop.Excel
 Imports MsExcel = Microsoft.Office.Interop.Excel
@@ -260,15 +261,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             MyBase.New(options)
             Me._MsExcelAppInstance = msExcelApp
             Me._Workbooks = New MsExcelWorkbooksWrapper(msExcelApp, msExcelApp.ComObjectStronglyTyped.Workbooks)
-            Select Case mode
-                Case OpenMode.OpenExistingFile
-                    Me.LoadAndInitializeWorkbookFile(file, options)
-                Case OpenMode.CreateFile
-                    Me.CreateAndInitializeWorkbookFile(file, options)
-                    Me.ReadOnly = Me.[ReadOnly] OrElse (file = Nothing)
-                Case Else
-                    Throw New ArgumentOutOfRangeException(NameOf(mode))
-            End Select
+            Me.ExecuteOpenModeActions(file, mode, options)
             If unprotectWorksheets = True Then
                 Me.UnprotectSheets()
             End If
@@ -403,7 +396,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
         Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
-                If Me.MsExcelAppInstance IsNot Nothing AndAlso Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot Nothing Then
+                If Me.MsExcelAppInstance IsNot Nothing AndAlso Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot Nothing AndAlso Me._Workbook IsNot Nothing Then
                     Return (Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic)
                 Else
                     Return MyBase.AutoCalculationEnabledWorkbookSetting
@@ -411,7 +404,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
             Set(value As Boolean)
                 MyBase.AutoCalculationEnabledWorkbookSetting = value
-                If Me.MsExcelAppInstance IsNot Nothing AndAlso Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot Nothing Then
+                If Me.MsExcelAppInstance IsNot Nothing AndAlso Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot Nothing AndAlso Me._Workbook IsNot Nothing Then
                     If value Then
                         Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic
                     Else
