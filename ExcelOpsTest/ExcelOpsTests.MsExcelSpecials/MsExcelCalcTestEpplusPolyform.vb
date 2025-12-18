@@ -22,7 +22,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
         Protected Overrides Function CreateEngineInstance(testFile As String) As ExcelOps.ExcelDataOperationsBase
             ExcelOpsTests.Engines.EpplusPolyformEditionOpsTest.AssignLicenseContext()
-            Return New ExcelOps.EpplusPolyformExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
+            Return New ExcelOps.EpplusPolyformExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions)
         End Function
 
         Protected Overrides Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)

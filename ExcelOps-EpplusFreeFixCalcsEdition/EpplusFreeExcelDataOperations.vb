@@ -19,9 +19,49 @@ Namespace ExcelOps
     Public Class EpplusFreeExcelDataOperations
         Inherits ExcelDataOperationsBase
 
+        Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
+            Get
+                Return New ExcelEngineDefaultOptions(False, True)
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
+        ''' <param name="mode">Open an existing file or (re)create a new file</param>
+        ''' <param name="options">File and engine options</param>
+        ''' <remarks>
+        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+        ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(file, mode, options)
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="options">File and engine options</param>
+        Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
+            MyBase.New(data, options)
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="options">File and engine options</param>
+        Public Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
+            MyBase.New(data, options)
+        End Sub
+
         ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(file, mode, Not disableInitialCalculation, False, [readOnly], passwordForOpening)
         End Sub
@@ -29,6 +69,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, False, True, [readOnly], passwordForOpening)
         End Sub
@@ -36,6 +78,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, False, True, passwordForOpening)
         End Sub
@@ -43,6 +87,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, True, passwordForOpening)
         End Sub
@@ -50,6 +96,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, False, True, passwordForOpening)
         End Sub
@@ -57,6 +105,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, True, passwordForOpening)
         End Sub
@@ -64,14 +114,16 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
-        Public Sub New()
-            Me.New(Nothing)
+        Friend Sub New()
+            MyBase.New(New ExcelDataOperationsOptions)
         End Sub
 
         ''' <summary>
         ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime">Pre-define encryption password on future save actions</param>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(False, True, True, passwordForOpeningOnNextTime)
         End Sub

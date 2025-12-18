@@ -6,6 +6,8 @@ Public Class SpecialFeature_SaveToHtml
     Private Const OPEN_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = False
     Private Const UNIQUE_TEST_OUTPUT_SUBDIR_NAME_FOR_PROVIDER = "FreeSpire"
 
+    Private ReadOnly Property DisabledCalculationEngineOptions As ExcelDataOperationsOptions = New ExcelDataOperationsOptions("", True, True, True)
+
     <Test>
     Public Sub ExportWorkbook()
         Dim TestXlsxFile = TestFiles.TestFileGrund01()
@@ -14,7 +16,7 @@ Public Class SpecialFeature_SaveToHtml
         System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
 
         Try
-            Dim Wb As New FreeSpireXlsDataOperations(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+            Dim Wb As New FreeSpireXlsDataOperations(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, DisabledCalculationEngineOptions)
             Wb.SaveToHtml(TestHtmlOutputFile, False)
         Catch ex As TypeInitializationException
             Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
@@ -35,7 +37,7 @@ Public Class SpecialFeature_SaveToHtml
 
         Dim Wb As FreeSpireXlsDataOperations = Nothing
         Try
-            Wb = New FreeSpireXlsDataOperations(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+            Wb = New FreeSpireXlsDataOperations(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, DisabledCalculationEngineOptions)
         Catch ex As TypeInitializationException
             Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
         End Try

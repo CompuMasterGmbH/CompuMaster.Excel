@@ -76,7 +76,7 @@ TextTable formulasOrValues;
 TextTable values;
 
 //Create a workbook and put some values and formulas
-ExcelDataOperationsBase workbook = new EpplusFreeExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, true, null);
+ExcelDataOperationsBase workbook = new EpplusFreeExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);
 workbook.WriteCellValue<double>(new ExcelCell(FirstSheetName, "B1", ExcelCell.ValueTypes.All), 456.123);
@@ -120,7 +120,7 @@ TextTable values;
 EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
 //Create a workbook and put some values and formulas
-workbook = new EpplusPolyformExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, true, null);
+workbook = new EpplusPolyformExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);
 workbook.WriteCellValue<double>(new ExcelCell(FirstSheetName, "B1", ExcelCell.ValueTypes.All), 456.123);
@@ -161,7 +161,7 @@ TextTable formulasOrValues;
 TextTable values;
 
 //Create a workbook and put some values and formulas
-workbook = new FreeSpireXlsDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, true, null);
+workbook = new FreeSpireXlsDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);
 workbook.WriteCellValue<double>(new ExcelCell(FirstSheetName, "B1", ExcelCell.ValueTypes.All), 456.123);
@@ -202,7 +202,7 @@ TextTable formulasOrValues;
 TextTable values;
 
 //Create a workbook and put some values and formulas
-workbook = new MsExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, true, null);
+workbook = new MsExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);
 workbook.WriteCellValue<double>(new ExcelCell(FirstSheetName, "B1", ExcelCell.ValueTypes.All), 456.123);

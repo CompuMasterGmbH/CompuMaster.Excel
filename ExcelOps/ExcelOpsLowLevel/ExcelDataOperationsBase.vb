@@ -1,5 +1,6 @@
 ﻿Option Explicit On
 Option Strict On
+
 Imports System.IO
 Imports System.Text
 
@@ -18,13 +19,105 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
+        ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
+        ''' <param name="mode">Open an existing file or (re)create a new file</param>
+        ''' <param name="options">File and engine options</param>
+        Protected Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
+            Me.New(options)
+            If mode = OpenMode.OpenExistingFile AndAlso file = Nothing Then
+                Throw New ArgumentNullException(NameOf(file), "File path must be provided when opening an existing file")
+            End If
+            Select Case mode
+                Case OpenMode.OpenExistingFile
+                    Me.LoadAndInitializeWorkbookFile(file, options)
+                Case OpenMode.CreateFile
+                    Me.CreateAndInitializeWorkbookFile(file, options)
+                    Me.ReadOnly = [ReadOnly] OrElse (file = Nothing)
+                Case Else
+                    Throw New ArgumentOutOfRangeException(NameOf(mode))
+            End Select
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="options">File and engine options</param>
+        Protected Sub New(data As Byte(), options As ExcelDataOperationsOptions)
+            Me.New(options)
+            Me.LoadAndInitializeWorkbookFile(data, options)
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="options">File and engine options</param>
+        Protected Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
+            Me.New(options)
+            Me.LoadAndInitializeWorkbookFile(data, options)
+        End Sub
+
+        ''' <summary>
+        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' </summary>
+        ''' <param name="options">File and engine options</param>
+        Protected Sub New(options As ExcelDataOperationsOptions)
+            If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
+            Dim ValidatedOptions As ExcelDataOperationsOptions = options.ApplyDefaultsFromEngineAndValidate(Me.DefaultCalculationOptions)
+            Me.ValidateLoadOptions(ValidatedOptions)
+            Me.LoadOptions = ValidatedOptions
+            Me.CalculationModuleDisabled = ValidatedOptions.DisableCalculationEngine.Value
+            Me.AutoCalculationOnLoad = Not ValidatedOptions.DisableInitialCalculation.Value
+            If ValidatedOptions.DisableAutoCalculationInWorkbook.HasValue Then
+                Me.AutoCalculationEnabledWorkbookSetting = Not ValidatedOptions.DisableAutoCalculationInWorkbook.Value
+            End If
+            Me.ReadOnly = (ValidatedOptions.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Me.PasswordForOpening = ValidatedOptions.PasswordForOpening
+        End Sub
+
+        Protected Overridable Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
+            'nothing to do here
+            'but override possible to check in engine for unsupported options (e.g. MS Excel doesn't support disabling of whole calculation module)
+        End Sub
+
+        Protected ReadOnly Property LoadOptions As ExcelDataOperationsOptions
+
+        ''' <summary>
+        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' </summary>
+        Private Sub New()
+            Me.New(New ExcelDataOperationsOptions)
+        End Sub
+
+        ''' <summary>
+        ''' Default options for calculation behavior of the engine
+        ''' </summary>
+        ''' <returns></returns>
+        Protected Friend MustOverride ReadOnly Property DefaultCalculationOptions() As ExcelEngineDefaultOptions
+
+        Protected Shared Function ConvertToUnvalidatedOptions(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String) As ExcelDataOperationsOptions
+            Return New ExcelDataOperationsOptions(If([readOnly], ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite),
+                                                  passwordForOpening,
+                                                  Not autoCalculationOnLoad,
+                                                  calculationModuleDisabled,
+                                                  calculationModuleDisabled)
+
+        End Function
+
+        ''' <summary>
+        ''' Create or open a workbook
+        ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(file As String, mode As OpenMode, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, [readOnly], passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
             Me.CalculationModuleDisabled = calculationModuleDisabled
@@ -32,9 +125,9 @@ Namespace ExcelOps
             Select Case mode
                 Case OpenMode.OpenExistingFile
                     Me.PasswordForOpening = passwordForOpening
-                    Me.LoadAndInitializeWorkbookFile(file)
+                    Me.LoadAndInitializeWorkbookFile(file, Me.LoadOptions)
                 Case OpenMode.CreateFile
-                    Me.CreateAndInitializeWorkbookFile(file)
+                    Me.CreateAndInitializeWorkbookFile(file, Me.LoadOptions)
                     Me.ReadOnly = [readOnly] OrElse (file = Nothing)
                     Me.PasswordForOpening = passwordForOpening
                 Case Else
@@ -49,14 +142,17 @@ Namespace ExcelOps
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="passwordForOpening"></param>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(data As Byte(), autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
+            Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, True, passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
             Me.CalculationModuleDisabled = calculationModuleDisabled
             Me.ReadOnly = True
             'OpenMode.OpenExistingFile
             Me.PasswordForOpening = passwordForOpening
-            Me.LoadAndInitializeWorkbookFile(data)
+            Me.LoadAndInitializeWorkbookFile(data, Me.LoadOptions)
         End Sub
 
         ''' <summary>
@@ -66,14 +162,17 @@ Namespace ExcelOps
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="passwordForOpening"></param>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(data As System.IO.Stream, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
+            Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, True, passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
             Me.CalculationModuleDisabled = calculationModuleDisabled
             Me.ReadOnly = True
             'OpenMode.OpenExistingFile
             Me.PasswordForOpening = passwordForOpening
-            Me.LoadAndInitializeWorkbookFile(data)
+            Me.LoadAndInitializeWorkbookFile(data, Me.LoadOptions)
         End Sub
 
         ''' <summary>
@@ -81,7 +180,10 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
         ''' <param name="calculationModuleDisabled">Disables the Excel calculation engine</param>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
+            Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, [readOnly], passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
             Me.AutoCalculationOnLoad = autoCalculationOnLoad
             Me.CalculationModuleDisabled = calculationModuleDisabled
@@ -93,7 +195,7 @@ Namespace ExcelOps
         ''' Reload a file from disk
         ''' </summary>
         Public Sub ReloadFromFile()
-            Me.LoadAndInitializeWorkbookFile(Me.FilePath)
+            Me.LoadAndInitializeWorkbookFile(Me.FilePath, Me.LoadOptions)
         End Sub
 
         ''' <summary>
@@ -101,30 +203,114 @@ Namespace ExcelOps
         ''' </summary>
         ''' <returns></returns>
         Public Property PasswordForOpening As String
+            Get
+                Return Me.LoadOptions.PasswordForOpening
+            End Get
+            Set(value As String)
+                Me.LoadOptions.PasswordForOpening = value
+            End Set
+        End Property
 
         ''' <summary>
         ''' Write protection for this filename prevents Save, but still allows SaveAs
         ''' </summary>
         ''' <returns></returns>
         Public Property [ReadOnly] As Boolean
+            Get
+                Return Me.LoadOptions.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly
+            End Get
+            Set(value As Boolean)
+                Me.LoadOptions.FileWriteProtection = If(value, ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+            End Set
+        End Property
 
         ''' <summary>
         ''' The calculation module of involved Excel engine might be disabled due to insufficiency/incompleteness of 3rd party Excel (calculation) engines (except for single cell calculations)
         ''' </summary>
         ''' <returns></returns>
         Public Property CalculationModuleDisabled As Boolean
+            Get
+                Return Me.LoadOptions.DisableCalculationEngine.Value
+            End Get
+            Set(value As Boolean)
+                Me.LoadOptions.DisableCalculationEngine = value
+            End Set
+        End Property
 
         ''' <summary>
         ''' If enabled, the calculation engine will do a full recalculation after loading a workbook
         ''' </summary>
         ''' <returns></returns>
-        Public ReadOnly Property AutoCalculationOnLoad As Boolean
+        Public Property AutoCalculationOnLoad As Boolean
+            Get
+                Return Me.LoadOptions.DisableInitialCalculation.Value
+            End Get
+            Set(value As Boolean)
+                Me.LoadOptions.DisableInitialCalculation = value
+            End Set
+        End Property
 
         ''' <summary>
-        ''' If enabled, the calculation engine will do a full recalculation after every modification
+        ''' If enabled (default), the workbook setting will be reset to enabled AutoCalculation feature in all saved workbooks (but stays at its value in-memory)
+        ''' If disabled, the workbook setting for AutoCalculation will be saved as it is
         ''' </summary>
         ''' <returns></returns>
-        Public MustOverride Property AutoCalculationEnabled As Boolean
+        ''' <remarks>Please note: this property is an engine property and defaults to True</remarks>
+        Public Property AutoCalculationResetToEnabledForAllSavedWorkbooks As Boolean = True
+
+        ''' <summary>
+        ''' If enabled, the calculation engine will do a full recalculation after every modification.
+        ''' If disabled, the calculation engine is not allowed to automatically/continuously calculate on every change and the user has to manually force a recalculation (typically by pressing F9 key in MS Excel).
+        ''' </summary>
+        ''' <returns></returns>
+        ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
+        <Obsolete("Use AutoCalculationEnabledWorkbookSetting instead", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        Public Property AutoCalculationEnabled As Boolean
+            Get
+                Return AutoCalculationEnabledWorkbookSetting
+            End Get
+            Set(value As Boolean)
+                AutoCalculationEnabledWorkbookSetting = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' If enabled, the calculation engine will do a full recalculation after every modification.
+        ''' If disabled, the calculation engine is not allowed to automatically/continuously calculate on every change and the user has to manually force a recalculation (typically by pressing F9 key in MS Excel).
+        ''' </summary>
+        ''' <returns></returns>
+        ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
+        Public Overridable Property AutoCalculationEnabledWorkbookSetting As Boolean
+            Get
+                Return Not Me.LoadOptions.DisableAutoCalculationInWorkbook.GetValueOrDefault
+            End Get
+            Set(value As Boolean)
+                Me.LoadOptions.DisableAutoCalculationInWorkbook = Not value
+            End Set
+        End Property
+
+        '''' <summary>
+        '''' If calculation module is enabled and also AutoCalculationEnabled is enabled, then AutoCalculationEnabled is enabled effectively
+        '''' </summary>
+        '''' <returns></returns>
+        'Protected Friend ReadOnly Property AutoCalculationEnabledEffectively As Boolean
+        '    Get
+        '        Return Me.CalculationModuleDisabled AndAlso Me.AutoCalculationEnabledWorkbookSetting
+        '    End Get
+        'End Property
+
+        ''' <summary>
+        ''' If calculation module is enabled and also AutoCalculationOnLoad is enabled, then AutoCalculationOnLoad is enabled effectively (regardless of AutoCalculationEnabled setting)
+        ''' </summary>
+        ''' <returns></returns>
+        Protected Friend ReadOnly Property AutoCalculationOnLoadEffectively As Boolean
+            Get
+                Return Not Me.CalculationModuleDisabled AndAlso Me.AutoCalculationOnLoad
+            End Get
+        End Property
+
+
 
         <CodeAnalysis.SuppressMessage("Design", "CA1051:Sichtbare Instanzfelder nicht deklarieren")>
         Protected _FilePath As String
@@ -163,6 +349,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Save modifications made to the workbook
         ''' </summary>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub Save()
             Me.Save(SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         End Sub
@@ -170,6 +357,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Save modifications made to the workbook
         ''' </summary>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub Save(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.ReadOnly = True Then
                 Throw New FileReadOnlyException("File is read-only and can't be saved at same location")
@@ -186,13 +374,17 @@ Namespace ExcelOps
                 Me.SaveAs(Me.FilePath, cachedCalculationsOption)
             Else
                 Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
-                Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
-                Try
-                    Me.AutoCalculationEnabled = True
+                If Me.AutoCalculationResetToEnabledForAllSavedWorkbooks Then
+                    Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabledWorkbookSetting
+                    Try
+                        Me.AutoCalculationEnabledWorkbookSetting = True
+                        Me.SaveInternal()
+                    Finally
+                        Me.AutoCalculationEnabledWorkbookSetting = AutoCalcBuffer
+                    End Try
+                Else
                     Me.SaveInternal()
-                Finally
-                    Me.AutoCalculationEnabled = AutoCalcBuffer
-                End Try
+                End If
             End If
         End Sub
 
@@ -226,6 +418,7 @@ Namespace ExcelOps
         ''' Save workbook as another file
         ''' </summary>
         ''' <param name="filePath"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         <Obsolete("Use overloaded method", True)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub SaveAs(filePath As String)
@@ -236,6 +429,7 @@ Namespace ExcelOps
         ''' Save workbook as another file
         ''' </summary>
         ''' <param name="filePath"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub SaveAs(filePath As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.ReadOnly = True AndAlso Me._FilePath = filePath AndAlso Me.WorkbookFilePath <> Nothing Then
                 Throw New FileReadOnlyException("File """ & filePath & """ is read-only and can't be saved at same location")
@@ -249,14 +443,17 @@ Namespace ExcelOps
             If Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False Then Me.RecalculateAll()
 
             Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
-            Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabled
-            Try
-                Me.AutoCalculationEnabled = True
+            If Me.AutoCalculationResetToEnabledForAllSavedWorkbooks Then
+                Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabledWorkbookSetting
+                Try
+                    Me.AutoCalculationEnabledWorkbookSetting = True
+                    Me.SaveAsInternal(filePath, cachedCalculationsOption)
+                Finally
+                    Me.AutoCalculationEnabledWorkbookSetting = AutoCalcBuffer
+                End Try
+            Else
                 Me.SaveAsInternal(filePath, cachedCalculationsOption)
-            Finally
-                Me.AutoCalculationEnabled = AutoCalcBuffer
-            End Try
-
+            End If
             Me._FilePath = filePath
             Me.ReadOnly = False
         End Sub
@@ -447,36 +644,23 @@ Namespace ExcelOps
         ''' <param name="formula">Formula without leading '=' char</param>
         Public MustOverride Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
 
-        Private _RecalculationRequired As TriState = TriState.UseDefault
+        Private _RecalculationRequired As Boolean?
         ''' <summary>
         ''' Modifications require a full recalculation
         ''' </summary>
         ''' <returns></returns>
         Public Property RecalculationRequired As Boolean
             Get
-                If _RecalculationRequired = TriState.UseDefault Then
-                    Me.RecalculationRequired = False 'Defaults to false
-                End If
-                If _RecalculationRequired = TriState.True Then
-                    Return True
-                Else
-                    Return False
-                End If
+                Return Me._RecalculationRequired.GetValueOrDefault(False)
             End Get
             Set(value As Boolean)
-                If value = True Then 'then AndAlso Me.AutoCalculationEnabled = False Then
-                    _RecalculationRequired = TriState.True
-                Else
-                    'value=False OR 
-                    'sub module requests calculation, but is already done by Excel engine automatically
-                    _RecalculationRequired = TriState.False
-                End If
+                _RecalculationRequired = value
             End Set
         End Property
 
         Protected MustOverride Sub LoadWorkbook(file As System.IO.FileInfo)
 
-        Protected Sub LoadAndInitializeWorkbookFile(inputPath As String)
+        Protected Sub LoadAndInitializeWorkbookFile(inputPath As String, options As ExcelDataOperationsOptions)
             If inputPath = Nothing Then Throw New ArgumentNullException(NameOf(inputPath))
             '1st, close an exsting workbook instance
             If Me.IsClosed = False Then Me.Close()
@@ -487,38 +671,29 @@ Namespace ExcelOps
                 Throw New System.IO.FileNotFoundException("Missing file: " & file.ToString, file.ToString)
             End If
             Me.LoadWorkbook(file)
-            Me.AutoCalculationEnabled = False
-            If Me.AutoCalculationOnLoad Then
-                Me.RecalculateAll()
-            End If
+            Me.PostLoadOrCreateWorkbook(options)
         End Sub
 
         Protected MustOverride Sub LoadWorkbook(data As Byte())
 
-        Protected Sub LoadAndInitializeWorkbookFile(data As Byte())
+        Protected Sub LoadAndInitializeWorkbookFile(data As Byte(), options As ExcelDataOperationsOptions)
             '1st, close an exsting workbook instance
             If Me.IsClosed = False Then Me.Close()
             'Load the changed worksheet
             Me._FilePath = Nothing
             Me.LoadWorkbook(data)
-            Me.AutoCalculationEnabled = False
-            If Me.AutoCalculationOnLoad Then
-                Me.RecalculateAll()
-            End If
+            Me.PostLoadOrCreateWorkbook(options)
         End Sub
 
         Protected MustOverride Sub LoadWorkbook(data As System.IO.Stream)
 
-        Protected Sub LoadAndInitializeWorkbookFile(data As System.IO.Stream)
+        Protected Sub LoadAndInitializeWorkbookFile(data As System.IO.Stream, options As ExcelDataOperationsOptions)
             '1st, close an exsting workbook instance
             If Me.IsClosed = False Then Me.Close()
             'Load the changed worksheet
             Me._FilePath = Nothing
             Me.LoadWorkbook(data)
-            Me.AutoCalculationEnabled = False
-            If Me.AutoCalculationOnLoad Then
-                Me.RecalculateAll()
-            End If
+            Me.PostLoadOrCreateWorkbook(options)
         End Sub
 
         Protected MustOverride Sub CreateWorkbook()
@@ -527,7 +702,7 @@ Namespace ExcelOps
         ''' Create a new workbook
         ''' </summary>
         ''' <param name="intendedFilePath">If the file path is already known, the file will be checked to not exist already and the file path will be used for later saving</param>
-        Protected Sub CreateAndInitializeWorkbookFile(intendedFilePath As String)
+        Protected Sub CreateAndInitializeWorkbookFile(intendedFilePath As String, options As ExcelDataOperationsOptions)
             'Load the changed worksheet
             If intendedFilePath <> Nothing Then
                 Me._FilePath = intendedFilePath
@@ -539,8 +714,18 @@ Namespace ExcelOps
                 Me._FilePath = Nothing
             End If
             Me.CreateWorkbook()
-            Me.AutoCalculationEnabled = False
-            If Me.AutoCalculationOnLoad Then
+            Me.PostLoadOrCreateWorkbook(options)
+        End Sub
+
+        ''' <summary>
+        ''' Assign default options, perform required calculations
+        ''' </summary>
+        ''' <param name="options"></param>
+        Protected Sub PostLoadOrCreateWorkbook(options As ExcelDataOperationsOptions)
+            If options.DisableAutoCalculationInWorkbook.HasValue Then
+                Me.AutoCalculationEnabledWorkbookSetting = options.DisableAutoCalculationInWorkbook.Value 'Update local internal value of property to the workbook's setting
+            End If
+            If Me.AutoCalculationOnLoadEffectively Then
                 Me.RecalculateAll()
             End If
         End Sub

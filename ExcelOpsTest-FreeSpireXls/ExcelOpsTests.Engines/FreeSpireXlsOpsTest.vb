@@ -1,4 +1,5 @@
-﻿Imports NUnit.Framework
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 
 Namespace ExcelOpsTests.Engines
 
@@ -7,8 +8,8 @@ Namespace ExcelOpsTests.Engines
 
         Public Overrides ReadOnly Property ExpectedEngineName As String = "FreeSpire.Xls"
 
-        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean) As ExcelOps.FreeSpireXlsDataOperations
-            Return New ExcelOps.FreeSpireXlsDataOperations(file, mode, [readOnly], passwordForOpening, disableInitialCalculation)
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations(file, mode, options)
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.FreeSpireXlsDataOperations
@@ -23,12 +24,12 @@ Namespace ExcelOpsTests.Engines
             MyBase.TestInCultureContext_AssignCurrentThreadCulture()
         End Sub
 
-        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.FreeSpireXlsDataOperations
-            Return New ExcelOps.FreeSpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        Protected Overrides Function _CreateInstance(data() As Byte, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations(data, options)
         End Function
 
-        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.FreeSpireXlsDataOperations
-            Return New ExcelOps.FreeSpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        Protected Overrides Function _CreateInstance(data As IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.FreeSpireXlsDataOperations
+            Return New ExcelOps.FreeSpireXlsDataOperations(data, options)
         End Function
 
     End Class

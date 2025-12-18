@@ -21,19 +21,42 @@ Namespace ExcelOps
     Public Class FreeSpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
+        Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
+            Get
+                Return New ExcelEngineDefaultOptions(False, False)
+            End Get
+        End Property
+
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
-        ''' <param name="file"></param>
-        ''' <param name="mode"></param>
-        ''' <param name="[readOnly]"></param>
-        ''' <param name="passwordForOpening"></param>
+        ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
+        ''' <param name="mode">Open an existing file or (re)create a new file</param>
+        ''' <param name="options">File and engine options</param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
-        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
-            MyBase.New(file, mode, Not disableInitialCalculation, False, [readOnly], passwordForOpening)
+        Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(file, mode, options)
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="options">File and engine options</param>
+        Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
+            MyBase.New(data, options)
+        End Sub
+
+        ''' <summary>
+        ''' Open a workbook
+        ''' </summary>
+        ''' <param name="data"></param>
+        ''' <param name="options">File and engine options</param>
+        Public Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
+            MyBase.New(data, options)
         End Sub
 
         ''' <summary>
@@ -47,24 +70,51 @@ Namespace ExcelOps
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
+            MyBase.New(file, mode, Not disableInitialCalculation, disableCalculationEngine, [readOnly], passwordForOpening)
+        End Sub
+
+        ''' <summary>
+        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' </summary>
+        ''' <param name="file"></param>
+        ''' <param name="mode"></param>
+        ''' <param name="[readOnly]"></param>
+        ''' <param name="passwordForOpening"></param>
+        ''' <remarks>
+        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+        ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
         End Sub
 
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
         End Sub
 
-        Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
-            MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
         End Sub
 
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
         End Sub
 
-        Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
-            MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
+            MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
         End Sub
 
         ''' <summary>
@@ -74,8 +124,8 @@ Namespace ExcelOps
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
-        Public Sub New()
-            Me.New(Nothing)
+        Friend Sub New()
+            MyBase.New(New ExcelDataOperationsOptions)
         End Sub
 
         ''' <summary>
@@ -86,6 +136,8 @@ Namespace ExcelOps
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
         End Sub

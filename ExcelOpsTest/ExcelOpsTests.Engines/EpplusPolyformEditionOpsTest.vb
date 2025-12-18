@@ -1,4 +1,5 @@
-﻿Imports NUnit.Framework
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 
 Namespace ExcelOpsTests.Engines
 
@@ -15,8 +16,8 @@ Namespace ExcelOpsTests.Engines
 
         Public Overrides ReadOnly Property ExpectedEngineName As String = "Epplus (Polyform license edition)"
 
-        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean) As ExcelOps.EpplusPolyformExcelDataOperations
-            Return New ExcelOps.EpplusPolyformExcelDataOperations(file, mode, [readOnly], passwordForOpening, disableInitialCalculation)
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.EpplusPolyformExcelDataOperations
+            Return New ExcelOps.EpplusPolyformExcelDataOperations(file, mode, options)
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.EpplusPolyformExcelDataOperations
@@ -27,12 +28,12 @@ Namespace ExcelOpsTests.Engines
             Assert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
         End Sub
 
-        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.EpplusPolyformExcelDataOperations
-            Return New ExcelOps.EpplusPolyformExcelDataOperations(data, passwordForOpening, disableCalculationEngine)
+        Protected Overrides Function _CreateInstance(data() As Byte, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.EpplusPolyformExcelDataOperations
+            Return New ExcelOps.EpplusPolyformExcelDataOperations(data, options)
         End Function
 
-        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.EpplusPolyformExcelDataOperations
-            Return New ExcelOps.EpplusPolyformExcelDataOperations(data, passwordForOpening, disableCalculationEngine)
+        Protected Overrides Function _CreateInstance(data As IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.EpplusPolyformExcelDataOperations
+            Return New ExcelOps.EpplusPolyformExcelDataOperations(data, options)
         End Function
 
     End Class

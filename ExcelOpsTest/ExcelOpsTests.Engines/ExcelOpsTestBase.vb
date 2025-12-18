@@ -20,9 +20,9 @@ Namespace ExcelOpsTests.Engines
         Protected MustOverride Function _CreateInstance() As T
 
 #Disable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
-        Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableCalculationEngine As Boolean) As T
-        Protected MustOverride Function _CreateInstance(data As Byte(), passwordForOpening As String, disableCalculationEngine As Boolean) As T
-        Protected MustOverride Function _CreateInstance(data As System.IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As T
+        Protected MustOverride Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As T
+        Protected MustOverride Function _CreateInstance(data As Byte(), options As ExcelOps.ExcelDataOperationsOptions) As T
+        Protected MustOverride Function _CreateInstance(data As System.IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As T
 #Enable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
 
         ''' <summary>
@@ -56,35 +56,13 @@ Namespace ExcelOpsTests.Engines
         ''' <summary>
         ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
-        ''' <param name="file"></param>
-        ''' <param name="mode"></param>
-        ''' <param name="[readOnly]"></param>
-        ''' <param name="passwordForOpening"></param>
-        ''' <returns></returns>
-        Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String) As T
-            Return Me.CreateInstance(file, mode, [readOnly], passwordForOpening, False)
-        End Function
-
-        ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
-        ''' </summary>
-        ''' <param name="data"></param>
-        ''' <param name="passwordForOpening"></param>
-        ''' <returns></returns>
-        Protected Function CreateInstance(data As Byte(), passwordForOpening As String) As T
-            Return Me.CreateInstance(data, passwordForOpening, False)
-        End Function
-
-        ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
-        ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="passwordForOpening"></param>
         ''' <param name="disableCalculationEngine"></param>
         ''' <returns></returns>
-        Protected Function CreateInstance(data As Byte(), passwordForOpening As String, disableCalculationEngine As Boolean) As T
+        Protected Function CreateInstance(data As Byte(), options As ExcelOps.ExcelDataOperationsOptions) As T
             Try
-                Return _CreateInstance(data, passwordForOpening, disableCalculationEngine)
+                Return _CreateInstance(data, options)
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
@@ -111,21 +89,11 @@ Namespace ExcelOpsTests.Engines
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="passwordForOpening"></param>
-        ''' <returns></returns>
-        Protected Function CreateInstance(data As System.IO.Stream, passwordForOpening As String) As T
-            Return Me.CreateInstance(data, passwordForOpening, False)
-        End Function
-
-        ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
-        ''' </summary>
-        ''' <param name="data"></param>
-        ''' <param name="passwordForOpening"></param>
         ''' <param name="disableCalculationEngine"></param>
         ''' <returns></returns>
-        Protected Function CreateInstance(data As System.IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As T
+        Protected Function CreateInstance(data As System.IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As T
             Try
-                Return _CreateInstance(data, passwordForOpening, disableCalculationEngine)
+                Return _CreateInstance(data, options)
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
@@ -156,9 +124,9 @@ Namespace ExcelOpsTests.Engines
         ''' <param name="passwordForOpening"></param>
         ''' <param name="disableCalculationEngine">True to disable calculation engine, e.g. sometimes required with some excel engines to load excel workbooks with circular reference errors successfully</param>
         ''' <returns></returns>
-        Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableCalculationEngine As Boolean) As T
+        Protected Function CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As T
             Try
-                Return _CreateInstance(file, mode, [readOnly], passwordForOpening, disableCalculationEngine)
+                Return _CreateInstance(file, mode, options)
             Catch ex As Exception
                 If ex.GetType() Is GetType(PlatformNotSupportedException) Then
                     Throw
@@ -183,7 +151,7 @@ Namespace ExcelOpsTests.Engines
         <OneTimeSetUp>
         Public Sub CommonOneTimeSetup()
             Try
-                Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing))
+                Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions))
             Catch ex As PlatformNotSupportedException
                 Assert.Ignore("Platform not supported: " & ex.Message)
             Catch ex As CompuMaster.ComInterop.ComApplicationNotAvailableException
@@ -217,10 +185,10 @@ Namespace ExcelOpsTests.Engines
 
         <Test> Public Sub HasVbaProject()
             Dim VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
-            Assert.IsTrue(Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "").HasVbaProject)
+            Assert.IsTrue(Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions).HasVbaProject)
 
             Dim NonVbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
-            Assert.IsFalse(Me.CreateInstance(NonVbaTestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "").HasVbaProject)
+            Assert.IsFalse(Me.CreateInstance(NonVbaTestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions).HasVbaProject)
         End Sub
 
         <Test> Public Sub SaveXlsxWithVbaProjectMustFail()
@@ -232,7 +200,7 @@ Namespace ExcelOpsTests.Engines
             Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile(NameOf(SaveXlsxWithVbaProjectMustFail), "VbaProject.xlsx")
             System.IO.File.Copy(VbaTestFile, VbaTestFileClone)
 
-            Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+            Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.True(Wb.HasVbaProject)
             Assert.Throws(Of NotSupportedException)(Sub() Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
             Dim FilePathInEngineBefore As String = Wb.WorkbookFilePath
@@ -247,7 +215,7 @@ Namespace ExcelOpsTests.Engines
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
 
-            Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, "")
+            Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.True(Wb.HasVbaProject)
             Wb.Save()
             Assert.True(Wb.HasVbaProject, "VBA project hasn't been removed automatically")
@@ -262,12 +230,12 @@ Namespace ExcelOpsTests.Engines
             NewXlsxTargetPath = TestEnvironment.FullPathOfDynTestFile(NameOf(SaveXlsxWithVbaProjectMustFail), "NonVbaProject.xlsx")
             System.IO.File.Copy(NonVbaTestFile, NonVbaTestFileClone)
 
-            Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+            Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.False(Wb.HasVbaProject)
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
 
-            Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, "")
+            Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.False(Wb.HasVbaProject)
             Wb.Save()
             Wb.Close()
@@ -275,13 +243,13 @@ Namespace ExcelOpsTests.Engines
             'Loading a workbook with VBA project + removing VBA project + saving workbook as XLSM + reloading workbook = must still HasVbaProject = False
             VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
             NewXlsxTargetPath = TestEnvironment.FullPathOfDynTestFile(NameOf(SaveXlsxWithVbaProjectMustFail), "VbaProject.xlsm")
-            Wb = Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+            Wb = Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.True(Wb.HasVbaProject)
             Wb.RemoveVbaProject()
             Assert.False(Wb.HasVbaProject)
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
-            Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+            Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.False(Wb.HasVbaProject)
 
         End Sub
@@ -294,10 +262,10 @@ Namespace ExcelOpsTests.Engines
             If GetType(T) Is GetType(MsExcelDataOperations) Then
                 'known to fail because no support for reading files from in-memory
                 Assert.Throws(Of NotSupportedException)(Sub()
-                                                            Me.CreateInstance(Data, "")
+                                                            Me.CreateInstance(Data, New ExcelDataOperationsOptions)
                                                         End Sub)
             Else
-                Wb = Me.CreateInstance(Data, "")
+                Wb = Me.CreateInstance(Data, New ExcelDataOperationsOptions)
                 Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
                 Assert.That(Wb.ReadOnly, [Is].True)
             End If
@@ -311,10 +279,10 @@ Namespace ExcelOpsTests.Engines
             If GetType(T) Is GetType(MsExcelDataOperations) Then
                 'known to fail because no support for reading files from in-memory
                 Assert.Throws(Of NotSupportedException)(Sub()
-                                                            Me.CreateInstance(Data, "")
+                                                            Me.CreateInstance(Data, New ExcelDataOperationsOptions)
                                                         End Sub)
             Else
-                Wb = Me.CreateInstance(Data, "")
+                Wb = Me.CreateInstance(Data, New ExcelDataOperationsOptions)
                 Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
                 Assert.That(Wb.ReadOnly, [Is].True)
             End If
@@ -324,7 +292,7 @@ Namespace ExcelOpsTests.Engines
             Dim Wb As T
             'Testfile without password
             Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
 
             'Now, save it with password
@@ -335,12 +303,12 @@ Namespace ExcelOpsTests.Engines
             Wb.Close()
 
             'Try to reload it without password -> it must fail
-            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "something else"))
-            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, ""))
-            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing))
+            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.PasswordForOpening = "something else"}))
+            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.PasswordForOpening = ""}))
+            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.PasswordForOpening = Nothing}))
 
             'Reload it with password -> now it must succeed
-            Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "dummy")
+            Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.PasswordForOpening = "dummy"})
             Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
         End Sub
 
@@ -355,13 +323,13 @@ Namespace ExcelOpsTests.Engines
             Wb.Close()
 
             TestFile = Nothing
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.AreEqual(TestFile, Wb.FilePath)
             Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
 
             TestFile = ""
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.AreEqual(Nothing, Wb.FilePath)
             Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
             Wb.Close()
@@ -373,7 +341,7 @@ Namespace ExcelOpsTests.Engines
             Dim TestFile2 As String = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstance, "created-workbook2.xlsx")
 
             'Creating a new workbook without pre-defined file name must fail on Save(), but successful on SaveAs()
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up")
             Assert.AreEqual(TestFile, Wb.FilePath)
             Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
@@ -386,12 +354,12 @@ Namespace ExcelOpsTests.Engines
 
             'Creating a new workbook must fail with a pre-defined file name if there is already a file
             Assert.Throws(Of FileAlreadyExistsException)(Sub()
-                                                             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
+                                                             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
                                                          End Sub)
             System.IO.File.Delete(TestFile) 'Delete the file for next test block
 
             'Creating a new workbook must always be ReadOnly and saving it without a name must be forbidden
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must always be ReadOnly")
             Assert.AreEqual(TestFile, Wb.FilePath)
             Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
@@ -410,7 +378,7 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
 
             'Saving a ReadWrite file must be forbidden
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual(True, Wb.ReadOnly)
             Assert.AreEqual(TestFile, Wb.FilePath)
             Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
@@ -423,7 +391,7 @@ Namespace ExcelOpsTests.Engines
             Wb.Close()
 
             'Saving a ReadWrite file must be allowed
-            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, "")
+            Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Assert.AreEqual(False, Wb.ReadOnly)
             Assert.AreEqual(TestFile, Wb.FilePath)
             Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
@@ -451,7 +419,7 @@ Namespace ExcelOpsTests.Engines
             End Select
             workbook.Close()
 
-            workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing)
+            workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions)
             Assert.AreEqual(1, workbook.SheetNames.Count, "Sheets Count")
             Assert.AreEqual("Sheet1", workbook.SheetNames(0))
             workbook.Close()
@@ -473,8 +441,8 @@ Namespace ExcelOpsTests.Engines
                 Console.WriteLine("Test file output template: " & TestControllingToolFileNameOutTemplate)
                 Console.WriteLine("Test file output: " & TestControllingToolFileNameOut)
 
-                eppeoIn = Me.CreateInstance(TestControllingToolFileNameIn, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
-                eppeoOut = Me.CreateInstance(TestControllingToolFileNameOutTemplate, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                eppeoIn = Me.CreateInstance(TestControllingToolFileNameIn, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
+                eppeoOut = Me.CreateInstance(TestControllingToolFileNameOutTemplate, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                 Const SheetToCopy As String = "Grunddaten"
                 eppeoIn.CopySheetContent(SheetToCopy, eppeoOut, ExcelOps.ExcelDataOperationsBase.CopySheetOption.TargetSheetMightExist)
@@ -489,7 +457,7 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         <Test> Public Sub ExcelOpsTestCollection_ZahlenUndProzentwerte()
-            Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Dim SheetName As String
             SheetName = "ZahlenUndProzentwerte"
             Assert.AreEqual("0.00", eppeo.LookupCellFormat(SheetName, 0, 1))
@@ -505,7 +473,7 @@ Namespace ExcelOpsTests.Engines
         <Test> Public Sub IsMergedCell()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Const SheetName As String = "MergedCellsTest"
             Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
             Assert.True(eppeo.IsMergedCell(SheetName, 1, 0))
@@ -520,7 +488,7 @@ Namespace ExcelOpsTests.Engines
         <Test> Public Sub MergeAndUnMergedCell()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Const SheetName As String = "MergedCellsTest"
             Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
             Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
@@ -535,12 +503,12 @@ Namespace ExcelOpsTests.Engines
         <Test> Public Sub MergedCells()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Dim SheetName As String = "MergedCellsTest"
             Assert.AreEqual("A1:C3", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
 
             TestControllingToolFileName = TestFiles.TestFileGrund01.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             SheetName = "Grunddaten"
             Assert.AreEqual("", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
         End Sub
@@ -548,7 +516,7 @@ Namespace ExcelOpsTests.Engines
         <Test> Public Sub AutoFitColumns()
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Const SheetName As String = "MergedCellsTest"
             Try
                 Assert.AreEqual(2, eppeo.LookupLastCell(SheetName).ColumnIndex)
@@ -574,14 +542,14 @@ Namespace ExcelOpsTests.Engines
 
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileGrund01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             EppeoSheetNamesList = eppeo.SheetNames
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
             Assert.AreEqual("Grunddaten,Kostenplanung", Strings.Join(EppeoSheetNamesList.ToArray, ","))
 
             TestFileName = TestFiles.TestFileChartSheet01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             EppeoSheetNamesList = eppeo.SheetNames
             System.Console.WriteLine()
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
@@ -593,7 +561,7 @@ Namespace ExcelOpsTests.Engines
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual(0, eppeo.SheetIndex("data"))
             Assert.AreEqual(1, eppeo.SheetIndex("chart"))
             Assert.AreEqual(-1, eppeo.SheetIndex("doesntexist"))
@@ -605,7 +573,7 @@ Namespace ExcelOpsTests.Engines
 
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             EppeoSheetNamesList = eppeo.WorkSheetNames
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
@@ -616,7 +584,7 @@ Namespace ExcelOpsTests.Engines
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual(0, eppeo.WorkSheetIndex("data"))
             Assert.AreEqual(-1, eppeo.WorkSheetIndex("chart"))
         End Sub
@@ -626,7 +594,7 @@ Namespace ExcelOpsTests.Engines
 
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileGrund03.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
@@ -640,13 +608,13 @@ Namespace ExcelOpsTests.Engines
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             eppeo.SelectSheet(1)
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             eppeo.SelectSheet(2)
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
@@ -657,7 +625,7 @@ Namespace ExcelOpsTests.Engines
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             eppeo.SelectSheet("Kostenplanung")
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
@@ -670,7 +638,7 @@ Namespace ExcelOpsTests.Engines
 
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileHtmlExport01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
             Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Onboarding offen"))
             eppeo.SelectSheet("Upload erledigt")
@@ -683,7 +651,7 @@ Namespace ExcelOpsTests.Engines
 
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             EppeoSheetNamesList = eppeo.ChartSheetNames
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
@@ -694,7 +662,7 @@ Namespace ExcelOpsTests.Engines
             Dim eppeo As ExcelOps.ExcelDataOperationsBase
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
-            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual(0, eppeo.ChartSheetIndex("chart"))
             Assert.AreEqual(-1, eppeo.ChartSheetIndex("data"))
         End Sub
@@ -707,7 +675,7 @@ Namespace ExcelOpsTests.Engines
             Dim BeforeSheet As String = "Grunddaten"
             Dim SheetNameTopPosition As String = "SheetOnTop"
             Dim SheetNameBottomPosition As String = "SheetOnBottom"
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Dim ExpectedSheetNamesList, NewSheetNamesList As List(Of String)
             ExpectedSheetNamesList = eppeo.SheetNames
             ExpectedSheetNamesList.Add(SheetNameBottomPosition)
@@ -725,7 +693,7 @@ Namespace ExcelOpsTests.Engines
             Dim AllFormulas As List(Of ExcelOps.TextTableCell)
 
             TestControllingToolFileName = TestFiles.TestFileGrund01.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             AllFormulas = eppeo.AllFormulasOfWorkbook
             Console.WriteLine("Test file: " & TestControllingToolFileName)
             Assert.NotZero(AllFormulas.Count)
@@ -750,7 +718,7 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         <Test> Public Sub CellWithError()
-            Dim wb As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestFiles.TestFileGrund02.FullName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Dim wb As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestFiles.TestFileGrund02.FullName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Dim SheetName As String = wb.SheetNames(0)
 
             wb.WriteCellFormula(SheetName, 0, 0, "B2", False)
@@ -790,7 +758,7 @@ Namespace ExcelOpsTests.Engines
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
             Dim TestSheet As String = "Grunddaten"
 
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual("E40", eppeo.LookupLastCell(TestSheet).Address)
             Assert.AreEqual(39, eppeo.LookupLastRowIndex(TestSheet))
             Assert.AreEqual(4, eppeo.LookupLastColumnIndex(TestSheet))
@@ -801,7 +769,7 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(9, eppeo.LookupLastColumnIndex(TestSheet))
 
             TestControllingToolFileName = TestFiles.TestFileMergedCells.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             TestSheet = "MergedCellsTest"
             Assert.AreEqual("C3", eppeo.LookupLastCell(TestSheet).Address)
             Assert.AreEqual(2, eppeo.LookupLastRowIndex(TestSheet))
@@ -813,7 +781,7 @@ Namespace ExcelOpsTests.Engines
             Dim TestControllingToolFileName As String = TestFiles.TestFileGrund01.FullName
             Dim TestSheet As String = "Grunddaten"
 
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Assert.AreEqual("E40", eppeo.LookupLastContentCell(TestSheet).Address)
             Assert.AreEqual(39, eppeo.LookupLastContentRowIndex(TestSheet))
             Assert.AreEqual(4, eppeo.LookupLastContentColumnIndex(TestSheet))
@@ -825,7 +793,7 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual(8, eppeo.LookupLastContentColumnIndex(TestSheet))
 
             TestControllingToolFileName = TestFiles.TestFileMergedCells.FullName
-            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             TestSheet = "MergedCellsTest"
             Assert.AreEqual("C3", eppeo.LookupLastContentCell(TestSheet).Address)
             Assert.AreEqual(2, eppeo.LookupLastContentRowIndex(TestSheet))
@@ -875,7 +843,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
@@ -932,7 +900,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     ExpectedMatrix =
                                  "# |A                           |B        |C  |D |E    " & ControlChars.CrLf &
@@ -988,7 +956,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     ExpectedMatrix =
                                  "# |A |B            |C |D                                  " & ControlChars.CrLf &
@@ -1045,7 +1013,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     ExpectedMatrix =
                          "# |A                           |B        |C  |D     |E    " & ControlChars.CrLf &
@@ -1103,7 +1071,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     ExpectedMatrix =
                          "# |A                           |B            |C  |D                                  |E    " & ControlChars.CrLf &
@@ -1169,7 +1137,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     '## Expected matrix like following
                     '"# |A                           |B              |C  |D                                  |E     
@@ -1220,7 +1188,7 @@ Namespace ExcelOpsTests.Engines
 #Region "ExcelCharting"
         Private Function PrepareAndFillExcelFileWithChart(variantOfImage As Byte) As ExcelOps.ExcelDataOperationsBase
             Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileChartSheet01.FullName)
-            Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+            Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Select Case variantOfImage
                 Case 0 'master
                     Workbook.WriteCellValue(Of String)(New ExcelCell("data", "B1", ExcelCell.ValueTypes.All), "Sample Chart")
@@ -1321,7 +1289,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     Console.WriteLine(eppeo.SheetContentMatrix(TestSheet, ExcelDataOperationsBase.MatrixContent.Errors).ToUIExcelTable)
                     '## Expected matrix like following
@@ -1353,7 +1321,7 @@ Namespace ExcelOpsTests.Engines
             TestInCultureContext(
                 cultureName,
                 Sub()
-                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
 
                     Console.WriteLine(eppeo.SheetContentMatrix(TestSheet, ExcelDataOperationsBase.MatrixContent.Errors).ToUIExcelTable)
                     '## Expected matrix like following
@@ -1390,7 +1358,7 @@ Namespace ExcelOpsTests.Engines
         Public Sub TestFileWithEmbeddedPicture01()
             Try
                 Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileEmbeddedPicture01.FullName)
-                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                 Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_embeddedpicture01.xlsx")
                 Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Catch ex As PlatformNotSupportedException
@@ -1416,7 +1384,7 @@ Namespace ExcelOpsTests.Engines
         Public Sub TestFileWithEmbeddedPicture02()
             Try
                 Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileEmbeddedPicture02.FullName)
-                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                 Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_embeddedpicture02.xlsx")
                 Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Catch ex As PlatformNotSupportedException
@@ -1442,7 +1410,7 @@ Namespace ExcelOpsTests.Engines
         Public Sub TestFileWithEmbeddedPicture03()
             Try
                 Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileEmbeddedPicture03.FullName)
-                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                Dim Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                 Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_embeddedpicture02.xlsx")
                 Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Catch ex As PlatformNotSupportedException
@@ -1471,26 +1439,56 @@ Namespace ExcelOpsTests.Engines
 
                 Dim CatchedEx As Exception = Nothing
                 Try
-                    Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing)
+                    Workbook = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                 Catch ex As Exception
                     CatchedEx = ex
                     Workbook = Me.CreateInstance()
                 End Try
                 Select Case Workbook.EngineName
                     Case "Epplus 4 (LGPL)"
-                        Assert.AreEqual(False, Workbook.AutoCalculationOnLoad)
-                        Assert.Null(CatchedEx)
-                        Assert.NotNull(Workbook.FilePath)
+                        Assert.Multiple(
+                            Sub()
+                                Assert.AreEqual(True, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
+                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
+                                Assert.AreEqual(True, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
+                                Assert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
+                                Assert.AreEqual(True, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
+                                Assert.AreEqual(False, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
+                                Assert.Null(CatchedEx)
+                                Assert.NotNull(Workbook.FilePath)
+                            End Sub)
                     Case "Epplus (Polyform license edition)"
-                        Assert.Null(Workbook.FilePath)
-                        Assert.AreEqual(False, Workbook.AutoCalculationOnLoad)
-                        Assert.AreEqual("Circular Reference in cell CircularRefTest!B2", CatchedEx.Message)
-                        Assert.AreEqual("OfficeOpenXml.FormulaParsing.Exceptions.CircularReferenceException", CatchedEx.GetType.FullName)
+                        Assert.Multiple(
+                            Sub()
+                                'Assert.Null(Workbook.FilePath)
+                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
+                                Assert.AreEqual(True, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
+                                Assert.AreEqual(False, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
+                                Assert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
+                                Assert.AreEqual(False, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
+                                Assert.AreEqual(False, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
+                                Assert.Null(CatchedEx, "CatchedEx on AutoCalculationOnLoadEffectively")
+                                Try
+                                    Workbook.RecalculateAll()
+                                Catch ex As Exception
+                                    CatchedEx = ex
+                                End Try
+                                Assert.AreEqual("Circular Reference in cell CircularRefTest!B2", CatchedEx.Message, "CatchedEx on RecalculateAll")
+                                Assert.AreEqual("OfficeOpenXml.FormulaParsing.Exceptions.CircularReferenceException", CatchedEx.GetType.FullName)
+                            End Sub)
                     Case Else
                         Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
-                        Assert.AreEqual(True, Workbook.AutoCalculationOnLoad)
-                        Assert.Null(CatchedEx)
-                        Assert.NotNull(Workbook.FilePath)
+                        Assert.Multiple(
+                            Sub()
+                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
+                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
+                                Assert.AreEqual(False, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
+                                Assert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
+                                Assert.AreEqual(True, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
+                                Assert.AreEqual(True, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
+                                Assert.Null(CatchedEx)
+                                Assert.NotNull(Workbook.FilePath)
+                            End Sub)
                 End Select
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
@@ -1512,7 +1510,7 @@ Namespace ExcelOpsTests.Engines
         Public Sub TestFileWithCircularReference01_LoadAndResaveWithDisabledCalculationEngine()
             Try
                 Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileCircularReference01.FullName)
-                Dim Workbook As T = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Dim Workbook As T = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions("", True, True, True))
                 Dim OutputFile As String = TestEnvironment.FullPathOfDynTestFile(Workbook.GetType, "test_circularref01_rewritten.xlsx")
                 Workbook.SaveAs(OutputFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             Catch ex As PlatformNotSupportedException
@@ -1535,7 +1533,7 @@ Namespace ExcelOpsTests.Engines
         Public Sub TestFileWithCircularReference01_LoadAndRecalculateOnEnabledCalculationEngine()
             Try
                 Dim ExcelFile As String = TestEnvironment.FullPathOfExistingTestFile(TestFiles.TestFileCircularReference01.FullName)
-                Dim Workbook As T = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Dim Workbook As T = Me.CreateInstance(ExcelFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions("", True, True, False))
                 Dim CatchedEx As Exception = Nothing
                 Try
                     If Workbook.CalculationModuleDisabled = False Then
@@ -1577,7 +1575,7 @@ Namespace ExcelOpsTests.Engines
             System.Console.WriteLine("TEST IN FILE: " & TestXlsxFile.FullName)
 
             Try
-                Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                 Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".html")
                 System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                 Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
@@ -1602,7 +1600,7 @@ Namespace ExcelOpsTests.Engines
 
             Try
                 With Nothing
-                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
@@ -1614,7 +1612,7 @@ Namespace ExcelOpsTests.Engines
                     End If
                 End With
                 With Nothing
-                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor-fixed-on-top.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor, .SheetNavigationAlwaysVisible = True})
@@ -1626,7 +1624,7 @@ Namespace ExcelOpsTests.Engines
                     End If
                 End With
                 With Nothing
-                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                    Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-switch.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.SwitchVisibleSheet})
@@ -1655,7 +1653,7 @@ Namespace ExcelOpsTests.Engines
 
             Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Nothing
             Try
-                Wb = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, True, Nothing, True)
+                Wb = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions)
             Catch ex As TypeInitializationException
                 Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
             End Try

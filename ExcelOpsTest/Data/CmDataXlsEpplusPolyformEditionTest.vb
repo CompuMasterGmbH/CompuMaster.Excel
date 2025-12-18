@@ -5,11 +5,20 @@ Option Strict On
 'SEE:     clone-build-files.cmd/.sh/.ps1
 'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
 
+Imports CompuMaster.Excel.ExcelOps
 Imports NUnit.Framework
 
 Namespace Data
 
     Public Class CmDataXlsEpplusPolyformEditionTest
+
+        Public Sub New()
+            AssignLicenseContext()
+        End Sub
+
+        Friend Shared Sub AssignLicenseContext()
+            ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial
+        End Sub
 
         <Test> Public Sub ReadDataSetFromXlsFile()
 

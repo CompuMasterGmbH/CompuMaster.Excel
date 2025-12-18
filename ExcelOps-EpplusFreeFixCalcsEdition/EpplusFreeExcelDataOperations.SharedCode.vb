@@ -927,18 +927,27 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Is the Excel engine allowed to automatically/continuously calculate on every change or does the user has to manually force a recalculation (typically by pressing F9 key in MS Excel)
+        ''' If enabled, the calculation engine will do a full recalculation after every modification.
+        ''' If disabled, the calculation engine is not allowed to automatically/continuously calculate on every change and the user has to manually force a recalculation (typically by pressing F9 key in MS Excel).
         ''' </summary>
         ''' <returns></returns>
-        Public Overrides Property AutoCalculationEnabled As Boolean
+        ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
+        Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
-                Return (Me.Workbook.CalcMode = ExcelCalcMode.Automatic)
+                If Me._WorkbookPackage IsNot Nothing Then
+                    Return (Me.Workbook.CalcMode = ExcelCalcMode.Automatic)
+                Else
+                    Return MyBase.AutoCalculationEnabledWorkbookSetting
+                End If
             End Get
             Set(value As Boolean)
-                If value Then
-                    Me.Workbook.CalcMode = ExcelCalcMode.Automatic
-                Else
-                    Me.Workbook.CalcMode = ExcelCalcMode.Manual
+                MyBase.AutoCalculationEnabledWorkbookSetting = value
+                If Me._WorkbookPackage IsNot Nothing Then
+                    If value Then
+                        Me.Workbook.CalcMode = ExcelCalcMode.Automatic
+                    Else
+                        Me.Workbook.CalcMode = ExcelCalcMode.Manual
+                    End If
                 End If
             End Set
         End Property

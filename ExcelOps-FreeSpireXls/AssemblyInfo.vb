@@ -6,4 +6,4 @@ Imports System.Runtime.InteropServices
 <Assembly: ComVisible(False)>
 
 <Assembly: Runtime.CompilerServices.InternalsVisibleTo("CompuMaster.Excel.Test")>
-<Assembly: Runtime.CompilerServices.InternalsVisibleTo("CompuMaster.Excel.TestSpireXls")>
+<Assembly: Runtime.CompilerServices.InternalsVisibleTo("CompuMaster.Excel.TestFreeSpireXls")>

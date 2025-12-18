@@ -1,4 +1,5 @@
-﻿Imports CompuMaster.Excel.MsExcelCom
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports CompuMaster.Excel.MsExcelCom
 
 Namespace Global.CompuMaster.Excel.MsExcelCom
 
@@ -32,7 +33,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             If MsExcelApp Is Nothing Then
                 MsExcelApp = New MsExcelApplicationWrapper()
             End If
-            Dim wb As New ExcelOps.MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, False, passwordForOpening)
+            Dim wb As New ExcelOps.MsExcelDataOperations(filePath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, New ExcelDataOperationsOptions With {.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite})
             Try
                 wb.RecalculateAll()
                 wb.Save()

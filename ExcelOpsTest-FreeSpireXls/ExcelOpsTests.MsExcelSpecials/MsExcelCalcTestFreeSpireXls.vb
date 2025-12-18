@@ -21,7 +21,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
         End Property
 
         Protected Overrides Function CreateEngineInstance(testFile As String) As ExcelOps.ExcelDataOperationsBase
-            Return New ExcelOps.FreeSpireXlsDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
+            Return New ExcelOps.FreeSpireXlsDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions())
         End Function
 
         Protected Overrides Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)

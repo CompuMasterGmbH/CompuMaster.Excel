@@ -588,15 +588,22 @@ Namespace ExcelOps
         ''' Is the Excel engine allowed to automatically/continuously calculate on every change or does the user has to manually force a recalculation (typically by pressing F9 key in MS Excel)
         ''' </summary>
         ''' <returns></returns>
-        Public Overrides Property AutoCalculationEnabled As Boolean
+        Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
-                Return (Me.Workbook.CalculationMode = ExcelCalculationMode.Auto)
+                If Me._Workbook IsNot Nothing Then
+                    Return (Me.Workbook.CalculationMode = ExcelCalculationMode.Auto)
+                Else
+                    Return MyBase.AutoCalculationEnabledWorkbookSetting
+                End If
             End Get
             Set(value As Boolean)
-                If value Then
-                    Me.Workbook.CalculationMode = ExcelCalculationMode.Auto
-                Else
-                    Me.Workbook.CalculationMode = ExcelCalculationMode.Manual
+                MyBase.AutoCalculationEnabledWorkbookSetting = value
+                If Me._Workbook IsNot Nothing Then
+                    If value Then
+                        Me.Workbook.CalculationMode = ExcelCalculationMode.Auto
+                    Else
+                        Me.Workbook.CalculationMode = ExcelCalculationMode.Manual
+                    End If
                 End If
             End Set
         End Property
