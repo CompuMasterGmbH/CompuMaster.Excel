@@ -40,6 +40,23 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        Public Sub New(mode As OpenMode)
+            MyBase.New(mode)
+        End Sub
+
+        ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(mode, options)
+        End Sub
+
+        ''' <summary>
         ''' Open a workbook
         ''' </summary>
         ''' <param name="data"></param>
@@ -109,13 +126,6 @@ Namespace ExcelOps
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, True, passwordForOpening)
-        End Sub
-
-        ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
-        ''' </summary>
-        Friend Sub New()
-            MyBase.New(New ExcelDataOperationsOptions)
         End Sub
 
         ''' <summary>

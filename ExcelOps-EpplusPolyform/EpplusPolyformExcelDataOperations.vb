@@ -171,10 +171,20 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
-        Friend Sub New()
-            MyBase.New(New ExcelDataOperationsOptions)
+        ''' <param name="mode"></param>
+        Public Sub New(mode As OpenMode)
+            MyBase.New(mode)
+        End Sub
+
+        ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(mode, options)
         End Sub
 
         ''' <summary>

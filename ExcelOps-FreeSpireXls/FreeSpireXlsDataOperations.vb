@@ -118,14 +118,28 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
+        ''' <param name="mode"></param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
-        Friend Sub New()
-            MyBase.New(New ExcelDataOperationsOptions)
+        Public Sub New(mode As OpenMode)
+            MyBase.New(mode)
+        End Sub
+
+        ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        ''' <remarks>
+        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
+        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
+        ''' </remarks>
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(mode, options)
         End Sub
 
         ''' <summary>

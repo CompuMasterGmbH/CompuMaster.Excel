@@ -13,7 +13,7 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.FreeSpireXlsDataOperations
-            Return New ExcelOps.FreeSpireXlsDataOperations()
+            Return New ExcelOps.FreeSpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <Test> Public Overrides Sub CopySheetContent()

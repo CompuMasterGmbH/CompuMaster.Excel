@@ -47,9 +47,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Property
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
-        ''' <remarks>Use with pattern
+        ''' <param name="mode"></param>
+        ''' <remarks>
+        ''' For holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
         ''' Try
@@ -59,16 +62,18 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks> 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
-        Public Sub New(passwordForOpeningOnNextTime As String)
-            Me.New(Nothing, OpenMode.CreateFile, False, True, passwordForOpeningOnNextTime)
+        Public Sub New(mode As OpenMode)
+            MyBase.New(mode)
         End Sub
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
-        ''' <remarks>Use with pattern
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        ''' <remarks>
+        ''' For holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
         ''' Try
@@ -78,8 +83,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks> 
-        Friend Sub New()
-            MyBase.New(New ExcelDataOperationsOptions)
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(mode, options)
         End Sub
 
         ''' <summary>
@@ -260,7 +265,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     Me.LoadAndInitializeWorkbookFile(file, options)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file, options)
-                    Me.ReadOnly = [ReadOnly] OrElse (file = Nothing)
+                    Me.ReadOnly = Me.[ReadOnly] OrElse (file = Nothing)
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select

@@ -34,6 +34,7 @@ Namespace ExcelOps
         ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             MyBase.New(file, mode, options)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         ''' <summary>
@@ -43,6 +44,7 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         ''' <summary>
@@ -52,6 +54,7 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         ''' <summary>
@@ -88,32 +91,47 @@ Namespace ExcelOps
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
-        ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
-        Friend Sub New()
-            MyBase.New(New ExcelDataOperationsOptions)
+        ''' <param name="mode"></param>
+        Public Sub New(mode As OpenMode)
+            MyBase.New(mode)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
+        End Sub
+
+        ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(mode, options)
+            If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
         ''' <summary>

@@ -3,6 +3,7 @@ Option Strict On
 
 Imports System.IO
 Imports System.Text
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
 
 Namespace ExcelOps
 
@@ -12,8 +13,18 @@ Namespace ExcelOps
     Public MustInherit Class ExcelDataOperationsBase
 
         Public Enum OpenMode As Byte
+            ''' <summary>
+            ''' Open an existing workbook from file
+            ''' </summary>
             OpenExistingFile = 0
+            ''' <summary>
+            ''' Create a new workbook
+            ''' </summary>
             CreateFile = 1
+            ''' <summary>
+            ''' Just create the engine instance, but don't create or load a workbook explicitly (except the Excel engine automatically creates a new workbook implicitly)
+            ''' </summary>
+            Uninitialized = 255
         End Enum
 
         ''' <summary>
@@ -24,19 +35,44 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options</param>
         Protected Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             Me.New(options)
-            If mode = OpenMode.OpenExistingFile AndAlso file = Nothing Then
-                Throw New ArgumentNullException(NameOf(file), "File path must be provided when opening an existing file")
-            End If
             Select Case mode
                 Case OpenMode.OpenExistingFile
+                    If file = Nothing Then Throw New ArgumentNullException(NameOf(file), "File path must be provided when opening an existing file")
+                    If options.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile Then Throw New NotSupportedException("Option's WriteProtectionMode property must not be equal to " & WriteProtectionMode.DefaultBehaviourOnCreateFile.ToString)
                     Me.LoadAndInitializeWorkbookFile(file, options)
                 Case OpenMode.CreateFile
                     Me.CreateAndInitializeWorkbookFile(file, options)
-                    Me.ReadOnly = [ReadOnly] OrElse (file = Nothing)
+                    If options.FileWriteProtection = WriteProtectionMode.DefaultBehaviourOnCreateFile Then
+                        Me.ReadOnly = (file = Nothing)
+                    End If
+                Case OpenMode.Uninitialized
+                    'do nothing
                 Case Else
-                    Throw New ArgumentOutOfRangeException(NameOf(mode))
+                    Throw New NotImplementedException("OpenMode not implemented: " & mode.ToString)
             End Select
         End Sub
+
+        ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        Public Sub New(mode As OpenMode)
+            Me.New("", OpenModeMustNotBeOpenExistingFile(mode), New ExcelDataOperationsOptions(WriteProtectionMode.DefaultBehaviourOnCreateFile))
+        End Sub
+
+        ''' <summary>
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' </summary>
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            Me.New("", OpenModeMustNotBeOpenExistingFile(mode), options)
+        End Sub
+
+        Private Shared Function OpenModeMustNotBeOpenExistingFile(mode As OpenMode) As OpenMode
+            If mode = OpenMode.OpenExistingFile Then Throw New ArgumentOutOfRangeException(NameOf(mode), "Mode " & mode.ToString & " not supported for this constructor overload")
+            Return mode
+        End Function
 
         ''' <summary>
         ''' Open a workbook
@@ -86,8 +122,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Private Sub New()
-            Me.New(New ExcelDataOperationsOptions)
+            Me.New(New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
         End Sub
 
         ''' <summary>
@@ -114,8 +152,8 @@ Namespace ExcelOps
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+                                <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+                                    <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(file As String, mode As OpenMode, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, [readOnly], passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -142,8 +180,8 @@ Namespace ExcelOps
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="passwordForOpening"></param>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+                                        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+                                            <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(data As Byte(), autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, True, passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -162,8 +200,8 @@ Namespace ExcelOps
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="passwordForOpening"></param>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+                                                <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+                                                    <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(data As System.IO.Stream, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, True, passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -180,8 +218,8 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
         ''' <param name="calculationModuleDisabled">Disables the Excel calculation engine</param>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+                                                        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+                                                            <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, [readOnly], passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -264,8 +302,8 @@ Namespace ExcelOps
         ''' </summary>
         ''' <returns></returns>
         ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
-        <Obsolete("Use AutoCalculationEnabledWorkbookSetting instead", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+                                                                <Obsolete("Use AutoCalculationEnabledWorkbookSetting instead", True)>
+                                                                    <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Property AutoCalculationEnabled As Boolean
             Get
                 Return AutoCalculationEnabledWorkbookSetting
@@ -392,7 +430,7 @@ Namespace ExcelOps
         ''' Apply CachedCalculation setting
         ''' </summary>
         ''' <param name="cachedCalculationsOption"></param>
-        <CodeAnalysis.SuppressMessage("Naming", "CA1707:Bezeichner dürfen keine Unterstriche enthalten")>
+                                                                                <CodeAnalysis.SuppressMessage("Naming", "CA1707:Bezeichner dürfen keine Unterstriche enthalten")>
         Protected Overridable Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.DefaultBehaviour Then
                 cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.NoReset
@@ -419,8 +457,8 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
-        <Obsolete("Use overloaded method", True)>
-        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+                                                                                    <Obsolete("Use overloaded method", True)>
+                                                                                        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub SaveAs(filePath As String)
             Me.SaveAs(filePath, SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         End Sub
@@ -1860,8 +1898,8 @@ Namespace ExcelOps
             Dim adj As Func(Of Integer, Integer) =
                 Function(ch As Integer)
                     Dim v As Double
-                    If tint < 0 Then
-                        v = ch * (1.0 + tint)                   ' dunkler
+                    If tint <0 Then
+                        v= ch * (1.0 + tint)                   ' dunkler
                     Else
                         v = ch * (1.0 - tint) + 255.0 * tint    ' heller
                     End If

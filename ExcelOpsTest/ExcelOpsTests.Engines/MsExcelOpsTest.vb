@@ -16,7 +16,7 @@ Namespace ExcelOpsTests.Engines
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
                 MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
-            Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, New ExcelDataOperationsOptions)
+            Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, options)
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.MsExcelDataOperations
@@ -26,7 +26,7 @@ Namespace ExcelOpsTests.Engines
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
                 MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
-            Return New ExcelOps.MsExcelDataOperations(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, MsExcelInstance, False, New ExcelDataOperationsOptions)
+            Return New ExcelOps.MsExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <OneTimeSetUp>

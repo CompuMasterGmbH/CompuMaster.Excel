@@ -1,4 +1,5 @@
-﻿Imports NUnit.Framework
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 
 Namespace ExcelOpsTests.Engines
 
@@ -16,7 +17,7 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.SpireXlsDataOperations
-            Return New ExcelOps.SpireXlsDataOperations()
+            Return New ExcelOps.SpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <Test> Public Overrides Sub CopySheetContent()
@@ -37,12 +38,12 @@ Namespace ExcelOpsTests.Engines
             'Simulation: license assigned
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = True
             Assert.NotNull(Me.CreateInstance)
-            Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions))
+            Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)))
 
             'No license assigned -> instancing must fail
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = False
             Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance())
-            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions))
+            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)))
         End Sub
 
         <Test>

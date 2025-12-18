@@ -15,13 +15,13 @@ Namespace ExcelOpsTests.MsExcelSpecials
         Protected Overrides ReadOnly Property EngineName As String
             Get
                 Static Result As String
-                If Result Is Nothing Then Result = (New ExcelOps.EpplusFreeExcelDataOperations()).EngineName
+                If Result Is Nothing Then Result = (New ExcelOps.EpplusFreeExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
                 Return Result
             End Get
         End Property
 
-        Protected Overrides Function CreateEngineInstance(testFile As String) As ExcelOps.ExcelDataOperationsBase
-            Return New ExcelOps.EpplusFreeExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions())
+        Protected Overrides Function CreateEngineInstanceWithCreateFileMode(testFile As String) As ExcelOps.ExcelDataOperationsBase
+            Return New ExcelOps.EpplusFreeExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile))
         End Function
 
         Protected Overrides Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)

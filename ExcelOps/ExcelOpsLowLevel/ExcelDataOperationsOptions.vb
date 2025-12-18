@@ -11,12 +11,6 @@ Namespace ExcelOps
     ''' </summary>
     Public Class ExcelDataOperationsOptions
 
-        ''' <summary>
-        ''' Create a new options instance
-        ''' </summary>
-        Public Sub New()
-        End Sub
-
         Public Sub New(fileProtection As WriteProtectionMode)
             Me.FileWriteProtection = fileProtection
         End Sub
@@ -63,13 +57,17 @@ Namespace ExcelOps
 
         Public Enum WriteProtectionMode As Byte
             ''' <summary>
+            ''' If a file path is present, ReadWrite mode is enabled, without a file path, ReadOnly mode is active
+            ''' </summary>
+            DefaultBehaviourOnCreateFile = 0
+            ''' <summary>
             ''' File can't be saved (saving with same file name is forbidden), but SaveAs with another file name is allowed
             ''' </summary>
-            [ReadOnly] = 0
+            [ReadOnly] = 1
             ''' <summary>
             ''' No limitation
             ''' </summary>
-            ReadWrite = 1
+            ReadWrite = 4
         End Enum
 
         ''' <summary>

@@ -6,7 +6,7 @@ TextTable formulasOrValues;
 TextTable values;
 
 //Create a workbook and put some values and formulas
-workbook = new EpplusFreeExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
+workbook = new EpplusFreeExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile));
 System.Console.WriteLine("Engine=" + workbook.EngineName);
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);
@@ -27,7 +27,7 @@ System.Console.WriteLine(values.ToUIExcelTable());
 EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
 //Create a workbook and put some values and formulas
-workbook = new EpplusPolyformExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
+workbook = new EpplusPolyformExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile));
 System.Console.WriteLine("Engine=" + workbook.EngineName);
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);
@@ -65,7 +65,7 @@ System.Console.WriteLine(values.ToUIExcelTable());
 
 
 //Create a workbook and put some values and formulas
-workbook = new MsExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions());
+workbook = new MsExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile));
 System.Console.WriteLine("Engine=" + workbook.EngineName);
 FirstSheetName = workbook.SheetNames()[0];
 workbook.WriteCellValue<int>(FirstSheetName, 0, 0, 123);

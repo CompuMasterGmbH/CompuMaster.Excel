@@ -21,7 +21,7 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.EpplusPolyformExcelDataOperations
-            Return New ExcelOps.EpplusPolyformExcelDataOperations()
+            Return New ExcelOps.EpplusPolyformExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <Test> Public Overrides Sub CopySheetContent()

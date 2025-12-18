@@ -1,4 +1,5 @@
-﻿Imports NUnit.Framework
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 
 Namespace ExcelOpsTests.Engines
 
@@ -13,7 +14,7 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Protected Overrides Function _CreateInstance() As ExcelOps.EpplusFreeExcelDataOperations
-            Return New ExcelOps.EpplusFreeExcelDataOperations()
+            Return New ExcelOps.EpplusFreeExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <Test> Public Overrides Sub CopySheetContent()
