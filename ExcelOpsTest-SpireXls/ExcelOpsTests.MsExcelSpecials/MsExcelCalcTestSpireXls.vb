@@ -15,7 +15,10 @@ Namespace ExcelOpsTests.MsExcelSpecials
         Protected Overrides ReadOnly Property EngineName As String
             Get
                 Static Result As String
-                If Result Is Nothing Then Result = (New ExcelOps.SpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
+                If Result Is Nothing Then
+                    ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = True
+                    Result = (New ExcelOps.SpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
+                End If
                 Return Result
             End Get
         End Property
