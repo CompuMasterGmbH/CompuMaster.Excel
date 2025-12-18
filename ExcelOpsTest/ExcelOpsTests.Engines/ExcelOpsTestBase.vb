@@ -1306,15 +1306,17 @@ Namespace ExcelOpsTests.Engines
                     Assert.AreEqual("#DIV/0!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "A1", ExcelOps.ExcelCell.ValueTypes.All)))
                     Assert.AreEqual("#NAME?", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "B1", ExcelOps.ExcelCell.ValueTypes.All)))
                     Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "C1", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
                     Assert.AreEqual("#VALUE!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "F1", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'NOTE: Known expected behaviour for #NUM! error value is differently between the several engines
                     Select Case eppeo.EngineName
-                        Case "Spire.Xls", "FreeSpire.Xls" ', "Epplus (Polyform license edition)"
-                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
-                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=10^1000)")
+                        Case "Spire.Xls", "FreeSpire.Xls", "Epplus (Polyform license edition)"
+                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
+                            'Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            'Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
                         Case Else
+                            Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
                             Assert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
                     End Select
 
@@ -1357,13 +1359,13 @@ Namespace ExcelOpsTests.Engines
                             Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
                             Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count) 'Error detection not working (correctly) in engine at D1
                             Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
-                            'Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
+                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
                         Case "Epplus (Polyform license edition)"
                             Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
                             Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
                             Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
                             Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
-                            'Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
+                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
                         Case Else
                             Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
                             Assert.AreEqual(2, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
