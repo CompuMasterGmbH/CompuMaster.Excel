@@ -1,5 +1,6 @@
 ﻿Option Explicit On
 Option Strict On
+Imports CompuMaster.Excel.ExcelOps
 
 Namespace Data
 
@@ -10,7 +11,7 @@ Namespace Data
         End Sub
 
         Friend Shared Sub AssignLicenseContext()
-            ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial
+            ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = New EpplusPolyformExcelDataOperations.EpplusLicenseActivator(OfficeOpenXml.EPPlusLicenseType.NonCommercialPersonal, "Unit Testing ExcelDataOperations")
         End Sub
 
     End Class

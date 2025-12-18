@@ -33,6 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	  <PackageReference Include="EPPlus" Version="8.4.0" />
 	  <PackageReference Include="JUnitTestLogger4GitHub" Version="1.1.1" />
 	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
     <PackageReference Include="NUnit" Version="3.13.3" />

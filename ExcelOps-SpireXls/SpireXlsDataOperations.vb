@@ -28,10 +28,6 @@ Namespace ExcelOps
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
         ''' <param name="options">File and engine options</param>
-        ''' <remarks>
-        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
-        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
-        ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             MyBase.New(file, mode, options)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")

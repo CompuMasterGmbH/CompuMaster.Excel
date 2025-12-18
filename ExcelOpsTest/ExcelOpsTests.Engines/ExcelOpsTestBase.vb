@@ -1478,8 +1478,7 @@ Namespace ExcelOpsTests.Engines
                                 Catch ex As Exception
                                     CatchedEx = ex
                                 End Try
-                                Assert.AreEqual("Circular Reference in cell CircularRefTest!B2", CatchedEx.Message, "CatchedEx on RecalculateAll")
-                                Assert.AreEqual("OfficeOpenXml.FormulaParsing.Exceptions.CircularReferenceException", CatchedEx.GetType.FullName)
+                                Assert.Null(CatchedEx, "CatchedEx on AutoCalculationOnLoadEffectively")
                             End Sub)
                     Case Else
                         Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
@@ -1548,9 +1547,6 @@ Namespace ExcelOpsTests.Engines
                     CatchedEx = ex
                 End Try
                 Select Case Workbook.EngineName
-                    Case "Epplus (Polyform license edition)"
-                        Assert.AreEqual("Circular Reference in cell CircularRefTest!B2", CatchedEx.Message)
-                        Assert.AreEqual("OfficeOpenXml.FormulaParsing.Exceptions.CircularReferenceException", CatchedEx.GetType.FullName)
                     Case Else
                         Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
                         Assert.Null(CatchedEx)

@@ -24,7 +24,7 @@ System.Console.WriteLine(values.ToUIExcelTable());
 
 
 //Assign required license context for Epplus component
-EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+EpplusPolyformExcelDataOperations.LicenseContext = new EpplusPolyformExcelDataOperations.EpplusLicenseActivator(OfficeOpenXml.EPPlusLicenseType.NonCommercialPersonal, "Unit Testing");
 
 //Create a workbook and put some values and formulas
 workbook = new EpplusPolyformExcelDataOperations(null, ExcelDataOperationsBase.OpenMode.CreateFile, new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile));

@@ -14,7 +14,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
         <OneTimeSetUp>
         Public Sub InitializeLicenseContext()
-            ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial
+            ExcelOps.EpplusPolyformExcelDataOperations.LicenseContext = New EpplusPolyformExcelDataOperations.EpplusLicenseActivator(OfficeOpenXml.EPPlusLicenseType.NonCommercialPersonal, "Unit Testing ExcelDataOperations")
         End Sub
 
         Protected Overrides ReadOnly Property EngineName As String

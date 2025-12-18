@@ -29,35 +29,11 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' The license context for Epplus (see its polyform license)
-        ''' </summary>
-        ''' <remarks>https://epplussoftware.com/en/LicenseOverview/LicenseFAQ</remarks>
-        ''' <returns></returns>
-        Public Shared Property LicenseContext As OfficeOpenXml.LicenseContext?
-            Get
-                Return OfficeOpenXml.ExcelPackage.LicenseContext
-            End Get
-            Set(value As OfficeOpenXml.LicenseContext?)
-                OfficeOpenXml.ExcelPackage.LicenseContext = value
-            End Set
-        End Property
-
-        Private Shared Sub ValidateLicenseContext(instance As EpplusPolyformExcelDataOperations)
-            If LicenseContext.HasValue = False Then
-                Throw New System.ComponentModel.LicenseException(GetType(EpplusPolyformExcelDataOperations), instance, NameOf(LicenseContext) & " must be assigned before creating instances")
-            End If
-        End Sub
-
-        ''' <summary>
         ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
         ''' <param name="options">File and engine options</param>
-        ''' <remarks>
-        ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
-        ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
-        ''' </remarks>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             MyBase.New(file, mode, options)
         End Sub
@@ -203,6 +179,64 @@ Namespace ExcelOps
                 Return "Epplus (Polyform license edition)"
             End Get
         End Property
+
+        ''' <summary>
+        ''' The license context for Epplus (see its polyform license)
+        ''' </summary>
+        ''' <remarks>https://epplussoftware.com/en/LicenseOverview/LicenseFAQ</remarks>
+        ''' <returns></returns>
+        Public Shared Property LicenseContext As EpplusLicenseActivator?
+            Get
+                If OfficeOpenXml.ExcelPackage.License.LicenseType Is Nothing Then
+                    Return Nothing
+                End If
+                Select Case OfficeOpenXml.ExcelPackage.License.LicenseType.Value
+                    Case OfficeOpenXml.EPPlusLicenseType.Commercial
+                        Return New EpplusLicenseActivator(OfficeOpenXml.ExcelPackage.License.LicenseType.Value, OfficeOpenXml.ExcelPackage.License.LicenseKey)
+                    Case OfficeOpenXml.EPPlusLicenseType.NonCommercialOrganization, OfficeOpenXml.EPPlusLicenseType.NonCommercialPersonal
+                        Return New EpplusLicenseActivator(OfficeOpenXml.ExcelPackage.License.LicenseType.Value, OfficeOpenXml.ExcelPackage.License.LegalName)
+                    Case Else
+                        Throw New NotImplementedException("Unsupported license type: " & OfficeOpenXml.ExcelPackage.License.LicenseType.Value.ToString())
+                End Select
+            End Get
+            Set(value As EpplusLicenseActivator?)
+                If value.HasValue = False Then Throw New ArgumentNullException(NameOf(value), "License must be specified")
+                If value.Value.KeyOrName = Nothing Then Throw New ArgumentNullException(NameOf(value), "License must be specified with license key or licensor name")
+                Select Case value.Value.LicenseType
+                    Case EPPlusLicenseType.Commercial
+                        OfficeOpenXml.ExcelPackage.License.SetCommercial(value.Value.KeyOrName)
+                    Case EPPlusLicenseType.NonCommercialOrganization
+                        OfficeOpenXml.ExcelPackage.License.SetNonCommercialOrganization(value.Value.KeyOrName)
+                    Case EPPlusLicenseType.NonCommercialPersonal
+                        OfficeOpenXml.ExcelPackage.License.SetNonCommercialPersonal(value.Value.KeyOrName)
+                    Case Else
+                        Throw New NotImplementedException("Unsupported license type: " & value.Value.LicenseType.ToString())
+                End Select
+            End Set
+        End Property
+
+        Public Structure EpplusLicenseActivator
+
+            Public Sub New(licenseType As OfficeOpenXml.EPPlusLicenseType, licenseKeyOrLegalName As String)
+                Me.LicenseType = licenseType
+                Me.KeyOrName = licenseKeyOrLegalName
+            End Sub
+
+            Public Property LicenseType As OfficeOpenXml.EPPlusLicenseType
+
+            ''' <summary>
+            ''' License key for commercial use or personal/organisation name for non-commercial use
+            ''' </summary>
+            ''' <returns></returns>
+            Public Property KeyOrName As String
+
+        End Structure
+
+        Private Shared Sub ValidateLicenseContext(instance As EpplusPolyformExcelDataOperations)
+            If LicenseContext.HasValue = False Then
+                Throw New System.ComponentModel.LicenseException(GetType(EpplusPolyformExcelDataOperations), instance, NameOf(LicenseContext) & " must be assigned before creating instances")
+            End If
+        End Sub
 
         Private _WorkbookPackage As OfficeOpenXml.ExcelPackage
         Public ReadOnly Property WorkbookPackage As OfficeOpenXml.ExcelPackage
@@ -546,6 +580,72 @@ Namespace ExcelOps
         End Function
 
 #End Region
+
+#Disable Warning CA1034 ' Nested types should not be visible
+        Public Class FormulaParserLogger
+#Enable Warning CA1034 ' Nested types should not be visible
+            Implements OfficeOpenXml.FormulaParsing.Logging.IFormulaParserLogger
+
+            Public ReadOnly Property FullLog As New System.Text.StringBuilder
+            Public ReadOnly Property ExceptionsLog As New System.Text.StringBuilder
+
+            Public Sub Log(context As ParsingContext, ex As Exception) Implements IFormulaParserLogger.Log
+                Me.FullLog.AppendLine("ERROR at " & context.ToString & ": " & ex.ToString)
+                Me.ExceptionsLog.AppendLine("ERROR at " & context.ToString & ": " & ex.Message)
+            End Sub
+
+            Public Sub Log(context As ParsingContext, message As String) Implements IFormulaParserLogger.Log
+                Me.FullLog.AppendLine("WARNING at " & context.Parser.ToString & ": " & message)
+            End Sub
+
+            Public Sub Log(message As String) Implements IFormulaParserLogger.Log
+                Me.FullLog.AppendLine("WARNING: " & message)
+            End Sub
+
+            Public Sub LogCellCounted() Implements IFormulaParserLogger.LogCellCounted
+                Me.FullLog.AppendLine("INFO: CellCounted")
+            End Sub
+
+            Public Sub LogFunction(func As String) Implements IFormulaParserLogger.LogFunction
+                Me.FullLog.AppendLine("FUNC: " & func)
+            End Sub
+
+            Public Sub LogFunction(func As String, milliseconds As Long) Implements IFormulaParserLogger.LogFunction
+                Me.FullLog.AppendLine("FUNC: " & func & " (required " & milliseconds & " ms)")
+            End Sub
+
+#Region "IDisposable Support"
+            Private disposedValue As Boolean ' Dient zur Erkennung redundanter Aufrufe.
+
+            ' IDisposable
+            Protected Overridable Sub Dispose(disposing As Boolean)
+                If Not disposedValue Then
+                    If disposing Then
+                        ' TODO: verwalteten Zustand (verwaltete Objekte) entsorgen.
+                    End If
+
+                    ' TODO: nicht verwaltete Ressourcen (nicht verwaltete Objekte) freigeben und Finalize() weiter unten überschreiben.
+                    ' TODO: große Felder auf Null setzen.
+                End If
+                disposedValue = True
+            End Sub
+
+            ' TODO: Finalize() nur überschreiben, wenn Dispose(disposing As Boolean) weiter oben Code zur Bereinigung nicht verwalteter Ressourcen enthält.
+            'Protected Overrides Sub Finalize()
+            '    ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in Dispose(disposing As Boolean) weiter oben ein.
+            '    Dispose(False)
+            '    MyBase.Finalize()
+            'End Sub
+
+            ' Dieser Code wird von Visual Basic hinzugefügt, um das Dispose-Muster richtig zu implementieren.
+            Public Sub Dispose() Implements IDisposable.Dispose
+                ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in Dispose(disposing As Boolean) weiter oben ein.
+                Dispose(True)
+                ' TODO: Auskommentierung der folgenden Zeile aufheben, wenn Finalize() oben überschrieben wird.
+                GC.SuppressFinalize(Me)
+            End Sub
+#End Region
+        End Class
 
     End Class
 
