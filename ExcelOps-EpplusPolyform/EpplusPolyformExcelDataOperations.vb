@@ -24,7 +24,7 @@ Namespace ExcelOps
 
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
-                Return New ExcelEngineDefaultOptions(True, False)
+                Return New ExcelEngineDefaultOptions(False, False)
             End Get
         End Property
 

@@ -1462,24 +1462,6 @@ Namespace ExcelOpsTests.Engines
                                 Assert.Null(CatchedEx)
                                 Assert.NotNull(Workbook.FilePath)
                             End Sub)
-                    Case "Epplus (Polyform license edition)"
-                        Assert.Multiple(
-                            Sub()
-                                'Assert.Null(Workbook.FilePath)
-                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
-                                Assert.AreEqual(True, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
-                                Assert.AreEqual(False, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
-                                Assert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
-                                Assert.AreEqual(False, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
-                                Assert.AreEqual(False, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
-                                Assert.Null(CatchedEx, "CatchedEx on AutoCalculationOnLoadEffectively")
-                                Try
-                                    Workbook.RecalculateAll()
-                                Catch ex As Exception
-                                    CatchedEx = ex
-                                End Try
-                                Assert.Null(CatchedEx, "CatchedEx on AutoCalculationOnLoadEffectively")
-                            End Sub)
                     Case Else
                         Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
                         Assert.Multiple(

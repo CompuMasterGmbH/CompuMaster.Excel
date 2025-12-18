@@ -33,7 +33,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
         End Function
 
         Protected Overrides Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Assert.Ignore("Test not applicable for engine " & wb.EngineName)
+            'Assert.Ignore("Test not applicable for engine " & wb.EngineName)
             'CType(wb, ExcelOps.EpplusPolyformExcelDataOperations).ResetCellValueFromFormulaCell(sheetName, rowIndex, columnIndex)
         End Sub
 
