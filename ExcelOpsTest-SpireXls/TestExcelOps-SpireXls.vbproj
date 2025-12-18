@@ -15,20 +15,72 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="test_data\ChartSheet01.xlsx" />
+    <None Remove="test_data\CircularRefs01.xlsx" />
+    <None Remove="test_data\EmbeddedPicture01.xlsx" />
+    <None Remove="test_data\EmbeddedPicture02.xlsx" />
+    <None Remove="test_data\EmbeddedPicture03.xlsx" />
+    <None Remove="test_data\ExcelBaseDateSystem_mac_1904.xlsx" />
+    <None Remove="test_data\ExcelBaseDateSystem_mac_1904b.xlsx" />
+    <None Remove="test_data\ExcelBaseDateSystem_windows_1900.xlsx" />
+    <None Remove="test_data\ExcelOpsErrorValues.xlsx" />
     <None Remove="test_data\ExcelOpsGrund01.xlsx" />
     <None Remove="test_data\ExcelOpsGrund02.xlsx" />
+    <None Remove="test_data\ExcelOpsGrund03.xlsx" />
+    <None Remove="test_data\ExcelOpsMergedCells.xlsx" />
     <None Remove="test_data\ExcelOpsTestCollection.xlsx" />
+    <None Remove="test_data\HtmlExport01.xlsx" />
+    <None Remove="test_data\SampleTable01.xlsx" />
     <None Remove="test_data\VbaProject.xlsm" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="test_data\ChartSheet01.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\CircularRefs01.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\EmbeddedPicture01.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\EmbeddedPicture02.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\EmbeddedPicture03.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelBaseDateSystem_mac_1904.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelBaseDateSystem_mac_1904b.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelBaseDateSystem_windows_1900.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelOpsErrorValues.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="test_data\ExcelOpsGrund01.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="test_data\ExcelOpsGrund02.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="test_data\ExcelOpsGrund03.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\ExcelOpsMergedCells.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="test_data\ExcelOpsTestCollection.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\HtmlExport01.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\SampleTable01.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="test_data\VbaProject.xlsm">

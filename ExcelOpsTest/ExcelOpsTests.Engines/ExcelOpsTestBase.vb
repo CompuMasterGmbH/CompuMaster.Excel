@@ -1,8 +1,9 @@
 ﻿Option Strict On
 Option Explicit On
 
-Imports NUnit.Framework
+Imports CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Text
 Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 Imports NUnit.Framework.Interfaces
 
 Namespace ExcelOpsTests.Engines
@@ -1287,7 +1288,7 @@ Namespace ExcelOpsTests.Engines
 #End Region
 
 #Region "Excel error values in cells"
-        <Test> Public Sub LookupErrorCellValue(<Values("invariant", "de-DE")> cultureName As String)
+        <Test> Public Sub LookupErrorCellValue(<Values("invariant", "de-DE", "en-US")> cultureName As String)
             Dim TestControllingToolFileName As String = TestFiles.TestFileExcelOpsErrorValues.FullName
             Dim TestSheet As String = "Tabelle1"
 
@@ -1298,28 +1299,37 @@ Namespace ExcelOpsTests.Engines
 
                     Console.WriteLine(eppeo.SheetContentMatrix(TestSheet, ExcelDataOperationsBase.MatrixContent.Errors).ToUIExcelTable)
                     '## Expected matrix like following
-                    '# |A      |B     |C    |D    |E      
-                    '--+-------+------+-----+-----+-------
-                    '1 |#DIV/0!|#NAME?|#REF!|#NUM!|#VALUE!   
+                    '# |A      |B     |C    |D    |E    |F      
+                    '--+-------+------+-----+-----+-----+-------
+                    '1 |#DIV/0!|#NAME?|#REF!|#REF!|#NUM!|#VALUE!
 
                     Assert.AreEqual("#DIV/0!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "A1", ExcelOps.ExcelCell.ValueTypes.All)))
                     Assert.AreEqual("#NAME?", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "B1", ExcelOps.ExcelCell.ValueTypes.All)))
                     Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "C1", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("#VALUE!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
+                    Assert.AreEqual("#VALUE!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "F1", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'NOTE: Known expected behaviour for #NUM! error value is differently between the several engines
                     Select Case eppeo.EngineName
                         Case "Spire.Xls", "FreeSpire.Xls" ', "Epplus (Polyform license edition)"
-                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
                             Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=10^1000)")
                         Case Else
-                            Assert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            Assert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
                     End Select
 
                 End Sub)
         End Sub
 
-        <Test> Public Sub FindErrorCellsInWorkbook(<Values("invariant", "de-DE")> cultureName As String)
+        <Test> Public Sub FindErrorCellsInWorkbook_LookupLastCell()
+            Dim TestControllingToolFileName As String = TestFiles.TestFileExcelOpsErrorValues.FullName
+            Dim TestSheet As String = "Tabelle1"
+            System.Console.WriteLine("Testing XLSX: " & TestControllingToolFileName)
+            Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Assert.AreEqual("F1", eppeo.LookupLastCell(TestSheet).Address)
+        End Sub
+
+        <Test> Public Sub FindErrorCellsInWorkbook(<Values("invariant", "de-DE", "en-US")> cultureName As String)
             Dim TestControllingToolFileName As String = TestFiles.TestFileExcelOpsErrorValues.FullName
             Dim TestSheet As String = "Tabelle1"
 
@@ -1328,27 +1338,44 @@ Namespace ExcelOpsTests.Engines
                 Sub()
                     Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
 
+                    Assert.AreEqual("F1", eppeo.LookupLastCell(TestSheet).Address)
                     Console.WriteLine(eppeo.SheetContentMatrix(TestSheet, ExcelDataOperationsBase.MatrixContent.Errors).ToUIExcelTable)
                     '## Expected matrix like following
-                    '# |A      |B     |C    |D    |E      
-                    '--+-------+------+-----+-----+-------
-                    '1 |#DIV/0!|#NAME?|#REF!|#NUM!|#VALUE!
+                    '# |A      |B     |C    |D    |E    |F      
+                    '--+-------+------+-----+-----+-----+-------
+                    '1 |#DIV/0!|#NAME?|#REF!|#REF!|#NUM!|#VALUE!
 
                     Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#DIV/0!").Count)
                     Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NAME?").Count)
-                    Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
                     Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#VALUE!").Count)
 
                     'NOTE: Known expected behaviour for #NUM! error value is differently between the several engines
                     Select Case eppeo.EngineName
-                        Case "Spire.Xls", "FreeSpire.Xls" ', "Epplus (Polyform license edition)"
-                            Assert.AreEqual(0, eppeo.FindErrorCellsInWorkbook("#NUM!").Count) 'Error detection not working (correctly) in engine
-                            Assert.AreEqual(4, eppeo.FindErrorCellsInWorkbook().Count)
-                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=10^1000)")
+                        Case "Spire.Xls", "FreeSpire.Xls"
+                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
+                            Assert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(TestSheet, 0, 4), "E1 >> #NUM") 'Error detection not working (correctly) in engine at E1
+                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
+                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count) 'Error detection not working (correctly) in engine at D1
+                            Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
+                            'Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
+                        Case "Epplus (Polyform license edition)"
+                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
+                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
+                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
+                            Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
+                            'Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
                         Case Else
                             Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
-                            Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
+                            Assert.AreEqual(2, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
+                            Assert.AreEqual(6, eppeo.FindErrorCellsInWorkbook().Count)
                     End Select
+
+                    If eppeo.CalculationModuleDisabled = False Then
+                        eppeo.RecalculateAll()
+                        eppeo.RecalculateCell(TestSheet, 0, 3)
+                        Console.WriteLine("Values after explicit recalculation")
+                        Console.WriteLine(eppeo.SheetContentMatrix(TestSheet, ExcelDataOperationsBase.MatrixContent.Errors).ToUIExcelTable)
+                    End If
                 End Sub)
         End Sub
 
