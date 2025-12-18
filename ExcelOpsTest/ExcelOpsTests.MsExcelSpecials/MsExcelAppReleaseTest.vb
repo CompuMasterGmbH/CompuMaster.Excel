@@ -45,17 +45,17 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Assert.Pass()
         End Sub
 
-        <Test> Public Sub OpenAnCloseMsExcelWithProperProcessCleanup_SeparateMsExcelAppWithExplicitQuit()
-            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, Nothing)
+        <Test> Public Sub OpenAndCloseMsExcelWithProperProcessCleanup_SeparateMsExcelAppWithExplicitQuit()
+            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             DummyCTWb.CloseExcelAppInstance()
             Dim MsExcelProcessesAfterExplicitQuit As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Assert.AreEqual(MsExcelProcessesAfterExplicitQuit.Length, MsExcelProcessesAfterExplicitQuit.Length, "Process count after ExcelApp.Quit")
         End Sub
 
         '<NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit>
-        <Test> Public Sub OpenAnCloseMsExcelWithPropertProcessCleanup_SeparateMsExcelApp(<Values(True, False)> explicitlyCloseMsExcelAppInstance As Boolean)
+        <Test> Public Sub OpenAndCloseMsExcelWithProperProcessCleanup_SeparateMsExcelApp(<Values(True, False)> explicitlyCloseMsExcelAppInstance As Boolean)
             Dim Dummy = Sub()
-                            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, True, Nothing)
+                            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
 #Disable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
                             If explicitlyCloseMsExcelAppInstance Then DummyCTWb.CloseExcelAppInstance()
                             DummyCTWb = Nothing
@@ -69,11 +69,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
         End Sub
 
         '<NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit>
-        <Test> Public Sub OpenAnCloseMsExcelWithPropertProcessCleanup_ReusedMsExcelApp(<Values(True, False)> explicitlyCloseMsExcelAppInstance As Boolean)
+        <Test> Public Sub OpenAndCloseMsExcelWithProperProcessCleanup_ReusedMsExcelApp(<Values(True, False)> explicitlyCloseMsExcelAppInstance As Boolean)
             Dim Dummy = Sub()
                             Dim MsExcelApp As New MsExcelApplicationWrapper()
-                            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
-                            Dim DummyCTWb2 As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, True, Nothing)
+                            Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+                            Dim DummyCTWb2 As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, MsExcelApp, False, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
 #Disable Warning IDE0059 ' Unnötige Zuweisung eines Werts.
                             DummyCTWb = Nothing
                             DummyCTWb2 = Nothing

@@ -24,8 +24,9 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path As String, passwordForOpening As String)
-            Dim Wb As New ExcelOps.EpplusFreeExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, passwordForOpening) With {
-                .RecalculationRequired = True
+            Dim Wb As New ExcelOps.EpplusFreeExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)) With {
+                .RecalculationRequired = True,
+                .PasswordForOpening = passwordForOpening
             }
             Wb.SaveAs(Wb.FilePath, ExcelOps.ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation)
             Wb.Close()
@@ -50,7 +51,7 @@ Namespace ExcelOps
             Dim MsExcelWb As ExcelOps.MsExcelDataOperations = Nothing
             Try
                 MSExcel = New MsExcelCom.MsExcelApplicationWrapper
-                MsExcelWb = New ExcelOps.MsExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, False, passwordForOpening)
+                MsExcelWb = New ExcelOps.MsExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite, passwordForOpening))
                 MsExcelWb.RecalculateAll()
                 MsExcelWb.Save()
                 MsExcelWb.Close()

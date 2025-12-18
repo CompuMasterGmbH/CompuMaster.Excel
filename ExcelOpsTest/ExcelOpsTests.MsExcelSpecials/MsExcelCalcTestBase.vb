@@ -20,7 +20,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
         Protected MustOverride ReadOnly Property EngineName As String
 
-        Protected MustOverride Function CreateEngineInstance(testFile As String) As ExcelOps.ExcelDataOperationsBase
+        Protected MustOverride Function CreateEngineInstanceWithCreateFileMode(testFile As String) As ExcelOps.ExcelDataOperationsBase
 
         Protected MustOverride Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)
 
@@ -79,7 +79,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             System.Console.WriteLine()
 
             'Create new Excel workbook with Epplus and add some cells with values and formulas
-            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstance(TestFile)
+            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstanceWithCreateFileMode(TestFile)
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
 
             Eppeo.WriteCellValue(Of String)(FirstSheetName, 0, 0, "Static value initially set")
@@ -98,14 +98,14 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Eppeo.WriteCellFormula(FirstSheetName, 5, 1, "B3", False)
 
             Select Case EngineName
-                Case (New ExcelOps.EpplusFreeExcelDataOperations()).EngineName
+                Case (New ExcelOps.EpplusFreeExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
                     Assert.AreEqual(True, Eppeo.CalculationModuleDisabled)
                     Assert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+                    Eppeo.CalculationModuleDisabled = False
+                    Assert.AreEqual(False, Eppeo.CalculationModuleDisabled)
                 Case Else
                     Assert.AreEqual(False, Eppeo.CalculationModuleDisabled)
             End Select
-            Eppeo.CalculationModuleDisabled = False
-            Assert.AreEqual(False, Eppeo.CalculationModuleDisabled)
             Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
             'Create workbook copy, open and recalculate and save in MS Excel
@@ -185,7 +185,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             System.Console.WriteLine()
 
             'Create new Excel workbook with Epplus and add some cells with values and formulas
-            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstance(TestFile)
+            Dim Eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateEngineInstanceWithCreateFileMode(TestFile)
             Dim FirstSheetName As String = Eppeo.SheetNames(0)
             Eppeo.AddSheet("Sheet2")
 

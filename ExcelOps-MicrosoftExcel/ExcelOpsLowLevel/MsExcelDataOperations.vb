@@ -2,6 +2,7 @@
 Option Strict On
 
 Imports System.Text
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
 Imports CompuMaster.Excel.MsExcelCom
 Imports Microsoft.Office.Interop.Excel
 Imports MsExcel = Microsoft.Office.Interop.Excel
@@ -40,10 +41,19 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
+            Get
+                Return New ExcelEngineDefaultOptions(False, False)
+            End Get
+        End Property
+
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
-        ''' <remarks>Use with pattern
+        ''' <param name="mode"></param>
+        ''' <remarks>
+        ''' For holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
         ''' Try
@@ -53,14 +63,18 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks> 
-        Public Sub New(passwordForOpeningOnNextTime As String)
-            Me.New(Nothing, OpenMode.CreateFile, False, True, passwordForOpeningOnNextTime)
+        Public Sub New(mode As OpenMode)
+            MyBase.New(mode)
         End Sub
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
         ''' </summary>
-        ''' <remarks>Use with pattern
+        ''' <param name="mode"></param>
+        ''' <param name="options"></param>
+        ''' <remarks>
+        ''' For holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
         ''' Try
@@ -70,8 +84,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks> 
-        Public Sub New()
-            Me.New(Nothing)
+        Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
+            MyBase.New(mode, options)
         End Sub
 
         ''' <summary>
@@ -87,6 +101,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, New MsExcelApplicationWrapper, False, [readOnly], passwordForOpening)
         End Sub
@@ -104,6 +120,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, New MsExcelApplicationWrapper, unprotectWorksheets, [readOnly], passwordForOpening)
         End Sub
@@ -122,7 +140,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        <Obsolete("Use overload; WARNING: this overload always leads to: unprotectWorksheets = True")>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)> '<Obsolete("Use overload; WARNING: this overload always leads to: unprotectWorksheets = True")>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, msExcelApp, True, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
@@ -142,6 +161,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, msExcelApp, unprotectWorksheets, [readOnly], passwordForOpening, False)
         End Sub
@@ -161,6 +182,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String, disableAutoCalculation As Boolean)
 #Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
@@ -172,9 +195,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
             Select Case mode
                 Case OpenMode.OpenExistingFile
-                    Me.LoadAndInitializeWorkbookFile(file)
+                    Me.LoadAndInitializeWorkbookFile(file, ConvertToUnvalidatedOptions(Not disableAutoCalculation, False, [readOnly], passwordForOpening))
                 Case OpenMode.CreateFile
-                    Me.CreateAndInitializeWorkbookFile(file)
+                    Me.CreateAndInitializeWorkbookFile(file, ConvertToUnvalidatedOptions(Not disableAutoCalculation, False, [readOnly], passwordForOpening))
                     Me.ReadOnly = [readOnly] OrElse (file = Nothing)
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(mode))
@@ -182,6 +205,71 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             If unprotectWorksheets = True Then
                 Me.UnprotectSheets()
             End If
+        End Sub
+
+        ''' <summary>
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelOps.CloseExcelAppInstance()
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, options As ExcelOps.ExcelDataOperationsOptions)
+            Me.New(file, mode, New MsExcelApplicationWrapper, False, options)
+        End Sub
+
+        ''' <summary>
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelOps.CloseExcelAppInstance()
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, options As ExcelOps.ExcelDataOperationsOptions)
+            Me.New(file, mode, New MsExcelApplicationWrapper, unprotectWorksheets, options)
+        End Sub
+
+        ''' <summary>
+        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
+        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
+        Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, options As ExcelOps.ExcelDataOperationsOptions)
+#Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen
+#Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
+            MyBase.New(options)
+            Me._MsExcelAppInstance = msExcelApp
+            Me._Workbooks = New MsExcelWorkbooksWrapper(msExcelApp, msExcelApp.ComObjectStronglyTyped.Workbooks)
+            Me.ExecuteOpenModeActions(file, mode, options)
+            If unprotectWorksheets = True Then
+                Me.UnprotectSheets()
+            End If
+        End Sub
+
+        Protected Overrides Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
+            If options.DisableCalculationEngine.Value = True Then Throw New NotSupportedException("MS Excel doesn't support disabling of calculation engine")
+            MyBase.ValidateLoadOptions(options)
         End Sub
 
         '''' <summary>
@@ -300,15 +388,28 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
         End Property
 
-        Public Overrides Property AutoCalculationEnabled As Boolean
+        ''' <summary>
+        ''' If enabled, the calculation engine will do a full recalculation after every modification.
+        ''' If disabled, the calculation engine is not allowed to automatically/continuously calculate on every change and the user has to manually force a recalculation (typically by pressing F9 key in MS Excel).
+        ''' </summary>
+        ''' <returns></returns>
+        ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
+        Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
-                Return (Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic)
+                If Me.MsExcelAppInstance IsNot Nothing AndAlso Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot Nothing AndAlso Me._Workbook IsNot Nothing Then
+                    Return (Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic)
+                Else
+                    Return MyBase.AutoCalculationEnabledWorkbookSetting
+                End If
             End Get
             Set(value As Boolean)
-                If value Then
-                    Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic
-                Else
-                    Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationManual
+                MyBase.AutoCalculationEnabledWorkbookSetting = value
+                If Me.MsExcelAppInstance IsNot Nothing AndAlso Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot Nothing AndAlso Me._Workbook IsNot Nothing Then
+                    If value Then
+                        Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic
+                    Else
+                        Me.MsExcelAppInstance.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationManual
+                    End If
                 End If
             End Set
         End Property
@@ -1103,7 +1204,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Close()
 
             '2. Reload
-            Me.LoadAndInitializeWorkbookFile(TempFile)
+            Me.LoadAndInitializeWorkbookFile(TempFile, Me.LoadOptions)
 
             '3. Reset FileName property
             'Me.WorkbookFilePath = PreservedFileName or Me.SetWorkbookFilePath(PreservedFileName) or similar not available for MS Excel via COM

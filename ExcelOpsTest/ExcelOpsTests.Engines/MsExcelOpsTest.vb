@@ -1,4 +1,5 @@
-﻿Imports NUnit.Framework
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 
 Namespace ExcelOpsTests.Engines
 
@@ -8,24 +9,24 @@ Namespace ExcelOpsTests.Engines
 
         Public Overrides ReadOnly Property ExpectedEngineName As String = "Microsoft Excel (2013 or higher)"
 
-        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean) As ExcelOps.MsExcelDataOperations
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.MsExcelDataOperations
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
                 MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
-            Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, [readOnly], passwordForOpening) With {.AutoCalculationEnabled = Not disableInitialCalculation}
+            Return New ExcelOps.MsExcelDataOperations(file, mode, MsExcelInstance, False, options)
         End Function
 
-        Protected Overrides Function _CreateInstance() As ExcelOps.MsExcelDataOperations
+        Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.MsExcelDataOperations
             If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
                 MsExcelInstance.Workbooks.CloseAllWorkbooks()
             End If
-            Return New ExcelOps.MsExcelDataOperations(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, MsExcelInstance, False, True, Nothing)
+            Return New ExcelOps.MsExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <OneTimeSetUp>
@@ -119,11 +120,11 @@ Namespace ExcelOpsTests.Engines
             MsExcelInstance.SetCultureContext(System.Threading.Thread.CurrentThread.CurrentCulture)
         End Sub
 
-        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.MsExcelDataOperations
+        Protected Overrides Function _CreateInstance(data() As Byte, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.MsExcelDataOperations
             Throw New NotSupportedException
         End Function
 
-        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.MsExcelDataOperations
+        Protected Overrides Function _CreateInstance(data As IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.MsExcelDataOperations
             Throw New NotSupportedException
         End Function
     End Class

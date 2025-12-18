@@ -20,14 +20,16 @@ Namespace ExcelOpsTests.MsExcelSpecials
         Protected Overrides ReadOnly Property EngineName As String
             Get
                 Static Result As String
-                If Result Is Nothing Then Result = (New ExcelOps.EpplusPolyformExcelDataOperations()).EngineName
+                If Result Is Nothing Then
+                    Result = (New ExcelOps.EpplusPolyformExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
+                End If
                 Return Result
             End Get
         End Property
 
-        Protected Overrides Function CreateEngineInstance(testFile As String) As ExcelOps.ExcelDataOperationsBase
+        Protected Overrides Function CreateEngineInstanceWithCreateFileMode(testFile As String) As ExcelOps.ExcelDataOperationsBase
             ExcelOpsTests.Engines.EpplusPolyformEditionOpsTest.AssignLicenseContext()
-            Return New ExcelOps.EpplusPolyformExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, False, String.Empty)
+            Return New ExcelOps.EpplusPolyformExcelDataOperations(testFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile))
         End Function
 
         Protected Overrides Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)

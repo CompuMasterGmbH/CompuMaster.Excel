@@ -1,4 +1,5 @@
-﻿Imports NUnit.Framework
+﻿Imports CompuMaster.Excel.ExcelOps
+Imports NUnit.Framework
 
 Namespace ExcelOpsTests.Engines
 
@@ -11,12 +12,12 @@ Namespace ExcelOpsTests.Engines
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = True
         End Sub
 
-        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean) As ExcelOps.SpireXlsDataOperations
-            Return New ExcelOps.SpireXlsDataOperations(file, mode, [readOnly], passwordForOpening, disableInitialCalculation)
+        Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(file, mode, options)
         End Function
 
-        Protected Overrides Function _CreateInstance() As ExcelOps.SpireXlsDataOperations
-            Return New ExcelOps.SpireXlsDataOperations()
+        Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)
         End Function
 
         <Test> Public Overrides Sub CopySheetContent()
@@ -36,13 +37,13 @@ Namespace ExcelOpsTests.Engines
         Public Sub IsLicensedContext()
             'Simulation: license assigned
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = True
-            Assert.NotNull(Me.CreateInstance)
-            Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing))
+            Assert.NotNull(Me.CreateInstanceUninitialized)
+            Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)))
 
             'No license assigned -> instancing must fail
             ExcelOps.SpireXlsDataOperations.AllowInstancingForNonLicencedContextForTestingPurposesOnly = False
-            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance())
-            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, True, Nothing))
+            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstanceUninitialized())
+            Assert.Throws(Of System.ComponentModel.LicenseException)(Sub() Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelOps.ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)))
         End Sub
 
         <Test>
@@ -50,12 +51,12 @@ Namespace ExcelOpsTests.Engines
             Assert.False(CompuMaster.Excel.ExcelOps.Utils.IsLicensedContext)
         End Sub
 
-        Protected Overrides Function _CreateInstance(data() As Byte, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.SpireXlsDataOperations
-            Return New ExcelOps.SpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        Protected Overrides Function _CreateInstance(data() As Byte, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(data, options)
         End Function
 
-        Protected Overrides Function _CreateInstance(data As IO.Stream, passwordForOpening As String, disableCalculationEngine As Boolean) As ExcelOps.SpireXlsDataOperations
-            Return New ExcelOps.SpireXlsDataOperations(data, passwordForOpening, disableCalculationEngine)
+        Protected Overrides Function _CreateInstance(data As IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.SpireXlsDataOperations
+            Return New ExcelOps.SpireXlsDataOperations(data, options)
         End Function
 
     End Class
