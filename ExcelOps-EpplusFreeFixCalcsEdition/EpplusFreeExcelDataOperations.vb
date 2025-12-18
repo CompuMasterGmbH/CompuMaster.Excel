@@ -144,8 +144,6 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Private Const FULL_CALC_ON_LOAD As Boolean = True
-
         Private _WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
         Public ReadOnly Property WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
             Get

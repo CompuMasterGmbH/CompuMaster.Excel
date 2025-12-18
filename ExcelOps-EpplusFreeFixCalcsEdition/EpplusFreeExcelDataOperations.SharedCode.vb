@@ -513,7 +513,7 @@ Namespace ExcelOps
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = FULL_CALC_ON_LOAD 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
             Me.Workbook.Worksheets.Add("Sheet1")
         End Sub
 
@@ -526,7 +526,7 @@ Namespace ExcelOps
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = FULL_CALC_ON_LOAD 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
         End Sub
 
         Protected Overrides Sub LoadWorkbook(data As Byte())
@@ -545,7 +545,7 @@ Namespace ExcelOps
             Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
             'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = FULL_CALC_ON_LOAD 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
         End Sub
 
         ''' <summary>
