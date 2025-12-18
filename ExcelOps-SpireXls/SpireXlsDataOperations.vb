@@ -65,7 +65,7 @@ Namespace ExcelOps
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
         ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(file, mode, Not disableInitialCalculation, disableCalculationEngine, [readOnly], passwordForOpening)
@@ -80,35 +80,35 @@ Namespace ExcelOps
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
         ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
@@ -139,7 +139,7 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime"></param>
         ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)

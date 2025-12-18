@@ -83,7 +83,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(file, mode, Not disableInitialCalculation, disableCalculationEngine, [readOnly], passwordForOpening)
@@ -93,7 +93,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(file, mode, Not disableInitialCalculation, False, [readOnly], passwordForOpening)
@@ -103,7 +103,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
@@ -113,7 +113,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
@@ -123,7 +123,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
@@ -133,7 +133,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
@@ -143,7 +143,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
@@ -153,7 +153,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
@@ -163,7 +163,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Open a workbook
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
             MyBase.New(data, Not disableInitialCalculation, False, passwordForOpening)
@@ -191,7 +191,7 @@ Namespace ExcelOps
         ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime">Pre-define encryption password on future save actions</param>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(False, True, True, passwordForOpeningOnNextTime)

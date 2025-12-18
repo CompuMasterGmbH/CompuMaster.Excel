@@ -122,7 +122,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
         ''' </summary>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Private Sub New()
             Me.New(New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
@@ -152,8 +152,8 @@ Namespace ExcelOps
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="[readOnly]"></param>
         ''' <param name="passwordForOpening"></param>
-                                <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-                                    <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(file As String, mode As OpenMode, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, [readOnly], passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -180,8 +180,8 @@ Namespace ExcelOps
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="passwordForOpening"></param>
-                                        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-                                            <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(data As Byte(), autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, True, passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -200,8 +200,8 @@ Namespace ExcelOps
         ''' <param name="autoCalculationOnLoad"></param>
         ''' <param name="calculationModuleDisabled"></param>
         ''' <param name="passwordForOpening"></param>
-                                                <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-                                                    <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(data As System.IO.Stream, autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, True, passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))
@@ -218,8 +218,8 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
         ''' <param name="calculationModuleDisabled">Disables the Excel calculation engine</param>
-                                                        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
-                                                            <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Protected Sub New(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(ConvertToUnvalidatedOptions(autoCalculationOnLoad, calculationModuleDisabled, [readOnly], passwordForOpening))
             If autoCalculationOnLoad AndAlso calculationModuleDisabled Then Throw New ArgumentException("Calculation engine is disabled, but AutoCalculation requested", NameOf(autoCalculationOnLoad))

@@ -100,7 +100,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, New MsExcelApplicationWrapper, False, [readOnly], passwordForOpening)
@@ -119,7 +119,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, New MsExcelApplicationWrapper, unprotectWorksheets, [readOnly], passwordForOpening)
@@ -139,7 +139,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)> '<Obsolete("Use overload; WARNING: this overload always leads to: unprotectWorksheets = True")>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)> '<Obsolete("Use overload; WARNING: this overload always leads to: unprotectWorksheets = True")>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, msExcelApp, True, [readOnly], passwordForOpening)
@@ -160,7 +160,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, msExcelApp, unprotectWorksheets, [readOnly], passwordForOpening, False)
@@ -181,7 +181,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' End Try
         ''' </code>
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, unprotectWorksheets As Boolean, [readOnly] As Boolean, passwordForOpening As String, disableAutoCalculation As Boolean)
 #Disable Warning IDE0060 ' Nicht verwendete Parameter entfernen

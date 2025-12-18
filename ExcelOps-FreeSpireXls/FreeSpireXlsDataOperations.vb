@@ -70,7 +70,7 @@ Namespace ExcelOps
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(file, mode, Not disableInitialCalculation, disableCalculationEngine, [readOnly], passwordForOpening)
@@ -87,31 +87,31 @@ Namespace ExcelOps
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
             MyBase.New(file, mode, True, False, [readOnly], passwordForOpening)
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
             MyBase.New(data, Not disableInitialCalculation, disableCalculationEngine, passwordForOpening)
@@ -150,7 +150,7 @@ Namespace ExcelOps
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
         ''' </remarks>
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", True)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(passwordForOpeningOnNextTime As String)
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
