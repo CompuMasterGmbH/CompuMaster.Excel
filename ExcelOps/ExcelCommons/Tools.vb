@@ -64,7 +64,7 @@ Namespace ExcelOps
         ''' <param name="formula"></param>
         ''' <returns></returns>
         Public Shared Function IsFormulaWithoutCellReferences(formula As String) As Boolean
-            Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators)
+            Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators, StringSplitOptions.RemoveEmptyEntries)
             For Each Part As String In Parts
                 If ExcelCell.IsValidAddress(Part, True) = True Then
                     Return False
@@ -79,7 +79,7 @@ Namespace ExcelOps
         ''' <param name="formula"></param>
         ''' <returns></returns>
         Public Shared Function IsFormulaWithoutCellReferencesOrCellReferenceInSameRow(formula As String, rowIndex As Integer) As Boolean
-            Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators)
+            Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators, StringSplitOptions.RemoveEmptyEntries)
             For Each Part As String In Parts
                 If ExcelCell.IsValidAddress(Part, True) = True Then
                     Dim Cell As New ExcelCell(Part, ExcelCell.ValueTypes.All)
