@@ -405,8 +405,19 @@ Namespace ExcelOps
         ''' <summary>
         ''' Save modifications made to the workbook
         ''' </summary>
+        ''' <param name="cachedCalculationsOption"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub Save(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me.Save(New Boolean?, cachedCalculationsOption)
+        End Sub
+
+        ''' <summary>
+        ''' Save modifications made to the workbook
+        ''' </summary>
+        ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
+        ''' <param name="cachedCalculationsOption"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
+        Public Sub Save(recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.ReadOnly = True Then
                 Throw New FileReadOnlyException("File is read-only and can't be saved at same location")
             End If
@@ -416,7 +427,11 @@ Namespace ExcelOps
             If FilePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
                 Me.RemoveVbaProject()
             End If
-            If Me.RecalculationRequired Then Me.RecalculateAll()
+
+            Dim DoRecalculateWorkbook As Boolean = Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False
+            If recalculateWorkbook.HasValue Then DoRecalculateWorkbook = recalculateWorkbook.Value
+            If DoRecalculateWorkbook Then Me.RecalculateAll()
+
             If Me.FilePath <> Nothing AndAlso Me.WorkbookFilePath = Nothing Then
                 'Created workbook, initial save must provide a file path, so use SaveAs method instead
                 Me.SaveAs(Me.FilePath, cachedCalculationsOption)
@@ -440,7 +455,7 @@ Namespace ExcelOps
         ''' Apply CachedCalculation setting
         ''' </summary>
         ''' <param name="cachedCalculationsOption"></param>
-                                                                                <CodeAnalysis.SuppressMessage("Naming", "CA1707:Bezeichner dürfen keine Unterstriche enthalten")>
+        <CodeAnalysis.SuppressMessage("Naming", "CA1707:Bezeichner dürfen keine Unterstriche enthalten")>
         Protected Overridable Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.DefaultBehaviour Then
                 cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.NoReset
@@ -479,6 +494,17 @@ Namespace ExcelOps
         ''' <param name="filePath"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub SaveAs(filePath As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me.SaveAs(filePath, New Boolean?, cachedCalculationsOption)
+        End Sub
+
+        ''' <summary>
+        ''' Save workbook as another file
+        ''' </summary>
+        ''' <param name="filePath"></param>
+        ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
+        ''' <param name="cachedCalculationsOption"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
+        Public Sub SaveAs(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.ReadOnly = True AndAlso Me._FilePath = filePath AndAlso Me.WorkbookFilePath <> Nothing Then
                 Throw New FileReadOnlyException("File """ & filePath & """ is read-only and can't be saved at same location")
             End If
@@ -488,7 +514,10 @@ Namespace ExcelOps
             If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
                 Me.RemoveVbaProject()
             End If
-            If Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False Then Me.RecalculateAll()
+
+            Dim DoRecalculateWorkbook As Boolean = Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False
+            If recalculateWorkbook.HasValue Then DoRecalculateWorkbook = recalculateWorkbook.Value
+            If DoRecalculateWorkbook Then Me.RecalculateAll()
 
             Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
             If Me.AutoCalculationResetToEnabledForAllSavedWorkbooks Then
