@@ -20,6 +20,12 @@ Public NotInheritable Class TestFiles
         End Get
     End Property
 
+    Public Shared ReadOnly Property TestFileLastCellDetection01 As System.IO.FileInfo
+        Get
+            Return New System.IO.FileInfo(TestEnvironment.FullPathOfExistingTestFile("test_data", "LastCellDetection01.xlsx"))
+        End Get
+    End Property
+
     Public Shared ReadOnly Property TestFileCircularReference01 As System.IO.FileInfo
         Get
             Return New System.IO.FileInfo(TestEnvironment.FullPathOfExistingTestFile("test_data", "CircularRefs01.xlsx"))

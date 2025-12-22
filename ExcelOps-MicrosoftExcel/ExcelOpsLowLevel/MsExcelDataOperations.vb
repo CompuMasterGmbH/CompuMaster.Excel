@@ -597,7 +597,17 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <returns></returns>
         Public Overrides Function LookupCellFormat(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Dim Result As Object = CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).DisplayFormat.NumberFormat
             Return CType(Result, String)
         End Function
@@ -753,25 +763,36 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
-        Protected Overrides Function LookupLastContentColumnIndex(sheetName As String, lastMergedCell As ExcelCell) As Integer
+        ''' <param name="lastMergedCellNotEmpty"></param>
+        Protected Overrides Function LookupLastContentColumnIndex(sheetName As String, lastMergedCellNotEmpty As ExcelCell) As Integer
             'INTERNAL NOTE: method override (only) for performance reasons
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
             Dim autoSuggestionLastRowIndex As Integer = LastCell.Row - 1
             Dim autoSuggestedResult As Integer = LastCell.Column - 1
             Dim lastMergeCellRowIndex As Integer
             Dim lastMergeCellColumnIndex As Integer
-            If LastMergedCell IsNot Nothing Then
-                lastMergeCellRowIndex = LastMergedCell.RowIndex
-                lastMergeCellColumnIndex = LastMergedCell.ColumnIndex
+            If lastMergedCellNotEmpty IsNot Nothing Then
+                lastMergeCellRowIndex = lastMergedCellNotEmpty.RowIndex
+                lastMergeCellColumnIndex = lastMergedCellNotEmpty.ColumnIndex
             Else
                 lastMergeCellRowIndex = 0
                 lastMergeCellColumnIndex = 0
             End If
             'Find last content cell
             For colCounter As Integer = autoSuggestedResult To lastMergeCellColumnIndex Step -1
-                For rowCounter As Integer = lastMergeCellRowIndex To autoSuggestionLastRowIndex
+                For rowCounter As Integer = 0 To autoSuggestionLastRowIndex
                     If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
                         Return System.Math.Max(lastMergeCellColumnIndex, colCounter)
                     End If
@@ -784,25 +805,36 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
-        Protected Overrides Function LookupLastContentRowIndex(sheetName As String, lastMergedCell As ExcelCell) As Integer
+        ''' <param name="lastMergedCellNotEmpty"></param>
+        Protected Overrides Function LookupLastContentRowIndex(sheetName As String, lastMergedCellNotEmpty As ExcelCell) As Integer
             'INTERNAL NOTE: method override (only) for performance reasons
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Dim LastCell As MsExcel.Range = Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell)
             Dim autoSuggestionLastColumnIndex As Integer = LastCell.Column - 1
             Dim autoSuggestedResult As Integer = LastCell.Row - 1
             Dim lastMergeCellRowIndex As Integer
             Dim lastMergeCellColumnIndex As Integer
-            If LastMergedCell IsNot Nothing Then
-                lastMergeCellRowIndex = LastMergedCell.RowIndex
-                lastMergeCellColumnIndex = LastMergedCell.ColumnIndex
+            If lastMergedCellNotEmpty IsNot Nothing Then
+                lastMergeCellRowIndex = lastMergedCellNotEmpty.RowIndex
+                lastMergeCellColumnIndex = lastMergedCellNotEmpty.ColumnIndex
             Else
                 lastMergeCellRowIndex = 0
                 lastMergeCellColumnIndex = 0
             End If
             'Find last content cell
             For rowCounter As Integer = autoSuggestedResult To lastMergeCellRowIndex Step -1
-                For colCounter As Integer = lastMergeCellColumnIndex To autoSuggestionLastColumnIndex
+                For colCounter As Integer = 0 To autoSuggestionLastColumnIndex
                     If IsEmptyCell(Sheet, rowCounter, colCounter) = False Then
                         Return System.Math.Max(lastMergeCellRowIndex, rowCounter)
                     End If
@@ -817,7 +849,17 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <param name="sheetName"></param>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Dim UsedRange As New ExcelOps.ExcelRange(sheetName, Sheet.UsedRange.AddressLocal(False, False))
             Dim LastCell As New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell).AddressLocal(False, False), 1), ExcelCell.ValueTypes.All)
             Return Tools.CombineCellAddresses(LastCell, UsedRange.AddressEnd, Tools.CellAddressCombineMode.RightLowerCorner)
@@ -831,7 +873,17 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <param name="rows">Number of rows to remove</param>
         Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Me.RemoveRows(Sheet, startRowIndex, rows)
         End Sub
 
@@ -939,7 +991,17 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <param name="columnIndex">0-based column number</param>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Dim ECell = CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range)
             ECell.Calculate()
             If throwExceptionOnCalculationError AndAlso ECell.Value?.GetType Is GetType(MsExcel.XlCVError) Then
@@ -1216,7 +1278,17 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Dim FoundRanges As New Collections.Specialized.StringCollection()
             For Each x As MsExcel.Range In Sheet.UsedRange
                 If CType(x.MergeCells, Boolean) Then
@@ -1248,13 +1320,33 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Public Overrides Sub AutoFitColumns(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Sheet.Columns.AutoFit()
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
             Dim LastColIndex As Integer = Me.LookupLastColumnIndex(sheetName)
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             Sheet.Columns.AutoFit()
             For ColumnIndex As Integer = 0 To LastColIndex
                 If CType(CType(Sheet.Columns(ColumnIndex + 1), Range).ColumnWidth, Double) < minimumWidth Then
@@ -1264,12 +1356,32 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             CType(Sheet.Columns(columnIndex + 1), Range).AutoFit()
         End Sub
 
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
-            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim Sheet As MsExcel.Worksheet
+            Try
+                Sheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Catch ex As System.Runtime.InteropServices.COMException
+                If ex.HResult = &H8002000B Then
+                    'Ungültiger Index. (Ausnahme von HRESULT: 0x8002000B (DISP_E_BADINDEX))
+                    Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+                Else
+                    Throw
+                End If
+            End Try
             CType(Sheet.Columns(columnIndex + 1), Range).AutoFit()
             If CType(CType(Sheet.Columns(columnIndex + 1), Range).ColumnWidth, Double) < minimumWidth Then
                 CType(Sheet.Columns(columnIndex + 1), Range).ColumnWidth = minimumWidth

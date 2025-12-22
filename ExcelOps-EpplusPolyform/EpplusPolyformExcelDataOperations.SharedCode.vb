@@ -1065,6 +1065,7 @@ Namespace ExcelOps
 
         Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
             Dim Result As New List(Of ExcelOps.ExcelRange)
+            If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
             Dim AllMergedCells = Me.Workbook.Worksheets(sheetName).MergedCells()
             For MyCounter As Integer = 0 To AllMergedCells.Count - 1
                 Result.Add(New ExcelOps.ExcelRange(sheetName, AllMergedCells(MyCounter)))

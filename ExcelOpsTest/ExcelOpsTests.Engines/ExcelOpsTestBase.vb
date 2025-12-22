@@ -780,6 +780,13 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual("C3", eppeo.LookupLastCell(TestSheet).Address)
             Assert.AreEqual(2, eppeo.LookupLastRowIndex(TestSheet))
             Assert.AreEqual(2, eppeo.LookupLastColumnIndex(TestSheet))
+
+            TestControllingToolFileName = TestFiles.TestFileLastCellDetection01.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            TestSheet = "LastCellDetection01"
+            Assert.AreEqual("GD59", eppeo.LookupLastCell(TestSheet).Address)
+            Assert.AreEqual(58, eppeo.LookupLastRowIndex(TestSheet))
+            Assert.AreEqual(185, eppeo.LookupLastColumnIndex(TestSheet))
         End Sub
 
         <Test> Public Sub LookupLastContentCellAddress()
@@ -804,6 +811,13 @@ Namespace ExcelOpsTests.Engines
             Assert.AreEqual("C3", eppeo.LookupLastContentCell(TestSheet).Address)
             Assert.AreEqual(2, eppeo.LookupLastContentRowIndex(TestSheet))
             Assert.AreEqual(2, eppeo.LookupLastContentColumnIndex(TestSheet))
+
+            TestControllingToolFileName = TestFiles.TestFileLastCellDetection01.FullName
+            eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            TestSheet = "LastCellDetection01"
+            Assert.AreEqual("GD59", eppeo.LookupLastContentCell(TestSheet).Address)
+            Assert.AreEqual(58, eppeo.LookupLastContentRowIndex(TestSheet))
+            Assert.AreEqual(185, eppeo.LookupLastContentColumnIndex(TestSheet))
         End Sub
 
         Protected Delegate Sub TestInCultureContextAction()

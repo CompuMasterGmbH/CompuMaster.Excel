@@ -792,23 +792,24 @@ Namespace ExcelOps
         ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
-        Protected Overridable Function LookupLastContentColumnIndex(sheetName As String, lastMergedCell As ExcelCell) As Integer
+        ''' <param name="lastMergedCellNotEmpty"></param>
+        Protected Overridable Function LookupLastContentColumnIndex(sheetName As String, lastMergedCellNotEmpty As ExcelCell) As Integer
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
             Dim autoSuggestionLastRowIndex As Integer = LastCell.RowIndex
             Dim autoSuggestedResult As Integer = LastCell.ColumnIndex
             Dim lastMergeCellRowIndex As Integer
             Dim lastMergeCellColumnIndex As Integer
-            If lastMergedCell IsNot Nothing Then
-                lastMergeCellRowIndex = lastMergedCell.RowIndex
-                lastMergeCellColumnIndex = lastMergedCell.ColumnIndex
+            If lastMergedCellNotEmpty IsNot Nothing Then
+                lastMergeCellRowIndex = lastMergedCellNotEmpty.RowIndex
+                lastMergeCellColumnIndex = lastMergedCellNotEmpty.ColumnIndex
             Else
                 lastMergeCellRowIndex = 0
                 lastMergeCellColumnIndex = 0
             End If
             'Find last content cell
             For colCounter As Integer = autoSuggestedResult To lastMergeCellColumnIndex Step -1
-                For rowCounter As Integer = lastMergeCellRowIndex To autoSuggestionLastRowIndex
+                For rowCounter As Integer = 0 To autoSuggestionLastRowIndex
                     If IsEmptyCell(sheetName, rowCounter, colCounter) = False Then
                         Return System.Math.Max(lastMergeCellColumnIndex, colCounter)
                     End If
@@ -829,23 +830,24 @@ Namespace ExcelOps
         ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
         ''' </summary>
         ''' <param name="sheetName"></param>
-        Protected Overridable Function LookupLastContentRowIndex(sheetName As String, lastMergedCell As ExcelCell) As Integer
+        ''' <param name="lastMergedCellNotEmpty"></param>
+        Protected Overridable Function LookupLastContentRowIndex(sheetName As String, lastMergedCellNotEmpty As ExcelCell) As Integer
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
             Dim autoSuggestionLastColumnIndex As Integer = LastCell.ColumnIndex
             Dim autoSuggestedResult As Integer = LastCell.RowIndex
             Dim lastMergeCellRowIndex As Integer
             Dim lastMergeCellColumnIndex As Integer
-            If lastMergedCell IsNot Nothing Then
-                lastMergeCellRowIndex = lastMergedCell.RowIndex
-                lastMergeCellColumnIndex = lastMergedCell.ColumnIndex
+            If lastMergedCellNotEmpty IsNot Nothing Then
+                lastMergeCellRowIndex = lastMergedCellNotEmpty.RowIndex
+                lastMergeCellColumnIndex = lastMergedCellNotEmpty.ColumnIndex
             Else
                 lastMergeCellRowIndex = 0
                 lastMergeCellColumnIndex = 0
             End If
             'Find last content cell
             For rowCounter As Integer = autoSuggestedResult To lastMergeCellRowIndex Step -1
-                For colCounter As Integer = lastMergeCellColumnIndex To autoSuggestionLastColumnIndex
+                For colCounter As Integer = 0 To autoSuggestionLastColumnIndex
                     If IsEmptyCell(sheetName, rowCounter, colCounter) = False Then
                         Return System.Math.Max(lastMergeCellRowIndex, rowCounter)
                     End If
