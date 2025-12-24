@@ -21,7 +21,11 @@
   <ItemGroup>
     <PackageReference Include="CompuMaster.Data" Version="3.0.2023.724" />
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
-	  <None Include="..\logo_64x64.png">
+    <None Include="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\logo_64x64.png">
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>
 	  </None>
