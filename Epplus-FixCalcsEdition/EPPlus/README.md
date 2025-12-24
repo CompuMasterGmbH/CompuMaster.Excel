@@ -1,4 +1,4 @@
-# EPPlus 4.5.3.3
+# CompuMaster.EPPlus 4.5.3.3
 
 ## Special CompuMaster Edition
 * required for resetting internal calculation caches to force MS Excel to recalculate on next reload (otherwise cells referencing other cells with formulas won't be recalculated correctly)
@@ -8,13 +8,13 @@ EPPlus will from version 5 be licensed under the [Polyform Noncommercial 1.0.0](
 With the new license EPPlus is still free to use in some cases, but will require a commercial license to be used in a commercial business.  
 More information on the license change on [our website]( https://www.epplussoftware.com/Home/LgplToPolyform)
 
-New features in version 4.5:
+## New features in version 4.5:
 * .NET Core support
 * Sparklines
 * Sort method added to ExcelRange
 * Bug fixes and minor changes, see below and visit https://github.com/JanKallman/EPPlus for tutorials, samples and the latest information
 
-Important Notes:
+## Important Notes:
 Breaking change in .NET Core: The Worksheets collection will be zero based as default.
 This can be altered by setting the ExcelPackage.Compatibility.IsWorksheets1Based to true.
 .NET Core will have this property set to false, and .Net 3.5 and .Net 4 version will have this property set to true for backward compatibility reasons.
@@ -22,16 +22,17 @@ This property can also be set via the appsettings.json file in .Net Core or the 
 
 .NET Core uses a preview of System.Drawing.Common, so be aware of that. We will update it as Microsoft releases newer versions.
 System.Drawing.Common requires libgdiplus to be installed on non-Windows operating systems.
-Use your favorite package manager to install it.
+
+## Use your favorite package manager to install it.
 For example:
 
-Homebrew on MacOS:
+### Homebrew on MacOS:
 brew install mono-libgdiplus
 
-apt-get:
+### apt-get:
 apt-get install libgdiplus
 
-EPPlus-A .NET Spreadsheet API
+## EPPlus-A .NET Spreadsheet API
 
 Changes
 4.5.3.3

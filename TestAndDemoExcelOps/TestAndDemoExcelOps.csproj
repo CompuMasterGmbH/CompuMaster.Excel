@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
+    <ProjectReference Include="..\CM.Data.EpplusPolyformEdition\CM.Data.EpplusPolyformEdition.vbproj" />
+    <ProjectReference Include="..\MsExcelComInterop\CompuMaster.MsExcelComInterop.vbproj" />
     <ProjectReference Include="..\ExcelOps-EpplusFreeFixCalcsEdition\ExcelOps-EpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-EpplusPolyform\ExcelOps-EpplusPolyformEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />

@@ -1,3 +1,4 @@
+Imports System.IO
 Imports NUnit.Framework
 
 Namespace MsExcelComInteropTest
@@ -40,6 +41,32 @@ Namespace MsExcelComInteropTest
         Protected Function OpenExcelAppAndWorkbook(path As String) As CompuMaster.Excel.MsExcelComInterop.ExcelWorkbook
             Return ExcelApp.Workbooks.Open(path)
         End Function
+
+        Private Shared Sub DemoMethod()
+            Dim ExcelApp As CompuMaster.Excel.MsExcelComInterop.ExcelApplication = Nothing
+            Dim Wb As CompuMaster.Excel.MsExcelComInterop.ExcelWorkbook = Nothing
+            Try
+                'Open excel engine
+                Try
+                    ExcelApp = New CompuMaster.Excel.MsExcelComInterop.ExcelApplication()
+                Catch
+                    System.Console.WriteLine("Platform not supported or MS Excel application not installed")
+                    Return
+                End Try
+
+                'Workbook actions
+                Dim SourceTestFile As String = "test.xlsx"
+                Dim TargetTestFile As String = "test.pdf"
+                If System.IO.File.Exists(TargetTestFile) Then System.IO.File.Delete(TargetTestFile)
+                Wb = ExcelApp.Workbooks.Open(SourceTestFile)
+                Wb.ExportAsFixedFormat(CompuMaster.Excel.MsExcelComInterop.Enumerations.XlFixedFormatType.XlTypePDF, TargetTestFile)
+            Finally
+                'Close and dispose everything
+                If Wb IsNot Nothing AndAlso Wb.IsClosed = False Then Wb.Close()
+                If ExcelApp IsNot Nothing Then ExcelApp.Dispose()
+                CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
+            End Try
+        End Sub
 
         <Test>
         Public Sub ExportAsFixedFormat()

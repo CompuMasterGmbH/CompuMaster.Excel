@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RootNamespace>CompuMaster.Excel.Test</RootNamespace>
     <TargetFrameworks>net48;net8.0</TargetFrameworks>
-    <Copyright>2005-2024 CompuMaster GmbH</Copyright>
+    <Copyright>2005-2025 CompuMaster GmbH</Copyright>
     <OptionStrict>On</OptionStrict>
     <AssemblyName>CompuMaster.Excel.Test</AssemblyName>
     <Configurations>Debug;Release;CI_CD</Configurations>

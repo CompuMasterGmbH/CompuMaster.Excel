@@ -1,18 +1,18 @@
-# CompuMaster.Excel
+# CompuMaster.Excel.ExcelOps
 
-A bunch of libraries to access and edit Excel files with common interface for several Excel engines
+A common API for several libraries to access and edit Excel files
 
 ## Why this project?
 
+* Provides the common API for all following Excel engines
+* Sometimes there is the need to switch the Excel engine under the hood, because the standard MS Excel engine (via COM interop) is too slow for many operations.
+* Depending on your custom project or developer license, you might want/require to use a specific alternative Excel engine
+* Allow parallel use of several Excel engines in your project
+    * at least for some work items, you need Excel engine A, while for some other work item you need Excel engine B because of its feature set, bugs, etc.
+    * allow step-by-step-migrations instead of one big migration task
+
 ### One common API for several Excel engines
 
-  * **CompuMaster.Excel.ExcelOps**
-    * Provides the common API for all following Excel engines
-    * Sometimes there is the need to switch the Excel engine under the hood, because the standard MS Excel engine (via COM interop) is too slow for many operations.
-    * Depending on your custom project or developer license, you might want/require to use a specific alternative Excel engine
-    * Allow parallel use of several Excel engines in your project
-        * at least for some work items, you need Excel engine A, while for some other work item you need Excel engine B because of its feature set, bugs, etc.
-        * allow step-by-step-migrations instead of one big migration task
   * **CompuMaster.Excel.MicrosoftExcel**
     * Use Microsoft.Office.Interop.Excel v15 (MS Office 2013) or higher, for solutions targetting .NET Framework 4.8 or .NET 6 or higher
   * **CompuMaster.Excel.EpplusFreeFixCalcsEdition** 
@@ -41,24 +41,11 @@ PLEASE NOTE:
 <sup>2)</sup> calculation issue when re-opening in MS Excel: after Excel file has been written to disk, cell formulas are usually calculated and their results are buffered in the saved Excel file. In certain cases, MS Excel is not able to refresh calculated cell values when they depend (indirectly) on other cells which have changed.
   * This issue applies for all 3rd-party engines (as far as I know)
   * Available workaround in MS Excel: enter each single cell manually (and in correct dependency order!) and confirm its formula (and sorry, F9 for full automatic recalculation doesn't work)
-  * Available workaround in Epplus 4 special edition (provided within this project, see CompuMaster.Excel.EpplusFreeFixCalcsEdition): Clear all cached values from cells with formulas to enforce MS Excel to recalculate them (without depending of any caches)
-
-### Common helper libraries
-
-  * **CompuMaster.EPPlus4** 
-    * a fork of Epplus 4.5 with LGPL license, providing features to clear calculation caches which might lead to wrong calculation cache reset behavioiur in MS Excel (MS Excel doesn't recalculate all required cells)
-    * Supports .NET Framework 4.8 + .NET 6 or higher
-    * Feature support for checkup if cell requires recalculation: https://github.com/EPPlusSoftware/EPPlus/issues/113
-    * Correct refreshing of indirect cell references by resetting all calculation caches (enforces MS Excel to recalculate all cells)
-  * **CompuMaster.Excel.Tools.MicrosoftAndEpplus**
-    * Provide workarounds for some well-known issues in some of the alternative Excel engines
-  * **CompuMaster.Excel.MsExcelComInterop**
-    * Allow COM interop at clients without using Microsoft.Office.Excel.Interop assemblies for light-weight deployments of applications to customers/clients, regardless of the installed version of Microsoft Office
-    * Limitation: supports only a very tiny, but often-used feature set, e.g. print, export to PDF, run VBA code
+  * Available workaorund in Epplus 4 special edition (provided within this project, see CompuMaster.Excel.EpplusFreeFixCalcsEdition): Clear all cached values from cells with formulas to enforce MS Excel to recalculate them (without depending of any caches)
 
 ## Licensing
 
-  * Please see license type for every sub project within its directory
+  * Please see license file in project directory
   * Pay attention to required licensing of the 3rd party components (commercial vs. community licensing, user licensing, etc.)
 
 ## Examples
