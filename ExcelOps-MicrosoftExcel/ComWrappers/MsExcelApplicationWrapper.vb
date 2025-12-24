@@ -12,6 +12,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     ''' </remarks>
     Public Class MsExcelApplicationWrapper
         Inherits CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
+        Implements IDisposable
 
         Const ExpectedProcessName As String = "EXCEL"
 
@@ -45,10 +46,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' </summary>
         Protected Overrides Sub OnClosing()
             If Not Me.IsDisposedComObject Then
-                Try
-                    Me.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic 'reset value from manual to automatic (=expected default setting of user in 99% of all situations)
-                Catch
-                End Try
+                'Try
+                '    Me.ComObjectStronglyTyped.Calculation = MsExcel.XlCalculation.xlCalculationAutomatic 'reset value from manual to automatic (=expected default setting of user in 99% of all situations)
+                'Catch
+                'End Try
                 Me.ComObjectStronglyTyped.Quit()
             End If
             MyBase.OnClosing()
@@ -85,6 +86,39 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             Me.ComObjectStronglyTyped.DecimalSeparator = culture.NumberFormat.NumberDecimalSeparator
             Me.ComObjectStronglyTyped.ThousandsSeparator = culture.NumberFormat.NumberGroupSeparator
         End Sub
+
+        'Re-implements method to allow depending assemblies to not reference CompuMaster.ComInterop.ComApplication
+        ''' <summary>
+        ''' Is MS Excel application closed
+        ''' </summary>
+        Public ReadOnly Property IsClosedExcelApplication() As Boolean
+            Get
+                Return MyBase.IsClosed
+            End Get
+        End Property
+
+        'Re-implements method to allow depending assemblies to not reference CompuMaster.ComInterop.ComApplication
+        ''' <summary>
+        ''' Close MS Excel application
+        ''' </summary>
+        Public Sub CloseExcelApplication()
+            MyBase.Close()
+        End Sub
+
+#Region "IDisposable Support"
+        Private disposedValue As Boolean ' Dient zur Erkennung redundanter Aufrufe.
+
+        ' IDisposable
+        Protected Overrides Sub Dispose(disposing As Boolean)
+            If Not disposedValue Then
+                If disposing Then
+                    Me.CloseExcelApplication()
+                End If
+            End If
+            disposedValue = True
+            MyBase.Dispose(disposing)
+        End Sub
+#End Region
 
     End Class
 

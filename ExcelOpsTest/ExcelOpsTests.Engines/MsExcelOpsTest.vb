@@ -59,6 +59,8 @@ Namespace ExcelOpsTests.Engines
             If WbCount = 1 Then
                 MsExcelInstance.Workbooks.Workbook(1).CloseAndDispose()
             End If
+            MsExcelInstance.Workbooks.CloseAllWorkbooks()
+            MsExcelInstance.CloseExcelApplication()
         End Sub
 
         <OneTimeTearDown>

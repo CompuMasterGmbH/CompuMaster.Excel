@@ -135,8 +135,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Try
         '''    '...
         ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        '''     MsExcelOps.CloseExcelAppInstance()
         ''' End Try
         ''' </code>
         ''' </remarks>
@@ -156,8 +155,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Try
         '''    '...
         ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        '''     MsExcelOps.CloseExcelAppInstance()
         ''' End Try
         ''' </code>
         ''' </remarks>
@@ -177,8 +175,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Try
         '''    '...
         ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        '''     MsExcelOps.CloseExcelAppInstance()
         ''' End Try
         ''' </code>
         ''' </remarks>
@@ -250,8 +247,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Try
         '''    '...
         ''' Finally
-        '''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        '''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
+        '''     MSExcelApp.CloseExcelAppInstance()
         ''' End Try
         ''' </code>
         ''' </remarks>
@@ -272,23 +268,20 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             MyBase.ValidateLoadOptions(options)
         End Sub
 
-        '''' <summary>
-        '''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
-        '''' </summary>
-        '''' <remarks>Use with pattern
-        '''' <code>
-        '''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
-        '''' Try
-        ''''    '...
-        '''' Finally
-        ''''     MsExcelDataOperations.PrepareCloseExcelAppInstance(MSExcelApp)
-        ''''     MsExcelDataOperations.SafelyCloseExcelAppInstance(MSExcelApp)
-        '''' End Try
-        '''' </code>
-        '''' </remarks>
-        'Protected Property MSExcelApp As ComMsExcelApplication
-
         Private _MsExcelAppInstance As MsExcelApplicationWrapper
+        ''' <summary>
+        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
+        ''' </summary>
+        ''' <remarks>Use with pattern
+        ''' <code>
+        ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
+        ''' Try
+        '''    '...
+        ''' Finally
+        '''     MSExcelApp.CloseExcelAppInstance()
+        ''' End Try
+        ''' </code>
+        ''' </remarks>
         Public ReadOnly Property MsExcelAppInstance As MsExcelApplicationWrapper
             Get
                 If _MsExcelAppInstance Is Nothing Then
