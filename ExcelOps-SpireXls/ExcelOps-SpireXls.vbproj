@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.Reflection" Version="1.0.4" />
+    <PackageReference Include="CompuMaster.Reflection" Version="1.0.2024.1204" />
     <PackageReference Include="Spire.XLS" Version="13.2.4" />
     <None Include="README.md">
       <Pack>True</Pack>

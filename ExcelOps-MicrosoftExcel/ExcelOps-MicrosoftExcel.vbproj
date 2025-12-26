@@ -50,7 +50,7 @@ for proper Microsoft Excel licensing, please contact Microsoft</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.17" />
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.2025.1227" />
   </ItemGroup>
 
 </Project>

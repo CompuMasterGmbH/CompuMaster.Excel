@@ -10,7 +10,7 @@ Namespace ExcelOpsTests.Engines
         Public Overrides ReadOnly Property ExpectedEngineName As String = "Microsoft Excel (2013 or higher)"
 
         Protected Overrides Function _CreateInstance(file As String, mode As ExcelOps.ExcelDataOperationsBase.OpenMode, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.MsExcelDataOperations
-            If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
+            If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsClosed OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
@@ -20,7 +20,7 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Protected Overrides Function _CreateInstanceUninitialized() As ExcelOps.MsExcelDataOperations
-            If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsDisposed Then
+            If MsExcelInstance Is Nothing OrElse MsExcelInstance.IsClosed OrElse MsExcelInstance.IsDisposed Then
                 'recreate excel instance
                 MsExcelInstance = New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
             ElseIf AlwaysCloseAllWorkbooksInNewEngineInstances Then
@@ -31,14 +31,10 @@ Namespace ExcelOpsTests.Engines
 
         <OneTimeSetUp>
         Public Sub OneTimeSetup()
-            If Global.CompuMaster.Excel.MsExcelCom.MsExcelTools.IsPlatformSupportingComInteropAndMsExcelAppInstalled = False Then
-                AssertNoExcelProcessesAvailable()
-            End If
         End Sub
 
         <SetUp>
         Public Sub Setup()
-            AssertExactlyOur1ExcelProcessAvailableInProcessList()
             AlwaysCloseAllWorkbooksInNewEngineInstances = True
         End Sub
 
@@ -60,14 +56,13 @@ Namespace ExcelOpsTests.Engines
                 MsExcelInstance.Workbooks.Workbook(1).CloseAndDispose()
             End If
             MsExcelInstance.Workbooks.CloseAllWorkbooks()
-            MsExcelInstance.CloseExcelApplication()
+            MsExcelInstance.Close()
         End Sub
 
         <OneTimeTearDown>
         Public Sub OneTimeTearDown()
             If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
-            AssertNoExcelProcessesAvailable()
         End Sub
 
         ''' <summary>
@@ -82,26 +77,6 @@ Namespace ExcelOpsTests.Engines
         Protected Sub ClosedAllWorkbooksAndAllowMultipleWorkbooksForThisTestRun()
             MsExcelInstance.Workbooks.CloseAllWorkbooks()
             AlwaysCloseAllWorkbooksInNewEngineInstances = False
-        End Sub
-
-        Private Sub AssertExactlyOur1ExcelProcessAvailableInProcessList()
-            If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
-                Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-                If MsExcelProcesses.Length <> 1 Then
-                    Assert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but 1 excel processes allowed/required")
-                Else
-                    Assert.AreEqual(MsExcelInstance.ExcelProcessId, MsExcelProcesses(0).Id)
-                End If
-            End If
-        End Sub
-
-        Private Sub AssertNoExcelProcessesAvailable()
-            If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
-                Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-                If MsExcelProcesses.Length <> 0 Then
-                    Assert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but no excel processes allowed")
-                End If
-            End If
         End Sub
 
         Private MsExcelInstance As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper

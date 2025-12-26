@@ -6,11 +6,14 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     ''' COM Wrapper class for MS Excel workbooks collection
     ''' </summary>
     Public Class MsExcelWorkbooksWrapper
-        Inherits CompuMaster.ComInterop.ComChildObject(Of MsExcelApplicationWrapper, MsExcel.Workbooks)
+        Inherits CompuMaster.ComInterop.ComChildObject(Of CompuMaster.ComInterop.ComApplication(Of MsExcel.Application), MsExcel.Workbooks)
 
         Public Sub New(parent As MsExcelApplicationWrapper, obj As MsExcel.Workbooks)
-            MyBase.New(parent, obj)
+            MyBase.New(parent.ComApp, obj)
+            Me.ParentWrapper = parent
         End Sub
+
+        Public ReadOnly Property ParentWrapper As MsExcelApplicationWrapper
 
         ''' <summary>
         ''' Create a new workbook
@@ -34,21 +37,18 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Private _WorkbookWrappers As New Dictionary(Of MsExcel.Workbook, MsExcelWorkbookWrapper)
         Private Function GetWorkbookWrapper(comObject As MsExcel.Workbook) As MsExcelWorkbookWrapper
             If comObject Is Nothing Then Throw New ArgumentNullException(NameOf(comObject))
-
-            Dim WorkbookForIsClosedCheck As MsExcelWorkbookWrapper = Nothing
-            If _WorkbookWrappers.TryGetValue(comObject, WorkbookForIsClosedCheck) AndAlso WorkbookForIsClosedCheck.IsClosed Then
+            If Me._WorkbookWrappers.ContainsKey(comObject) AndAlso Me._WorkbookWrappers(comObject).IsClosed Then
                 Me._WorkbookWrappers.Remove(comObject)
             End If
-
-            Dim Result As MsExcelWorkbookWrapper = Nothing
-            If Not _WorkbookWrappers.TryGetValue(comObject, Result) Then
-                Result = New MsExcelWorkbookWrapper(Me, comObject)
-                Me._WorkbookWrappers.Add(comObject, Result)
+            If Not Me._WorkbookWrappers.ContainsKey(comObject) Then
+                Me._WorkbookWrappers.Add(comObject, New MsExcelWorkbookWrapper(Me, comObject))
             End If
-            Return Result
+            Return Me._WorkbookWrappers(comObject)
         End Function
         Friend Sub RemoveWorkbookWrapper(item As MsExcelWorkbookWrapper)
-            Me._WorkbookWrappers.Remove(item.ComObjectStronglyTyped)
+            If Me._WorkbookWrappers.ContainsKey(item.ComObjectStronglyTyped) Then
+                Me._WorkbookWrappers.Remove(item.ComObjectStronglyTyped)
+            End If
         End Sub
 
         ''' <summary>
