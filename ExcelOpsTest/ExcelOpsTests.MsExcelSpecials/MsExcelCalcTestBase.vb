@@ -1,4 +1,5 @@
 ﻿Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports CompuMaster.Excel.ExcelOps
 Imports System.Data
 
@@ -35,8 +36,8 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
             System.Console.WriteLine("Formula B2 BEFORE RESET=" & Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
             EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 1, 1)
-            Assert.IsNotNull(Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
-            Assert.IsNotEmpty(Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
+            ClassicAssert.IsNotNull(Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
+            ClassicAssert.IsNotEmpty(Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
             System.Console.WriteLine("Formula B2 AFTER RESET=" & Eppeo.LookupCellFormula(FirstSheetName, 1, 1))
             System.Console.WriteLine()
             EngineResetCellValueFromFormulaCell(Eppeo, FirstSheetName, 2, 1)
@@ -54,18 +55,18 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Try
                 CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
             Catch ex As System.PlatformNotSupportedException
-                Assert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
+                ClassicAssert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
             End Try
 
             'Compare expected values
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
             Dim TTable As New ExcelOps.TextTable(ETable)
             System.Console.WriteLine(TTable.ToUIExcelTable)
-            Assert.AreEqual(20, ETable.Rows(0)(1))
-            Assert.AreEqual(20, ETable.Rows(1)(1))
-            Assert.AreEqual(20, ETable.Rows(2)(1))
-            Assert.AreEqual(20, ETable.Rows(4)(1))
-            Assert.AreEqual(20, ETable.Rows(5)(1))
+            ClassicAssert.AreEqual(20, ETable.Rows(0)(1))
+            ClassicAssert.AreEqual(20, ETable.Rows(1)(1))
+            ClassicAssert.AreEqual(20, ETable.Rows(2)(1))
+            ClassicAssert.AreEqual(20, ETable.Rows(4)(1))
+            ClassicAssert.AreEqual(20, ETable.Rows(5)(1))
         End Sub
 
         <Test> Public Sub FormulaComplexityLevel1_BugReproduction()
@@ -99,12 +100,12 @@ Namespace ExcelOpsTests.MsExcelSpecials
 
             Select Case EngineName
                 Case (New ExcelOps.EpplusFreeExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
-                    Assert.AreEqual(True, Eppeo.CalculationModuleDisabled)
-                    Assert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+                    ClassicAssert.AreEqual(True, Eppeo.CalculationModuleDisabled)
+                    ClassicAssert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
                     Eppeo.CalculationModuleDisabled = False
-                    Assert.AreEqual(False, Eppeo.CalculationModuleDisabled)
+                    ClassicAssert.AreEqual(False, Eppeo.CalculationModuleDisabled)
                 Case Else
-                    Assert.AreEqual(False, Eppeo.CalculationModuleDisabled)
+                    ClassicAssert.AreEqual(False, Eppeo.CalculationModuleDisabled)
             End Select
             Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
@@ -116,7 +117,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Try
                 CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
             Catch ex As System.PlatformNotSupportedException
-                Assert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
+                ClassicAssert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
             End Try
 
             'Update single cells in calculated workbook with Epplus
@@ -133,11 +134,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
             Dim TTable As New ExcelOps.TextTable(ETable)
             System.Console.WriteLine(TTable.ToUIExcelTable)
-            Assert.AreEqual(20, ETable.Rows(0)(1))
-            Assert.AreEqual(50, ETable.Rows(1)(1))
-            Assert.AreEqual(50, ETable.Rows(2)(1))
-            Assert.AreEqual(50, ETable.Rows(4)(1))
-            Assert.AreEqual(50, ETable.Rows(5)(1))
+            ClassicAssert.AreEqual(20, ETable.Rows(0)(1))
+            ClassicAssert.AreEqual(50, ETable.Rows(1)(1))
+            ClassicAssert.AreEqual(50, ETable.Rows(2)(1))
+            ClassicAssert.AreEqual(50, ETable.Rows(4)(1))
+            ClassicAssert.AreEqual(50, ETable.Rows(5)(1))
 
             'System.Diagnostics.Process.Start(TestFile)
             Return Eppeo
@@ -163,15 +164,15 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Try
                 CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
             Catch ex As System.PlatformNotSupportedException
-                Assert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
+                ClassicAssert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
             End Try
 
             'Compare expected values
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
             Dim TTable As New ExcelOps.TextTable(ETable)
             System.Console.WriteLine(TTable.ToUIExcelTable)
-            Assert.AreEqual("1", ETable.Rows(1)(2))
-            Assert.AreEqual("1", ETable.Rows(2)(2))
+            ClassicAssert.AreEqual("1", ETable.Rows(1)(2))
+            ClassicAssert.AreEqual("1", ETable.Rows(2)(2))
         End Sub
 
         <Test> Public Sub FormulaComplexityLevel2_BugReproduction()
@@ -220,7 +221,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Try
                 CompuMaster.Excel.ExcelOps.MsVsEpplusTools.OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(TestFile)
             Catch ex As System.PlatformNotSupportedException
-                Assert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
+                ClassicAssert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
             End Try
 
             'Update single cells in calculated workbook with Epplus
@@ -237,8 +238,8 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Dim ETable As DataTable = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFile(TestFile, FirstSheetName, False)
             Dim TTable As New ExcelOps.TextTable(ETable)
             System.Console.WriteLine(TTable.ToUIExcelTable)
-            Assert.AreEqual("0", ETable.Rows(1)(2))
-            Assert.AreEqual("0", ETable.Rows(2)(2))
+            ClassicAssert.AreEqual("0", ETable.Rows(1)(2))
+            ClassicAssert.AreEqual("0", ETable.Rows(2)(2))
 
             'System.Diagnostics.Process.Start(TestFile)
             Return Eppeo

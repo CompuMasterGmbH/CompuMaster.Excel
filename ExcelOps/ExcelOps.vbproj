@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.Data" Version="3.0.2025.903" />
+    <PackageReference Include="CompuMaster.Data" Version="3.0.2025.1229" />
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
     <None Include="README.md">
       <Pack>True</Pack>

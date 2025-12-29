@@ -1,5 +1,6 @@
 ﻿Imports CompuMaster.Excel.ExcelOps
 Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 
 Namespace ExcelOpsTests.Engines
 
@@ -17,7 +18,7 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         <Test> Public Overrides Sub CopySheetContent()
-            Assert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
+            ClassicAssert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
         End Sub
 
         Protected Overrides Sub TestInCultureContext_AssignCurrentThreadCulture()

@@ -1,4 +1,5 @@
 ﻿Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports CompuMaster.Excel.ExcelOps
 
 Public Class SpecialFeature_SaveToHtml
@@ -24,7 +25,7 @@ Public Class SpecialFeature_SaveToHtml
             Dim Wb As New SpireXlsDataOperations(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, DisabledCalculationEngineOptions)
             Wb.SaveToHtml(TestHtmlOutputFile, False)
         Catch ex As TypeInitializationException
-            Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+            ClassicAssert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
         End Try
 
         If OPEN_OUTPUT_IN_BROWSER_AFTER_TEST Then
@@ -44,7 +45,7 @@ Public Class SpecialFeature_SaveToHtml
         Try
             Wb = New SpireXlsDataOperations(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, DisabledCalculationEngineOptions)
         Catch ex As TypeInitializationException
-            Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+            ClassicAssert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
         End Try
         For Each WorkSheetName In Wb.WorkSheetNames
             System.Console.WriteLine("FOUND WORKSHEET: " & WorkSheetName)

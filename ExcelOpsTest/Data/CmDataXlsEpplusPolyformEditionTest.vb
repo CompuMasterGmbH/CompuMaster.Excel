@@ -6,6 +6,7 @@ Option Strict On
 'WARNING: PLEASE CHANGE THIS FILE ONLY AT REQUIRED LOCATION, OR CHANGES WILL BE LOST!
 
 Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 
 Namespace Data
 
@@ -15,7 +16,7 @@ Namespace Data
 
             Dim Path As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "SampleTable01.xlsx")
             Dim t = CompuMaster.Data.XlsEpplusPolyformEdition.ReadDataSetFromXlsFile(Path, False).Tables
-            Assert.AreEqual(1, t.Count)
+            ClassicAssert.AreEqual(1, t.Count)
         End Sub
 
         Private Function SampleTableDyn01() As System.Data.DataTable

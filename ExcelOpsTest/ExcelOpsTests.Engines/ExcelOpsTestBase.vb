@@ -4,6 +4,7 @@ Option Explicit On
 Imports CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Text
 Imports CompuMaster.Excel.ExcelOps
 Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports NUnit.Framework.Interfaces
 
 Namespace ExcelOpsTests.Engines
@@ -152,13 +153,13 @@ Namespace ExcelOpsTests.Engines
         <OneTimeSetUp>
         Public Sub CommonOneTimeSetup()
             Try
-                Assert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)))
+                ClassicAssert.NotNull(Me.CreateInstance(Nothing, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)))
             Catch ex As PlatformNotSupportedException
-                Assert.Ignore("Platform not supported: " & ex.Message)
+                ClassicAssert.Ignore("Platform not supported: " & ex.Message)
             Catch ex As CompuMaster.ComInterop.ComApplicationNotAvailableException
-                Assert.Ignore("Platform supports COM, but requested COM application not installed: " & ex.Message)
+                ClassicAssert.Ignore("Platform supports COM, but requested COM application not installed: " & ex.Message)
             Catch ex As System.Runtime.InteropServices.COMException
-                Assert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
+                ClassicAssert.Ignore("Platform not supported or requested COM application not installed: " & ex.Message)
             End Try
         End Sub
 
@@ -181,15 +182,15 @@ Namespace ExcelOpsTests.Engines
         Public MustOverride ReadOnly Property ExpectedEngineName As String
 
         <Test> Public Sub EngineName()
-            Assert.AreEqual(ExpectedEngineName, Me.CreateInstanceUninitialized().EngineName)
+            ClassicAssert.AreEqual(ExpectedEngineName, Me.CreateInstanceUninitialized().EngineName)
         End Sub
 
         <Test> Public Sub HasVbaProject()
             Dim VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
-            Assert.IsTrue(Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)).HasVbaProject)
+            ClassicAssert.IsTrue(Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)).HasVbaProject)
 
             Dim NonVbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
-            Assert.IsFalse(Me.CreateInstance(NonVbaTestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)).HasVbaProject)
+            ClassicAssert.IsFalse(Me.CreateInstance(NonVbaTestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)).HasVbaProject)
         End Sub
 
         <Test> Public Sub SaveXlsxWithVbaProjectMustFail()
@@ -202,26 +203,26 @@ Namespace ExcelOpsTests.Engines
             System.IO.File.Copy(VbaTestFile, VbaTestFileClone)
 
             Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.True(Wb.HasVbaProject)
-            Assert.Throws(Of NotSupportedException)(Sub() Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+            ClassicAssert.True(Wb.HasVbaProject)
+            ClassicAssert.Throws(Of NotSupportedException)(Sub() Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
             Dim FilePathInEngineBefore As String = Wb.WorkbookFilePath
             Wb.RemoveVbaProject()
             If GetType(T) Is GetType(MsExcelDataOperations) Then
                 'MS Excel engine: feature RemoveVbaProject not supported + workaround only partially possible
-                Assert.IsNotEmpty(Wb.WorkbookFilePath)
+                ClassicAssert.IsNotEmpty(Wb.WorkbookFilePath)
             Else
-                Assert.AreEqual(FilePathInEngineBefore, Wb.WorkbookFilePath)
+                ClassicAssert.AreEqual(FilePathInEngineBefore, Wb.WorkbookFilePath)
             End If
-            Assert.False(Wb.HasVbaProject)
+            ClassicAssert.False(Wb.HasVbaProject)
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
 
             Wb = Me.CreateInstance(VbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.True(Wb.HasVbaProject)
+            ClassicAssert.True(Wb.HasVbaProject)
             Wb.Save()
-            Assert.True(Wb.HasVbaProject, "VBA project hasn't been removed automatically")
+            ClassicAssert.True(Wb.HasVbaProject, "VBA project hasn't been removed automatically")
             Wb.RemoveVbaProject()
-            Assert.False(Wb.HasVbaProject)
+            ClassicAssert.False(Wb.HasVbaProject)
             Wb.Save()
             Wb.Close()
 
@@ -232,12 +233,12 @@ Namespace ExcelOpsTests.Engines
             System.IO.File.Copy(NonVbaTestFile, NonVbaTestFileClone)
 
             Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.False(Wb.HasVbaProject)
+            ClassicAssert.False(Wb.HasVbaProject)
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
 
             Wb = Me.CreateInstance(NonVbaTestFileClone, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.False(Wb.HasVbaProject)
+            ClassicAssert.False(Wb.HasVbaProject)
             Wb.Save()
             Wb.Close()
 
@@ -245,13 +246,13 @@ Namespace ExcelOpsTests.Engines
             VbaTestFile = TestEnvironment.FullPathOfExistingTestFile("test_data", "VbaProject.xlsm")
             NewXlsxTargetPath = TestEnvironment.FullPathOfDynTestFile(NameOf(SaveXlsxWithVbaProjectMustFail), "VbaProject.xlsm")
             Wb = Me.CreateInstance(VbaTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.True(Wb.HasVbaProject)
+            ClassicAssert.True(Wb.HasVbaProject)
             Wb.RemoveVbaProject()
-            Assert.False(Wb.HasVbaProject)
+            ClassicAssert.False(Wb.HasVbaProject)
             Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
             Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.False(Wb.HasVbaProject)
+            ClassicAssert.False(Wb.HasVbaProject)
 
         End Sub
 
@@ -262,13 +263,13 @@ Namespace ExcelOpsTests.Engines
             Dim Data As Byte() = System.IO.File.ReadAllBytes(TestFile)
             If GetType(T) Is GetType(MsExcelDataOperations) Then
                 'known to fail because no support for reading files from in-memory
-                Assert.Throws(Of NotSupportedException)(Sub()
-                                                            Me.CreateInstance(Data, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-                                                        End Sub)
+                ClassicAssert.Throws(Of NotSupportedException)(Sub()
+                                                                   Me.CreateInstance(Data, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+                                                               End Sub)
             Else
                 Wb = Me.CreateInstance(Data, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-                Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
-                Assert.That(Wb.ReadOnly, [Is].True)
+                ClassicAssert.AreEqual("Grunddaten", Wb.SheetNames(0))
+                ClassicAssert.That(Wb.ReadOnly, [Is].True)
             End If
         End Sub
 
@@ -279,13 +280,13 @@ Namespace ExcelOpsTests.Engines
             Dim Data As System.IO.Stream = New System.IO.FileStream(TestFile, System.IO.FileMode.Open)
             If GetType(T) Is GetType(MsExcelDataOperations) Then
                 'known to fail because no support for reading files from in-memory
-                Assert.Throws(Of NotSupportedException)(Sub()
-                                                            Me.CreateInstance(Data, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-                                                        End Sub)
+                ClassicAssert.Throws(Of NotSupportedException)(Sub()
+                                                                   Me.CreateInstance(Data, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+                                                               End Sub)
             Else
                 Wb = Me.CreateInstance(Data, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-                Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
-                Assert.That(Wb.ReadOnly, [Is].True)
+                ClassicAssert.AreEqual("Grunddaten", Wb.SheetNames(0))
+                ClassicAssert.That(Wb.ReadOnly, [Is].True)
             End If
         End Sub
 
@@ -294,7 +295,7 @@ Namespace ExcelOpsTests.Engines
             'Testfile without password
             Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
+            ClassicAssert.AreEqual("Grunddaten", Wb.SheetNames(0))
 
             'Now, save it with password
             Wb.PasswordForOpening = "dummy"
@@ -304,13 +305,13 @@ Namespace ExcelOpsTests.Engines
             Wb.Close()
 
             'Try to reload it without password -> it must fail
-            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
-            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
-            Assert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
+            ClassicAssert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
+            ClassicAssert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
+            ClassicAssert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
 
             'Reload it with password -> now it must succeed
             Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "dummy"))
-            Assert.AreEqual("Grunddaten", Wb.SheetNames(0))
+            ClassicAssert.AreEqual("Grunddaten", Wb.SheetNames(0))
         End Sub
 
         <Test> Public Sub CreateWorkbookWithoutFilePath()
@@ -319,20 +320,20 @@ Namespace ExcelOpsTests.Engines
 
             TestFile = Nothing
             Wb = Me.CreateInstanceUninitialized()
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
 
             TestFile = Nothing
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
 
             TestFile = ""
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.AreEqual(Nothing, Wb.FilePath)
-            Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(Nothing, Wb.FilePath)
+            ClassicAssert.AreEqual(Nothing, Wb.WorkbookFilePath)
             Wb.Close()
         End Sub
 
@@ -343,69 +344,69 @@ Namespace ExcelOpsTests.Engines
 
             'Creating a new workbook without pre-defined file name must fail on Save(), but successful on SaveAs()
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual(True, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up, but ReadWrite if file path has been set up")
+            ClassicAssert.AreEqual(True, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up, but ReadWrite if file path has been set up")
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.AreEqual(False, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up, but ReadWrite if file path has been set up")
+            ClassicAssert.AreEqual(False, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up, but ReadWrite if file path has been set up")
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile))
-            Assert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up, but ReadWrite if file path has been set up")
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must be ReadOnly if file path hasn't been set up, but ReadWrite if file path has been set up")
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(Nothing, Wb.WorkbookFilePath)
             Wb.Save()
             Wb.ReadOnly = True
-            Assert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
-            Assert.Throws(Of FileReadOnlyException)(Sub() Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+            ClassicAssert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
+            ClassicAssert.Throws(Of FileReadOnlyException)(Sub() Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
             Wb.SaveAs(TestFile2, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
             Wb.Close()
 
             'Creating a new workbook must fail with a pre-defined file name if there is already a file
-            Assert.Throws(Of FileAlreadyExistsException)(Sub()
-                                                             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-                                                         End Sub)
+            ClassicAssert.Throws(Of FileAlreadyExistsException)(Sub()
+                                                                    Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
+                                                                End Sub)
             System.IO.File.Delete(TestFile) 'Delete the file for next test block
 
             'Creating a new workbook must always be ReadOnly and saving it without a name must be forbidden
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must always be ReadOnly")
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(TestFile = Nothing, Wb.ReadOnly, "Newly created files must always be ReadOnly")
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(Nothing, Wb.WorkbookFilePath)
             Wb.Save()
             Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
-            Assert.AreEqual(False, Wb.ReadOnly, "Newly saved files must always be ReadWrite")
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(False, Wb.ReadOnly, "Newly saved files must always be ReadWrite")
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
-            Assert.AreEqual(False, Wb.ReadOnly)
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(Nothing, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(False, Wb.ReadOnly)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(Nothing, Wb.WorkbookFilePath)
             Wb.ReloadFromFile()
-            Assert.AreEqual(False, Wb.ReadOnly)
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(False, Wb.ReadOnly)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
 
             'Saving a ReadWrite file must be forbidden
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual(True, Wb.ReadOnly)
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
-            Assert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
-            Assert.AreEqual(True, Wb.ReadOnly)
-            Assert.Throws(Of FileReadOnlyException)(Sub() Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
-            Assert.AreEqual(True, Wb.ReadOnly)
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(True, Wb.ReadOnly)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.Throws(Of FileReadOnlyException)(Sub() Wb.Save())
+            ClassicAssert.AreEqual(True, Wb.ReadOnly)
+            ClassicAssert.Throws(Of FileReadOnlyException)(Sub() Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+            ClassicAssert.AreEqual(True, Wb.ReadOnly)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
 
             'Saving a ReadWrite file must be allowed
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite))
-            Assert.AreEqual(False, Wb.ReadOnly)
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(False, Wb.ReadOnly)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Save()
-            Assert.AreEqual(False, Wb.ReadOnly)
+            ClassicAssert.AreEqual(False, Wb.ReadOnly)
             Wb.SaveAs(TestFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
-            Assert.AreEqual(False, Wb.ReadOnly)
-            Assert.AreEqual(TestFile, Wb.FilePath)
-            Assert.AreEqual(TestFile, Wb.WorkbookFilePath)
+            ClassicAssert.AreEqual(False, Wb.ReadOnly)
+            ClassicAssert.AreEqual(TestFile, Wb.FilePath)
+            ClassicAssert.AreEqual(TestFile, Wb.WorkbookFilePath)
             Wb.Close()
         End Sub
 
@@ -418,16 +419,16 @@ Namespace ExcelOpsTests.Engines
                 Case GetType(MsExcelDataOperations)
                     'Accept fact that a new workbook is opened automatically
                     'Assert.NotZero(workbook.SheetNames.Count)
-                    Assert.Throws(Of System.NullReferenceException)(Function() workbook.SheetNames.Count)
+                    ClassicAssert.Throws(Of System.NullReferenceException)(Function() workbook.SheetNames.Count)
                 Case Else
                     'No workbook opened - must be done in 2ndary step
-                    Assert.Throws(Of InvalidOperationException)(Function() workbook.SheetNames.Count)
+                    ClassicAssert.Throws(Of InvalidOperationException)(Function() workbook.SheetNames.Count)
             End Select
             workbook.Close()
 
             workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual(1, workbook.SheetNames.Count, "Sheets Count")
-            Assert.AreEqual("Sheet1", workbook.SheetNames(0))
+            ClassicAssert.AreEqual(1, workbook.SheetNames.Count, "Sheets Count")
+            ClassicAssert.AreEqual("Sheet1", workbook.SheetNames(0))
             workbook.Close()
 
         End Sub
@@ -454,8 +455,8 @@ Namespace ExcelOpsTests.Engines
                 eppeoIn.CopySheetContent(SheetToCopy, eppeoOut, ExcelOps.ExcelDataOperationsBase.CopySheetOption.TargetSheetMightExist)
                 eppeoOut.SelectSheet(SheetToCopy)
                 eppeoOut.SaveAs(TestControllingToolFileNameOut, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                Assert.AreEqual(eppeoIn.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
-                Assert.Pass("Required manual, optical review for comparison to check for formattings")
+                ClassicAssert.AreEqual(eppeoIn.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText), eppeoOut.SheetContentMatrix(SheetToCopy, ExcelDataOperationsBase.MatrixContent.FormulaOrFormattedText))
+                ClassicAssert.Pass("Required manual, optical review for comparison to check for formattings")
             Finally
                 If eppeoIn IsNot Nothing Then eppeoIn.Close()
                 If eppeoOut IsNot Nothing Then eppeoOut.Close()
@@ -466,14 +467,14 @@ Namespace ExcelOpsTests.Engines
             Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestFiles.TestFileExcelOpsTestCollection.FullName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Dim SheetName As String
             SheetName = "ZahlenUndProzentwerte"
-            Assert.AreEqual("0.00", eppeo.LookupCellFormat(SheetName, 0, 1))
-            Assert.AreEqual("0.00%", eppeo.LookupCellFormat(SheetName, 1, 1))
-            Assert.AreEqual(10.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-            Assert.AreEqual(0.1, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
+            ClassicAssert.AreEqual("0.00", eppeo.LookupCellFormat(SheetName, 0, 1))
+            ClassicAssert.AreEqual("0.00%", eppeo.LookupCellFormat(SheetName, 1, 1))
+            ClassicAssert.AreEqual(10.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
+            ClassicAssert.AreEqual(0.1, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
             eppeo.WriteCellValue(Of Double)(SheetName, 0, 1, 20.0)
             eppeo.WriteCellValue(Of Double)(SheetName, 1, 1, 0.2)
-            Assert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-            Assert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
+            ClassicAssert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
+            ClassicAssert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
         End Sub
 
         <Test> Public Sub IsMergedCell()
@@ -481,14 +482,14 @@ Namespace ExcelOpsTests.Engines
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Const SheetName As String = "MergedCellsTest"
-            Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
-            Assert.True(eppeo.IsMergedCell(SheetName, 1, 0))
-            Assert.True(eppeo.IsMergedCell(SheetName, 0, 1))
-            Assert.True(eppeo.IsMergedCell(SheetName, 2, 0))
-            Assert.True(eppeo.IsMergedCell(SheetName, 0, 2))
-            Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
-            Assert.False(eppeo.IsMergedCell(SheetName, 3, 0))
-            Assert.False(eppeo.IsMergedCell(SheetName, 0, 3))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 0, 0))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 1, 0))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 0, 1))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 2, 0))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 0, 2))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 2, 2))
+            ClassicAssert.False(eppeo.IsMergedCell(SheetName, 3, 0))
+            ClassicAssert.False(eppeo.IsMergedCell(SheetName, 0, 3))
         End Sub
 
         <Test> Public Sub MergeAndUnMergedCell()
@@ -496,14 +497,14 @@ Namespace ExcelOpsTests.Engines
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Const SheetName As String = "MergedCellsTest"
-            Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
-            Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 0, 0))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 2, 2))
             eppeo.UnMergeCells(SheetName, 1, 1)
-            Assert.False(eppeo.IsMergedCell(SheetName, 0, 0))
-            Assert.False(eppeo.IsMergedCell(SheetName, 2, 2))
+            ClassicAssert.False(eppeo.IsMergedCell(SheetName, 0, 0))
+            ClassicAssert.False(eppeo.IsMergedCell(SheetName, 2, 2))
             eppeo.MergeCells(SheetName, 0, 0, 2, 2)
-            Assert.True(eppeo.IsMergedCell(SheetName, 0, 0))
-            Assert.True(eppeo.IsMergedCell(SheetName, 2, 2))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 0, 0))
+            ClassicAssert.True(eppeo.IsMergedCell(SheetName, 2, 2))
         End Sub
 
         <Test> Public Sub MergedCells()
@@ -511,12 +512,12 @@ Namespace ExcelOpsTests.Engines
             Dim TestControllingToolFileName As String = TestFiles.TestFileMergedCells.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Dim SheetName As String = "MergedCellsTest"
-            Assert.AreEqual("A1:C3", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
+            ClassicAssert.AreEqual("A1:C3", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
 
             TestControllingToolFileName = TestFiles.TestFileGrund01.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             SheetName = "Grunddaten"
-            Assert.AreEqual("", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
+            ClassicAssert.AreEqual("", String.Join(";"c, eppeo.MergedCells(SheetName).Select(Of String)(Function(x) x.LocalAddress)))
         End Sub
 
         <Test> Public Sub AutoFitColumns()
@@ -525,7 +526,7 @@ Namespace ExcelOpsTests.Engines
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Const SheetName As String = "MergedCellsTest"
             Try
-                Assert.AreEqual(2, eppeo.LookupLastCell(SheetName).ColumnIndex)
+                ClassicAssert.AreEqual(2, eppeo.LookupLastCell(SheetName).ColumnIndex)
                 eppeo.AutoFitColumns(SheetName, 0, 250.0)
                 eppeo.AutoFitColumns(SheetName, 0)
                 eppeo.AutoFitColumns(SheetName, 80.0)
@@ -533,12 +534,12 @@ Namespace ExcelOpsTests.Engines
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             End Try
         End Sub
 
@@ -552,7 +553,7 @@ Namespace ExcelOpsTests.Engines
             EppeoSheetNamesList = eppeo.SheetNames
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
-            Assert.AreEqual("Grunddaten,Kostenplanung", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            ClassicAssert.AreEqual("Grunddaten,Kostenplanung", Strings.Join(EppeoSheetNamesList.ToArray, ","))
 
             TestFileName = TestFiles.TestFileChartSheet01.FullName
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
@@ -560,7 +561,7 @@ Namespace ExcelOpsTests.Engines
             System.Console.WriteLine()
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
-            Assert.AreEqual("data,chart", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            ClassicAssert.AreEqual("data,chart", Strings.Join(EppeoSheetNamesList.ToArray, ","))
         End Sub
 
         <Test> Public Sub SheetIndex()
@@ -568,9 +569,9 @@ Namespace ExcelOpsTests.Engines
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual(0, eppeo.SheetIndex("data"))
-            Assert.AreEqual(1, eppeo.SheetIndex("chart"))
-            Assert.AreEqual(-1, eppeo.SheetIndex("doesntexist"))
+            ClassicAssert.AreEqual(0, eppeo.SheetIndex("data"))
+            ClassicAssert.AreEqual(1, eppeo.SheetIndex("chart"))
+            ClassicAssert.AreEqual(-1, eppeo.SheetIndex("doesntexist"))
         End Sub
 
         <Test> Public Sub WorkSheetNames()
@@ -583,7 +584,7 @@ Namespace ExcelOpsTests.Engines
             EppeoSheetNamesList = eppeo.WorkSheetNames
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
-            Assert.AreEqual("data", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            ClassicAssert.AreEqual("data", Strings.Join(EppeoSheetNamesList.ToArray, ","))
         End Sub
 
         <Test> Public Sub WorkSheetIndex()
@@ -591,8 +592,8 @@ Namespace ExcelOpsTests.Engines
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual(0, eppeo.WorkSheetIndex("data"))
-            Assert.AreEqual(-1, eppeo.WorkSheetIndex("chart"))
+            ClassicAssert.AreEqual(0, eppeo.WorkSheetIndex("data"))
+            ClassicAssert.AreEqual(-1, eppeo.WorkSheetIndex("chart"))
         End Sub
 
         <Test> Public Sub SelectedSheetName()
@@ -602,40 +603,40 @@ Namespace ExcelOpsTests.Engines
             TestFileName = TestFiles.TestFileGrund03.FullName
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
 
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
             If eppeo.EngineName = "Spire.Xls" Then
                 'known to insert sheet "Evaluation Warning" --> do not test
-                Assert.Ignore("Testing must fail because of added sheet ""Evaluation Warning""")
+                ClassicAssert.Ignore("Testing must fail because of added sheet ""Evaluation Warning""")
             End If
 
             eppeo.SelectSheet(0)
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.0.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             eppeo.SelectSheet(1)
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Ausgewählt.1.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Ausgewählt"))
 
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             eppeo.SelectSheet(2)
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.2.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
 
             eppeo.SelectSheet("Grunddaten")
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Grunddaten.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Grunddaten"))
 
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             eppeo.SelectSheet("Kostenplanung")
             eppeo.SaveAs(TestEnvironment.FullPathOfDynTestFile(eppeo, "SelectedSheet.Kostenplanung.xlsx"), ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
             System.Console.WriteLine("OUT: " & eppeo.FilePath)
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Kostenplanung"))
 
         End Sub
 
@@ -646,9 +647,9 @@ Namespace ExcelOpsTests.Engines
             TestFileName = TestFiles.TestFileHtmlExport01.FullName
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
 
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Onboarding offen"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Onboarding offen"))
             eppeo.SelectSheet("Upload erledigt")
-            Assert.That(eppeo.SelectedSheetName, [Is].EqualTo("Upload erledigt"))
+            ClassicAssert.That(eppeo.SelectedSheetName, [Is].EqualTo("Upload erledigt"))
         End Sub
 
         <Test> Public Sub ChartSheetNames()
@@ -661,7 +662,7 @@ Namespace ExcelOpsTests.Engines
             EppeoSheetNamesList = eppeo.ChartSheetNames
             System.Console.WriteLine("## " & System.IO.Path.GetFileName(TestFileName))
             System.Console.WriteLine(Strings.Join(EppeoSheetNamesList.ToArray, ","))
-            Assert.AreEqual("chart", Strings.Join(EppeoSheetNamesList.ToArray, ","))
+            ClassicAssert.AreEqual("chart", Strings.Join(EppeoSheetNamesList.ToArray, ","))
         End Sub
 
         <Test> Public Sub ChartSheetIndex()
@@ -669,8 +670,8 @@ Namespace ExcelOpsTests.Engines
             Dim TestFileName As String
             TestFileName = TestFiles.TestFileChartSheet01.FullName
             eppeo = Me.CreateInstance(TestFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual(0, eppeo.ChartSheetIndex("chart"))
-            Assert.AreEqual(-1, eppeo.ChartSheetIndex("data"))
+            ClassicAssert.AreEqual(0, eppeo.ChartSheetIndex("chart"))
+            ClassicAssert.AreEqual(-1, eppeo.ChartSheetIndex("data"))
         End Sub
 
         <Test> Public Sub AddSheet()
@@ -690,7 +691,7 @@ Namespace ExcelOpsTests.Engines
             eppeo.AddSheet(SheetNameBottomPosition)
             eppeo.AddSheet(SheetNameTopPosition, BeforeSheet)
             NewSheetNamesList = eppeo.SheetNames
-            Assert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
+            ClassicAssert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
         End Sub
 
         <Test> Public Sub AllFormulasOfWorkbook()
@@ -702,16 +703,16 @@ Namespace ExcelOpsTests.Engines
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             AllFormulas = eppeo.AllFormulasOfWorkbook
             Console.WriteLine("Test file: " & TestControllingToolFileName)
-            Assert.NotZero(AllFormulas.Count)
+            ClassicAssert.NotZero(AllFormulas.Count)
 
             Dim ReferencesFromTestSheet As List(Of TextTableCell) = ExcelOps.Tools.FormulasWithSheetReferencesFromSheet("Kostenplanung", AllFormulas, eppeo.SheetNames.ToArray)
             System.Console.WriteLine("## Formulas of Kostenplanung targetting other sheets in workbook")
             For MyFormulaCounter As Integer = 0 To ReferencesFromTestSheet.Count - 1
                 System.Console.WriteLine(ReferencesFromTestSheet(MyFormulaCounter).ToString)
             Next
-            Assert.NotZero(ReferencesFromTestSheet.Count)
-            Assert.IsTrue(ExcelOps.Tools.ContainsFormulasWithSheetReferencesFromSheet("Kostenplanung", AllFormulas, eppeo.SheetNames.ToArray))
-            Assert.IsFalse(ExcelOps.Tools.ContainsFormulasWithSheetReferencesFromSheet("Grunddaten", AllFormulas, eppeo.SheetNames.ToArray))
+            ClassicAssert.NotZero(ReferencesFromTestSheet.Count)
+            ClassicAssert.IsTrue(ExcelOps.Tools.ContainsFormulasWithSheetReferencesFromSheet("Kostenplanung", AllFormulas, eppeo.SheetNames.ToArray))
+            ClassicAssert.IsFalse(ExcelOps.Tools.ContainsFormulasWithSheetReferencesFromSheet("Grunddaten", AllFormulas, eppeo.SheetNames.ToArray))
 
             System.Console.WriteLine()
             System.Console.WriteLine("## Formulas of sheets in workbook targetting Grunddaten")
@@ -719,8 +720,8 @@ Namespace ExcelOpsTests.Engines
             For MyFormulaCounter As Integer = 0 To ReferencesToTestSheet.Count - 1
                 System.Console.WriteLine(ReferencesToTestSheet(MyFormulaCounter).ToString)
             Next
-            Assert.NotZero(ReferencesToTestSheet.Count)
-            Assert.IsTrue(ExcelOps.Tools.ContainsFormulasWithSheetReferencesToSheet(AllFormulas, "Grunddaten", Nothing))
+            ClassicAssert.NotZero(ReferencesToTestSheet.Count)
+            ClassicAssert.IsTrue(ExcelOps.Tools.ContainsFormulasWithSheetReferencesToSheet(AllFormulas, "Grunddaten", Nothing))
         End Sub
 
         <Test> Public Sub CellWithError()
@@ -729,33 +730,33 @@ Namespace ExcelOpsTests.Engines
 
             wb.WriteCellFormula(SheetName, 0, 0, "B2", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
-            Assert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
+            ClassicAssert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
 
             wb.WriteCellFormula(SheetName, 0, 0, "1/1", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
-            Assert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
-            Assert.AreEqual(1, wb.LookupCellValue(Of Integer)(SheetName, 0, 0))
+            ClassicAssert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
+            ClassicAssert.AreEqual(1, wb.LookupCellValue(Of Integer)(SheetName, 0, 0))
 
             wb.WriteCellFormula(SheetName, 0, 0, "INVALIDFUNCTION(B2)", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
-            Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
+            ClassicAssert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
 
             wb.WriteCellFormula(SheetName, 0, 0, "1/0", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
-            Assert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
+            ClassicAssert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
 
             wb.WriteCellFormula(SheetName, 0, 0, "B2/0", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
-            Assert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
+            ClassicAssert.AreEqual("#DIV/0!", wb.LookupCellErrorValue(SheetName, 0, 0))
 
             Select Case GetType(T)
                 Case GetType(EpplusFreeExcelDataOperations), GetType(EpplusPolyformExcelDataOperations)
                     'bug in Epplus engine
-                    Assert.Ignore("Bugs in Epplus formula manager engine")
+                    ClassicAssert.Ignore("Bugs in Epplus formula manager engine")
                 Case Else
                     wb.WriteCellFormula(SheetName, 0, 0, "A0", False)
                     wb.RecalculateCell(SheetName, 0, 0, False)
-                    Assert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
+                    ClassicAssert.AreEqual("#NAME?", wb.LookupCellErrorValue(SheetName, 0, 0))
             End Select
         End Sub
 
@@ -765,28 +766,28 @@ Namespace ExcelOpsTests.Engines
             Dim TestSheet As String = "Grunddaten"
 
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual("E40", eppeo.LookupLastCell(TestSheet).Address)
-            Assert.AreEqual(39, eppeo.LookupLastRowIndex(TestSheet))
-            Assert.AreEqual(4, eppeo.LookupLastColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("E40", eppeo.LookupLastCell(TestSheet).Address)
+            ClassicAssert.AreEqual(39, eppeo.LookupLastRowIndex(TestSheet))
+            ClassicAssert.AreEqual(4, eppeo.LookupLastColumnIndex(TestSheet))
 
             eppeo.WriteCellValue(Of String)(New ExcelCell(TestSheet, "J50", ExcelCell.ValueTypes.All), "Content! :-)")
-            Assert.AreEqual("J50", eppeo.LookupLastCell(TestSheet).Address)
-            Assert.AreEqual(49, eppeo.LookupLastRowIndex(TestSheet))
-            Assert.AreEqual(9, eppeo.LookupLastColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("J50", eppeo.LookupLastCell(TestSheet).Address)
+            ClassicAssert.AreEqual(49, eppeo.LookupLastRowIndex(TestSheet))
+            ClassicAssert.AreEqual(9, eppeo.LookupLastColumnIndex(TestSheet))
 
             TestControllingToolFileName = TestFiles.TestFileMergedCells.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             TestSheet = "MergedCellsTest"
-            Assert.AreEqual("C3", eppeo.LookupLastCell(TestSheet).Address)
-            Assert.AreEqual(2, eppeo.LookupLastRowIndex(TestSheet))
-            Assert.AreEqual(2, eppeo.LookupLastColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("C3", eppeo.LookupLastCell(TestSheet).Address)
+            ClassicAssert.AreEqual(2, eppeo.LookupLastRowIndex(TestSheet))
+            ClassicAssert.AreEqual(2, eppeo.LookupLastColumnIndex(TestSheet))
 
             TestControllingToolFileName = TestFiles.TestFileLastCellDetection01.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             TestSheet = "LastCellDetection01"
-            Assert.AreEqual("GD59", eppeo.LookupLastCell(TestSheet).Address)
-            Assert.AreEqual(58, eppeo.LookupLastRowIndex(TestSheet))
-            Assert.AreEqual(185, eppeo.LookupLastColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("GD59", eppeo.LookupLastCell(TestSheet).Address)
+            ClassicAssert.AreEqual(58, eppeo.LookupLastRowIndex(TestSheet))
+            ClassicAssert.AreEqual(185, eppeo.LookupLastColumnIndex(TestSheet))
         End Sub
 
         <Test> Public Sub LookupLastContentCellAddress()
@@ -795,29 +796,29 @@ Namespace ExcelOpsTests.Engines
             Dim TestSheet As String = "Grunddaten"
 
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual("E40", eppeo.LookupLastContentCell(TestSheet).Address)
-            Assert.AreEqual(39, eppeo.LookupLastContentRowIndex(TestSheet))
-            Assert.AreEqual(4, eppeo.LookupLastContentColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("E40", eppeo.LookupLastContentCell(TestSheet).Address)
+            ClassicAssert.AreEqual(39, eppeo.LookupLastContentRowIndex(TestSheet))
+            ClassicAssert.AreEqual(4, eppeo.LookupLastContentColumnIndex(TestSheet))
 
             eppeo.WriteCellValue(Of String)(New ExcelCell(TestSheet, "I49", ExcelCell.ValueTypes.All), "content :-)")
             eppeo.WriteCellValue(Of String)(New ExcelCell(TestSheet, "J50", ExcelCell.ValueTypes.All), "")
-            Assert.AreEqual("I49", eppeo.LookupLastContentCell(TestSheet).Address)
-            Assert.AreEqual(48, eppeo.LookupLastContentRowIndex(TestSheet))
-            Assert.AreEqual(8, eppeo.LookupLastContentColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("I49", eppeo.LookupLastContentCell(TestSheet).Address)
+            ClassicAssert.AreEqual(48, eppeo.LookupLastContentRowIndex(TestSheet))
+            ClassicAssert.AreEqual(8, eppeo.LookupLastContentColumnIndex(TestSheet))
 
             TestControllingToolFileName = TestFiles.TestFileMergedCells.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             TestSheet = "MergedCellsTest"
-            Assert.AreEqual("C3", eppeo.LookupLastContentCell(TestSheet).Address)
-            Assert.AreEqual(2, eppeo.LookupLastContentRowIndex(TestSheet))
-            Assert.AreEqual(2, eppeo.LookupLastContentColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("C3", eppeo.LookupLastContentCell(TestSheet).Address)
+            ClassicAssert.AreEqual(2, eppeo.LookupLastContentRowIndex(TestSheet))
+            ClassicAssert.AreEqual(2, eppeo.LookupLastContentColumnIndex(TestSheet))
 
             TestControllingToolFileName = TestFiles.TestFileLastCellDetection01.FullName
             eppeo = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             TestSheet = "LastCellDetection01"
-            Assert.AreEqual("GD59", eppeo.LookupLastContentCell(TestSheet).Address)
-            Assert.AreEqual(58, eppeo.LookupLastContentRowIndex(TestSheet))
-            Assert.AreEqual(185, eppeo.LookupLastContentColumnIndex(TestSheet))
+            ClassicAssert.AreEqual("GD59", eppeo.LookupLastContentCell(TestSheet).Address)
+            ClassicAssert.AreEqual(58, eppeo.LookupLastContentRowIndex(TestSheet))
+            ClassicAssert.AreEqual(185, eppeo.LookupLastContentColumnIndex(TestSheet))
         End Sub
 
         Protected Delegate Sub TestInCultureContextAction()
@@ -1078,7 +1079,7 @@ Namespace ExcelOpsTests.Engines
                          "38|Pflegekasse                 |1▲4      |   |      |     " & ControlChars.CrLf &
                          "39|Krankengeld                 |0▲25     |   |      |     " & ControlChars.CrLf &
                          "40|                            |12▲45    |   |      |     " & ControlChars.CrLf
-                    Assert.AreEqual(12.45.ToString, eppeo.LookupCellFormattedText(TestSheet, 40 - 1, 2 - 1))
+                    ClassicAssert.AreEqual(12.45.ToString, eppeo.LookupCellFormattedText(TestSheet, 40 - 1, 2 - 1))
                     Me.AssertSheetContentMatrix(eppeo, TestSheet, ExcelOps.ExcelDataOperationsBase.MatrixContent.FormattedText, ExpectedResultInCultureContextAndPlateformLineBreakEncoding(ExpectedMatrix))
                 End Sub)
         End Sub
@@ -1147,7 +1148,7 @@ Namespace ExcelOpsTests.Engines
             Console.WriteLine("## Table " & eo.EngineName & " - " & MatrixContentName & " - " & System.Threading.Thread.CurrentThread.CurrentCulture.Name)
             Console.WriteLine(SheetData.ToUIExcelTable)
             Console.WriteLine("## /Table")
-            Assert.AreEqual(expectedMatrix, SheetData.ToUIExcelTable)
+            ClassicAssert.AreEqual(expectedMatrix, SheetData.ToUIExcelTable)
         End Sub
 
         <Test> Public Sub LookupCellValue(<Values("invariant", "de-DE")> cultureName As String)
@@ -1189,19 +1190,19 @@ Namespace ExcelOpsTests.Engines
                     '"40|                            |=SUMME(B36:B39)|   |                                   |      
 
                     'D3
-                    Assert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'A8
-                    Assert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual(ExpectedResultInCultureContextAndPlateformLineBreakEncoding("Chef: 14▲09"), eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual(ExpectedResultInCultureContextAndPlateformLineBreakEncoding("Chef: 14▲09"), eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'E1
-                    Assert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
                 End Sub)
         End Sub
 
@@ -1261,7 +1262,7 @@ Namespace ExcelOpsTests.Engines
                 MasterImg = System.Drawing.Image.FromFile(TestEnvironment.FullPathOfExistingTestFile("test_comparison_masters", "excel_test_chart.png"))
 
                 Dim Workbook = PrepareAndFillExcelFileWithChart(0)
-                Assert.AreEqual(2, Workbook.SheetNames.Count) '"data","chart"
+                ClassicAssert.AreEqual(2, Workbook.SheetNames.Count) '"data","chart"
                 Dim ChartImage = Workbook.ExportChartSheetImage("chart")
 
                 ChartImage.Save(TempFilePng, System.Drawing.Imaging.ImageFormat.Png)
@@ -1280,23 +1281,23 @@ Namespace ExcelOpsTests.Engines
                 'Now, do the negative test: image must be detected as "is different"
                 Dim DifferentChartImage As System.Drawing.Image
                 DifferentChartImage = PrepareAndFillExcelFileWithChart(2).ExportChartSheetImage("chart") 'stronger difference
-                Assert.Throws(Of NUnit.Framework.AssertionException)(Sub() TestImageComparison.AssertImagesAreEqual(MasterImg, DifferentChartImage))
+                ClassicAssert.Throws(Of NUnit.Framework.AssertionException)(Sub() TestImageComparison.AssertImagesAreEqual(MasterImg, DifferentChartImage))
 
                 DifferentChartImage = PrepareAndFillExcelFileWithChart(1).ExportChartSheetImage("chart") 'minor difference of just 1 letter 
-                Assert.Throws(Of NUnit.Framework.AssertionException)(Sub() TestImageComparison.AssertImagesAreEqual(MasterImg, DifferentChartImage))
+                ClassicAssert.Throws(Of NUnit.Framework.AssertionException)(Sub() TestImageComparison.AssertImagesAreEqual(MasterImg, DifferentChartImage))
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 #End Region
@@ -1317,21 +1318,21 @@ Namespace ExcelOpsTests.Engines
                     '--+-------+------+-----+-----+-----+-------
                     '1 |#DIV/0!|#NAME?|#REF!|#REF!|#NUM!|#VALUE!
 
-                    Assert.AreEqual("#DIV/0!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "A1", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("#NAME?", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "B1", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "C1", ExcelOps.ExcelCell.ValueTypes.All)))
-                    Assert.AreEqual("#VALUE!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "F1", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("#DIV/0!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "A1", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("#NAME?", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "B1", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "C1", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("#VALUE!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "F1", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'NOTE: Known expected behaviour for #NUM! error value is differently between the several engines
                     Select Case eppeo.EngineName
                         Case "Spire.Xls", "FreeSpire.Xls", "Epplus (Polyform license edition)"
-                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
-                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
+                            ClassicAssert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            ClassicAssert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
                             'Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
                             'Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
                         Case Else
-                            Assert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
-                            Assert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            ClassicAssert.AreEqual("#REF!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "D1", ExcelOps.ExcelCell.ValueTypes.All)))
+                            ClassicAssert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(New ExcelOps.ExcelCell(TestSheet, "E1", ExcelOps.ExcelCell.ValueTypes.All)))
                     End Select
 
                 End Sub)
@@ -1342,7 +1343,7 @@ Namespace ExcelOpsTests.Engines
             Dim TestSheet As String = "Tabelle1"
             System.Console.WriteLine("Testing XLSX: " & TestControllingToolFileName)
             Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            Assert.AreEqual("F1", eppeo.LookupLastCell(TestSheet).Address)
+            ClassicAssert.AreEqual("F1", eppeo.LookupLastCell(TestSheet).Address)
         End Sub
 
         <Test> Public Sub FindErrorCellsInWorkbook(<Values("invariant", "de-DE", "en-US")> cultureName As String)
@@ -1354,36 +1355,36 @@ Namespace ExcelOpsTests.Engines
                 Sub()
                     Dim eppeo As ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestControllingToolFileName, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
 
-                    Assert.AreEqual("F1", eppeo.LookupLastCell(TestSheet).Address)
+                    ClassicAssert.AreEqual("F1", eppeo.LookupLastCell(TestSheet).Address)
                     Console.WriteLine(eppeo.SheetContentMatrix(TestSheet, ExcelDataOperationsBase.MatrixContent.Errors).ToUIExcelTable)
                     '## Expected matrix like following
                     '# |A      |B     |C    |D    |E    |F      
                     '--+-------+------+-----+-----+-----+-------
                     '1 |#DIV/0!|#NAME?|#REF!|#REF!|#NUM!|#VALUE!
 
-                    Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#DIV/0!").Count)
-                    Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NAME?").Count)
-                    Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#VALUE!").Count)
+                    ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#DIV/0!").Count)
+                    ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NAME?").Count)
+                    ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#VALUE!").Count)
 
                     'NOTE: Known expected behaviour for #NUM! error value is differently between the several engines
                     Select Case eppeo.EngineName
                         Case "Spire.Xls", "FreeSpire.Xls"
-                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
-                            Assert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(TestSheet, 0, 4), "E1 >> #NUM") 'Error detection not working (correctly) in engine at E1
-                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
-                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count) 'Error detection not working (correctly) in engine at D1
-                            Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
-                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
+                            ClassicAssert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
+                            ClassicAssert.AreEqual("#NUM!", eppeo.LookupCellErrorValue(TestSheet, 0, 4), "E1 >> #NUM") 'Error detection not working (correctly) in engine at E1
+                            ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
+                            ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count) 'Error detection not working (correctly) in engine at D1
+                            ClassicAssert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
+                            ClassicAssert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #NUM! error value in cell E1 (=SQRT(-1) alias =WURZEL(-1))")
                         Case "Epplus (Polyform license edition)"
-                            Assert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
-                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
-                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
-                            Assert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
-                            Assert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
+                            ClassicAssert.AreEqual(Nothing, eppeo.LookupCellErrorValue(TestSheet, 0, 3), "D1 >> #REF") 'Error detection not working (correctly) in engine at D1
+                            ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
+                            ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
+                            ClassicAssert.AreEqual(5, eppeo.FindErrorCellsInWorkbook().Count)
+                            ClassicAssert.Ignore(eppeo.EngineName & " is not fully compatible and doesn't show up with #REF! error value in cell D1 (cell reference to a removed sheet (by EPPlus lib, which doesn't update formulas with #REF! on sheet removal)")
                         Case Else
-                            Assert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
-                            Assert.AreEqual(2, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
-                            Assert.AreEqual(6, eppeo.FindErrorCellsInWorkbook().Count)
+                            ClassicAssert.AreEqual(1, eppeo.FindErrorCellsInWorkbook("#NUM!").Count)
+                            ClassicAssert.AreEqual(2, eppeo.FindErrorCellsInWorkbook("#REF!").Count)
+                            ClassicAssert.AreEqual(6, eppeo.FindErrorCellsInWorkbook().Count)
                     End Select
 
                     If eppeo.CalculationModuleDisabled = False Then
@@ -1412,16 +1413,16 @@ Namespace ExcelOpsTests.Engines
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 
@@ -1438,16 +1439,16 @@ Namespace ExcelOpsTests.Engines
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 
@@ -1464,16 +1465,16 @@ Namespace ExcelOpsTests.Engines
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 #End Region
@@ -1494,44 +1495,44 @@ Namespace ExcelOpsTests.Engines
                 End Try
                 Select Case Workbook.EngineName
                     Case "Epplus 4 (LGPL)"
-                        Assert.Multiple(
+                        ClassicAssert.Multiple(
                             Sub()
-                                Assert.AreEqual(True, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
-                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
-                                Assert.AreEqual(True, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
-                                Assert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
-                                Assert.AreEqual(True, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
-                                Assert.AreEqual(False, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
-                                Assert.Null(CatchedEx)
-                                Assert.NotNull(Workbook.FilePath)
+                                ClassicAssert.AreEqual(True, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
+                                ClassicAssert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
+                                ClassicAssert.AreEqual(True, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
+                                ClassicAssert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
+                                ClassicAssert.AreEqual(True, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
+                                ClassicAssert.AreEqual(False, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
+                                ClassicAssert.Null(CatchedEx)
+                                ClassicAssert.NotNull(Workbook.FilePath)
                             End Sub)
                     Case Else
                         Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
-                        Assert.Multiple(
+                        ClassicAssert.Multiple(
                             Sub()
-                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
-                                Assert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
-                                Assert.AreEqual(False, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
-                                Assert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
-                                Assert.AreEqual(True, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
-                                Assert.AreEqual(True, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
-                                Assert.Null(CatchedEx)
-                                Assert.NotNull(Workbook.FilePath)
+                                ClassicAssert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableCalculationEngine, "DefaultCalculationOptions.DisableCalculationEngine")
+                                ClassicAssert.AreEqual(False, Workbook.DefaultCalculationOptions.DisableInitialCalculation, "DefaultCalculationOptions.DisableInitialCalculation")
+                                ClassicAssert.AreEqual(False, Workbook.CalculationModuleDisabled, "CalculationModuleDisabled")
+                                ClassicAssert.AreEqual(True, Workbook.AutoCalculationEnabledWorkbookSetting, "AutoCalculationEnabledWorkbookSetting")
+                                ClassicAssert.AreEqual(True, Workbook.AutoCalculationOnLoad, "AutoCalculationOnLoad")
+                                ClassicAssert.AreEqual(True, Workbook.AutoCalculationOnLoadEffectively, "AutoCalculationOnLoadEffectively")
+                                ClassicAssert.Null(CatchedEx)
+                                ClassicAssert.NotNull(Workbook.FilePath)
                             End Sub)
                 End Select
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 
@@ -1545,16 +1546,16 @@ Namespace ExcelOpsTests.Engines
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 
@@ -1574,22 +1575,22 @@ Namespace ExcelOpsTests.Engines
                 Select Case Workbook.EngineName
                     Case Else
                         Console.WriteLine("Workbook.EngineName=" & Workbook.EngineName)
-                        Assert.Null(CatchedEx)
+                        ClassicAssert.Null(CatchedEx)
                 End Select
 
             Catch ex As PlatformNotSupportedException
                 'System.Drawing.Common is not supported on platform
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As System.TypeInitializationException
                 'The type initializer for 'Gdip' threw an exception.
                 '---> System.PlatformNotSupportedException System.Drawing.Common Is Not supported on non-Windows platforms. See https://aka.ms/systemdrawingnonwindows for more information.
                 'just ignore AutoFit feature
-                Assert.Ignore("PlatformNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("PlatformNotSupported: " & ex.Message)
             Catch ex As NotSupportedException
-                Assert.Ignore("EngineNotSupported: " & ex.Message)
+                ClassicAssert.Ignore("EngineNotSupported: " & ex.Message)
             Catch ex As NotImplementedException
-                Assert.Ignore("EngineImplementation missing: " & ex.Message)
+                ClassicAssert.Ignore("EngineImplementation missing: " & ex.Message)
             End Try
         End Sub
 #End Region
@@ -1612,9 +1613,9 @@ Namespace ExcelOpsTests.Engines
                 })
                 End If
             Catch ex As NotImplementedException
-                Assert.Ignore("Not implemented for this Excel engine")
+                ClassicAssert.Ignore("Not implemented for this Excel engine")
             Catch ex As TypeInitializationException
-                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+                ClassicAssert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
             End Try
 
         End Sub
@@ -1662,9 +1663,9 @@ Namespace ExcelOpsTests.Engines
                     End If
                 End With
             Catch ex As NotImplementedException
-                Assert.Ignore("Not implemented for this Excel engine")
+                ClassicAssert.Ignore("Not implemented for this Excel engine")
             Catch ex As TypeInitializationException
-                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+                ClassicAssert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
             End Try
 
         End Sub
@@ -1681,7 +1682,7 @@ Namespace ExcelOpsTests.Engines
             Try
                 Wb = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Catch ex As TypeInitializationException
-                Assert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
+                ClassicAssert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
             End Try
             For Each WorkSheetName In Wb.WorkSheetNames
                 System.Console.WriteLine("FOUND WORKSHEET: " & WorkSheetName)
@@ -1711,7 +1712,7 @@ Namespace ExcelOpsTests.Engines
                     End With
                 Next
             Catch ex As NotImplementedException
-                Assert.Ignore("Not implemented for this Excel engine")
+                ClassicAssert.Ignore("Not implemented for this Excel engine")
             End Try
 
         End Sub

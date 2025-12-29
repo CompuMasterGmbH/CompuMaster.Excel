@@ -1,4 +1,5 @@
 ﻿Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports CompuMaster.Excel.ExcelOps
 Imports System.Data
 
@@ -28,7 +29,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
         End Function
 
         Protected Overrides Sub EngineResetCellValueFromFormulaCell(wb As ExcelOps.ExcelDataOperationsBase, sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Assert.Ignore("Test not applicable for engine " & wb.EngineName)
+            ClassicAssert.Ignore("Test not applicable for engine " & wb.EngineName)
             'CType(wb, ExcelOps.FreeSpireXlsDataOperations).ResetCellValueFromFormulaCell(sheetName, rowIndex, columnIndex)
         End Sub
 

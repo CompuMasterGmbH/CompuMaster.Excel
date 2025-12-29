@@ -1,5 +1,6 @@
 ﻿Imports CompuMaster.Excel.ExcelOps
 Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 
 Namespace ExcelOpsTests.Engines
 
@@ -51,16 +52,16 @@ Namespace ExcelOpsTests.Engines
                     MsExcelInstance.Workbooks.Workbook(MyCounter).CloseAndDispose()
                 Next
             End If
-            Assert.LessOrEqual(WbCount, 1, AssertionMessageWbCount)
+            ClassicAssert.LessOrEqual(WbCount, 1, AssertionMessageWbCount)
             If WbCount = 1 Then
                 MsExcelInstance.Workbooks.Workbook(1).CloseAndDispose()
             End If
-            MsExcelInstance.Workbooks.CloseAllWorkbooks()
-            MsExcelInstance.Close()
         End Sub
 
         <OneTimeTearDown>
         Public Sub OneTimeTearDown()
+            MsExcelInstance.Workbooks.CloseAllWorkbooks()
+            MsExcelInstance.Close()
             If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
         End Sub
@@ -85,7 +86,7 @@ Namespace ExcelOpsTests.Engines
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Console.WriteLine("Found " & MsExcelProcessesBefore.Length & " EXCEL processes")
             ExcelOps.MsExcelDataOperations.CheckForRunningMsExcelInstancesAndAskUserToKill()
-            Assert.Pass()
+            ClassicAssert.Pass()
         End Sub
 
         <Test> Public Overrides Sub CopySheetContent()

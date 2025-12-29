@@ -2,6 +2,7 @@
 Option Explicit On
 
 Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports CompuMaster.Excel.ExcelOps
 
 Namespace DataTests
@@ -13,7 +14,7 @@ Namespace DataTests
 
         <Test> Public Sub BasicTestAndToCsvTable()
             Dim Table As New TextTable
-            Assert.AreEqual("no rows found" & System.Environment.NewLine, Table.ToUITable)
+            ClassicAssert.AreEqual("no rows found" & System.Environment.NewLine, Table.ToUITable)
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
@@ -21,10 +22,10 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual("", Table.ToCsvTable)
+            ClassicAssert.AreEqual("", Table.ToCsvTable)
 
             Table.AddRow("A1", "B1", "C1")
-            Assert.AreEqual("""A1"",""B1"",""C1""" & ControlChars.CrLf, Table.ToCsvTable)
+            ClassicAssert.AreEqual("""A1"",""B1"",""C1""" & ControlChars.CrLf, Table.ToCsvTable)
             Table.AddRow("A2", "B2", "C2", "D2", "", Nothing)
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUITable)
@@ -33,7 +34,7 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         """A1"",""B1"",""C1"",,," & ControlChars.CrLf &
                         """A2"",""B2"",""C2"",""D2"",""""," & ControlChars.CrLf, Table.ToCsvTable)
 
@@ -45,13 +46,13 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         """A1"",""B1"",""C1"",,," & ControlChars.CrLf &
                         """A2"",""B2"",""C2"",""D2"",""""," & ControlChars.CrLf &
                         ",,,,," & ControlChars.CrLf &
                         ",,,,," & ControlChars.CrLf, Table.ToCsvTable)
-            Assert.AreEqual(1, Table.LastContentRowIndex)
-            Assert.AreEqual(3, Table.LastContentColumnIndex)
+            ClassicAssert.AreEqual(1, Table.LastContentRowIndex)
+            ClassicAssert.AreEqual(3, Table.LastContentColumnIndex)
 
             Table.AutoTrim()
             Console.WriteLine("## UI")
@@ -61,7 +62,7 @@ Namespace DataTests
             Console.WriteLine(Table.ToCsvTable)
             Console.WriteLine("## /CSV")
             Console.WriteLine()
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         """A1"",""B1"",""C1""," & ControlChars.CrLf &
                         """A2"",""B2"",""C2"",""D2""" & ControlChars.CrLf, Table.ToCsvTable)
         End Sub
@@ -77,10 +78,10 @@ Namespace DataTests
             Console.WriteLine("## /UI")
             Console.WriteLine()
 
-            Assert.AreEqual("A1", Table.Cell(0, 0))
-            Assert.AreEqual("A1", Table.Cell(0, "A"))
-            Assert.AreEqual("B2", Table.Cell(1, 1))
-            Assert.AreEqual("B2", Table.Cell(1, "B"))
+            ClassicAssert.AreEqual("A1", Table.Cell(0, 0))
+            ClassicAssert.AreEqual("A1", Table.Cell(0, "A"))
+            ClassicAssert.AreEqual("B2", Table.Cell(1, 1))
+            ClassicAssert.AreEqual("B2", Table.Cell(1, "B"))
         End Sub
 
         <Test> Public Sub ToUITable()
@@ -89,14 +90,14 @@ Namespace DataTests
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual("no rows found" & System.Environment.NewLine, Table.ToUITable)
+            ClassicAssert.AreEqual("no rows found" & System.Environment.NewLine, Table.ToUITable)
 
             Table.AddRow("A1", "B1", "C1")
             Table.AddRow("A2", "B2", "C2", "D2", "", Nothing)
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "Column1|Column2|Column3|Column4|Column5|Column6" & System.Environment.NewLine &
                         "-------+-------+-------+-------+-------+-------" & System.Environment.NewLine &
                         "A1     |B1     |C1     |       |       |       " & System.Environment.NewLine &
@@ -108,7 +109,7 @@ Namespace DataTests
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "Column1|Column2|Column3|Column4|Column5|Column6" & System.Environment.NewLine &
                         "-------+-------+-------+-------+-------+-------" & System.Environment.NewLine &
                         "A1     |B1     |C1     |       |       |       " & System.Environment.NewLine &
@@ -121,7 +122,7 @@ Namespace DataTests
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUITable)
             Console.WriteLine("## /UI")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "Column1|Column2|Column3|Column4" & System.Environment.NewLine &
                         "-------+-------+-------+-------" & System.Environment.NewLine &
                         "A1     |B1     |C1     |       " & System.Environment.NewLine &
@@ -135,7 +136,7 @@ Namespace DataTests
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual("no rows found" & System.Environment.NewLine, Table.ToUIExcelTable)
+            ClassicAssert.AreEqual("no rows found" & System.Environment.NewLine, Table.ToUIExcelTable)
 
             Table.AddRow("A1", "B1", "C1")
             Table.AddRow("A2", "B2", "C2", "D2", "", Nothing)
@@ -143,7 +144,7 @@ Namespace DataTests
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |A1|B1|C1|  |  |  " & System.Environment.NewLine &
@@ -155,7 +156,7 @@ Namespace DataTests
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
             Console.WriteLine()
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |A1|B1|C1|  |  |  " & System.Environment.NewLine &
@@ -168,7 +169,7 @@ Namespace DataTests
             Console.WriteLine("## UI")
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /UI")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D " & System.Environment.NewLine &
                         "--+--+--+--+--" & System.Environment.NewLine &
                         "1 |A1|B1|C1|  " & System.Environment.NewLine &
@@ -177,32 +178,32 @@ Namespace DataTests
         End Sub
 
         <Test> Public Sub ExcelColumnName()
-            Assert.Multiple(
+            ClassicAssert.Multiple(
                 Sub()
-                    Assert.AreEqual("A", TextTable.ExcelColumnName(0))
-                    Assert.AreEqual("Z", TextTable.ExcelColumnName(25))
-                    Assert.AreEqual("AA", TextTable.ExcelColumnName(26))
-                    Assert.AreEqual("XFD", TextTable.ExcelColumnName(16383))
-                    Assert.AreEqual("A", ExcelOps.ExcelCell.ExcelColumnName(0))
-                    Assert.AreEqual("Z", ExcelOps.ExcelCell.ExcelColumnName(25))
-                    Assert.AreEqual("AA", ExcelOps.ExcelCell.ExcelColumnName(26))
-                    Assert.AreEqual("XFD", ExcelOps.ExcelCell.ExcelColumnName(16383))
-                    Assert.AreEqual("BY", ExcelCell.ExcelColumnName(76)) 'Not: "C@"
-                    Assert.AreEqual("BZ", ExcelCell.ExcelColumnName(77)) 'Not: "C@"
-                    Assert.AreEqual("CA", ExcelCell.ExcelColumnName(78)) 'Not: "C@"
+                    ClassicAssert.AreEqual("A", TextTable.ExcelColumnName(0))
+                    ClassicAssert.AreEqual("Z", TextTable.ExcelColumnName(25))
+                    ClassicAssert.AreEqual("AA", TextTable.ExcelColumnName(26))
+                    ClassicAssert.AreEqual("XFD", TextTable.ExcelColumnName(16383))
+                    ClassicAssert.AreEqual("A", ExcelOps.ExcelCell.ExcelColumnName(0))
+                    ClassicAssert.AreEqual("Z", ExcelOps.ExcelCell.ExcelColumnName(25))
+                    ClassicAssert.AreEqual("AA", ExcelOps.ExcelCell.ExcelColumnName(26))
+                    ClassicAssert.AreEqual("XFD", ExcelOps.ExcelCell.ExcelColumnName(16383))
+                    ClassicAssert.AreEqual("BY", ExcelCell.ExcelColumnName(76)) 'Not: "C@"
+                    ClassicAssert.AreEqual("BZ", ExcelCell.ExcelColumnName(77)) 'Not: "C@"
+                    ClassicAssert.AreEqual("CA", ExcelCell.ExcelColumnName(78)) 'Not: "C@"
                 End Sub)
         End Sub
 
         <Test> Public Sub CellAddress()
             Dim Table As New TextTable
-            Assert.AreEqual("A1", TextTable.CellAddress(0, 0))
-            Assert.AreEqual("A2", TextTable.CellAddress(1, 0))
-            Assert.AreEqual("B1", TextTable.CellAddress(0, 1))
-            Assert.AreEqual("B2", TextTable.CellAddress(1, 1))
-            Assert.AreEqual("A1", ExcelOps.ExcelCell.LocalCellAddress(0, 0))
-            Assert.AreEqual("A2", ExcelOps.ExcelCell.LocalCellAddress(1, 0))
-            Assert.AreEqual("B1", ExcelOps.ExcelCell.LocalCellAddress(0, 1))
-            Assert.AreEqual("B2", ExcelOps.ExcelCell.LocalCellAddress(1, 1))
+            ClassicAssert.AreEqual("A1", TextTable.CellAddress(0, 0))
+            ClassicAssert.AreEqual("A2", TextTable.CellAddress(1, 0))
+            ClassicAssert.AreEqual("B1", TextTable.CellAddress(0, 1))
+            ClassicAssert.AreEqual("B2", TextTable.CellAddress(1, 1))
+            ClassicAssert.AreEqual("A1", ExcelOps.ExcelCell.LocalCellAddress(0, 0))
+            ClassicAssert.AreEqual("A2", ExcelOps.ExcelCell.LocalCellAddress(1, 0))
+            ClassicAssert.AreEqual("B1", ExcelOps.ExcelCell.LocalCellAddress(0, 1))
+            ClassicAssert.AreEqual("B2", ExcelOps.ExcelCell.LocalCellAddress(1, 1))
         End Sub
 
         <Test> Public Sub CompareCells()
@@ -236,7 +237,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |D |  |  |  |  |  |  |  " & System.Environment.NewLine &
@@ -250,7 +251,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |E |E |E |E |E |E |E " & System.Environment.NewLine &
@@ -264,7 +265,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |  |  |  |  |  |  |  " & System.Environment.NewLine &
@@ -278,7 +279,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |  |  |  |  |  |  |  " & System.Environment.NewLine &
@@ -292,7 +293,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |M |  |  |  |  |  |  |  " & System.Environment.NewLine &
@@ -306,7 +307,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |M |  |A |  |  |  |  |  " & System.Environment.NewLine &
@@ -319,7 +320,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 DiffCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |M |  |R |  |  |  |  |  " & System.Environment.NewLine &
@@ -332,7 +333,7 @@ Namespace DataTests
             Console.WriteLine("## Table 2 DiffCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 DiffCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |D |  |  |  |  |  |  |  " & System.Environment.NewLine &
@@ -346,7 +347,7 @@ Namespace DataTests
             Console.WriteLine("## Table 2 EqualCells - Bool")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 EqualCells - Bool")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |E |E |E |E |E |E |E " & System.Environment.NewLine &
@@ -363,7 +364,7 @@ Namespace DataTests
             Console.WriteLine("## Table 1 DiffCells (CSV) - Content")
             Console.WriteLine(DiffTable.ToCsvTable)
             Console.WriteLine("## /Table 1 DiffCells (CSV) - Content")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G  |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+---+--" & System.Environment.NewLine &
                         "1 |A1|  |  |  |  |  |   |  " & System.Environment.NewLine &
@@ -372,20 +373,20 @@ Namespace DataTests
                         "4 |  |  |  |  |  |  |   |  " & System.Environment.NewLine &
                         "5 |  |  |  |  |  |  |   |  " & System.Environment.NewLine,
                         DiffTable.ToUIExcelTable)
-            Assert.IsNull(DiffTable.Cell(0, 4))
-            Assert.IsNull(DiffTable.Cell(0, 5))
-            Assert.IsNotEmpty(DiffTable.Cell(0, 4))
-            Assert.IsNotEmpty(DiffTable.Cell(0, 5))
-            Assert.IsNotNull(DiffTable.Cell(1, 4))
-            Assert.IsNotNull(DiffTable.Cell(1, 5))
-            Assert.IsEmpty(DiffTable.Cell(1, 4))
-            Assert.IsEmpty(DiffTable.Cell(1, 5))
+            ClassicAssert.IsNull(DiffTable.Cell(0, 4))
+            ClassicAssert.IsNull(DiffTable.Cell(0, 5))
+            ClassicAssert.IsNotEmpty(DiffTable.Cell(0, 4))
+            ClassicAssert.IsNotEmpty(DiffTable.Cell(0, 5))
+            ClassicAssert.IsNotNull(DiffTable.Cell(1, 4))
+            ClassicAssert.IsNotNull(DiffTable.Cell(1, 5))
+            ClassicAssert.IsEmpty(DiffTable.Cell(1, 4))
+            ClassicAssert.IsEmpty(DiffTable.Cell(1, 5))
 
             DiffTable = Table.CompareCells(CompTable, TextTable.DiffMode.EqualTrimmedCellsWithContent, TextTable.DiffCellOutput.CellContentOfThisTable)
             Console.WriteLine("## Table 1 EqualCells - Content")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 1 EqualCells - Content")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |B1|C1|  |  |  |  |  " & System.Environment.NewLine &
@@ -399,7 +400,7 @@ Namespace DataTests
             Console.WriteLine("## Table 2 DiffCells - Content")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 DiffCells - Content")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A        |B |C |D        |E      |F      |G  |H " & System.Environment.NewLine &
                         "--+---------+--+--+---------+-------+-------+---+--" & System.Environment.NewLine &
                         "1 |A1Changed|  |  |         |       |       |   |  " & System.Environment.NewLine &
@@ -413,7 +414,7 @@ Namespace DataTests
             Console.WriteLine("## Table 2 EqualCells - Content")
             Console.WriteLine(DiffTable.ToUIExcelTable)
             Console.WriteLine("## /Table 2 EqualCells - Content")
-            Assert.AreEqual(
+            ClassicAssert.AreEqual(
                         "# |A |B |C |D |E |F |G |H " & System.Environment.NewLine &
                         "--+--+--+--+--+--+--+--+--" & System.Environment.NewLine &
                         "1 |  |B1|C1|  |  |  |  |  " & System.Environment.NewLine &
@@ -427,18 +428,18 @@ Namespace DataTests
 
         <Test> Public Sub CellExists()
             Dim Table As New TextTable
-            Assert.False(Table.CellExists(0, 0))
+            ClassicAssert.False(Table.CellExists(0, 0))
             Table.AddRow("A1", "B1", "C1")
             Table.AddRow("A2", "B2", "C2", "D2", "", Nothing)
             Table.AddRows(2)
             Console.WriteLine("## Table")
             Console.WriteLine(Table.ToUIExcelTable)
             Console.WriteLine("## /Table")
-            Assert.True(Table.CellExists(0, 0))
-            Assert.True(Table.CellExists(3, 5))
-            Assert.False(Table.CellExists(4, 6))
-            Assert.False(Table.CellExists(3, 6))
-            Assert.False(Table.CellExists(4, 5))
+            ClassicAssert.True(Table.CellExists(0, 0))
+            ClassicAssert.True(Table.CellExists(3, 5))
+            ClassicAssert.False(Table.CellExists(4, 6))
+            ClassicAssert.False(Table.CellExists(3, 6))
+            ClassicAssert.False(Table.CellExists(4, 5))
         End Sub
 
         <Test> Public Sub EqualsAndHashCodes()
@@ -453,12 +454,12 @@ Namespace DataTests
             Table3.AddRow("A1", "B1", "C1")
             Table3.AddRow("A2", "B2", "C2", "D2", "", Nothing)
             Table3.AddRow("A3")
-            Assert.AreEqual(Table1, Table2)
-            Assert.AreNotEqual(Table1, Table3)
-            Assert.AreNotEqual(Table3, Table2)
-            Assert.IsTrue(Table1 = Table2)
-            Assert.IsFalse(Table1 = Table3)
-            Assert.IsFalse(Table3 = Table2)
+            ClassicAssert.AreEqual(Table1, Table2)
+            ClassicAssert.AreNotEqual(Table1, Table3)
+            ClassicAssert.AreNotEqual(Table3, Table2)
+            ClassicAssert.IsTrue(Table1 = Table2)
+            ClassicAssert.IsFalse(Table1 = Table3)
+            ClassicAssert.IsFalse(Table3 = Table2)
         End Sub
 
     End Class

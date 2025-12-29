@@ -1,4 +1,5 @@
 ﻿Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.MsExcelCom
 
@@ -10,7 +11,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
         <OneTimeSetUp()> Public Sub OneTimeInitConfig()
             If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
                 If MsExcelTools.IsPlatformSupportingComInteropAndMsExcelAppInstalled = False Then
-                    Assert.Ignore("Platform not supported or MS Excel not installed")
+                    ClassicAssert.Ignore("Platform not supported or MS Excel not installed")
                 End If
             End If
         End Sub
@@ -19,7 +20,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Test.Console.ResetConsoleForTestOutput()
             If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
                 Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-                Assert.Zero(MsExcelProcessesBefore.Length, "There are already Excel processes before test started")
+                ClassicAssert.Zero(MsExcelProcessesBefore.Length, "There are already Excel processes before test started")
             End If
         End Sub
 
@@ -27,14 +28,14 @@ Namespace ExcelOpsTests.MsExcelSpecials
             If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
                 CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
                 Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-                Assert.Zero(MsExcelProcessesAfter.Length, "There are Excel processes after test completed (TearDown)")
+                ClassicAssert.Zero(MsExcelProcessesAfter.Length, "There are Excel processes after test completed (TearDown)")
             End If
         End Sub
 
         <OneTimeTearDown> Public Sub OneTimeTearDown()
             If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
                 Dim MsExcelProcessesAfter As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-                Assert.Zero(MsExcelProcessesAfter.Length, "There are Excel processes after test completed (OneTimeTearDown)")
+                ClassicAssert.Zero(MsExcelProcessesAfter.Length, "There are Excel processes after test completed (OneTimeTearDown)")
             End If
         End Sub
 
@@ -42,14 +43,14 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Console.WriteLine("Found " & MsExcelProcessesBefore.Length & " EXCEL processes")
             MsExcelDataOperations.CheckForRunningMsExcelInstancesAndAskUserToKill()
-            Assert.Pass()
+            ClassicAssert.Pass()
         End Sub
 
         <Test> Public Sub OpenAndCloseMsExcelWithProperProcessCleanup_SeparateMsExcelAppWithExplicitQuit()
             Dim DummyCTWb As New MsExcelDataOperations(TestFiles.TestFileGrund02.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, False, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             DummyCTWb.CloseExcelAppInstance()
             Dim MsExcelProcessesAfterExplicitQuit As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
-            Assert.AreEqual(MsExcelProcessesAfterExplicitQuit.Length, MsExcelProcessesAfterExplicitQuit.Length, "Process count after ExcelApp.Quit")
+            ClassicAssert.AreEqual(MsExcelProcessesAfterExplicitQuit.Length, MsExcelProcessesAfterExplicitQuit.Length, "Process count after ExcelApp.Quit")
         End Sub
 
         '<NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit>
@@ -65,7 +66,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
             'If System.Diagnostics.Process.GetProcessesByName("EXCEL").Length <> 0 Then System.Console.WriteLine(Found)
             'MsExcelTools.WaitUntilTrueOrTimeout(Function() System.Diagnostics.Process.GetProcessesByName("EXCEL").Length = 0, New TimeSpan(0, 0, 15))
-            Assert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
+            ClassicAssert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
         End Sub
 
         '<NUnit.Framework.Ignore("Known2Fail But Less Important"), Explicit>
@@ -83,7 +84,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
                         End Sub
             Dummy()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
-            Assert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
+            ClassicAssert.AreEqual(0, System.Diagnostics.Process.GetProcessesByName("EXCEL").Length, "Process count after GC.Collect")
         End Sub
 
     End Class

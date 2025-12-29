@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.2025.1227" />
+    <PackageReference Include="CompuMaster.ComInterop" Version="1.0.2025.1229" />
     <None Include="README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

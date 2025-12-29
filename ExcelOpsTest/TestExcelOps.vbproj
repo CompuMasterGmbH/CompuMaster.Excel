@@ -36,7 +36,7 @@
 	  <PackageReference Include="EPPlus" Version="8.4.0" />
 	  <PackageReference Include="JUnitTestLogger4GitHub" Version="1.1.1" />
 	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="6.0.1" />
     <PackageReference Include="NUnit.Analyzers" Version="3.6.1">
       <PrivateAssets>all</PrivateAssets>

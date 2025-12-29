@@ -1,5 +1,6 @@
 Imports System.IO
 Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 
 Namespace MsExcelComInteropTest
 
@@ -15,7 +16,7 @@ Namespace MsExcelComInteropTest
             Try
                 ExcelApp = New CompuMaster.Excel.MsExcelComInterop.ExcelApplication()
             Catch
-                Assert.Ignore("Platform not supported or MS Excel application not installed")
+                ClassicAssert.Ignore("Platform not supported or MS Excel application not installed")
             End Try
         End Sub
 
@@ -31,7 +32,7 @@ Namespace MsExcelComInteropTest
             If NUnit.Framework.TestContext.CurrentContext.Test.Name <> NameOf(ManualRunOnly_KillAllMsExcelAppProcesses) Then
                 Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
                 If MsExcelProcesses.Length <> 0 Then
-                    Assert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but no excel processes allowed")
+                    ClassicAssert.Fail("Found " & MsExcelProcesses.Length & " EXCEL processes, but no excel processes allowed")
                 End If
             End If
         End Sub
@@ -77,7 +78,7 @@ Namespace MsExcelComInteropTest
             If System.IO.File.Exists(TargetTestFile) Then System.IO.File.Delete(TargetTestFile)
             Dim Wb = OpenExcelAppAndWorkbook(TestFiles.TestFileExcelOpsTestCollection.FullName)
             Wb.ExportAsFixedFormat(MsExcelComInterop.Enumerations.XlFixedFormatType.XlTypePDF, TargetTestFile)
-            Assert.True(System.IO.File.Exists(TargetTestFile))
+            ClassicAssert.True(System.IO.File.Exists(TargetTestFile))
             Wb.Close()
         End Sub
 
@@ -85,7 +86,7 @@ Namespace MsExcelComInteropTest
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Console.WriteLine("Found " & MsExcelProcessesBefore.Length & " EXCEL processes")
             CheckForRunningMsExcelInstancesAndAskUserToKill()
-            Assert.Pass()
+            ClassicAssert.Pass()
         End Sub
 
         Private Shared Sub CheckForRunningMsExcelInstancesAndAskUserToKill()

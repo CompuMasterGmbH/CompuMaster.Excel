@@ -1,4 +1,5 @@
 ﻿Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports System.Drawing
 #Disable Warning BC40056
 #Disable Warning IDE0005
@@ -18,7 +19,7 @@ Public Class TestImageComparison
     ''' <remarks>WARNING: Platform support for image comparison feature only provided by windows</remarks>
     Public Shared Sub AssertImagesAreEqual(expected As System.Drawing.Image, current As System.Drawing.Image, Optional acceptedTolerance As Single = 0F)
         '1st: compare image dimensions
-        Assert.AreEqual(expected.Size, current.Size, "Image pixel size difference")
+        ClassicAssert.AreEqual(expected.Size, current.Size, "Image pixel size difference")
 
         '2nd: compare pixels
         Dim Threshold As Byte = 0 'https://www.codeproject.com/Articles/374386/Simple-image-comparison-in-NET recommends thresholds between 0 - 4
@@ -26,13 +27,13 @@ Public Class TestImageComparison
         Dim DiffPercentage = PercentageDifference(expected, current, Threshold, expected.Width, expected.Height)
         Dim MaxDiff = acceptedTolerance
         Console.WriteLine("Image diff [%]: " & (DiffPercentage * 100).ToString)
-        Assert.LessOrEqual(DiffPercentage, MaxDiff, "Image difference > " & MaxDiff & " found: " & (DiffPercentage * 100).ToString & " %")
+        ClassicAssert.LessOrEqual(DiffPercentage, MaxDiff, "Image difference > " & MaxDiff & " found: " & (DiffPercentage * 100).ToString & " %")
     End Sub
 
     <Test>
     Public Shared Sub AssertImagesAreEqualTest()
         If Not TestTools.IsWindowsPlatform Then
-            Assert.Ignore("Platform not supported for image comparison feature (supported only by windows)")
+            ClassicAssert.Ignore("Platform not supported for image comparison feature (supported only by windows)")
         Else
             Dim MasterImg As Image = System.Drawing.Image.FromFile(TestEnvironment.FullPathOfExistingTestFile("test_comparison_masters", "excel_test_chart.png"))
             Dim ComparisonImg As New Bitmap(MasterImg)
@@ -46,7 +47,7 @@ Public Class TestImageComparison
                     ComparisonImg.SetPixel(x, y, System.Drawing.Color.Blue)
                 Next
             Next
-            Assert.Throws(Of NUnit.Framework.AssertionException)(Sub() AssertImagesAreEqual(MasterImg, ComparisonImg))
+            ClassicAssert.Throws(Of NUnit.Framework.AssertionException)(Sub() AssertImagesAreEqual(MasterImg, ComparisonImg))
         End If
     End Sub
 

@@ -1,4 +1,5 @@
 ﻿Imports NUnit.Framework
+Imports NUnit.Framework.Legacy
 Imports CompuMaster.Excel.ExcelOps
 
 Namespace ExcelOpsTests.MsExcelSpecials
@@ -22,7 +23,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
                     Try
                         _MsExcelAppWrapper = New MsExcelCom.MsExcelApplicationWrapper
                     Catch ex As System.PlatformNotSupportedException
-                        Assert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
+                        ClassicAssert.Ignore("Platform not supported or MS Excel app not installed: " & ex.Message)
                     End Try
                 End If
                 Return _MsExcelAppWrapper
@@ -47,16 +48,16 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Dim TestCell As OfficeOpenXml.ExcelRange
             wb.Workbook.Worksheets.Add("test-calcs")
             TestCell = wb.Workbook.Worksheets(0).Cells(1, 1)
-            Assert.AreEqual("#NAME?", Me.CalcTestCell(TestCell, "INVALIDFUNCTION(B2)"))
-            Assert.AreEqual("5", Me.CalcTestCell(TestCell, "2+3"))
-            Assert.AreEqual("6", Me.CalcTestCell(TestCell, "2*3"))
-            Assert.AreEqual("0", Me.CalcTestCell(TestCell, "B2"))
+            ClassicAssert.AreEqual("#NAME?", Me.CalcTestCell(TestCell, "INVALIDFUNCTION(B2)"))
+            ClassicAssert.AreEqual("5", Me.CalcTestCell(TestCell, "2+3"))
+            ClassicAssert.AreEqual("6", Me.CalcTestCell(TestCell, "2*3"))
+            ClassicAssert.AreEqual("0", Me.CalcTestCell(TestCell, "B2"))
             If "#VALUE!" = Me.CalcTestCell(TestCell, "B2+B3") Then
-                Assert.Warn("EPPlus calculation engine not working for formula '=B2+B3'")
-                Assert.Ignore("EPPlus calculation engine not working for formula '=B2+B3'")
+                ClassicAssert.Warn("EPPlus calculation engine not working for formula '=B2+B3'")
+                ClassicAssert.Ignore("EPPlus calculation engine not working for formula '=B2+B3'")
             End If
-            Assert.AreEqual("0", Me.CalcTestCell(TestCell, "B2+B3"))
-            Assert.AreEqual("5", Me.CalcTestCell(TestCell, "SUM(2,3)"))
+            ClassicAssert.AreEqual("0", Me.CalcTestCell(TestCell, "B2+B3"))
+            ClassicAssert.AreEqual("5", Me.CalcTestCell(TestCell, "SUM(2,3)"))
         End Sub
 
         Private Function CalcTestCell(cell As OfficeOpenXml.ExcelRange, formula As String) As String
@@ -82,16 +83,16 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Dim TestCell As CompuMaster.Epplus4.ExcelRange
             wb.Workbook.Worksheets.Add("test-calcs")
             TestCell = wb.Workbook.Worksheets(0).Cells(1, 1)
-            Assert.AreEqual("#NAME?", Me.CalcTestCell(TestCell, "INVALIDFUNCTION(B2)"))
-            Assert.AreEqual("5", Me.CalcTestCell(TestCell, "2+3"))
-            Assert.AreEqual("6", Me.CalcTestCell(TestCell, "2*3"))
-            Assert.AreEqual("0", Me.CalcTestCell(TestCell, "B2"))
+            ClassicAssert.AreEqual("#NAME?", Me.CalcTestCell(TestCell, "INVALIDFUNCTION(B2)"))
+            ClassicAssert.AreEqual("5", Me.CalcTestCell(TestCell, "2+3"))
+            ClassicAssert.AreEqual("6", Me.CalcTestCell(TestCell, "2*3"))
+            ClassicAssert.AreEqual("0", Me.CalcTestCell(TestCell, "B2"))
             If "#VALUE!" = Me.CalcTestCell(TestCell, "B2+B3") Then
-                Assert.Warn("EPPlus calculation engine not working for formula '=B2+B3'")
-                Assert.Ignore("EPPlus calculation engine not working for formula '=B2+B3'")
+                ClassicAssert.Warn("EPPlus calculation engine not working for formula '=B2+B3'")
+                ClassicAssert.Ignore("EPPlus calculation engine not working for formula '=B2+B3'")
             End If
-            Assert.AreEqual("0", Me.CalcTestCell(TestCell, "B2+B3"))
-            Assert.AreEqual("5", Me.CalcTestCell(TestCell, "SUM(2,3)"))
+            ClassicAssert.AreEqual("0", Me.CalcTestCell(TestCell, "B2+B3"))
+            ClassicAssert.AreEqual("5", Me.CalcTestCell(TestCell, "SUM(2,3)"))
         End Sub
 
         Private Function CalcTestCell(cell As CompuMaster.Epplus4.ExcelRange, formula As String) As String

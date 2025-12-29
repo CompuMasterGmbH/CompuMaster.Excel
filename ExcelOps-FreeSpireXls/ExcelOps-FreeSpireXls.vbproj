@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompuMaster.Reflection" Version="1.0.2024.1204" />
+    <PackageReference Include="CompuMaster.Reflection" Version="1.0.2025.1229" />
     <PackageReference Include="FreeSpire.XLS" Version="12.7.0" />
     <None Include="README.md">
       <Pack>True</Pack>
