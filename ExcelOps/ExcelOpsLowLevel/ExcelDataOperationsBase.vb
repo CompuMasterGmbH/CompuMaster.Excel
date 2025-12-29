@@ -428,14 +428,14 @@ Namespace ExcelOps
                 Me.RemoveVbaProject()
             End If
 
-            Dim DoRecalculateWorkbook As Boolean = Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False
-            If recalculateWorkbook.HasValue Then DoRecalculateWorkbook = recalculateWorkbook.Value
-            If DoRecalculateWorkbook Then Me.RecalculateAll()
-
             If Me.FilePath <> Nothing AndAlso Me.WorkbookFilePath = Nothing Then
                 'Created workbook, initial save must provide a file path, so use SaveAs method instead
-                Me.SaveAs(Me.FilePath, cachedCalculationsOption)
+                Me.SaveAs(Me.FilePath, recalculateWorkbook, cachedCalculationsOption)
             Else
+                Dim DoRecalculateWorkbook As Boolean = Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False
+                If recalculateWorkbook.HasValue Then DoRecalculateWorkbook = recalculateWorkbook.Value
+                If DoRecalculateWorkbook Then Me.RecalculateAll()
+
                 Me.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
                 If Me.AutoCalculationResetToEnabledForAllSavedWorkbooks Then
                     Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabledWorkbookSetting
