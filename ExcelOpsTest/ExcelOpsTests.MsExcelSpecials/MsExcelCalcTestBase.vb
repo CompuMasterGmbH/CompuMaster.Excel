@@ -101,7 +101,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Select Case EngineName
                 Case (New ExcelOps.EpplusFreeExcelDataOperations(ExcelDataOperationsBase.OpenMode.Uninitialized)).EngineName
                     ClassicAssert.AreEqual(True, Eppeo.CalculationModuleDisabled)
-                    ClassicAssert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+                    ClassicAssert.Throws(Of FeatureDisabledException)(Sub() Eppeo.Save(True, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
                     Eppeo.CalculationModuleDisabled = False
                     ClassicAssert.AreEqual(False, Eppeo.CalculationModuleDisabled)
                 Case Else
