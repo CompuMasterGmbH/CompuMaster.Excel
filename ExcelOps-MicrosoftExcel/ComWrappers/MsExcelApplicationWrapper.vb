@@ -94,9 +94,16 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Property
 
         Public Sub SetCultureContext(culture As System.Globalization.CultureInfo)
-            _ComApp.ComObjectStronglyTyped.UseSystemSeparators = (culture Is Nothing) 'True allows customization in lines below, False uses system settings
-            _ComApp.ComObjectStronglyTyped.DecimalSeparator = culture.NumberFormat.NumberDecimalSeparator
-            _ComApp.ComObjectStronglyTyped.ThousandsSeparator = culture.NumberFormat.NumberGroupSeparator
+            If Me.IsClosed Then Throw New InvalidOperationException("MS Excel instance is (already) closed")
+            If culture Is Nothing Then
+                _ComApp.ComObjectStronglyTyped.DecimalSeparator = System.Globalization.CultureInfo.InvariantCulture.NumberFormat.NumberDecimalSeparator
+                _ComApp.ComObjectStronglyTyped.ThousandsSeparator = System.Globalization.CultureInfo.InvariantCulture.NumberFormat.NumberGroupSeparator
+                _ComApp.ComObjectStronglyTyped.UseSystemSeparators = True 'allows customization in lines below, False uses system settings
+            Else
+                _ComApp.ComObjectStronglyTyped.UseSystemSeparators = False 'True allows customization in lines below, False uses system settings
+                _ComApp.ComObjectStronglyTyped.DecimalSeparator = culture.NumberFormat.NumberDecimalSeparator
+                _ComApp.ComObjectStronglyTyped.ThousandsSeparator = culture.NumberFormat.NumberGroupSeparator
+            End If
         End Sub
 
         ''' <summary>
