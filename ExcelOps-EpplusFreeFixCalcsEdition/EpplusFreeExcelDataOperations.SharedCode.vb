@@ -1068,7 +1068,11 @@ Namespace ExcelOps
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
             Dim AllMergedCells = Me.Workbook.Worksheets(sheetName).MergedCells()
             For MyCounter As Integer = 0 To AllMergedCells.Count - 1
-                Result.Add(New ExcelOps.ExcelRange(sheetName, AllMergedCells(MyCounter)))
+                If AllMergedCells(MyCounter) IsNot Nothing Then
+                    Result.Add(New ExcelOps.ExcelRange(sheetName, AllMergedCells(MyCounter)))
+                Else
+                    'unexpected situation: merged cell is nothing, but obviously can exist in collection of some XLSX files of real world sometimes, probably a bug in Epplus library after deleting sheets or merged cells?
+                End If
             Next
             Return Result
         End Function
