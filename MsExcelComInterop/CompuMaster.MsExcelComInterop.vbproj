@@ -11,7 +11,7 @@
     <OptionStrict>On</OptionStrict>
     <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Copyright>2023-2025 CompuMaster GmbH</Copyright>
+    <Copyright>2023-2026 CompuMaster GmbH</Copyright>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Control MS Excel via COM but without dependency to any Microsoft Interop assemblies</Description>
     <IncludeSymbols>True</IncludeSymbols>
