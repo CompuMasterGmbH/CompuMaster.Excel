@@ -40,8 +40,8 @@
         ''' <param name="range"></param>
         Public Sub New(sheetName As String, range As String)
             Me.New(
-                    New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 0), ExcelCell.ValueTypes.All),
-                    New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, 1), ExcelCell.ValueTypes.All)
+                    New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, Tools.LookupCellAddresFromRangeMode.FirstCell), ExcelCell.ValueTypes.All),
+                    New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, Tools.LookupCellAddresFromRangeMode.LastCell), ExcelCell.ValueTypes.All)
                     )
         End Sub
 

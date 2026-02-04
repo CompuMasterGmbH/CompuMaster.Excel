@@ -31,22 +31,35 @@ Namespace ExcelOps
             End Select
         End Function
 
+        Public Enum LookupCellAddresFromRangeMode As Integer
+            ''' <summary>
+            ''' 1st address part of range
+            ''' </summary>
+            FirstCell = 0
+            ''' <summary>
+            ''' 2nd address part of range or 1st address part if only single cell address given (typically the last cell of range)
+            ''' </summary>
+            LastCell = 1
+        End Enum
+
         ''' <summary>
-        ''' Resolve range addresses (e.g. "A1:C3" or "A1") to cell addresses (e.g. "A1" or "C3")
+        ''' Resolve first or last cell address of range address (e.g. "A1:C3" or "A1") to cell addresses (e.g. "A1" or "C3")
         ''' </summary>
         ''' <param name="range">Range address (e.g. "A1:C3" or "A1")</param>
-        ''' <param name="index">0 for 1st cell address, 1 for 2nd cell address</param>
+        ''' <param name="mode">0 for 1st cell address, 1 for 2nd cell address part</param>
         ''' <returns>Cell address (e.g. "A1" or "C3")</returns>
-        Public Shared Function LookupCellAddresFromRange(range As String, index As Integer) As String
+        Public Shared Function LookupCellAddresFromRange(range As String, mode As LookupCellAddresFromRangeMode) As String
+            If range Is Nothing Then Throw New ArgumentNullException(NameOf(range), "Invalid range argument with null")
+            If range = Nothing Then Throw New ArgumentNullException(NameOf(range), "Invalid range argument with empty string")
             Dim Cells As String() = range.Split(":"c)
-            If Cells.Length = 0 OrElse Cells.Length > 2 Then Throw New ArgumentException("Invalid range", NameOf(range))
-            Select Case index
-                Case 0
+            If Cells.Length = 0 OrElse Cells.Length > 2 Then Throw New ArgumentException("Invalid range: " & range, NameOf(range))
+            Select Case mode
+                Case LookupCellAddresFromRangeMode.FirstCell
                     Return Cells(0)
-                Case 1
+                Case LookupCellAddresFromRangeMode.LastCell
                     Return Cells(If(Cells.Length = 2, 1, 0))
                 Case Else
-                    Throw New ArgumentOutOfRangeException(NameOf(index))
+                    Throw New ArgumentOutOfRangeException(NameOf(mode))
             End Select
         End Function
 

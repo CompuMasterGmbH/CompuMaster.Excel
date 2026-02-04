@@ -854,7 +854,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                 End If
             End Try
             Dim UsedRange As New ExcelOps.ExcelRange(sheetName, Sheet.UsedRange.AddressLocal(False, False))
-            Dim LastCell As New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell).AddressLocal(False, False), 1), ExcelCell.ValueTypes.All)
+            Dim LastCell As New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(Sheet.Cells.SpecialCells(MsExcel.XlCellType.xlCellTypeLastCell).AddressLocal(False, False), Tools.LookupCellAddresFromRangeMode.LastCell), ExcelCell.ValueTypes.All)
             Return Tools.CombineCellAddresses(LastCell, UsedRange.AddressEnd, Tools.CellAddressCombineMode.RightLowerCorner)
         End Function
 

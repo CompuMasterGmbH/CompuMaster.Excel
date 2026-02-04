@@ -181,6 +181,28 @@ Namespace ExcelOpsEngineTests
             ClassicAssert.AreEqual(New DateTime(1904, 1, 1), ExcelOps.Tools.ConvertExcelDateToDateTime(0.0, ExcelOps.Tools.XlsxDateSystem.Date1904))
         End Sub
 
+        <Test> Public Sub LookupCellAddresFromRange()
+            Dim LookupMode As ExcelOps.Tools.LookupCellAddresFromRangeMode
+
+            LookupMode = ExcelOps.Tools.LookupCellAddresFromRangeMode.FirstCell
+            ClassicAssert.AreEqual("B2", ExcelOps.Tools.LookupCellAddresFromRange("B2:C4", LookupMode))
+            ClassicAssert.AreEqual("B2", ExcelOps.Tools.LookupCellAddresFromRange("B2", LookupMode))
+            Assert.Throws(Of ArgumentNullException)(Sub() ExcelOps.Tools.LookupCellAddresFromRange(Nothing, LookupMode))
+            'ClassicAssert.AreEqual("", ExcelOps.Tools.LookupCellAddresFromRange("", LookupMode))
+            Assert.Throws(Of ArgumentNullException)(Sub() ExcelOps.Tools.LookupCellAddresFromRange("", LookupMode))
+
+            Assert.Throws(Of ArgumentException)(Sub() ExcelOps.Tools.LookupCellAddresFromRange("A1:B2:C3", LookupMode))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() ExcelOps.Tools.LookupCellAddresFromRange("A1:B2", CType(LookupMode + 2, ExcelOps.Tools.LookupCellAddresFromRangeMode)))
+
+            LookupMode = ExcelOps.Tools.LookupCellAddresFromRangeMode.LastCell
+            ClassicAssert.AreEqual("C4", ExcelOps.Tools.LookupCellAddresFromRange("B2:C4", LookupMode))
+            ClassicAssert.AreEqual("B2", ExcelOps.Tools.LookupCellAddresFromRange("B2", LookupMode))
+            Assert.Throws(Of ArgumentNullException)(Sub() ExcelOps.Tools.LookupCellAddresFromRange(Nothing, LookupMode))
+            'ClassicAssert.AreEqual("", ExcelOps.Tools.LookupCellAddresFromRange("", LookupMode))
+            Assert.Throws(Of ArgumentNullException)(Sub() ExcelOps.Tools.LookupCellAddresFromRange("", LookupMode))
+
+        End Sub
+
     End Class
 
 End Namespace
