@@ -312,8 +312,8 @@ Namespace ExcelOps
         ''' </summary>
         ''' <returns></returns>
         ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
-                                                                <Obsolete("Use AutoCalculationEnabledWorkbookSetting instead", True)>
-                                                                    <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use AutoCalculationEnabledWorkbookSetting instead", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Property AutoCalculationEnabled As Boolean
             Get
                 Return AutoCalculationEnabledWorkbookSetting
@@ -441,12 +441,12 @@ Namespace ExcelOps
                     Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabledWorkbookSetting
                     Try
                         Me.AutoCalculationEnabledWorkbookSetting = True
-                        Me.SaveInternal()
+                        Me.SaveInternal(cachedCalculationsOption)
                     Finally
                         Me.AutoCalculationEnabledWorkbookSetting = AutoCalcBuffer
                     End Try
                 Else
-                    Me.SaveInternal()
+                    Me.SaveInternal(cachedCalculationsOption)
                 End If
             End If
         End Sub
@@ -475,15 +475,15 @@ Namespace ExcelOps
         ''' <summary>
         ''' Save modifications made to the workbook
         ''' </summary>
-        Protected MustOverride Sub SaveInternal()
+        Protected MustOverride Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
         ''' <summary>
         ''' Save workbook as another file
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
-                                                                                    <Obsolete("Use overloaded method", True)>
-                                                                                        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use overloaded method", True)>
+        <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub SaveAs(filePath As String)
             Me.SaveAs(filePath, SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
         End Sub
@@ -505,12 +505,55 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub SaveAs(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me.SaveAs_Internal(filePath, recalculateWorkbook, cachedCalculationsOption, SaveMethodMode.SaveAs)
+        End Sub
+
+        ''' <summary>
+        ''' Save workbook as another file, but keep current file path and read-only status
+        ''' </summary>
+        ''' <param name="filePath"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
+        Public Sub SaveCopyAs(filePath As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me.SaveCopyAs(filePath, New Boolean?, cachedCalculationsOption)
+        End Sub
+
+        ''' <summary>
+        ''' Save workbook as another file, but keep current file path and read-only status
+        ''' </summary>
+        ''' <param name="filePath"></param>
+        ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
+        ''' <param name="cachedCalculationsOption"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
+        Public Sub SaveCopyAs(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me.SaveAs_Internal(filePath, recalculateWorkbook, cachedCalculationsOption, SaveMethodMode.SaveCopyAs)
+        End Sub
+
+        Private Enum SaveMethodMode As Byte
+            Save = 0
+            SaveAs = 1
+            SaveCopyAs = 2
+        End Enum
+
+        ''' <summary>
+        ''' Save workbook as another file
+        ''' </summary>
+        ''' <param name="filePath"></param>
+        ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
+        ''' <param name="cachedCalculationsOption"></param>
+        ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
+        Private Sub SaveAs_Internal(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines, saveMode As SaveMethodMode)
+            If saveMode = SaveMethodMode.Save Then Throw New NotImplementedException("SaveMethodMode.Save not fully implemented / Save method still calls Save_Internal instead of SaveAs_Internal")
             If Me.ReadOnly = True AndAlso Me._FilePath = filePath AndAlso Me.WorkbookFilePath <> Nothing Then
                 Throw New FileReadOnlyException("File """ & filePath & """ is read-only and can't be saved at same location")
             End If
             If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) AndAlso Me.HasVbaProject Then
                 Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
             End If
+
+            Dim OriginalFilePath As String = Me._FilePath
+            Dim OriginalReadOnlyStatus As Boolean = Me.ReadOnly
+            Dim SaveFilePath As New System.IO.FileInfo(filePath)
+
             If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
                 Me.RemoveVbaProject()
             End If
@@ -524,15 +567,29 @@ Namespace ExcelOps
                 Dim AutoCalcBuffer As Boolean = Me.AutoCalculationEnabledWorkbookSetting
                 Try
                     Me.AutoCalculationEnabledWorkbookSetting = True
-                    Me.SaveAsInternal(filePath, cachedCalculationsOption)
+                    Me.SaveAsInternal(SaveFilePath.FullName, cachedCalculationsOption)
                 Finally
                     Me.AutoCalculationEnabledWorkbookSetting = AutoCalcBuffer
                 End Try
             Else
-                Me.SaveAsInternal(filePath, cachedCalculationsOption)
+                Me.SaveAsInternal(SaveFilePath.FullName, cachedCalculationsOption)
             End If
-            Me._FilePath = filePath
-            Me.ReadOnly = False
+            Select Case saveMode
+                Case SaveMethodMode.Save
+                    'Keep original file path and read-only status - or force both to original values in case of temporary change in SaveAsInternal (e.g. for workarounds with RemoveVbaProject)
+                    Me._FilePath = OriginalFilePath
+                    Me.ReadOnly = OriginalReadOnlyStatus
+                Case SaveMethodMode.SaveAs
+                    'Accept new file path and set read-only status to false
+                    Me._FilePath = SaveFilePath.FullName
+                    Me.ReadOnly = False
+                Case SaveMethodMode.SaveCopyAs
+                    'Update file path and read-only status only if not in SaveAsCopy mode, otherwise keep original file path and read-only status (as in SaveAsCopy mode, the file is just saved to another location, but the current file path and read-only status of the engine instance should not be changed)
+                    Me._FilePath = OriginalFilePath
+                    Me.ReadOnly = OriginalReadOnlyStatus
+                Case Else
+                    Throw New NotImplementedException("Invalid save mode: " & saveMode.ToString)
+            End Select
         End Sub
 
         Public Enum SaveOptionsForDisabledCalculationEngines As Byte

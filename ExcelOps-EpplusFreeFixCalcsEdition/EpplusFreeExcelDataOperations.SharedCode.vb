@@ -30,12 +30,14 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Protected Overrides Sub SaveInternal()
-            If Me.PasswordForOpening <> Nothing Then
-                Me.WorkbookPackage.Save(Me.PasswordForOpening)
-            Else
-                Me.WorkbookPackage.Save()
-            End If
+        Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Me.SaveAsInternal(Me.FilePath, cachedCalculationsOption)
+            'FOLLOWING CODE MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+            'If Me.PasswordForOpening <> Nothing Then
+            '    Me.WorkbookPackage.Save(Me.PasswordForOpening)
+            'Else
+            '    Me.WorkbookPackage.Save()
+            'End If
         End Sub
 
         Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
@@ -61,6 +63,7 @@ Namespace ExcelOps
             Else
                 Me.WorkbookPackage.SaveAs(FullPath)
             End If
+            Me.ReloadFromFile() 'WITHOUT THIS STEP, NEXT SAVE/SAVEAS MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
             Me._FilePath = FullPath.FullName
         End Sub
 

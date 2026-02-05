@@ -30,7 +30,7 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Protected Overrides Sub SaveInternal()
+        Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.PasswordForOpening <> Nothing Then
                 Me.WorkbookPackage.Save(Me.PasswordForOpening)
             Else

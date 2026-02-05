@@ -256,6 +256,80 @@ Namespace ExcelOpsTests.Engines
 
         End Sub
 
+        <Test> Public Sub SaveCopyAsVsSaveAsVsSave(<Values("ExcelOpsGrund01.xlsx", "VbaProject.xlsm")> testFileName As String)
+            Dim Wb As T
+            'Testfile without password
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", testFileName)
+            Wb = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Dim HasVbaProjectBefore As Boolean = Wb.HasVbaProject
+            Dim FilePathLocationBefore As String = Wb.FilePath
+
+            Assert.That(Wb.ReadOnly, [Is].True)
+            Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+
+            Assert.Throws(Of CompuMaster.Excel.ExcelOps.FileReadOnlyException)(Sub() Wb.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+
+            Dim NewXlsxTargetPath As String
+            NewXlsxTargetPath = TestEnvironment.FullPathOfDynTestFile(Wb, "SaveCopyAs.xlsx")
+            If HasVbaProjectBefore Then
+                Assert.Throws(Of NotSupportedException)(Sub() Wb.SaveCopyAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+            Else
+                Wb.SaveCopyAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+            End If
+
+            Assert.That(Wb.ReadOnly, [Is].EqualTo(True))
+            Assert.That(Wb.FilePath, [Is].EqualTo(FilePathLocationBefore))
+            Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+
+            Assert.Throws(Of CompuMaster.Excel.ExcelOps.FileReadOnlyException)(Sub() Wb.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+
+            Assert.That(Wb.ReadOnly, [Is].EqualTo(True))
+            Assert.That(Wb.FilePath, [Is].EqualTo(FilePathLocationBefore))
+            Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+
+            NewXlsxTargetPath = TestEnvironment.FullPathOfDynTestFile(Wb, "SaveAs.xlsx")
+            If HasVbaProjectBefore Then
+                Assert.Throws(Of NotSupportedException)(Sub() Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+                Assert.That(Wb.ReadOnly, [Is].EqualTo(True))
+                Assert.That(Wb.FilePath, [Is].EqualTo(FilePathLocationBefore))
+                Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+            Else
+                Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+                Assert.That(Wb.ReadOnly, [Is].EqualTo(False))
+                Assert.That(Wb.FilePath, [Is].Not.EqualTo(FilePathLocationBefore))
+                Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+            End If
+
+            'Wb.ReloadFromFile() '==> if not reloading with Epplus4, following Save() call would fail with System.ArgumentOutOfRangeException : Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
+
+            If HasVbaProjectBefore Then
+                'Never saved as, so still read-only
+                Assert.Throws(Of CompuMaster.Excel.ExcelOps.FileReadOnlyException)(Sub() Wb.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset))
+                Assert.That(Wb.ReadOnly, [Is].EqualTo(True))
+                Assert.That(Wb.FilePath, [Is].EqualTo(FilePathLocationBefore))
+                Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+            Else
+                Wb.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.That(Wb.ReadOnly, [Is].EqualTo(False))
+                Assert.That(Wb.FilePath, [Is].Not.EqualTo(FilePathLocationBefore))
+                Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+            End If
+
+            'Save a 2nd time
+            If HasVbaProjectBefore Then
+                'Never saved as, so still read-only
+                Assert.Throws(Of CompuMaster.Excel.ExcelOps.FileReadOnlyException)(Sub() Wb.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour))
+                Assert.That(Wb.ReadOnly, [Is].EqualTo(True))
+                Assert.That(Wb.FilePath, [Is].EqualTo(FilePathLocationBefore))
+                Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+            Else
+                Wb.Save(ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+                Assert.That(Wb.ReadOnly, [Is].EqualTo(False))
+                Assert.That(Wb.FilePath, [Is].Not.EqualTo(FilePathLocationBefore))
+                Assert.That(Wb.HasVbaProject, [Is].EqualTo(HasVbaProjectBefore))
+            End If
+        End Sub
+
         <Test> Public Sub LoadFileFromByteArray()
             Dim Wb As T
             'Testfile without password

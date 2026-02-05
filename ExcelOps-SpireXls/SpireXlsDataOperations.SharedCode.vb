@@ -39,7 +39,7 @@ Namespace ExcelOps
             End Get
         End Property
 
-        Protected Overrides Sub SaveInternal()
+        Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Me._Workbook.SaveToFile(Me.FilePath) 'NOTE: _Workbook.Save is forbidden since the file path might have changed in background due to a workaround required for RemoveVbaProject
         End Sub
 
