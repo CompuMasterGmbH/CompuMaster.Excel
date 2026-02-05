@@ -31,11 +31,13 @@ Namespace ExcelOps
         End Property
 
         Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            If Me.PasswordForOpening <> Nothing Then
-                Me.WorkbookPackage.Save(Me.PasswordForOpening)
-            Else
-                Me.WorkbookPackage.Save()
-            End If
+            Me.SaveAsInternal(Me.FilePath, cachedCalculationsOption)
+            'FOLLOWING CODE MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+            'If Me.PasswordForOpening <> Nothing Then
+            '    Me.WorkbookPackage.Save(Me.PasswordForOpening)
+            'Else
+            '    Me.WorkbookPackage.Save()
+            'End If
         End Sub
 
         Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
@@ -61,6 +63,11 @@ Namespace ExcelOps
             Else
                 Me.WorkbookPackage.SaveAs(FullPath)
             End If
+            With Nothing
+                'WORKAROUND FOR NEXT SAVE/SAVEAS MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+                Me._FilePath = fileName
+                Me.ReloadFromFile() 'WITHOUT THIS STEP , NEXT SAVE/SAVEAS MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+            End With
             Me._FilePath = FullPath.FullName
         End Sub
 
@@ -1068,7 +1075,11 @@ Namespace ExcelOps
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
             Dim AllMergedCells = Me.Workbook.Worksheets(sheetName).MergedCells()
             For MyCounter As Integer = 0 To AllMergedCells.Count - 1
-                Result.Add(New ExcelOps.ExcelRange(sheetName, AllMergedCells(MyCounter)))
+                If AllMergedCells(MyCounter) IsNot Nothing Then
+                    Result.Add(New ExcelOps.ExcelRange(sheetName, AllMergedCells(MyCounter)))
+                Else
+                    'unexpected situation: merged cell is nothing, but obviously can exist in collection of some XLSX files of real world sometimes, probably a bug in Epplus library after deleting sheets or merged cells?
+                End If
             Next
             Return Result
         End Function

@@ -111,7 +111,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Apply default options from engine if not set and validate the resulting combination
+        ''' Apply default options from engine if not set and validate the resulting combination (creates a clone of this options instance, doesn't change the current instance)
         ''' </summary>
         ''' <param name="calculationDefaultOptions">Default calculation options from engine</param>
         ''' <returns>Validated options instance</returns>

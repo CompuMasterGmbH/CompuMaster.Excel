@@ -63,7 +63,11 @@ Namespace ExcelOps
             Else
                 Me.WorkbookPackage.SaveAs(FullPath)
             End If
-            Me.ReloadFromFile() 'WITHOUT THIS STEP, NEXT SAVE/SAVEAS MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+            With Nothing
+                'WORKAROUND FOR NEXT SAVE/SAVEAS MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+                Me._FilePath = fileName
+                Me.ReloadFromFile() 'WITHOUT THIS STEP , NEXT SAVE/SAVEAS MIGHT END UP IN EXCEPTION BECAUSE OF Epplus4 BUGS, THEREFORE SAVEAS IS USED INSTEAD OF SAVE
+            End With
             Me._FilePath = FullPath.FullName
         End Sub
 

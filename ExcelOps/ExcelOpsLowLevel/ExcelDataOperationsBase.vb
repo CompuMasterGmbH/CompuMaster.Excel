@@ -110,16 +110,16 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options</param>
         Protected Sub New(options As ExcelDataOperationsOptions)
             If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
-            Dim ValidatedOptions As ExcelDataOperationsOptions = options.ApplyDefaultsFromEngineAndValidate(Me.DefaultCalculationOptions)
-            Me.ValidateLoadOptions(ValidatedOptions)
-            Me.LoadOptions = ValidatedOptions
-            Me.CalculationModuleDisabled = ValidatedOptions.DisableCalculationEngine.Value
-            Me.AutoCalculationOnLoad = Not ValidatedOptions.DisableInitialCalculation.Value
-            If ValidatedOptions.DisableAutoCalculationInWorkbook.HasValue Then
-                Me.AutoCalculationEnabledWorkbookSetting = Not ValidatedOptions.DisableAutoCalculationInWorkbook.Value
+            Dim ValidatedOptionsClone As ExcelDataOperationsOptions = options.ApplyDefaultsFromEngineAndValidate(Me.DefaultCalculationOptions)
+            Me.ValidateLoadOptions(ValidatedOptionsClone)
+            Me.LoadOptions = ValidatedOptionsClone
+            Me.CalculationModuleDisabled = ValidatedOptionsClone.DisableCalculationEngine.Value
+            Me.AutoCalculationOnLoad = Not ValidatedOptionsClone.DisableInitialCalculation.Value
+            If ValidatedOptionsClone.DisableAutoCalculationInWorkbook.HasValue Then
+                Me.AutoCalculationEnabledWorkbookSetting = Not ValidatedOptionsClone.DisableAutoCalculationInWorkbook.Value
             End If
-            Me.ReadOnly = (ValidatedOptions.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
-            Me.PasswordForOpening = ValidatedOptions.PasswordForOpening
+            Me.ReadOnly = (ValidatedOptionsClone.FileWriteProtection = ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Me.PasswordForOpening = ValidatedOptionsClone.PasswordForOpening
         End Sub
 
         Protected Overridable Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
@@ -242,6 +242,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Reload a file from disk
         ''' </summary>
+        ''' <remarks>If workbook is still opened, workbook state like selected sheet can be restored from memory, otherwise state will be restored as saved in file</remarks>
         Public Sub ReloadFromFile()
             Me.LoadAndInitializeWorkbookFile(Me.FilePath, Me.LoadOptions)
         End Sub
@@ -796,8 +797,10 @@ Namespace ExcelOps
 
         Protected Sub LoadAndInitializeWorkbookFile(inputPath As String, options As ExcelDataOperationsOptions)
             If inputPath = Nothing Then Throw New ArgumentNullException(NameOf(inputPath))
-            '1st, close an exsting workbook instance
-            If Me.IsClosed = False Then Me.Close()
+            '1st, close an exsting workbook instance, preserving most valuable states (e.g. selected sheet)
+            If Me.IsClosed = False Then
+                Me.Close()
+            End If
             'Load the changed worksheet
             Me._FilePath = inputPath
             Dim file As New System.IO.FileInfo(inputPath)
