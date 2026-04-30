@@ -1,4 +1,4 @@
-// ZipFile.cs
+﻿// ZipFile.cs
 //
 // Copyright (c) 2006-2010 Dino Chiesa
 // All rights reserved.

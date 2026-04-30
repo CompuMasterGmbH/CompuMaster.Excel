@@ -1,4 +1,4 @@
-//#define Trace
+﻿//#define Trace
 
 // ParallelDeflateOutputStream.cs
 // ------------------------------------------------------------------

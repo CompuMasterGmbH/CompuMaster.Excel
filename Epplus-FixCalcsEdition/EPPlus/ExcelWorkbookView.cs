@@ -13,17 +13,17 @@
 
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
  * The GNU Lesser General Public License can be viewed at http://www.opensource.org/licenses/lgpl-license.php
  * If you unfamiliar with this license or have questions about it, here is an http://www.gnu.org/licenses/gpl-faq.html
  *
- * All code and executables are provided "as is" with no warranty either express or implied. 
+ * All code and executables are provided "as is" with no warranty either express or implied.
  * The author accepts no liability for any damage or loss of business that this product may cause.
  *
  * Code change notes:
- * 
+ *
  * Author							Change						Date
  * ******************************************************************************
  * Jan Källman		    Initial Release		       2011-11-02
@@ -43,7 +43,7 @@ namespace CompuMaster.Epplus4
     {
         #region ExcelWorksheetView Constructor
         /// <summary>
-        /// Creates a new ExcelWorkbookView which provides access to all the 
+        /// Creates a new ExcelWorkbookView which provides access to all the
         /// view states of the worksheet.
         /// </summary>
         /// <param name="ns"></param>
@@ -60,7 +60,7 @@ namespace CompuMaster.Epplus4
         /// Position of the upper left corner of the workbook window. In twips.
         /// </summary>
         public int Left
-        { 
+        {
             get
             {
                 return GetXmlNodeInt(LEFT_PATH);
@@ -75,7 +75,7 @@ namespace CompuMaster.Epplus4
         /// Position of the upper left corner of the workbook window. In twips.
         /// </summary>
         public int Top
-        { 
+        {
             get
             {
                 return GetXmlNodeInt(TOP_PATH);
@@ -90,7 +90,7 @@ namespace CompuMaster.Epplus4
         /// Width of the workbook window. In twips.
         /// </summary>
         public int Width
-        { 
+        {
             get
             {
                 return GetXmlNodeInt(WIDTH_PATH);
@@ -105,7 +105,7 @@ namespace CompuMaster.Epplus4
         /// Height of the workbook window. In twips.
         /// </summary>
         public int Height
-        { 
+        {
             get
             {
                 return GetXmlNodeInt(HEIGHT_PATH);
@@ -191,7 +191,7 @@ namespace CompuMaster.Epplus4
         }
 
         const string ACTIVETAB_PATH = "d:bookViews/d:workbookView/@activeTab";
-        public int ActiveTab 
+        public int ActiveTab
         {
             get
             {
@@ -209,4 +209,4 @@ namespace CompuMaster.Epplus4
         }
     }
 }
-    
+

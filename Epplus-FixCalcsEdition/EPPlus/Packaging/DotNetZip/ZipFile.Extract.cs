@@ -1,4 +1,4 @@
-// ZipFile.Extract.cs
+﻿// ZipFile.Extract.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009 Dino Chiesa.

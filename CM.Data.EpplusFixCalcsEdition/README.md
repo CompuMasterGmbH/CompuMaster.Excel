@@ -1,4 +1,4 @@
-# CompuMaster.Data.EpplusFreeFixCalcsEdition
+﻿# CompuMaster.Data.EpplusFreeFixCalcsEdition
 
 A library to write and read System.Data.DataTable or System.Data.DataSet
 

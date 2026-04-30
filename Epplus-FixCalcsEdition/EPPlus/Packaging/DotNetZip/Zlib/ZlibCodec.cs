@@ -1,4 +1,4 @@
-// ZlibCodec.cs
+﻿// ZlibCodec.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  

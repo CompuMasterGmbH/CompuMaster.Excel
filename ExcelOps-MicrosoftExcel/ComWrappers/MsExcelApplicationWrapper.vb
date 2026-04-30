@@ -1,4 +1,4 @@
-Imports Microsoft.Office.Interop.Excel
+﻿Imports Microsoft.Office.Interop.Excel
 Imports MsExcel = Microsoft.Office.Interop.Excel
 
 Namespace Global.CompuMaster.Excel.MsExcelCom

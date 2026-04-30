@@ -1,4 +1,4 @@
-// ZipEntry.Read.cs
+﻿// ZipEntry.Read.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 Dino Chiesa

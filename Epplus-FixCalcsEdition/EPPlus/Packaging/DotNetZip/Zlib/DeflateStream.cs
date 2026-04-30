@@ -1,4 +1,4 @@
-// DeflateStream.cs
+﻿// DeflateStream.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2010 Dino Chiesa.

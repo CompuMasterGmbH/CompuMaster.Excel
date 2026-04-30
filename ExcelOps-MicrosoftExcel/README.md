@@ -1,4 +1,4 @@
-# CompuMaster.Excel.MicrosoftExcel
+﻿# CompuMaster.Excel.MicrosoftExcel
 
 A library to access and edit Excel files with common interface CompuMaster.Excel.ExcelOps for several Excel engines
 

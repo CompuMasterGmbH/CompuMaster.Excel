@@ -1,4 +1,4 @@
-name: Build and Test
+﻿name: Build and Test
 
 # PREREQUISITES FOR PUSH-BACK OF TEST RESULTS
 # Please note: test project usually required nuget package JUnitTestLogger 

@@ -1,4 +1,4 @@
-// ZipErrorAction.cs
+﻿// ZipErrorAction.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c)  2009 Dino Chiesa

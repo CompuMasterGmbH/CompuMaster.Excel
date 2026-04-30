@@ -1,4 +1,4 @@
-// ZipEntrySource.cs
+﻿// ZipEntrySource.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009 Dino Chiesa

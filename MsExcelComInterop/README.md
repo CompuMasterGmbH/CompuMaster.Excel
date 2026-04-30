@@ -1,4 +1,4 @@
-# CompuMaster.Excel.MsExcelComInterop
+﻿# CompuMaster.Excel.MsExcelComInterop
 
 Use Microsoft.Office.Interop.Excel v15 (MS Office 2013) or higher, for solutions targetting .NET Framework 4.8 or .NET 6 or higher
 

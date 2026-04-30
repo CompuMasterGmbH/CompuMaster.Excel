@@ -1,4 +1,4 @@
--[] Write a detailed description of your what you have implemented or changed.
+﻿-[] Write a detailed description of your what you have implemented or changed.
 -[] Attach unit tests in the testproject to test implemented functionallity.
 -[] Make sure no tests fail in the test project.
 -[] Verify that you only check in the files intended for the pull request.

@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Option Explicit On
 
 Imports CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Text

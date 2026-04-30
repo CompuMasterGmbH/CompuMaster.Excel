@@ -1,4 +1,4 @@
-EPPlus samples for .Net Core
+﻿EPPlus samples for .Net Core
 
 Solution can be opened in Visual Studio for Windows or MacOS.
 On other operation systems please use...

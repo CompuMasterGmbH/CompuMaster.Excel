@@ -1,4 +1,4 @@
-# CompuMaster.Excel.ExcelOps
+﻿# CompuMaster.Excel.ExcelOps
 
 A common API for several libraries to access and edit Excel files
 

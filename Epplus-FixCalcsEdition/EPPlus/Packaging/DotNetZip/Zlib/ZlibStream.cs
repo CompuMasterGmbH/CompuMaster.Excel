@@ -1,4 +1,4 @@
-// ZlibStream.cs
+﻿// ZlibStream.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.

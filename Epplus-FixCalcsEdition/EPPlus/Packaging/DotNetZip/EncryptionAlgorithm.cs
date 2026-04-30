@@ -1,4 +1,4 @@
-// EncryptionAlgorithm.cs
+﻿// EncryptionAlgorithm.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c)  2009 Dino Chiesa

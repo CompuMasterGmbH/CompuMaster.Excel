@@ -1,4 +1,4 @@
-// ZipFile.Events.cs
+﻿// ZipFile.Events.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2008, 2009, 2011 Dino Chiesa .

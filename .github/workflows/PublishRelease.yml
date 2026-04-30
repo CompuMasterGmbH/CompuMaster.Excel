@@ -1,4 +1,4 @@
-name: Publish/Upload dotnet package on release
+﻿name: Publish/Upload dotnet package on release
 
 # PLEASE NOTE: PUBLISHING/DEPLOYMENT
 # Release is to be created manually at GitHub releases management page

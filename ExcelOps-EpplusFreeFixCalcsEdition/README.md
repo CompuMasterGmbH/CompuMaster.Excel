@@ -1,4 +1,4 @@
-# CompuMaster.Excel.EpplusFreeFixCalcsEdition
+﻿# CompuMaster.Excel.EpplusFreeFixCalcsEdition
 
 A library to access and edit Excel files with common interface CompuMaster.Excel.ExcelOps for several Excel engines
 

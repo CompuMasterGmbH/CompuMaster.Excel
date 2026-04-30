@@ -1,2 +1,2 @@
-dotnet restore
+﻿dotnet restore
 pause

@@ -1,4 +1,4 @@
-# CompuMaster.Excel.Tools.MicrosoftAndEpplus
+﻿# CompuMaster.Excel.Tools.MicrosoftAndEpplus
 
 Provide workarounds for some well-known issues in some of the alternative Excel engines
  

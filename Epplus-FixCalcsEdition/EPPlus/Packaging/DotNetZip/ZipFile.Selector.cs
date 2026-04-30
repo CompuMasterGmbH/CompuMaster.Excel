@@ -1,4 +1,4 @@
-// ZipFile.Selector.cs
+﻿// ZipFile.Selector.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2010 Dino Chiesa.

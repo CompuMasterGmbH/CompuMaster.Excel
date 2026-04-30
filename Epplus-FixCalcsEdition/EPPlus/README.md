@@ -1,4 +1,4 @@
-# CompuMaster.EPPlus 4.5.3.3
+ï»¿# CompuMaster.EPPlus 4.5.3.3
 
 ## Special CompuMaster Edition
 * required for resetting internal calculation caches to force MS Excel to recalculate on next reload (otherwise cells referencing other cells with formulas won't be recalculated correctly)
@@ -191,7 +191,7 @@ Minor new features
 
 Beta 2 Changes
 * Fixed bug when using RepeatColumns & RepeatRows at the same time.
-* VBA project will be left untouched if it’s not accessed.
+* VBA project will be left untouched if itï¿½s not accessed.
 * Fixed problem with strings on save.
 * Added locks to the cell store for access by multiple threads.
 * Implemented Indirect function

@@ -1,4 +1,12 @@
-﻿[*.cs]
+﻿root = true
+
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
 
 # CS1591: Fehledes XML-Kommentar für öffentlich sichtbaren Typ oder Element
 dotnet_diagnostic.CS1591.severity = none

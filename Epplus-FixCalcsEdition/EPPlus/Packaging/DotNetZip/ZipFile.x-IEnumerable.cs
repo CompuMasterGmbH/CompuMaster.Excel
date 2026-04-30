@@ -1,4 +1,4 @@
-// ZipFile.x-IEnumerable.cs
+﻿// ZipFile.x-IEnumerable.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.

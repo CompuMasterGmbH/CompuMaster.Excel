@@ -11,7 +11,7 @@
  * The author accepts no liability for any damage or loss of business that this product may cause.
  *
  * Code change notes:
- * 
+ *
  * Author Change                      Date
  *******************************************************************************
  * Mats Alm Added		                2016-12-27
@@ -168,7 +168,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
             {
                 return this;
             }
-            
+
             public ExcelAddressBase Address
             {
                 get { return _address; }
@@ -218,7 +218,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
 
             public string Formula
             {
-                get 
+                get
                 {
                     return _ws.GetFormula(_values.Row, _values.Column);
                 }
@@ -228,7 +228,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
             {
                 get { return _values.Value._value; }
             }
-            
+
             public double ValueDouble
             {
                 get { return ConvertUtil.GetValueDouble(_values.Value._value, true); }
@@ -239,8 +239,8 @@ namespace CompuMaster.Epplus4.FormulaParsing
             }
             public bool IsHiddenRow
             {
-                get 
-                { 
+                get
+                {
                     var row=_ws.GetValueInner(_values.Row, 0) as RowInternal;
                     if(row != null)
                     {
@@ -260,7 +260,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
 
             public IList<Token> Tokens
             {
-                get 
+                get
                 {
                     return _ws._formulaTokens.GetValue(_values.Row, _values.Column);
                 }
@@ -321,7 +321,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
             {
                 addr = ConvertToA1C1(addr);
             }
-            //SetCurrentWorksheet(addr.WorkSheet); 
+            //SetCurrentWorksheet(addr.WorkSheet);
             var wsName = string.IsNullOrEmpty(addr.WorkSheet) ? _currentWorksheet.Name : addr.WorkSheet;
             var ws = _package.Workbook.Worksheets[wsName];
             //return new CellsStoreEnumerator<object>(ws._values, addr._fromRow, addr._fromCol, addr._toRow, addr._toCol);
@@ -334,7 +334,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
             {
                 addr = ConvertToA1C1(addr);
             }
-            //SetCurrentWorksheet(addr.WorkSheet); 
+            //SetCurrentWorksheet(addr.WorkSheet);
             var wsName = string.IsNullOrEmpty(addr.WorkSheet) ? _currentWorksheet.Name : addr.WorkSheet;
             var ws = _package.Workbook.Worksheets[wsName];
             //return new CellsStoreEnumerator<object>(ws._values, addr._fromRow, addr._fromCol, addr._toRow, addr._toCol);
@@ -346,14 +346,14 @@ namespace CompuMaster.Epplus4.FormulaParsing
             //Convert the Table-style Address to an A1C1 address
             addr.SetRCFromTable(_package, addr);
             var a = new ExcelAddress(addr._fromRow, addr._fromCol, addr._toRow, addr._toCol);
-            a._ws = addr._ws;            
+            a._ws = addr._ws;
             return a;
         }
 
         public override INameInfo GetName(string worksheet, string name)
         {
             ExcelNamedRange nameItem;
-            ulong id;            
+            ulong id;
             ExcelWorksheet ws;
             if (string.IsNullOrEmpty(worksheet))
             {
@@ -395,7 +395,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
                 {
                     Id = id,
                     Name = name,
-                    Worksheet = nameItem.Worksheet==null ? nameItem._ws : nameItem.Worksheet.Name, 
+                    Worksheet = nameItem.Worksheet==null ? nameItem._ws : nameItem.Worksheet.Name,
                     Formula = nameItem.Formula
                 };
                 if (nameItem._fromRow > 0)
@@ -451,7 +451,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
                 address = _package.Workbook.Worksheets[worksheet].Dimension.End;
             }
             catch{}
-            
+
             return address;
         }
 
@@ -471,13 +471,13 @@ namespace CompuMaster.Epplus4.FormulaParsing
         {
             if (!string.IsNullOrEmpty(worksheetName))
             {
-                _currentWorksheet = _package.Workbook.Worksheets[worksheetName];    
+                _currentWorksheet = _package.Workbook.Worksheets[worksheetName];
             }
             else
             {
-                _currentWorksheet = _package.Workbook.Worksheets.First(); 
+                _currentWorksheet = _package.Workbook.Worksheets.First();
             }
-            
+
         }
 
         //public override void SetCellValue(string address, object value)
@@ -541,7 +541,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
 
         public override bool IsRowHidden(string worksheetName, int row)
         {
-            var b = _package.Workbook.Worksheets[worksheetName].Row(row).Height == 0 || 
+            var b = _package.Workbook.Worksheets[worksheetName].Row(row).Height == 0 ||
                     _package.Workbook.Worksheets[worksheetName].Row(row).Hidden;
 
             return b;
@@ -549,7 +549,7 @@ namespace CompuMaster.Epplus4.FormulaParsing
 
         public override void Reset()
         {
-            _names = new Dictionary<ulong, INameInfo>(); //Reset name cache.            
+            _names = new Dictionary<ulong, INameInfo>(); //Reset name cache.
         }
 
         //public override void SetToTableAddress(ExcelAddress address)
@@ -558,4 +558,4 @@ namespace CompuMaster.Epplus4.FormulaParsing
         //}
     }
 }
-    
+

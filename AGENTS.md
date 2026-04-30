@@ -1,4 +1,4 @@
-# Repository Guidance for Agents
+﻿# Repository Guidance for Agents
 
 ## Communication
 

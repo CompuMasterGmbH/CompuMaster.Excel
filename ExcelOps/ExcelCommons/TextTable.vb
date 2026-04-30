@@ -1,4 +1,4 @@
-Imports System.Data
+﻿Imports System.Data
 
 Namespace ExcelOps
 #If NETFRAMEWORK Then

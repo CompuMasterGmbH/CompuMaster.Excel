@@ -1,4 +1,4 @@
-# CompuMaster.Data.EpplusPolyformEdition
+﻿# CompuMaster.Data.EpplusPolyformEdition
 
 A library to write and read System.Data.DataTable or System.Data.DataSet
 

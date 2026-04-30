@@ -1,4 +1,4 @@
-// Zlib.cs
+﻿// Zlib.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 Dino Chiesa and Microsoft Corporation.

@@ -1,4 +1,4 @@
-//#define SelectorTrace
+﻿//#define SelectorTrace
 
 // FileSelector.cs
 // ------------------------------------------------------------------

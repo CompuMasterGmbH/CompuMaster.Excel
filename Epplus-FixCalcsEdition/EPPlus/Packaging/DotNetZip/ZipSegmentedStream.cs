@@ -1,4 +1,4 @@
-// ZipSegmentedStream.cs
+﻿// ZipSegmentedStream.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 Dino Chiesa.

@@ -1,4 +1,4 @@
-// ZipEntry.Extract.cs
+﻿// ZipEntry.Extract.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 Dino Chiesa

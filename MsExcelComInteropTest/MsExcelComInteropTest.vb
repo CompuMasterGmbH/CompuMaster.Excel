@@ -1,4 +1,4 @@
-Imports System.IO
+ï»¿Imports System.IO
 Imports NUnit.Framework
 Imports NUnit.Framework.Legacy
 
@@ -94,7 +94,7 @@ Namespace MsExcelComInteropTest
             If MsExcelProcesses IsNot Nothing AndAlso MsExcelProcesses.Length > 0 Then
                 Dim AllowedToKillProcesses As Boolean = False
                 Try
-                    AllowedToKillProcesses = (MsgBox(MsExcelProcesses.Length & " bereits geöffenete MS Excel Instanzen wurden gefunden. Sollen diese zuvor geschlossen werden?", MsgBoxStyle.Question Or MsgBoxStyle.YesNo) = vbYes)
+                    AllowedToKillProcesses = (MsgBox(MsExcelProcesses.Length & " bereits geï¿½ffenete MS Excel Instanzen wurden gefunden. Sollen diese zuvor geschlossen werden?", MsgBoxStyle.Question Or MsgBoxStyle.YesNo) = vbYes)
                 Catch ex As System.PlatformNotSupportedException
                     AllowedToKillProcesses = True
                 End Try

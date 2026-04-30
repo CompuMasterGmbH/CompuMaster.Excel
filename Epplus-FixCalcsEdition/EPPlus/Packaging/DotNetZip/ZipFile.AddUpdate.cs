@@ -1,4 +1,4 @@
-// ZipFile.AddUpdate.cs
+﻿// ZipFile.AddUpdate.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 Dino Chiesa.

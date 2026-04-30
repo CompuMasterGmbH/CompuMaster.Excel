@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Option Explicit On
 
 'NOTE:    THIS FILE IS UPDATED IN DIRECTORY ExcelOps-EpplusFreeFixCalcsEdition FIRST AND COPIED TO ExcelOps-EpplusPolyform AFTERWARDS

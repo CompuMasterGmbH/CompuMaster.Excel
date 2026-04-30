@@ -1,4 +1,4 @@
-// OffsetStream.cs
+﻿// OffsetStream.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c)  2009 Dino Chiesa

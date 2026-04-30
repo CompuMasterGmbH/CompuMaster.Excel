@@ -1,4 +1,4 @@
-// Inflate.cs
+﻿// Inflate.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.

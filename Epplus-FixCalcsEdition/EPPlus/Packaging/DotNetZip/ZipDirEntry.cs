@@ -1,4 +1,4 @@
-// ZipDirEntry.cs
+﻿// ZipDirEntry.cs
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2006-2011 Dino Chiesa .
