@@ -8,6 +8,11 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     Public Class MsExcelWorkbookWrapper
         Inherits CompuMaster.ComInterop.ComChildObject(Of MsExcelWorkbooksWrapper, MsExcel.Workbook)
 
+        ''' <summary>
+        ''' Creates a wrapper for an Excel workbook.
+        ''' </summary>
+        ''' <param name="parent">Parent workbooks collection wrapper.</param>
+        ''' <param name="obj">Excel workbook COM object.</param>
         Public Sub New(parent As MsExcelWorkbooksWrapper, obj As MsExcel.Workbook)
             MyBase.New(parent, obj)
         End Sub

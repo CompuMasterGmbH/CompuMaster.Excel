@@ -2,9 +2,15 @@
 
 Namespace ExcelOps
 #If NETFRAMEWORK Then
+    ''' <summary>
+    ''' Represents a simple text table backed by a data table.
+    ''' </summary>
     <CodeAnalysis.SuppressMessage("Naming", "CA1708:Bezeichner dürfen sich nicht nur durch die Groß-/Kleinschreibung unterscheiden", Justification:=".NET 8 doesn't implement this rule any more, so might be applicable for .NET Framework only, but .NET 4.8 seems to handle everything correctly")>
     Public Class TextTable
 #Else
+    ''' <summary>
+    ''' Represents a simple text table backed by a data table.
+    ''' </summary>
     Public Class TextTable
 #End If
         Implements ICloneable, IDisposable
@@ -32,6 +38,12 @@ Namespace ExcelOps
         Private ReadOnly Table As DataTable
         Private disposedValue As Boolean
 
+        ''' <summary>
+        ''' Gets or sets the cell value at the specified zero-based indexes.
+        ''' </summary>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns>The cell value.</returns>
         Public Property Cell(rowIndex As Integer, columnIndex As Integer) As String
             Get
                 Return CompuMaster.Data.Utils.NoDBNull(Me.Table.Rows(rowIndex)(columnIndex), CType(Nothing, String))
@@ -41,6 +53,12 @@ Namespace ExcelOps
             End Set
         End Property
 
+        ''' <summary>
+        ''' Gets or sets the cell value in the specified row and column.
+        ''' </summary>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnName">Column name.</param>
+        ''' <returns>The cell value.</returns>
         Public Property Cell(rowIndex As Integer, columnName As String) As String
             Get
                 Return CompuMaster.Data.Utils.NoDBNull(Me.Table.Rows(rowIndex)(columnName), CType(Nothing, String))
@@ -50,6 +68,11 @@ Namespace ExcelOps
             End Set
         End Property
 
+        ''' <summary>
+        ''' Gets or sets the column name at the specified zero-based column index.
+        ''' </summary>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns>The column name.</returns>
         Public Property ColumnName(columnIndex As Integer) As String
             Get
                 Return Me.Table.Columns(columnIndex).ColumnName
@@ -59,24 +82,40 @@ Namespace ExcelOps
             End Set
         End Property
 
+        ''' <summary>
+        ''' Adds empty columns.
+        ''' </summary>
+        ''' <param name="number">Number of columns to add.</param>
         Public Sub AddColumns(number As Integer)
             For MyCounter As Integer = 0 To number - 1
                 Me.Table.Columns.Add(Nothing, GetType(String))
             Next
         End Sub
 
+        ''' <summary>
+        ''' Adds columns with the specified names.
+        ''' </summary>
+        ''' <param name="columnNames">Column names to add.</param>
         Public Sub AddColumns(ParamArray columnNames As String())
             For MyCounter As Integer = 0 To columnNames.Length - 1
                 Me.Table.Columns.Add(columnNames(MyCounter), GetType(String))
             Next
         End Sub
 
+        ''' <summary>
+        ''' Adds empty rows.
+        ''' </summary>
+        ''' <param name="number">Number of rows to add.</param>
         Public Sub AddRows(number As Integer)
             For MyCounter As Integer = 0 To number - 1
                 Me.Table.Rows.Add()
             Next
         End Sub
 
+        ''' <summary>
+        ''' Adds a row with the specified cell values.
+        ''' </summary>
+        ''' <param name="cellData">Cell values for the new row.</param>
         Public Sub AddRow(ParamArray cellData As String())
             If cellData.Length > Me.Table.Columns.Count Then
                 Me.AddColumns(cellData.Length - Me.Table.Columns.Count)
@@ -84,20 +123,35 @@ Namespace ExcelOps
             Me.Table.Rows.Add(New ArrayList(cellData).ToArray)
         End Sub
 
+        ''' <summary>
+        ''' Adds a row with the specified cell values.
+        ''' </summary>
+        ''' <param name="cellData">Cell values for the new row.</param>
         Public Sub AddRow(cellData As List(Of String))
             Me.AddRow(cellData.ToArray)
         End Sub
 
+        ''' <summary>
+        ''' Clears all rows from the table.
+        ''' </summary>
         Public Sub Clear()
             Me.Table.Clear()
         End Sub
 
+        ''' <summary>
+        ''' Fills a column with the specified value.
+        ''' </summary>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <param name="value">Value to write into every row of the column.</param>
         Public Sub FillColumnWithValue(columnIndex As Integer, value As String)
             For MyCounter As Integer = 0 To Me.RowCount - 1
                 Me.Cell(MyCounter, columnIndex) = value
             Next
         End Sub
 
+        ''' <summary>
+        ''' Removes trailing empty rows and columns.
+        ''' </summary>
         Public Sub AutoTrim()
             For MyRowCounter As Integer = Me.Table.Rows.Count - 1 To Me.LastContentRowIndex + 1 Step -1
                 Me.Table.Rows.RemoveAt(MyRowCounter)
@@ -107,6 +161,10 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <summary>
+        ''' Gets the zero-based index of the last row containing a value.
+        ''' </summary>
+        ''' <returns>The last content row index, or -1 when the table has no content.</returns>
         Public Function LastContentRowIndex() As Integer
             For MyRowCounter As Integer = Me.Table.Rows.Count - 1 To 0 Step -1
                 For MyColCounter As Integer = Me.Table.Columns.Count - 1 To 0 Step -1
@@ -118,6 +176,10 @@ Namespace ExcelOps
             Return -1
         End Function
 
+        ''' <summary>
+        ''' Gets the zero-based index of the last column containing a value.
+        ''' </summary>
+        ''' <returns>The last content column index, or -1 when the table has no content.</returns>
         Public Function LastContentColumnIndex() As Integer
             For MyColCounter As Integer = Me.Table.Columns.Count - 1 To 0 Step -1
                 For MyRowCounter As Integer = Me.Table.Rows.Count - 1 To 0 Step -1
@@ -129,10 +191,18 @@ Namespace ExcelOps
             Return -1
         End Function
 
+        ''' <summary>
+        ''' Converts the table to a fixed-width plain text table.
+        ''' </summary>
+        ''' <returns>A fixed-width plain text table.</returns>
         Public Function ToUITable() As String
             Return CompuMaster.Data.DataTables.ConvertToPlainTextTableFixedColumnWidths(Me.Table, New CompuMaster.Data.ConvertToPlainTextTableOptions() With {.MinimumColumnWidth = 2, .MaximumColumnWidth = 65535})
         End Function
 
+        ''' <summary>
+        ''' Converts the table to a fixed-width plain text table with Excel-style row and column captions.
+        ''' </summary>
+        ''' <returns>A fixed-width plain text table.</returns>
         Public Function ToUIExcelTable() As String
             Dim UITable As DataTable = CompuMaster.Data.DataTables.CreateDataTableClone(Me.Table)
             UITable.Columns.Add("RowNo", GetType(Integer))
@@ -180,22 +250,35 @@ Namespace ExcelOps
             End Get
         End Property
 
+        ''' <summary>
+        ''' Converts the table to CSV text.
+        ''' </summary>
+        ''' <returns>CSV text using comma separators and CRLF row breaks.</returns>
         Public Function ToCsvTable() As String
             Return CompuMaster.Data.Csv.WriteDataTableToCsvTextString(Me.Table, False, CompuMaster.Data.Csv.WriteLineEncodings.RowBreakCrLf_CellLineBreakLf, ",", """"c, "."c)
         End Function
 
+        ''' <summary>
+        ''' Gets the number of columns.
+        ''' </summary>
         Public ReadOnly Property ColumnCount As Integer
             Get
                 Return Me.Table.Columns.Count
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the number of rows.
+        ''' </summary>
         Public ReadOnly Property RowCount As Integer
             Get
                 Return Me.Table.Rows.Count
             End Get
         End Property
 
+        ''' <summary>
+        ''' Defines which cells are included in a diff result.
+        ''' </summary>
         Public Enum DiffMode As Byte
             ''' <summary>
             ''' Cells with different content (after trimming) 
@@ -207,6 +290,9 @@ Namespace ExcelOps
             EqualTrimmedCellsWithContent = 1
         End Enum
 
+        ''' <summary>
+        ''' Defines how matching diff cells are represented in a diff result.
+        ''' </summary>
         Public Enum DiffCellOutput As Byte
             ''' <summary>
             ''' Cells without difference are null/Nothing, empty cells in this table but with different value in comparison table are String.Empty, else cells contain content of this table
@@ -436,6 +522,12 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <summary>
+        ''' Determines whether the specified cell exists in the table.
+        ''' </summary>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns><see langword="True"/> when the cell exists; otherwise <see langword="False"/>.</returns>
         Public Function CellExists(rowIndex As Integer, columnIndex As Integer) As Boolean
             Return rowIndex < Me.RowCount AndAlso columnIndex < Me.ColumnCount
         End Function
@@ -456,14 +548,30 @@ Namespace ExcelOps
             Return AutoTrimClone.ToCsvTable.GetHashCode()
         End Function
 
+        ''' <summary>
+        ''' Creates a deep clone of this table.
+        ''' </summary>
+        ''' <returns>A cloned table.</returns>
         Public Function Clone() As Object Implements ICloneable.Clone
             Return New TextTable(Me)
         End Function
 
+        ''' <summary>
+        ''' Determines whether two text tables are equal.
+        ''' </summary>
+        ''' <param name="obj1">First table.</param>
+        ''' <param name="obj2">Second table.</param>
+        ''' <returns><see langword="True"/> when both tables are equal; otherwise <see langword="False"/>.</returns>
         Public Shared Operator =(obj1 As TextTable, obj2 As TextTable) As Boolean
             Return obj1.Equals(obj2)
         End Operator
 
+        ''' <summary>
+        ''' Determines whether two text tables are not equal.
+        ''' </summary>
+        ''' <param name="obj1">First table.</param>
+        ''' <param name="obj2">Second table.</param>
+        ''' <returns><see langword="True"/> when both tables are different; otherwise <see langword="False"/>.</returns>
         Public Shared Operator <>(obj1 As TextTable, obj2 As TextTable) As Boolean
             Return Not obj1.Equals(obj2)
         End Operator
@@ -494,6 +602,10 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <summary>
+        ''' Releases resources used by this table.
+        ''' </summary>
+        ''' <param name="disposing">Whether managed resources shall be released.</param>
         Protected Overridable Sub Dispose(disposing As Boolean)
             If Not disposedValue Then
                 If disposing Then
@@ -513,6 +625,9 @@ Namespace ExcelOps
         '     MyBase.Finalize()
         ' End Sub
 
+        ''' <summary>
+        ''' Releases resources used by this table.
+        ''' </summary>
         Public Sub Dispose() Implements IDisposable.Dispose
             ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in der Methode "Dispose(disposing As Boolean)" ein.
             Dispose(disposing:=True)

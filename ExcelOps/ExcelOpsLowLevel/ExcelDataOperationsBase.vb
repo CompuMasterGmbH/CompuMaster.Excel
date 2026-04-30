@@ -12,6 +12,9 @@ Namespace ExcelOps
     ''' </summary>
     Public MustInherit Class ExcelDataOperationsBase
 
+        ''' <summary>
+        ''' Defines how an engine instance initializes its workbook.
+        ''' </summary>
         Public Enum OpenMode As Byte
             ''' <summary>
             ''' Open an existing workbook from file
@@ -150,11 +153,21 @@ Namespace ExcelOps
             Me.PasswordForOpening = ValidatedOptionsClone.PasswordForOpening
         End Sub
 
+        ''' <summary>
+        ''' Validates load options for the current engine.
+        ''' </summary>
+        ''' <param name="options">Validated load options with engine defaults already applied.</param>
+        ''' <remarks>
+        ''' Override this method when an engine does not support one or more options accepted by the base class.
+        ''' </remarks>
         Protected Overridable Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
             'nothing to do here
             'but override possible to check in engine for unsupported options (e.g. MS Excel doesn't support disabling of whole calculation module)
         End Sub
 
+        ''' <summary>
+        ''' Gets the validated load options used to initialize this engine instance.
+        ''' </summary>
         Protected ReadOnly Property LoadOptions As ExcelDataOperationsOptions
 
         ''' <summary>
@@ -192,6 +205,14 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <summary>
+        ''' Converts legacy constructor arguments to load options before engine validation is applied.
+        ''' </summary>
+        ''' <param name="autoCalculationOnLoad">Whether formulas shall be calculated when loading the workbook.</param>
+        ''' <param name="calculationModuleDisabled">Whether the engine calculation module shall be disabled.</param>
+        ''' <param name="readOnly">Whether the workbook shall be opened read-only.</param>
+        ''' <param name="passwordForOpening">Password used for opening the workbook.</param>
+        ''' <returns>Load options representing the legacy constructor arguments.</returns>
         Protected Shared Function ConvertToUnvalidatedOptions(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String) As ExcelDataOperationsOptions
             Return New ExcelDataOperationsOptions(If([readOnly], ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite),
                                                   passwordForOpening,
@@ -641,6 +662,9 @@ Namespace ExcelOps
             End Select
         End Sub
 
+        ''' <summary>
+        ''' Defines how cached formula results are handled when saving with disabled calculation engines.
+        ''' </summary>
         Public Enum SaveOptionsForDisabledCalculationEngines As Byte
             <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)> DefaultBehaviour = 0
             ''' <summary>

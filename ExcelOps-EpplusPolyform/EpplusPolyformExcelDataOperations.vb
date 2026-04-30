@@ -236,6 +236,9 @@ Namespace ExcelOps
                 Me.KeyOrName = licenseKeyOrLegalName
             End Sub
 
+            ''' <summary>
+            ''' Gets or sets the EPPlus license type to activate.
+            ''' </summary>
             Public Property LicenseType As OfficeOpenXml.EPPlusLicenseType
 
             ''' <summary>
@@ -253,6 +256,9 @@ Namespace ExcelOps
         End Sub
 
         Private _WorkbookPackage As OfficeOpenXml.ExcelPackage
+        ''' <summary>
+        ''' Gets the underlying EPPlus workbook package.
+        ''' </summary>
         Public ReadOnly Property WorkbookPackage As OfficeOpenXml.ExcelPackage
             Get
                 ValidateLicenseContext(Me)
@@ -263,6 +269,9 @@ Namespace ExcelOps
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the underlying EPPlus workbook.
+        ''' </summary>
         Public ReadOnly Property Workbook As OfficeOpenXml.ExcelWorkbook
             Get
                 ValidateLicenseContext(Me)

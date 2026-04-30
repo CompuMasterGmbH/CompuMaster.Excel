@@ -325,6 +325,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         Private _Workbooks As MsExcelWorkbooksWrapper
+        ''' <summary>
+        ''' Gets the underlying Excel workbooks COM collection.
+        ''' </summary>
         Public ReadOnly Property Workbooks As MsExcel.Workbooks
             Get
                 If _Workbooks Is Nothing Then
@@ -386,6 +389,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         Private _Workbook As MsExcelWorkbookWrapper
+        ''' <summary>
+        ''' Gets the underlying Excel workbook COM object.
+        ''' </summary>
         Public ReadOnly Property Workbook As MsExcel.Workbook
             Get
                 If _Workbook Is Nothing Then

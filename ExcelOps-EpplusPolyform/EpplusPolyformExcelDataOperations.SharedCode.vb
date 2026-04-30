@@ -357,16 +357,25 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <summary>
+        ''' Attaches the calculation engine logger and clears previous log output.
+        ''' </summary>
         Public Sub CalculationEngineAttachLogger()
             Me.CalculationEngineLog.FullLog.Clear()
             Me.CalculationEngineLog.ExceptionsLog.Clear()
             Me.Workbook.FormulaParserManager.AttachLogger(Me.CalculationEngineLog)
         End Sub
 
+        ''' <summary>
+        ''' Detaches the calculation engine logger.
+        ''' </summary>
         Public Sub CalculationEngineDetachLogger()
             Me.Workbook.FormulaParserManager.DetachLogger()
         End Sub
 
+        ''' <summary>
+        ''' Gets the calculation engine log collector.
+        ''' </summary>
         Public ReadOnly Property CalculationEngineLog As New FormulaParserLogger
 
         ''' <inheritdoc/>
@@ -896,6 +905,11 @@ Namespace ExcelOps
             Return Me.Workbook.Worksheets.Item(sheetName).Hidden <> eWorkSheetHidden.Visible
         End Function
 
+        ''' <summary>
+        ''' Writes a data table to a worksheet and replaces existing worksheet content.
+        ''' </summary>
+        ''' <param name="dataTable">Data table to write.</param>
+        ''' <param name="sheetName">Worksheet name.</param>
         Public Sub WriteTableToSheet(dataTable As DataTable, sheetName As String)
 
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -1070,6 +1084,13 @@ Namespace ExcelOps
             Me.Workbook.Worksheets(sheetName).Cells(fromRowIndex + 1, fromColumnIndex + 1, toRowIndex + 1, toColumnIndex + 1).Merge = True
         End Sub
 
+        ''' <summary>
+        ''' Gets the merged range address containing the specified cell.
+        ''' </summary>
+        ''' <param name="sheetName">Worksheet name.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns>The merged range address.</returns>
         Public Function IsMergedCellOfRange(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             Return Me.Workbook.Worksheets(sheetName).MergedCells(Me.Workbook.Worksheets(sheetName).GetMergeCellId(rowIndex + 1, columnIndex + 1) - 1)
         End Function

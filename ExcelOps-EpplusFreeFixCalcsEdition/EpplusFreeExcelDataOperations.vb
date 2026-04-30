@@ -150,6 +150,9 @@ Namespace ExcelOps
         End Property
 
         Private _WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
+        ''' <summary>
+        ''' Gets the underlying EPPlus workbook package.
+        ''' </summary>
         Public ReadOnly Property WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
             Get
                 If Me._WorkbookPackage Is Nothing Then
@@ -159,6 +162,9 @@ Namespace ExcelOps
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the underlying EPPlus workbook.
+        ''' </summary>
         Public ReadOnly Property Workbook As CompuMaster.Epplus4.ExcelWorkbook
             Get
                 If Me._WorkbookPackage Is Nothing Then

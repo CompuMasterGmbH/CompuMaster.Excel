@@ -51,30 +51,46 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             End If
         End Sub
 
+        ''' <summary>
+        ''' Gets the wrapped COM application helper.
+        ''' </summary>
         Public ReadOnly Property ComApp As CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
             Get
                 Return _ComApp
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the raw Excel application COM object.
+        ''' </summary>
         Public ReadOnly Property ComObject As Object
             Get
                 Return _ComApp.ComObject
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the strongly typed Excel application COM object.
+        ''' </summary>
         Public ReadOnly Property ComObjectStronglyTyped As Application
             Get
                 Return _ComApp.ComObjectStronglyTyped
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the process id of the Excel application instance.
+        ''' </summary>
         Public ReadOnly Property ExcelProcessId As Integer
             Get
                 Return _ComApp.ProcessId
             End Get
         End Property
 
+        ''' <summary>
+        ''' Gets the process of the Excel application instance.
+        ''' </summary>
+        ''' <returns>The Excel process.</returns>
         Public Function ExcelProcess() As System.Diagnostics.Process
             Return _ComApp.Process
         End Function
@@ -93,6 +109,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             End Get
         End Property
 
+        ''' <summary>
+        ''' Sets Excel decimal and thousands separators for the specified culture.
+        ''' </summary>
+        ''' <param name="culture">Culture to apply, or <see langword="Nothing"/> to use system separators.</param>
         Public Sub SetCultureContext(culture As System.Globalization.CultureInfo)
             If Me.IsClosed Then Throw New InvalidOperationException("MS Excel instance is (already) closed")
             If culture Is Nothing Then
@@ -227,6 +247,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
 #Region "IDisposable Support"
         Private disposedValue As Boolean ' Dient zur Erkennung redundanter Aufrufe.
 
+        ''' <summary>
+        ''' Gets whether this wrapper has been disposed.
+        ''' </summary>
         Public ReadOnly Property IsDisposed As Boolean
             Get
                 Return disposedValue
@@ -234,6 +257,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Property
 
         ' IDisposable
+        ''' <summary>
+        ''' Releases resources used by this wrapper.
+        ''' </summary>
+        ''' <param name="disposing">Whether managed resources shall be released.</param>
         Protected Overridable Sub Dispose(disposing As Boolean)
             If Not disposedValue Then
                 If disposing Then
@@ -250,6 +277,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         '     MyBase.Finalize()
         ' End Sub
 
+        ''' <summary>
+        ''' Releases resources used by this wrapper.
+        ''' </summary>
         Public Sub Dispose() Implements IDisposable.Dispose
             ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in der Methode "Dispose(disposing As Boolean)" ein.
             Dispose(disposing:=True)

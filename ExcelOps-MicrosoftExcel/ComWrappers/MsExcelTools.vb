@@ -20,14 +20,29 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             Return MsExcelProcesses IsNot Nothing AndAlso MsExcelProcesses.Length > 0
         End Function
 
+        ''' <summary>
+        ''' Recalculates and saves an Excel workbook file with Microsoft Excel.
+        ''' </summary>
+        ''' <param name="filePath">Workbook file path.</param>
         Public Shared Sub RecalculateFile(filePath As String)
             RecalculateFile(filePath, Nothing)
         End Sub
 
+        ''' <summary>
+        ''' Recalculates and saves an Excel workbook file with Microsoft Excel.
+        ''' </summary>
+        ''' <param name="filePath">Workbook file path.</param>
+        ''' <param name="msAppInstance">Existing Microsoft Excel application wrapper, or <see langword="Nothing"/> to create a temporary instance.</param>
         Public Shared Sub RecalculateFile(filePath As String, msAppInstance As MsExcelApplicationWrapper)
             RecalculateFile(filePath, msAppInstance, Nothing)
         End Sub
 
+        ''' <summary>
+        ''' Recalculates and saves an Excel workbook file with Microsoft Excel.
+        ''' </summary>
+        ''' <param name="filePath">Workbook file path.</param>
+        ''' <param name="msAppInstance">Existing Microsoft Excel application wrapper, or <see langword="Nothing"/> to create a temporary instance.</param>
+        ''' <param name="passwordForOpening">Password used for opening the workbook.</param>
         Public Shared Sub RecalculateFile(filePath As String, msAppInstance As MsExcelApplicationWrapper, passwordForOpening As String)
             Dim MsExcelApp As MsExcelApplicationWrapper = msAppInstance
             If MsExcelApp Is Nothing Then
@@ -43,6 +58,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             End Try
         End Sub
 
+        ''' <summary>
+        ''' Determines whether COM interop is available and Microsoft Excel is installed.
+        ''' </summary>
+        ''' <returns><see langword="True"/> when Microsoft Excel COM automation is available; otherwise <see langword="False"/>.</returns>
         Public Shared Function IsPlatformSupportingComInteropAndMsExcelAppInstalled() As Boolean
             Return CompuMaster.ComInterop.ComTools.IsPlatformSupportingComInteropAndMsExcelAppInstalled("Excel.Application")
         End Function

@@ -1,23 +1,47 @@
 ﻿Namespace ExcelOps
 
 #If NETFRAMEWORK Then
+    ''' <summary>
+    ''' Represents a worksheet cell address and expected value type.
+    ''' </summary>
     <CodeAnalysis.SuppressMessage("Naming", "CA1708:Bezeichner dürfen sich nicht nur durch die Groß-/Kleinschreibung unterscheiden", Justification:=".NET 8 doesn't implement this rule any more, so might be applicable for .NET Framework only, but .NET 4.8 seems to handle everything correctly")>
     Public Class ExcelCell
 #Else
+    ''' <summary>
+    ''' Represents a worksheet cell address and expected value type.
+    ''' </summary>
     Public Class ExcelCell
 #End If
         Implements ICloneable, IComparable, IEqualityComparer
 
+        ''' <summary>
+        ''' Creates a cell address from an address that may include a worksheet name.
+        ''' </summary>
+        ''' <param name="addressWithSheetName">Cell address, optionally including a worksheet name.</param>
+        ''' <param name="dataType">Expected value type of the cell.</param>
         Public Sub New(addressWithSheetName As String, dataType As ValueTypes)
             Me.New(SheetNamePart(addressWithSheetName), LocalAddressPart(addressWithSheetName), dataType)
         End Sub
 
+        ''' <summary>
+        ''' Creates a cell address from a worksheet name and local cell address.
+        ''' </summary>
+        ''' <param name="sheetName">Worksheet name.</param>
+        ''' <param name="addressWithoutSheetName">Cell address without worksheet name.</param>
+        ''' <param name="dataType">Expected value type of the cell.</param>
         Public Sub New(sheetName As String, addressWithoutSheetName As String, dataType As ValueTypes)
             Me.SheetName = sheetName
             Me.Address = addressWithoutSheetName
             Me.DataType = dataType
         End Sub
 
+        ''' <summary>
+        ''' Creates a cell address from zero-based row and column indexes.
+        ''' </summary>
+        ''' <param name="sheetName">Worksheet name.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <param name="dataType">Expected value type of the cell.</param>
         Public Sub New(sheetName As String, rowIndex As Integer, columnIndex As Integer, dataType As ValueTypes)
             Me.New(sheetName, LocalCellAddress(rowIndex, columnIndex), dataType)
         End Sub
@@ -79,11 +103,29 @@
         ''' Cell value types
         ''' </summary>
         Public Enum ValueTypes
+            ''' <summary>
+            ''' Any value type.
+            ''' </summary>
             All = -1
+            ''' <summary>
+            ''' Text value.
+            ''' </summary>
             Text = 0
+            ''' <summary>
+            ''' Numeric value.
+            ''' </summary>
             Number = 1
+            ''' <summary>
+            ''' Date or time value.
+            ''' </summary>
             DateTime = 2
+            ''' <summary>
+            ''' Formula value.
+            ''' </summary>
             Formula = 3
+            ''' <summary>
+            ''' Boolean value.
+            ''' </summary>
             Bool = 4
         End Enum
 
@@ -341,10 +383,7 @@
             Return AddressRowNumberStartIndex(Me.Address)
         End Function
 
-        ''' <summary>
-        ''' A string representation of the address like "Sheetname!A1:B2"
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function ToString() As String
             Return Me.Address(True)
         End Function
@@ -429,10 +468,22 @@
             Return Me = CType(obj, ExcelCell)
         End Function
 
+        ''' <summary>
+        ''' Determines whether two cell addresses are equal.
+        ''' </summary>
+        ''' <param name="x">First cell address.</param>
+        ''' <param name="y">Second cell address.</param>
+        ''' <returns><see langword="True"/> when both cell addresses compare as equal; otherwise <see langword="False"/>.</returns>
         Public Shared Operator =(x As ExcelCell, y As ExcelCell) As Boolean
             Return x.CompareTo(y) = 0
         End Operator
 
+        ''' <summary>
+        ''' Determines whether two cell addresses are not equal.
+        ''' </summary>
+        ''' <param name="x">First cell address.</param>
+        ''' <param name="y">Second cell address.</param>
+        ''' <returns><see langword="True"/> when both cell addresses compare as different; otherwise <see langword="False"/>.</returns>
         Public Shared Operator <>(x As ExcelCell, y As ExcelCell) As Boolean
             Return x.CompareTo(y) <> 0
         End Operator
@@ -447,14 +498,31 @@
             Return Me.ToString(True).GetHashCode
         End Function
 
+        ''' <summary>
+        ''' Determines whether one cell address is located before another cell address.
+        ''' </summary>
+        ''' <param name="x">First cell address.</param>
+        ''' <param name="y">Second cell address.</param>
+        ''' <returns><see langword="True"/> when <paramref name="x"/> is located before <paramref name="y"/>; otherwise <see langword="False"/>.</returns>
         Public Shared Operator <(x As ExcelCell, y As ExcelCell) As Boolean
             Return x.CompareTo(y) < 0
         End Operator
 
+        ''' <summary>
+        ''' Determines whether one cell address is located after another cell address.
+        ''' </summary>
+        ''' <param name="x">First cell address.</param>
+        ''' <param name="y">Second cell address.</param>
+        ''' <returns><see langword="True"/> when <paramref name="x"/> is located after <paramref name="y"/>; otherwise <see langword="False"/>.</returns>
         Public Shared Operator >(x As ExcelCell, y As ExcelCell) As Boolean
             Return x.CompareTo(y) > 0
         End Operator
 
+        ''' <summary>
+        ''' Compares this cell address to another cell address by row and column.
+        ''' </summary>
+        ''' <param name="obj">Cell address to compare with this instance.</param>
+        ''' <returns>A negative value when this cell is before <paramref name="obj"/>, a positive value when it is after <paramref name="obj"/>, or zero when both positions are equal.</returns>
         Public Function CompareTo(obj As Object) As Integer Implements IComparable.CompareTo
             If obj Is Nothing OrElse GetType(ExcelCell).IsInstanceOfType(obj) = False Then Throw New ArgumentException("Comparison requires values of type ExcelCell")
             Dim ComparisonRange = CType(obj, ExcelCell)

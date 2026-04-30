@@ -1,9 +1,15 @@
 ﻿Namespace ExcelOps
 
 #If NETFRAMEWORK Then
+    ''' <summary>
+    ''' Represents a rectangular worksheet cell range.
+    ''' </summary>
     <CodeAnalysis.SuppressMessage("Naming", "CA1708:Bezeichner dürfen sich nicht nur durch die Groß-/Kleinschreibung unterscheiden", Justification:=".NET 8 doesn't implement this rule any more, so might be applicable for .NET Framework only, but .NET 4.8 seems to handle everything correctly")>
     Public Class ExcelRange
 #Else
+    ''' <summary>
+    ''' Represents a rectangular worksheet cell range.
+    ''' </summary>
     Public Class ExcelRange
 #End If
         Implements IEnumerable(Of ExcelCell), ICloneable, IEqualityComparer, IComparable
@@ -87,10 +93,7 @@
             Return Me.ToString(True)
         End Function
 
-        ''' <summary>
-        ''' A string representation of the address like "Sheetname!A1:B2"
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function ToString() As String
             Return Me.ToString(True)
         End Function
@@ -222,10 +225,22 @@
             Return Me = CType(obj, ExcelRange)
         End Function
 
+        ''' <summary>
+        ''' Determines whether two ranges are equal.
+        ''' </summary>
+        ''' <param name="x">First range.</param>
+        ''' <param name="y">Second range.</param>
+        ''' <returns><see langword="True"/> when both ranges compare as equal; otherwise <see langword="False"/>.</returns>
         Public Shared Operator =(x As ExcelRange, y As ExcelRange) As Boolean
             Return x.CompareTo(y) = 0
         End Operator
 
+        ''' <summary>
+        ''' Determines whether two ranges are not equal.
+        ''' </summary>
+        ''' <param name="x">First range.</param>
+        ''' <param name="y">Second range.</param>
+        ''' <returns><see langword="True"/> when both ranges compare as different; otherwise <see langword="False"/>.</returns>
         Public Shared Operator <>(x As ExcelRange, y As ExcelRange) As Boolean
             Return x.CompareTo(y) <> 0
         End Operator
@@ -240,14 +255,31 @@
             Return Me.ToString(True).GetHashCode
         End Function
 
+        ''' <summary>
+        ''' Determines whether one range is located before another range.
+        ''' </summary>
+        ''' <param name="x">First range.</param>
+        ''' <param name="y">Second range.</param>
+        ''' <returns><see langword="True"/> when <paramref name="x"/> is located before <paramref name="y"/>; otherwise <see langword="False"/>.</returns>
         Public Shared Operator <(x As ExcelRange, y As ExcelRange) As Boolean
             Return x.CompareTo(y) < 0
         End Operator
 
+        ''' <summary>
+        ''' Determines whether one range is located after another range.
+        ''' </summary>
+        ''' <param name="x">First range.</param>
+        ''' <param name="y">Second range.</param>
+        ''' <returns><see langword="True"/> when <paramref name="x"/> is located after <paramref name="y"/>; otherwise <see langword="False"/>.</returns>
         Public Shared Operator >(x As ExcelRange, y As ExcelRange) As Boolean
             Return x.CompareTo(y) > 0
         End Operator
 
+        ''' <summary>
+        ''' Compares this range to another range by start cell and cell count.
+        ''' </summary>
+        ''' <param name="obj">Range to compare with this instance.</param>
+        ''' <returns>A negative value when this range is before or smaller than <paramref name="obj"/>, a positive value when it is after or larger than <paramref name="obj"/>, or zero when both ranges are equal.</returns>
         Public Function CompareTo(obj As Object) As Integer Implements IComparable.CompareTo
             If obj Is Nothing OrElse GetType(ExcelRange).IsInstanceOfType(obj) = False Then Throw New ArgumentException("Comparison requires values of type ExcelRange")
             Dim ComparisonRange = CType(obj, ExcelRange)
@@ -287,6 +319,9 @@
             ' until the first MoveNext() call.
             Dim position As Integer = -1
 
+            ''' <summary>
+            ''' Gets the current cell in the range.
+            ''' </summary>
             Public ReadOnly Property Current As ExcelCell Implements IEnumerator(Of ExcelCell).Current
                 Get
                     Return AllCells(position)
@@ -299,21 +334,34 @@
                 End Get
             End Property
 
+            ''' <summary>
+            ''' Resets the enumerator to its initial position.
+            ''' </summary>
             Public Sub Reset() Implements IEnumerator.Reset
                 position = -1
             End Sub
 
+            ''' <summary>
+            ''' Advances the enumerator to the next cell.
+            ''' </summary>
+            ''' <returns><see langword="True"/> when another cell is available; otherwise <see langword="False"/>.</returns>
             Public Function MoveNext() As Boolean Implements IEnumerator.MoveNext
                 position += 1
                 Return (position < AllCells.Count)
             End Function
 
 #Region "IDisposable Support"
-            ' IDisposable
+            ''' <summary>
+            ''' Releases resources used by the enumerator.
+            ''' </summary>
+            ''' <param name="disposing">Whether managed resources shall be released.</param>
             Protected Overridable Sub Dispose(disposing As Boolean)
                 'nothing to do
             End Sub
 
+            ''' <summary>
+            ''' Releases resources used by the enumerator.
+            ''' </summary>
             Public Sub Dispose() Implements IDisposable.Dispose
                 Dispose(True)
             End Sub

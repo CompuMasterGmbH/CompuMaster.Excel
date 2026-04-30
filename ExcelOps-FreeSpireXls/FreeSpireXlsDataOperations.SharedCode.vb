@@ -19,6 +19,9 @@ Namespace ExcelOps
         Inherits ExcelDataOperationsBase
 
         Private _Workbook As Spire.Xls.Workbook
+        ''' <summary>
+        ''' Gets the underlying Spire workbook instance.
+        ''' </summary>
         Public ReadOnly Property Workbook As Spire.Xls.Workbook
             Get
                 If Me._Workbook Is Nothing Then
@@ -646,6 +649,11 @@ Namespace ExcelOps
             Return Me.Workbook.Worksheets.Item(sheetName).Visibility <> WorksheetVisibility.Visible
         End Function
 
+        ''' <summary>
+        ''' Writes a data table to a worksheet and replaces existing worksheet content.
+        ''' </summary>
+        ''' <param name="dataTable">Data table to write.</param>
+        ''' <param name="sheetName">Worksheet name.</param>
         Public Sub WriteTableToSheet(dataTable As DataTable, sheetName As String)
 
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
