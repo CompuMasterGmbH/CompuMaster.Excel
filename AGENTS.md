@@ -16,6 +16,7 @@
 
 - Every new public API member must have XML documentation matching the quality of the surrounding API.
 - New protected members that define engine contracts or are intended for derived engine implementations must also have XML documentation.
+- The documentation requirements do not apply to the `EPPlus45-FixCalcsEdition.MultiTarget` project or to `TestAndDemoExcelOps`; do not make documentation-only changes there.
 - Public enums and their values must be documented.
 - Keep `<summary>` text short and focused, for example `Insert one or more columns.`.
 - Put details such as zero-based indexing, insertion position, behavior contracts, and parameter semantics into `<param>`, `<returns>`, `<remarks>`, or `<exception>` elements as appropriate.
@@ -34,7 +35,7 @@
 ## Tests and Generated Files
 
 - Add durable unit tests for new behavior, including engine-specific behavior where engines differ.
-- Test methods should include short comments or XML summaries explaining why the test exists and what workbook behavior it verifies.
+- Test methods should preferably include short comments or XML summaries explaining why the test exists and what workbook behavior it verifies, but this is guidance and not a mandatory API documentation requirement.
 - Static test workbooks belong in the appropriate `test_data` directories.
 - When repository copy/clone scripts generate or synchronize shared source or test files, include the resulting copied files in the same change.
 

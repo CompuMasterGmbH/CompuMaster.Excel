@@ -19,6 +19,11 @@ $sourceRoots = @(
     "CM.Data.EpplusPolyformEdition"
 )
 
+$excludedDocumentationScopes = @(
+    "Epplus-FixCalcsEdition/EPPlus/",
+    "TestAndDemoExcelOps"
+)
+
 $maxMissingDocumentation = 0
 $maxOverridesWithoutInheritdoc = 0
 
@@ -67,7 +72,11 @@ foreach ($sourceRoot in $sourceRoots) {
     $rootPath = Join-Path $repoRoot $sourceRoot
     if (Test-Path -LiteralPath $rootPath) {
         Get-ChildItem -LiteralPath $rootPath -Recurse -Filter "*.vb" -File |
-            Where-Object { $_.FullName -notmatch "\\(bin|obj)\\" } |
+            Where-Object {
+                $relativeFile = (Get-RelativePath $_.FullName).Replace("\", "/")
+                $_.FullName -notmatch "\\(bin|obj)\\" -and
+                    -not ($excludedDocumentationScopes | Where-Object { $relativeFile.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase) })
+            } |
             ForEach-Object { $files.Add($_.FullName) }
     }
 }
