@@ -2,7 +2,7 @@
 #Disable Warning CA2237 ' Mark ISerializable types with serializable
 #Disable Warning CA1032 ' Implement standard exception constructors
     ''' <summary>
-    ''' An exception which is thrown when found data can't be converted into requests data type
+    ''' An exception which is thrown when found data can't be converted into requests data type.
     ''' </summary>
     Public Class InvalidCellAddressException
 #Enable Warning CA1032 ' Implement standard exception constructors

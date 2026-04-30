@@ -8,7 +8,7 @@ Imports Spire.Xls
 Namespace ExcelOps
 
     ''' <summary>
-    ''' An Excel operations engine based on Spire.Xls
+    ''' An Excel operations engine based on Spire.Xls.
     ''' </summary>
     ''' <remarks>
     ''' Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/ 
@@ -31,7 +31,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates or opens a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
@@ -42,7 +42,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -52,7 +52,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -62,7 +62,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
@@ -77,7 +77,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
@@ -128,7 +128,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         Public Sub New(mode As OpenMode)
@@ -137,7 +137,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <param name="options"></param>
@@ -147,7 +147,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime"></param>
         ''' <remarks>Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/</remarks>
@@ -159,14 +159,14 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Allow instancing of engine in (OneTime)Setup methods of unit tests
+        ''' Allow instancing of engine in (OneTime)Setup methods of unit tests.
         ''' </summary>
         ''' <returns></returns>
         Friend Shared Property AllowInstancingForNonLicencedContextForTestingPurposesOnly As Boolean = False
 
 #Disable Warning CA1822 ' Mark members as static
         ''' <summary>
-        ''' Is a valid Spire.Xls license assigned
+        ''' Gets whether a valid Spire.Xls license is assigned.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property IsLicensedContext As Boolean
@@ -197,7 +197,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="fileName"></param>
         ''' <param name="skipHiddenSheets"></param>
@@ -207,7 +207,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="fileName"></param>
@@ -224,7 +224,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="stream"></param>

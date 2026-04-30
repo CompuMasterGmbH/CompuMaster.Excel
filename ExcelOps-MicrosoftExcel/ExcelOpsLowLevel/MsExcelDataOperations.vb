@@ -10,7 +10,7 @@ Imports MsExcel = Microsoft.Office.Interop.Excel
 Namespace Global.CompuMaster.Excel.ExcelOps
 
     ''' <summary>
-    ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
+    ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!).
     ''' </summary>
     ''' <remarks>
     ''' For proper Microsoft Excel licensing, please contact Microsoft.
@@ -62,7 +62,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Property
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <remarks>
@@ -82,7 +82,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <param name="options"></param>
@@ -103,7 +103,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -122,7 +122,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -141,7 +141,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -161,7 +161,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -180,7 +180,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
         ''' <param name="disableAutoCalculation">Disable initial and auto-calculations</param>
         ''' <remarks>Use with pattern
@@ -219,7 +219,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -236,7 +236,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
+        ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -253,7 +253,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets
+        ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -285,7 +285,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 
         Private _MsExcelAppInstance As MsExcelApplicationWrapper
         ''' <summary>
-        ''' MS Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!)
+        ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!).
         ''' </summary>
         ''' <remarks>Use with pattern
         ''' <code>
@@ -556,7 +556,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <returns></returns>
         Private Overloads Function LookupCellValueAsObject(sheet As MsExcel.Worksheet, rowIndex As Integer, columnIndex As Integer) As Object
@@ -569,7 +569,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="cell"></param>
@@ -587,12 +587,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="sheet"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         Private Overloads Function LookupCellValue(Of T)(sheet As MsExcel.Worksheet, rowIndex As Integer, columnIndex As Integer) As T
             Dim Result As Object = CType(sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).Value
@@ -635,7 +635,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -655,11 +655,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell formula
+        ''' Reads a cell formula.
         ''' </summary>
         ''' <param name="worksheet"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         Private Overloads Function LookupCellFormula(worksheet As MsExcel.Worksheet, rowIndex As Integer, columnIndex As Integer) As String
             If CType(CType(worksheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).HasFormula, Boolean) Then
@@ -696,7 +696,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -731,11 +731,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <param name="sheet"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         Private Overloads Function LookupCellIsLocked(sheet As MsExcel.Worksheet, rowIndex As Integer, columnIndex As Integer) As Boolean
             Return CType(CType(sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).Locked, Boolean)
@@ -865,10 +865,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Remove specified rows
+        ''' Removes specified rows.
         ''' </summary>
         ''' <param name="sheet"></param>
-        ''' <param name="startRowIndex">0-based row number</param>
+        ''' <param name="startRowIndex">zero-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
         Public Overloads Sub RemoveRows(sheet As MsExcel.Worksheet, startRowIndex As Integer, rows As Integer)
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
@@ -1087,7 +1087,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="sheet"></param>
         ''' <param name="rangeFirstCell"></param>
@@ -1130,7 +1130,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Select a worksheet
+        ''' Selects a worksheet.
         ''' </summary>
         ''' <param name="sheet"></param>
         Public Overloads Sub SelectSheet(sheet As MsExcel.Worksheet)

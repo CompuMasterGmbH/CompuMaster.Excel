@@ -15,7 +15,7 @@
         Implements IEnumerable(Of ExcelCell), ICloneable, IEqualityComparer, IComparable
 
         ''' <summary>
-        ''' Create a range from 2 cells including all cells within this rectangle
+        ''' Creates a range from two cells including all cells within the rectangle.
         ''' </summary>
         ''' <param name="addressStart"></param>
         ''' <param name="addressEnd"></param>
@@ -32,7 +32,7 @@
         End Sub
 
         ''' <summary>
-        ''' Create a range from a single cell
+        ''' Creates a range from a single cell.
         ''' </summary>
         ''' <param name="singleCell"></param>
         Public Sub New(singleCell As ExcelCell)
@@ -40,7 +40,7 @@
         End Sub
 
         ''' <summary>
-        ''' Create a range from an address string
+        ''' Creates a range from an address string.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="range"></param>
@@ -52,19 +52,19 @@
         End Sub
 
         ''' <summary>
-        ''' First cell of range
+        ''' First cell of range.
         ''' </summary>
         ''' <returns></returns>
         Public Property AddressStart As ExcelCell
 
         ''' <summary>
-        ''' Last cell of range
+        ''' Last cell of range.
         ''' </summary>
         ''' <returns></returns>
         Public Property AddressEnd As ExcelCell
 
         ''' <summary>
-        ''' Name of sheet
+        ''' Name of sheet.
         ''' </summary>
         ''' <returns></returns>
         Public Property SheetName As String
@@ -78,7 +78,7 @@
         End Property
 
         ''' <summary>
-        ''' An address like "A1:B2"
+        ''' An address like "A1:B2".
         ''' </summary>
         ''' <returns></returns>
         Public Function LocalAddress() As String
@@ -86,7 +86,7 @@
         End Function
 
         ''' <summary>
-        ''' An address like "Sheetname!A1:B2"
+        ''' An address like "Sheetname!A1:B2".
         ''' </summary>
         ''' <returns></returns>
         Public Function FullAddress() As String
@@ -99,7 +99,7 @@
         End Function
 
         ''' <summary>
-        ''' A string representation of the address
+        ''' A string representation of the address.
         ''' </summary>
         ''' <param name="inclusiveSheetName"></param>
         ''' <returns></returns>
@@ -108,7 +108,7 @@
         End Function
 
         ''' <summary>
-        ''' Number of cells in range
+        ''' Number of cells in range.
         ''' </summary>
         ''' <returns></returns>
         Public Function CellCount() As Integer
@@ -118,7 +118,7 @@
         End Function
 
         ''' <summary>
-        ''' An enumerator for a cells in this range
+        ''' An enumerator for a cells in this range.
         ''' </summary>
         ''' <returns></returns>
         Public Function GetEnumerator() As IEnumerator(Of ExcelCell) Implements IEnumerable(Of ExcelCell).GetEnumerator
@@ -126,7 +126,7 @@
         End Function
 
         ''' <summary>
-        ''' An independent clone of this ExcelRange
+        ''' An independent clone of this ExcelRange.
         ''' </summary>
         ''' <returns></returns>
         Private Function ICloneable_Clone() As Object Implements ICloneable.Clone
@@ -134,7 +134,7 @@
         End Function
 
         ''' <summary>
-        ''' An independent clone of this ExcelRange
+        ''' An independent clone of this ExcelRange.
         ''' </summary>
         ''' <returns></returns>
         Public Function Clone() As ExcelRange
@@ -142,7 +142,7 @@
         End Function
 
         ''' <summary>
-        ''' Create a clone but override the sheet name to the specified name
+        ''' Creates a clone and overrides the sheet name with the specified name.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <returns></returns>
@@ -153,7 +153,7 @@
         End Function
 
         ''' <summary>
-        ''' A cell of this range
+        ''' A cell of this range.
         ''' </summary>
         ''' <param name="index"></param>
         ''' <returns></returns>
@@ -164,7 +164,7 @@
         End Property
 
         ''' <summary>
-        ''' A cell of this range
+        ''' A cell of this range.
         ''' </summary>
         ''' <param name="index"></param>
         ''' <param name="accessDirection"></param>
@@ -192,23 +192,23 @@
         End Property
 
         ''' <summary>
-        ''' An direction to access the cells of a range
+        ''' An direction to access the cells of a range.
         ''' </summary>
         Public Enum CellAccessDirection As Byte
             ''' <summary>
-            ''' Row by row, column by column
+            ''' Row by row, column by column.
             ''' </summary>
             ''' <remarks>In a Range with 3x3 cells, the cell at index 3 is located in the 2nd row and 1st column</remarks>
             AllCellsOfARowThenNextRow = 0
             ''' <summary>
-            ''' Column by column, row by row
+            ''' Column by column, row by row.
             ''' </summary>
             ''' <remarks>In a Range with 3x3 cells, the cell at index 3 is located in the 2nd column and 1st row</remarks>
             AllCellsOfAColumnThenNextColumn = 1
         End Enum
 
         ''' <summary>
-        ''' An enumerator for a cells in this range
+        ''' An enumerator for a cells in this range.
         ''' </summary>
         ''' <returns></returns>
         Private Function IEnumerable_GetEnumerator() As IEnumerator Implements IEnumerable.GetEnumerator
@@ -298,7 +298,7 @@
 #End Region
 
         ''' <summary>
-        ''' An enumerator for a cells in this range
+        ''' An enumerator for a cells in this range.
         ''' </summary>
         <CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
         Public Class ExcelRangeEnum

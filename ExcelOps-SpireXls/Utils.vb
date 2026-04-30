@@ -5,7 +5,7 @@ Namespace ExcelOps
     Friend Class Utils
 
         ''' <summary>
-        '''     Return the string which is not nothing or else String.Empty
+        ''' Returns the specified string or String.Empty when it is Nothing.
         ''' </summary>
         ''' <param name="value">The string to be validated</param>
         ''' <returns></returns>
@@ -18,7 +18,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Spire.Xls requires an assigned license
+        ''' Spire.Xls requires an assigned license.
         ''' </summary>
         ''' <returns></returns>
         Friend Shared Function IsLicensedContext() As Boolean

@@ -2,7 +2,7 @@
 #Disable Warning CA2237 ' Mark ISerializable types with serializable
 #Disable Warning CA1032 ' Implement standard exception constructors
     ''' <summary>
-    ''' An exception which is thrown when found data doesn't match with expected data
+    ''' An exception which is thrown when found data doesn't match with expected data.
     ''' </summary>
     Public Class ExpectedSheetLayoutMismatchException
 #Enable Warning CA1032 ' Implement standard exception constructors

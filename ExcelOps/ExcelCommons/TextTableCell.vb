@@ -1,7 +1,7 @@
 ﻿Namespace ExcelOps
 
     ''' <summary>
-    ''' Cell data of a text table
+    ''' Cell data of a text table.
     ''' </summary>
     Public Class TextTableCell
 
@@ -18,17 +18,17 @@
         End Sub
 
         ''' <summary>
-        ''' The formula (or cell content as value)
+        ''' The formula (or cell content as value).
         ''' </summary>
         Public Property CellContent As String
 
         ''' <summary>
-        ''' Sheet name containing the formula
+        ''' Sheet name containing the formula.
         ''' </summary>
         Public Property SheetName As String
 
         ''' <summary>
-        ''' Cell address containing the formula
+        ''' Cell address containing the formula.
         ''' </summary>
         Public Property Address As String
 
@@ -38,7 +38,7 @@
         End Function
 
         ''' <summary>
-        ''' The excel cell address representation of this text table cell
+        ''' The excel cell address representation of this text table cell.
         ''' </summary>
         ''' <returns></returns>
         Public Function ToExcelCellAddress() As Excel.ExcelOps.ExcelCell

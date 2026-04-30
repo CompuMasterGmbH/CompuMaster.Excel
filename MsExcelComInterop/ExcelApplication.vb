@@ -1,5 +1,5 @@
 ﻿''' <summary>
-''' A wrapper for an Excel application instance created with Interaction.CreateObject without requiring MS Office type libraries
+''' A wrapper for an Excel application instance created with Interaction.CreateObject without requiring MS Office type libraries.
 ''' </summary>
 Public Class ExcelApplication
     Inherits ComRootObject(Of Object)
@@ -81,7 +81,7 @@ Public Class ExcelApplication
 
 #Disable Warning CA1712 ' Enumerationswerten nicht den Typnamen voranstellen
     ''' <summary>
-    ''' https://learn.microsoft.com/de-de/office/vba/api/office.msoautomationsecurity
+    ''' https://learn.microsoft.com/de-de/office/vba/api/office.msoautomationsecurity.
     ''' </summary>
     Public Enum MsoAutomationSecurity As Integer
         ''' <summary>
@@ -100,7 +100,7 @@ Public Class ExcelApplication
 #Enable Warning CA1712 ' Enumerationswerten nicht den Typnamen voranstellen
 
     ''' <summary>
-    ''' Configure security level for macros/VBA
+    ''' Configure security level for macros/VBA.
     ''' </summary>
     ''' <returns></returns>
     Public Property AutomationSecurity As MsoAutomationSecurity

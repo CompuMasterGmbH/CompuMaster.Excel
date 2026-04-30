@@ -6,7 +6,7 @@ Imports System.Data
 Friend NotInheritable Class Utils
 
     ''' <summary>
-    '''     Lookup a new unique column name for a data table
+    ''' Looks up a new unique column name for a data table.
     ''' </summary>
     ''' <param name="dataTable">The data table which shall get a new data column</param>
     ''' <param name="suggestedColumnName">A column name suggestion</param>

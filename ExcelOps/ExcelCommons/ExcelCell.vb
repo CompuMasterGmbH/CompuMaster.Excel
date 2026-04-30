@@ -67,7 +67,7 @@
         End Function
 
         ''' <summary>
-        ''' Translate row/column index to a local Excel sheet address without sheetname (e.g. 'A1')
+        ''' Translate row/column index to a local Excel sheet address without sheetname (e.g. 'A1').
         ''' </summary>
         ''' <param name="rowIndex"></param>
         ''' <param name="columnIndex"></param>
@@ -80,7 +80,7 @@
         End Property
 
         ''' <summary>
-        ''' Translate row/column index to a local Excel sheet address without sheetname (e.g. 'A1')
+        ''' Translate row/column index to a local Excel sheet address without sheetname (e.g. 'A1').
         ''' </summary>
         ''' <param name="rowIndex"></param>
         ''' <param name="columnIndex"></param>
@@ -92,7 +92,7 @@
         End Function
 
         ''' <summary>
-        ''' Validate that the sheet name and cell address are assigned and valid
+        ''' Validates that the sheet name and cell address are assigned and valid.
         ''' </summary>
         ''' <returns></returns>
         Public Function ValidateFullCellAddressInclSheetName() As Boolean
@@ -100,7 +100,7 @@
         End Function
 
         ''' <summary>
-        ''' Cell value types
+        ''' Cell value types.
         ''' </summary>
         Public Enum ValueTypes
             ''' <summary>
@@ -130,14 +130,14 @@
         End Enum
 
         ''' <summary>
-        ''' Name of sheet
+        ''' Name of sheet.
         ''' </summary>
         ''' <returns></returns>
         Public Property SheetName As String
 
         Private _Address As String
         ''' <summary>
-        ''' An Excel cell address like A1 (without absolute $-addressing like $A$1)
+        ''' An Excel cell address like A1 (without absolute $-addressing like $A$1).
         ''' </summary>
         ''' <returns></returns>
         Public Property Address As String
@@ -151,7 +151,7 @@
         End Property
 
         ''' <summary>
-        ''' An Excel cell address like A1 (without absolute $-addressing like $A$1), optionally inclusive sheet name
+        ''' An Excel cell address like A1 (without absolute $-addressing like $A$1), optionally inclusive sheet name.
         ''' </summary>
         ''' <param name="inclusiveSheetName"></param>
         ''' <returns></returns>
@@ -167,7 +167,7 @@
         End Property
 
         ''' <summary>
-        ''' An Excel cell address like A1 or $A$1, optionally inclusive sheet name
+        ''' An Excel cell address like A1 or $A$1, optionally inclusive sheet name.
         ''' </summary>
         ''' <param name="inclusiveSheetName">Add sheetname to address</param>
         ''' <param name="useAbsoluteAddressingForColumn">Use $-addressing for column like $A</param>
@@ -186,7 +186,7 @@
         End Property
 
         ''' <summary>
-        ''' An Excel cell address like R1C1, optionally inclusive sheet name
+        ''' An Excel cell address like R1C1, optionally inclusive sheet name.
         ''' </summary>
         ''' <param name="inclusiveSheetName"></param>
         ''' <returns></returns>
@@ -202,7 +202,7 @@
         End Property
 
         ''' <summary>
-        ''' An address like "A1"
+        ''' An address like "A1".
         ''' </summary>
         ''' <returns></returns>
         Public Function LocalAddress() As String
@@ -210,7 +210,7 @@
         End Function
 
         ''' <summary>
-        ''' An address like "R1C1"
+        ''' An address like "R1C1".
         ''' </summary>
         ''' <returns></returns>
         Public Function LocalAddressR1C1() As String
@@ -218,7 +218,7 @@
         End Function
 
         ''' <summary>
-        ''' An address like "Sheetname!A1"
+        ''' An address like "Sheetname!A1".
         ''' </summary>
         ''' <returns></returns>
         Public Function FullAddress() As String
@@ -226,7 +226,7 @@
         End Function
 
         ''' <summary>
-        ''' An address like "Sheetname!R1C1"
+        ''' An address like "Sheetname!R1C1".
         ''' </summary>
         ''' <returns></returns>
         Public Function FullAddressR1C1() As String
@@ -234,7 +234,7 @@
         End Function
 
         ''' <summary>
-        ''' Expected cell value type
+        ''' Expected cell value type.
         ''' </summary>
         ''' <returns></returns>
         Public Property DataType As ValueTypes
@@ -257,7 +257,7 @@
         End Property
 
         ''' <summary>
-        ''' 0-based index
+        ''' zero-based index.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property RowIndex() As Integer
@@ -267,7 +267,7 @@
         End Property
 
         ''' <summary>
-        ''' 0-based index
+        ''' zero-based index.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property ColumnIndex() As Integer
@@ -277,7 +277,7 @@
         End Property
 
         ''' <summary>
-        ''' 1-based index
+        ''' one-based index.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property ColumnNumber() As Integer
@@ -287,7 +287,7 @@
         End Property
 
         ''' <summary>
-        ''' 0-based index
+        ''' zero-based index.
         ''' </summary>
         ''' <param name="columnAddressPart">Column letters, e.g. "A", "B", ..., "AA", "AB", ...</param>
         ''' <returns></returns>
@@ -304,7 +304,7 @@
         End Function
 
         ''' <summary>
-        ''' Validate if a potential address is a valid Excel cell address
+        ''' Validates if a potential address is a valid Excel cell address.
         ''' </summary>
         ''' <param name="cellAddress"></param>
         ''' <param name="allowAbsoluteAddressing">Allow absolute addresses like $A$1</param>
@@ -364,7 +364,7 @@
         End Property
 
         ''' <summary>
-        ''' 1-based index
+        ''' one-based index.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property RowNumber As Integer
@@ -389,7 +389,7 @@
         End Function
 
         ''' <summary>
-        ''' A string representation of the address
+        ''' A string representation of the address.
         ''' </summary>
         ''' <param name="inclusiveSheetName"></param>
         ''' <returns></returns>
@@ -398,7 +398,7 @@
         End Function
 
         ''' <summary>
-        ''' An independent clone of this ExcelCell
+        ''' An independent clone of this ExcelCell.
         ''' </summary>
         ''' <returns></returns>
         Private Function ICloneable_Clone() As Object Implements ICloneable.Clone
@@ -406,7 +406,7 @@
         End Function
 
         ''' <summary>
-        ''' An independent clone of this ExcelCell
+        ''' An independent clone of this ExcelCell.
         ''' </summary>
         ''' <returns></returns>
         Public Function Clone() As ExcelCell
@@ -414,7 +414,7 @@
         End Function
 
         ''' <summary>
-        ''' Create a clone but override the sheet name to the specified name
+        ''' Creates a clone and overrides the sheet name with the specified name.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <returns></returns>
@@ -423,7 +423,7 @@
         End Function
 
         ''' <summary>
-        ''' Create a clone but override the sheet name to the specified name as well as the data type
+        ''' Creates a clone and overrides the sheet name and data type with the specified values.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <returns></returns>
@@ -432,7 +432,7 @@
         End Function
 
         ''' <summary>
-        ''' Create a clone but override the data type to the specified one
+        ''' Creates a clone and overrides the data type with the specified value.
         ''' </summary>
         ''' <param name="dataType"></param>
         ''' <returns></returns>
@@ -441,7 +441,7 @@
         End Function
 
         ''' <summary>
-        ''' Create a clone but override the data type to the specified one
+        ''' Creates a clone and overrides the data type with the specified value.
         ''' </summary>
         ''' <returns></returns>
         Public Function Clone(rowIndex As Integer, columnIndex As Integer) As ExcelCell
@@ -449,7 +449,7 @@
         End Function
 
         ''' <summary>
-        ''' Create a clone pointing to a new cell position relative to the current cell
+        ''' Creates a clone pointing to a new cell position relative to the current cell.
         ''' </summary>
         ''' <param name="addRows"></param>
         ''' <param name="addColumns"></param>

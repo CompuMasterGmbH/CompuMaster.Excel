@@ -11,7 +11,7 @@ Imports CompuMaster.Epplus4.FormulaParsing.Logging
 Namespace ExcelOps
 
     ''' <summary>
-    ''' An Excel operations engine based on Epplus 4 with its LGPL license
+    ''' An Excel operations engine based on Epplus 4 with its LGPL license.
     ''' </summary>
     ''' <remarks>
     ''' For licensing issues of origin Epplus 4 project, please see https://github.com/JanKallman/EPPlus
@@ -34,7 +34,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates or opens a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
@@ -44,7 +44,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         Public Sub New(mode As OpenMode)
@@ -52,7 +52,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <param name="options"></param>
@@ -61,7 +61,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -70,7 +70,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -79,7 +79,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -88,7 +88,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -97,7 +97,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -106,7 +106,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -115,7 +115,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -124,7 +124,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -133,7 +133,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' Creates a new instance for accessing Excel workbooks (still requires creating or loading of a workbook).
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime">Pre-define encryption password on future save actions</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
@@ -175,7 +175,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value
+        ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
         Public Sub ResetCellValueFromFormulaCellInWholeWorkbook()
             Dim AllSheetNames As List(Of String) = Me.SheetNames
@@ -185,7 +185,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value
+        ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Sub ResetCellValueFromFormulaCell(sheetName As String)
@@ -200,7 +200,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value
+        ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
         Public Sub ResetCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -213,7 +213,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value
+        ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
         ''' <param name="cell"></param>
         Public Sub ResetCellValueFromFormulaCell(cell As ExcelCell)
@@ -227,7 +227,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Has the workbook some cells which got a formula without a calculated value
+        ''' Gets whether the workbook some cells which got a formula without a calculated value.
         ''' </summary>
         Public Function FindMissingCalculatedCellValueFromFormulaCell() As List(Of MissingCalculatedCellValueException)
             Dim Result As New List(Of MissingCalculatedCellValueException)
@@ -239,7 +239,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Has the specified sheet some cells which got a formula without a calculated value
+        ''' Gets whether the specified sheet some cells which got a formula without a calculated value.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Function FindMissingCalculatedCellValueFromFormulaCell(sheetName As String) As List(Of MissingCalculatedCellValueException)
@@ -259,7 +259,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Has the workbook some cells which got a formula without a calculated value
+        ''' Gets whether the workbook some cells which got a formula without a calculated value.
         ''' </summary>
         Public Function HasMissingCalculatedCellValueFromFormulaCell() As Boolean
             Dim AllSheetNames As List(Of String) = Me.SheetNames
@@ -273,7 +273,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Has the specified sheet some cells which got a formula without a calculated value
+        ''' Gets whether the specified sheet some cells which got a formula without a calculated value.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Function HasMissingCalculatedCellValueFromFormulaCell(sheetName As String) As Boolean
@@ -292,7 +292,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Has the specified cell got a formula without a calculated value
+        ''' Gets whether the specified cell got a formula without a calculated value.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -308,7 +308,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Has the specified cell got a formula without a calculated value
+        ''' Gets whether the specified cell got a formula without a calculated value.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex"></param>
@@ -358,7 +358,7 @@ Namespace ExcelOps
 
 #Region "Colors and Theming (Helpers for e.g. ExportSheetToHtmlInternal)"
         ''' <summary>
-        ''' Zentrale Farbauflösung inkl. Cache
+        ''' Zentrale Farbauflösung inkl. Cache.
         ''' </summary>
         ''' <remarks>
         ''' Die Farbauflösung erfolgt inkl. Cache für:
@@ -433,7 +433,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Konstruiert einen stabilen Schlüssel für die Cache-Map
+        ''' Konstruiert einen stabilen Schlüssel für die Cache-Map.
         ''' </summary>
         ''' <param name="color"></param>
         ''' <returns></returns>

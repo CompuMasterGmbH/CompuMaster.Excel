@@ -7,7 +7,7 @@ Imports System.Text
 Namespace ExcelOps
 
     ''' <summary>
-    ''' Base implementation for common API for the several Excel engines
+    ''' Provides the base implementation for the common API of the Excel engines.
     ''' </summary>
     Public Class ExcelDataOperationsOptions
 
@@ -23,7 +23,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new options instance
+        ''' Creates a new options instance.
         ''' </summary>
         ''' <param name="passwordForOpening">Password for opening protected Excel files</param>
         Public Sub New(passwordForOpening As String)
@@ -31,7 +31,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new options instance
+        ''' Creates a new options instance.
         ''' </summary>
         ''' <param name="passwordForOpening">Password for opening protected Excel files</param>
         ''' <param name="disableInitialCalculation">If set to true, no initial calculation of formulas is performed when opening/loading an Excel file</param>
@@ -44,7 +44,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new options instance
+        ''' Creates a new options instance.
         ''' </summary>
         ''' <param name="passwordForOpening">Password for opening protected Excel files</param>
         ''' <param name="disableInitialCalculation">If set to true, no initial calculation of formulas is performed when opening/loading an Excel file</param>
@@ -62,51 +62,51 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum WriteProtectionMode As Byte
             ''' <summary>
-            ''' If a file path is present, ReadWrite mode is enabled, without a file path, ReadOnly mode is active
+            ''' If a file path is present, ReadWrite mode is enabled, without a file path, ReadOnly mode is active.
             ''' </summary>
             DefaultBehaviourOnCreateFile = 0
             ''' <summary>
-            ''' File can't be saved (saving with same file name is forbidden), but SaveAs with another file name is allowed
+            ''' File can't be saved (saving with same file name is forbidden), but SaveAs with another file name is allowed.
             ''' </summary>
             [ReadOnly] = 1
             ''' <summary>
-            ''' No limitation
+            ''' No limitation.
             ''' </summary>
             ReadWrite = 4
         End Enum
 
         ''' <summary>
-        ''' Write protection for this filename prevents Save, but still allows SaveAs
+        ''' Gets or sets whether write protection for this file prevents Save but still allows SaveAs.
         ''' </summary>
         ''' <returns></returns>
         Public Property FileWriteProtection As WriteProtectionMode = WriteProtectionMode.ReadOnly
 
         ''' <summary>
-        ''' If set to true, the calculation engine is disabled and no formula calculations are performed, if set to false, the calculation engine is enabled, if null/not set, the engine default is used
+        ''' If set to true, the calculation engine is disabled and no formula calculations are performed, if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
         ''' <remarks>Feature belongs to Excel engine</remarks>
         Public Property DisableCalculationEngine As Boolean?
 
         ''' <summary>
-        ''' If set to true, no initial calculation of formulas is performed when opening/loading an Excel file, if set to false, the calculation engine is enabled, if null/not set, the engine default is used
+        ''' If set to true, no initial calculation of formulas is performed when opening/loading an Excel file, if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
         ''' <remarks>Feature belongs to Excel engine</remarks>
         Public Property DisableInitialCalculation As Boolean?
 
         ''' <summary>
-        ''' If set to true, automatic calculation mode is disabled in workbook (only manual calculation mode is used), if set to false, the calculation engine is enabled, if null/not set, the engine default is used
+        ''' If set to true, automatic calculation mode is disabled in workbook (only manual calculation mode is used), if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
         ''' <remarks>Feature belongs to workbook and changes permanently the workbook's behaviour when saved</remarks>
         Public Property DisableAutoCalculationInWorkbook As Boolean?
 
         ''' <summary>
-        ''' Password for opening protected Excel files
+        ''' Password for opening protected Excel files.
         ''' </summary>
         ''' <returns></returns>
         Public Property PasswordForOpening As String
 
         ''' <summary>
-        ''' Create a clone of this options instance
+        ''' Creates a clone of this options instance.
         ''' </summary>
         ''' <returns></returns>
         Private Function Clone() As ExcelDataOperationsOptions
@@ -116,7 +116,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Apply default options from engine if not set and validate the resulting combination (creates a clone of this options instance, doesn't change the current instance)
+        ''' Applies default options from engine if not set and validate the resulting combination (creates a clone of this options instance, doesn't change the current instance).
         ''' </summary>
         ''' <param name="calculationDefaultOptions">Default calculation options from engine</param>
         ''' <returns>Validated options instance</returns>

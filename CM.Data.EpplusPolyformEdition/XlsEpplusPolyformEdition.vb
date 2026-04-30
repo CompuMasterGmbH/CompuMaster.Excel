@@ -12,7 +12,7 @@ Namespace CompuMaster.Data
 
     ''' -----------------------------------------------------------------------------
     ''' <summary>
-    '''     Provides simplified write access to XLS files
+    ''' Provides simplified write access to XLS files.
     ''' </summary>
     ''' <remarks>
     '''     Please pay attention to following circumstances
@@ -31,7 +31,7 @@ Namespace CompuMaster.Data
         Private Shared _ErrorLevel As Byte = 0
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        ''' Error level 0 doesn't throw exception when writing e.g. invalid date/time values (invalid for excel); Error level 1 throws them
+        ''' Error level 0 doesn't throw exception when writing e.g. invalid date/time values (invalid for excel); Error level 1 throws them.
         ''' </summary>
         ''' <value></value>
         ''' <remarks>
@@ -51,7 +51,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Create an new excel file with some data
+        ''' Creates a new Excel file with data.
         ''' </summary>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataSet">A dataset to write into the workbook</param>
@@ -67,7 +67,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Load an excel file, put some data into it and save the file again
+        ''' Loads an Excel file, writes data into it, and saves the file again.
         ''' </summary>
         ''' <param name="inputPath">A file which shall be loaded</param>
         ''' <param name="outputPath">The output file</param>
@@ -92,7 +92,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Create an new excel file with some data
+        ''' Creates a new Excel file with data.
         ''' </summary>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
@@ -109,7 +109,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Create an new excel file with some data
+        ''' Creates a new Excel file with data.
         ''' </summary>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
@@ -135,7 +135,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Create an new excel file with some data
+        ''' Creates a new Excel file with data.
         ''' </summary>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
@@ -161,7 +161,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Create an new excel file with some data
+        ''' Creates a new Excel file with data.
         ''' </summary>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
@@ -178,7 +178,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Load an excel file, put some data into it and save the file again
+        ''' Loads an Excel file, writes data into it, and saves the file again.
         ''' </summary>
         ''' <param name="inputPath">A file which shall be loaded</param>
         ''' <param name="outputPath">The output file</param>
@@ -196,7 +196,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        ''' Update/create an excel file, put some data into it and save the file again
+        ''' Updates or creates an Excel file, writes data into it, and saves the file again.
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template</param>
         ''' <param name="outputPath">The output file</param>
@@ -222,7 +222,7 @@ Namespace CompuMaster.Data
         End Sub
 
         ''' <summary>
-        ''' Save the changed worksheet
+        ''' Saves the changed worksheet.
         ''' </summary>
         ''' <param name="exportWorkbook"></param>
         ''' <param name="outputPath"></param>
@@ -241,7 +241,7 @@ Namespace CompuMaster.Data
         End Sub
 
         ''' <summary>
-        ''' The sheet which is subject of operations
+        ''' The sheet which is subject of operations.
         ''' </summary>
         ''' <remarks></remarks>
         Private Enum SpecialSheet As Byte
@@ -251,7 +251,7 @@ Namespace CompuMaster.Data
         End Enum
 
         ''' <summary>
-        ''' Update/create an excel file, put some data into it and save the file again
+        ''' Updates or creates an Excel file, writes data into it, and saves the file again.
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template</param>
         ''' <param name="dataTables">Some datatables to write into the workbook</param>
@@ -428,7 +428,7 @@ Namespace CompuMaster.Data
         End Function
 
         ''' <summary>
-        ''' Excel file formats
+        ''' Defines Excel file formats.
         ''' </summary>
         ''' <remarks></remarks>
         Public Enum FileFormat As Byte
@@ -444,7 +444,7 @@ Namespace CompuMaster.Data
 
 #Disable Warning CA1822 ' Mark members as static
         ''' <summary>
-        ''' Update/create an excel file, put some data into it and save the file to the output stream
+        ''' Updates or creates an Excel file, writes data into it, and saves the file to the output stream.
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template</param>
         ''' <param name="outputStream">An opened output stream</param>
@@ -504,7 +504,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read all sheets from an excel sheet into a dataset
+        ''' Reads all sheets from an excel sheet into a dataset.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
@@ -569,7 +569,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <returns></returns>
@@ -598,7 +598,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
@@ -627,7 +627,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
@@ -676,7 +676,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
@@ -704,7 +704,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
@@ -732,7 +732,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
@@ -782,7 +782,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
@@ -812,7 +812,7 @@ Namespace CompuMaster.Data
         End Sub
 
         ''' <summary>
-        '''     Read the data from first sheet of an excel sheet into a datatable
+        ''' Reads the data from first sheet of an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
@@ -839,7 +839,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
@@ -892,7 +892,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        ''' Read the available sheet names from an XLS file
+        ''' Reads the available sheet names from an XLS file.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <returns></returns>
@@ -928,7 +928,7 @@ Namespace CompuMaster.Data
 #Region "Internal tools"
 
         ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content column index (zero-based index) (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheet"></param>
         ''' <returns></returns>
@@ -948,7 +948,7 @@ Namespace CompuMaster.Data
         End Function
 
         ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content row index (zero-based index) (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheet"></param>
         ''' <returns></returns>
@@ -968,7 +968,7 @@ Namespace CompuMaster.Data
         End Function
 
         ''' <summary>
-        ''' Determine if a cell contains empty content
+        ''' Determines whether a cell contains empty content.
         ''' </summary>
         ''' <param name="sheet"></param>
         ''' <param name="rowIndex">Zero-based index</param>
@@ -988,7 +988,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Read the data from an excel sheet into a datatable
+        ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="sheet">An excel sheet containing the required data</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
@@ -1140,7 +1140,7 @@ Namespace CompuMaster.Data
         End Function
 
         ''' <summary>
-        ''' Detect custom date/time format strings which haven't been detected by Epplus
+        ''' Detect custom date/time format strings which haven't been detected by Epplus.
         ''' </summary>
         ''' <param name="cellFormat"></param>
         ''' <returns></returns>
@@ -1155,7 +1155,7 @@ Namespace CompuMaster.Data
         End Function
 
         ''' <summary>
-        '''     Analyze the values in the complete sheet for their data type and create a data table with those corresponding column data types to hold all the data of the sheet
+        ''' Analyze the values in the complete sheet for their data type and create a data table with those corresponding column data types to hold all the data of the sheet.
         ''' </summary>
         ''' <param name="sheet">A sheet</param>
         ''' <param name="tableName">A table name for the new table</param>
@@ -1172,7 +1172,7 @@ Namespace CompuMaster.Data
         End Function
 
         ''' <summary>
-        '''     Analyze the values in the complete sheet for their data type and create a data table with those corresponding column data types to hold all the data of the sheet
+        ''' Analyze the values in the complete sheet for their data type and create a data table with those corresponding column data types to hold all the data of the sheet.
         ''' </summary>
         ''' <param name="inputTable">The target table</param>
         ''' <param name="sheet">A sheet</param>
@@ -1270,7 +1270,7 @@ Namespace CompuMaster.Data
         End Sub
 
         ''' <summary>
-        ''' Try to lookup the cell's value to a string anyhow
+        ''' Try to lookup the cell's value to a string anyhow.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -1284,10 +1284,10 @@ Namespace CompuMaster.Data
         End Function
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Lookup the (zero-based) index number of a work sheet
+        ''' Looks up the (zero-based) index number of a worksheet.
         ''' </summary>
         ''' <param name="workbook">The excel workbook</param>
-        ''' <param name="worksheetName">A work sheet name</param>
+        ''' <param name="worksheetName">A worksheet name</param>
         ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
         ''' <remarks>
         ''' </remarks>
@@ -1308,7 +1308,7 @@ Namespace CompuMaster.Data
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
-        '''     Lookup for a sheet with the specified name
+        ''' Looks for a sheet with the specified name.
         ''' </summary>
         ''' <param name="workbook">The excel workbook</param>
         ''' <param name="sheetName">A sheet name</param>
@@ -1330,7 +1330,7 @@ Namespace CompuMaster.Data
 #End Region
 
         ''' <summary>
-        ''' Lookup if the value is a DateTime value and not a normal number
+        ''' Determines whether the value is a DateTime value and not a regular number.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns>True for DateTime, False for Number(Double)</returns>

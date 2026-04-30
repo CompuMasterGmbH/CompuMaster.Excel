@@ -4,7 +4,7 @@ Option Strict On
 Namespace ExcelOps
 
     ''' <summary>
-    ''' Tools for fixing issues of workbooks between Epplus and Microsoft Excel
+    ''' Tools for fixing issues of workbooks between Epplus and Microsoft Excel.
     ''' </summary>
     ''' <remarks>
     ''' PLEASE NOTE: Considerations for server-side Automation of Office https://support.microsoft.com/en-us/topic/considerations-for-server-side-automation-of-office-48bcfe93-8a89-47f1-0bce-017433ad79e2
@@ -12,7 +12,7 @@ Namespace ExcelOps
     Public NotInheritable Class MsVsEpplusTools
 
         ''' <summary>
-        ''' Due to a bug in EPPlus, the Excel workbook file contains calculated caches which are used by MS Excel but never reset by MS Excel, for this it might be required to reset all cached calucations
+        ''' Due to a bug in EPPlus, the Excel workbook file contains calculated caches which are used by MS Excel but never reset by MS Excel, for this it might be required to reset all cached calucations.
         ''' </summary>
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path As String)
@@ -20,7 +20,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Due to a bug in EPPlus, the Excel workbook file contains calculated caches which are used by MS Excel but never reset by MS Excel, for this it might be required to reset all cached calucations
+        ''' Due to a bug in EPPlus, the Excel workbook file contains calculated caches which are used by MS Excel but never reset by MS Excel, for this it might be required to reset all cached calucations.
         ''' </summary>
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path As String, passwordForOpening As String)
@@ -34,7 +34,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Execute a full recalculation
+        ''' Execute a full recalculation.
         ''' </summary>
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path As String)
@@ -42,7 +42,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Execute a full recalculation
+        ''' Execute a full recalculation.
         ''' </summary>
         ''' <param name="path"></param>
         Public Shared Sub OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path As String, passwordForOpening As String)

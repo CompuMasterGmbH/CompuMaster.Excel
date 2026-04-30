@@ -15,17 +15,17 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum CellAddressCombineMode As Byte
             ''' <summary>
-            ''' Return the upper-left corner of both cell addresses.
+            ''' Returns the upper-left corner of both cell addresses.
             ''' </summary>
             LeftUpperCorner = 0
             ''' <summary>
-            ''' Return the lower-right corner of both cell addresses.
+            ''' Returns the lower-right corner of both cell addresses.
             ''' </summary>
             RightLowerCorner = 1
         End Enum
 
         ''' <summary>
-        ''' Find the corner cell of 2 cells
+        ''' Finds the corner cell of two cells.
         ''' </summary>
         ''' <param name="cell1"></param>
         ''' <param name="cell2"></param>
@@ -48,17 +48,17 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum LookupCellAddresFromRangeMode As Integer
             ''' <summary>
-            ''' 1st address part of range
+            ''' 1st address part of range.
             ''' </summary>
             FirstCell = 0
             ''' <summary>
-            ''' 2nd address part of range or 1st address part if only single cell address given (typically the last cell of range)
+            ''' 2nd address part of range or 1st address part if only single cell address given (typically the last cell of range).
             ''' </summary>
             LastCell = 1
         End Enum
 
         ''' <summary>
-        ''' Resolve first or last cell address of range address (e.g. "A1:C3" or "A1") to cell addresses (e.g. "A1" or "C3")
+        ''' Resolve first or last cell address of range address (e.g. "A1:C3" or "A1") to cell addresses (e.g. "A1" or "C3").
         ''' </summary>
         ''' <param name="range">Range address (e.g. "A1:C3" or "A1")</param>
         ''' <param name="mode">0 for 1st cell address, 1 for 2nd cell address part</param>
@@ -94,7 +94,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula without cell references contain just simple mathematic operations such as *, /, +, -, ^, (, )
+        ''' Formula without cell references contain just simple mathematic operations such as *, /, +, -, ^, (, ).
         ''' </summary>
         ''' <param name="formula"></param>
         ''' <returns></returns>
@@ -109,7 +109,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula without cell references contain just simple mathematic operations such as *, /, +, -, ^, (, )
+        ''' Formula without cell references contain just simple mathematic operations such as *, /, +, -, ^, (, ).
         ''' </summary>
         ''' <param name="formula"></param>
         ''' <returns></returns>
@@ -129,7 +129,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula is just a simple cell reference like "Grunddaten!B4"
+        ''' Formula is just a simple cell reference like "Grunddaten!B4".
         ''' </summary>
         ''' <param name="formula"></param>
         ''' <returns></returns>
@@ -141,7 +141,7 @@ Namespace ExcelOps
         Private Shared ReadOnly IsFormulaWithoutCellReferences_Separators As Char() = New Char() {":"c, "+"c, "-"c, "*"c, "/"c, "^"c, "("c, ")"c, ","c}
 
         ''' <summary>
-        ''' Formula is just a simple SUM function with a cell range
+        ''' Formula is just a simple SUM function with a cell range.
         ''' </summary>
         ''' <param name="formula"></param>
         ''' <returns></returns>
@@ -162,7 +162,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula contains a reference to specified sheet
+        ''' Formula contains a reference to specified sheet.
         ''' </summary>
         ''' <param name="formula"></param>
         ''' <returns></returns>
@@ -175,7 +175,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula contains a reference to specified sheet
+        ''' Formula contains a reference to specified sheet.
         ''' </summary>
         ''' <param name="formulas"></param>
         ''' <returns></returns>
@@ -192,7 +192,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula contains a reference to specified sheet
+        ''' Formula contains a reference to specified sheet.
         ''' </summary>
         ''' <param name="formulas"></param>
         ''' <returns></returns>
@@ -208,7 +208,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula contains a reference to specified sheet
+        ''' Formula contains a reference to specified sheet.
         ''' </summary>
         ''' <param name="formulas"></param>
         ''' <returns></returns>
@@ -228,7 +228,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Formula contains a reference to specified sheet
+        ''' Formula contains a reference to specified sheet.
         ''' </summary>
         ''' <param name="formulas"></param>
         ''' <returns></returns>
@@ -455,7 +455,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Check if a value is member of an array of values
+        ''' Checks whether a value is a member of an array of values.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="value"></param>
@@ -491,7 +491,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Convert a Double value from Excel to a DateTime value
+        ''' Converts a Double value from Excel to a DateTime value.
         ''' </summary>
         ''' <param name="excelDate"></param>
         ''' <param name="baseDateValue"></param>
@@ -515,15 +515,15 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' The base date for Excel date values
+        ''' The base date for Excel date values.
         ''' </summary>
         Public Enum XlsxDateSystem
             ''' <summary>
-            ''' The 1900 date system is used
+            ''' The 1900 date system is used.
             ''' </summary>
             Date1900 = 1
             ''' <summary>
-            ''' The 1904 date system is used
+            ''' The 1904 date system is used.
             ''' </summary>
             ''' <remarks>
             ''' This flag is often used in Excel for Macintosh versions 2004 and earlier or when the 1904 date system is enabled for the workbook in Excel for Windows
@@ -532,7 +532,7 @@ Namespace ExcelOps
         End Enum
 
         ''' <summary>
-        ''' Determines whether the 1904 date system is used in an XLSX file
+        ''' Determines whether the 1904 date system is used in an XLSX file.
         ''' </summary>
         ''' <param name="xlsxFilePath">The path to the XLSX file</param>
         ''' <returns>A value of <see cref="XlsxDateSystem">XlsxDateSystem</see></returns>

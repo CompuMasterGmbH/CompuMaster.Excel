@@ -3,7 +3,7 @@
 Namespace Global.CompuMaster.Excel.MsExcelCom
 
     ''' <summary>
-    ''' A COM wrapper class for a MS Excel workbook
+    ''' A COM wrapper class for a MS Excel workbook.
     ''' </summary>
     Public Class MsExcelWorkbookWrapper
         Inherits CompuMaster.ComInterop.ComChildObject(Of MsExcelWorkbooksWrapper, MsExcel.Workbook)
@@ -18,7 +18,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Close workbook
+        ''' Closes workbook.
         ''' </summary>
         Public Sub CloseAndDispose()
             Me.Close()
@@ -35,7 +35,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Workbook name
+        ''' Workbook name.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property Name As String = Me.ComObjectStronglyTyped.Name

@@ -8,7 +8,7 @@ Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
 Namespace ExcelOps
 
     ''' <summary>
-    ''' Base implementation for common API for the several Excel engines
+    ''' Provides the base implementation for the common API of the Excel engines.
     ''' </summary>
     Public MustInherit Class ExcelDataOperationsBase
 
@@ -17,15 +17,15 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum OpenMode As Byte
             ''' <summary>
-            ''' Open an existing workbook from file
+            ''' Opens an existing workbook from file.
             ''' </summary>
             OpenExistingFile = 0
             ''' <summary>
-            ''' Create a new workbook
+            ''' Creates a new workbook.
             ''' </summary>
             CreateFile = 1
             ''' <summary>
-            ''' Just create the engine instance, but don't create or load a workbook explicitly (except the Excel engine automatically creates a new workbook implicitly)
+            ''' Creates only the engine instance without explicitly creating or loading a workbook, except when an engine creates a workbook implicitly.
             ''' </summary>
             Uninitialized = 255
         End Enum
@@ -59,7 +59,7 @@ Namespace ExcelOps
         End Enum
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
@@ -70,7 +70,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Initialize engine, open file or create new workbook
+        ''' Initializes the engine and opens or creates a workbook.
         ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
@@ -94,7 +94,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         Public Sub New(mode As OpenMode)
@@ -102,7 +102,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <param name="options"></param>
@@ -116,7 +116,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -126,7 +126,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -136,7 +136,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' Creates a new instance for accessing Excel workbooks (still requires creating or loading of a workbook).
         ''' </summary>
         ''' <param name="options">File and engine options</param>
         Protected Sub New(options As ExcelDataOperationsOptions)
@@ -171,7 +171,7 @@ Namespace ExcelOps
         Protected ReadOnly Property LoadOptions As ExcelDataOperationsOptions
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' Creates a new instance for accessing Excel workbooks (still requires creating or loading of a workbook).
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -180,7 +180,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Default options for calculation behavior of the engine
+        ''' Default options for calculation behavior of the engine.
         ''' </summary>
         ''' <returns></returns>
         Protected Friend MustOverride ReadOnly Property DefaultCalculationOptions() As ExcelEngineDefaultOptions
@@ -195,7 +195,7 @@ Namespace ExcelOps
         Protected Friend MustOverride ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
 
         ''' <summary>
-        ''' Validate the requested formula/reference update behavior.
+        ''' Validates the requested formula/reference update behavior.
         ''' </summary>
         ''' <param name="updateFormulasAndReferences">Requested behavior for automatic formula/reference updates.</param>
         ''' <exception cref="NotSupportedException">The engine cannot provide the requested formula/reference update behavior.</exception>
@@ -223,7 +223,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
@@ -253,7 +253,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="autoCalculationOnLoad"></param>
@@ -273,7 +273,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="autoCalculationOnLoad"></param>
@@ -293,7 +293,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' Creates a new instance for accessing Excel workbooks (still requires creating or loading of a workbook).
         ''' </summary>
         ''' <param name="autoCalculationOnLoad">Automatically do a full recalculation after workbook has been loaded</param>
         ''' <param name="calculationModuleDisabled">Disables the Excel calculation engine</param>
@@ -309,7 +309,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Reload a file from disk
+        ''' Reload a file from disk.
         ''' </summary>
         ''' <remarks>If workbook is still opened, workbook state like selected sheet can be restored from memory, otherwise state will be restored as saved in file</remarks>
         Public Sub ReloadFromFile()
@@ -317,7 +317,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' A password for opening an excel file
+        ''' Gets or sets the password for opening an Excel file.
         ''' </summary>
         ''' <returns></returns>
         Public Property PasswordForOpening As String
@@ -330,7 +330,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Write protection for this filename prevents Save, but still allows SaveAs
+        ''' Gets or sets whether write protection for this file prevents Save but still allows SaveAs.
         ''' </summary>
         ''' <returns></returns>
         Public Property [ReadOnly] As Boolean
@@ -343,7 +343,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' The calculation module of involved Excel engine might be disabled due to insufficiency/incompleteness of 3rd party Excel (calculation) engines (except for single cell calculations)
+        ''' The calculation module of involved Excel engine might be disabled due to insufficiency/incompleteness of 3rd party Excel (calculation) engines (except for single cell calculations).
         ''' </summary>
         ''' <returns></returns>
         Public Property CalculationModuleDisabled As Boolean
@@ -356,7 +356,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' If enabled, the calculation engine will do a full recalculation after loading a workbook
+        ''' If enabled, the calculation engine will do a full recalculation after loading a workbook.
         ''' </summary>
         ''' <returns></returns>
         Public Property AutoCalculationOnLoad As Boolean
@@ -369,8 +369,8 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' If enabled (default), the workbook setting will be reset to enabled AutoCalculation feature in all saved workbooks (but stays at its value in-memory)
-        ''' If disabled, the workbook setting for AutoCalculation will be saved as it is
+        ''' If enabled (default), the workbook setting will be reset to enabled AutoCalculation feature in all saved workbooks (but stays at its value in-memory).
+        ''' If disabled, the workbook setting for AutoCalculation will be saved as it is.
         ''' </summary>
         ''' <returns></returns>
         ''' <remarks>Please note: this property is an engine property and defaults to True</remarks>
@@ -419,7 +419,7 @@ Namespace ExcelOps
         'End Property
 
         ''' <summary>
-        ''' If calculation module is enabled and also AutoCalculationOnLoad is enabled, then AutoCalculationOnLoad is enabled effectively (regardless of AutoCalculationEnabled setting)
+        ''' If calculation module is enabled and also AutoCalculationOnLoad is enabled, then AutoCalculationOnLoad is enabled effectively (regardless of AutoCalculationEnabled setting).
         ''' </summary>
         ''' <returns></returns>
         Protected Friend ReadOnly Property AutoCalculationOnLoadEffectively As Boolean
@@ -433,7 +433,7 @@ Namespace ExcelOps
         <CodeAnalysis.SuppressMessage("Design", "CA1051:Sichtbare Instanzfelder nicht deklarieren")>
         Protected _FilePath As String
         ''' <summary>
-        ''' The file path as initialized in constructor (applies for saved files as well as for created, not-saved files with their intended file location on 1st save)
+        ''' The file path as initialized in constructor (applies for saved files as well as for created, not-saved files with their intended file location on 1st save).
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property FilePath As String
@@ -443,29 +443,29 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Close the current worksbook (without saving)
+        ''' Closes the current worksbook (without saving).
         ''' </summary>
         Public MustOverride Sub Close()
 
         ''' <summary>
-        ''' Has the workbook already been closed
+        ''' Gets whether the workbook has already been closed.
         ''' </summary>
         ''' <returns></returns>
         Public MustOverride ReadOnly Property IsClosed As Boolean
 
         ''' <summary>
-        ''' Close the external Excel engine application (if applicable)
+        ''' Closes the external Excel engine application (if applicable).
         ''' </summary>
         Public MustOverride Sub CloseExcelAppInstance()
 
         ''' <summary>
-        ''' The current workbook file name (as it is known by the Excel engine)
+        ''' The current workbook file name (as it is known by the Excel engine).
         ''' </summary>
         ''' <returns>Null/Nothing if the file has been created in memory, but hasn't been saved OR the file name from last open/save action</returns>
         Protected Friend MustOverride ReadOnly Property WorkbookFilePath As String
 
         ''' <summary>
-        ''' Save modifications made to the workbook
+        ''' Saves modifications made to the workbook.
         ''' </summary>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
         Public Sub Save()
@@ -473,7 +473,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save modifications made to the workbook
+        ''' Saves modifications made to the workbook.
         ''' </summary>
         ''' <param name="cachedCalculationsOption"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
@@ -482,7 +482,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save modifications made to the workbook
+        ''' Saves modifications made to the workbook.
         ''' </summary>
         ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
         ''' <param name="cachedCalculationsOption"></param>
@@ -522,7 +522,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Apply CachedCalculation setting
+        ''' Applies CachedCalculation setting.
         ''' </summary>
         ''' <param name="cachedCalculationsOption"></param>
         <CodeAnalysis.SuppressMessage("Naming", "CA1707:Bezeichner dürfen keine Unterstriche enthalten")>
@@ -543,12 +543,12 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save modifications made to the workbook
+        ''' Saves modifications made to the workbook.
         ''' </summary>
         Protected MustOverride Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
         ''' <summary>
-        ''' Save workbook as another file
+        ''' Saves workbook as another file.
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
@@ -559,7 +559,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save workbook as another file
+        ''' Saves workbook as another file.
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
@@ -568,7 +568,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save workbook as another file
+        ''' Saves workbook as another file.
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
@@ -579,7 +579,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save workbook as another file, but keep current file path and read-only status
+        ''' Saves workbook as another file, but keep current file path and read-only status.
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <remarks>Depending on <c ref="AutoCalculationResetToEnabledForAllSavedWorkbooks">AutoCalculationResetToEnabledForAllSavedWorkbooks</c>, <c ref="AutoCalculationEnabledWorkbookSetting">AutoCalculationEnabledWorkbookSetting</c> will be reset to True in saved workbook</remarks>
@@ -588,7 +588,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save workbook as another file, but keep current file path and read-only status
+        ''' Saves workbook as another file, but keep current file path and read-only status.
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
@@ -605,7 +605,7 @@ Namespace ExcelOps
         End Enum
 
         ''' <summary>
-        ''' Save workbook as another file
+        ''' Saves workbook as another file.
         ''' </summary>
         ''' <param name="filePath"></param>
         ''' <param name="recalculateWorkbook">True to force recalculation, False to forbid recalculation, null to use default rule</param>
@@ -668,15 +668,15 @@ Namespace ExcelOps
         Public Enum SaveOptionsForDisabledCalculationEngines As Byte
             <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)> DefaultBehaviour = 0
             ''' <summary>
-            ''' No reset of cached calculation values of formula cells
+            ''' No reset of cached calculation values of formula cells.
             ''' </summary>
             NoReset = 1
             ''' <summary>
-            ''' Reset cached calculation values of formula cells
+            ''' Resets cached calculation values of formula cells.
             ''' </summary>
             AlwaysResetCalculatedValuesForForcedCellRecalculation = 2
             ''' <summary>
-            ''' Reset cached calculation values of formula cells if a recalculation is requested
+            ''' Resets cached calculation values of formula cells if a recalculation is requested.
             ''' </summary>
             ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired = 3
         End Enum
@@ -689,52 +689,52 @@ Namespace ExcelOps
         Protected MustOverride Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
         ''' <summary>
-        ''' All available sheet names (work sheets + chart sheets)
+        ''' Gets all available sheet names (worksheets + chart sheets).
         ''' </summary>
         ''' <returns></returns>
         Public MustOverride Function SheetNames() As List(Of String)
 
         ''' <summary>
-        ''' Lookup the (zero-based) index number of a sheet
+        ''' Looks up the (zero-based) index number of a sheet.
         ''' </summary>
-        ''' <param name="sheetName">A sheet name (work sheet or chart sheet)</param>
+        ''' <param name="sheetName">A sheet name (worksheet or chart sheet)</param>
         ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
         Public Overridable Function SheetIndex(ByVal sheetName As String) As Integer
             Return Me.SheetNames.IndexOf(sheetName)
         End Function
 
         ''' <summary>
-        ''' All available work sheet names
+        ''' Gets all available worksheet names.
         ''' </summary>
         ''' <returns></returns>
         Public MustOverride Function WorkSheetNames() As List(Of String)
 
         ''' <summary>
-        ''' Lookup the (zero-based) index number of a work sheet
+        ''' Looks up the (zero-based) index number of a worksheet.
         ''' </summary>
-        ''' <param name="workSheetName">A work sheet name</param>
+        ''' <param name="workSheetName">A worksheet name</param>
         ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
         Public Function WorkSheetIndex(ByVal workSheetName As String) As Integer
             Return Me.WorkSheetNames.IndexOf(workSheetName)
         End Function
 
         ''' <summary>
-        ''' All available chart sheet names
+        ''' Gets all available chart sheet names.
         ''' </summary>
         ''' <returns></returns>
         Public MustOverride Function ChartSheetNames() As List(Of String)
 
         ''' <summary>
-        ''' Lookup the (zero-based) index number of a chart sheet
+        ''' Looks up the (zero-based) index number of a chart sheet.
         ''' </summary>
-        ''' <param name="chartName">A work sheet name</param>
+        ''' <param name="chartName">A worksheet name</param>
         ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
         Public Function ChartSheetIndex(ByVal chartName As String) As Integer
             Return Me.ChartSheetNames.IndexOf(chartName)
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="cell"></param>
@@ -743,7 +743,7 @@ Namespace ExcelOps
         Public MustOverride Function LookupCellValue(Of T)(cell As ExcelCell) As T
 
         ''' <summary>
-        ''' Read several cell values
+        ''' Reads several cell values.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="range"></param>
@@ -758,18 +758,18 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public MustOverride Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="cell"></param>
@@ -778,28 +778,28 @@ Namespace ExcelOps
         Public MustOverride Function TryLookupCellValue(Of T As Structure)(cell As ExcelCell) As T?
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public MustOverride Function TryLookupCellValue(Of T As Structure)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T?
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public MustOverride Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -810,18 +810,18 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read a cell value
+        ''' Reads a cell value.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
         Public MustOverride Function LookupCellFormula(cell As ExcelCell) As String
 
         ''' <summary>
-        ''' Read a cell formula
+        ''' Reads a cell formula.
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns></returns>
         Public MustOverride Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
 
@@ -842,7 +842,7 @@ Namespace ExcelOps
         Public MustOverride Function LookupCellIsLocked(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
 
         ''' <summary>
-        ''' Write a cell value
+        ''' Writes a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="cell"></param>
@@ -850,27 +850,27 @@ Namespace ExcelOps
         Public MustOverride Sub WriteCellValue(Of T)(cell As ExcelCell, value As T)
 
         ''' <summary>
-        ''' Write a cell value
+        ''' Writes a cell value.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <param name="value"></param>
         Public MustOverride Sub WriteCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer, value As T)
 
         ''' <summary>
-        ''' Write a cell formula
+        ''' Writes a cell formula.
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         ''' <param name="formula">Formula without leading '=' char</param>
         Public MustOverride Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
 
         Private _RecalculationRequired As Boolean?
         ''' <summary>
-        ''' Modifications require a full recalculation
+        ''' Modifications require a full recalculation.
         ''' </summary>
         ''' <returns></returns>
         Public Property RecalculationRequired As Boolean
@@ -955,7 +955,7 @@ Namespace ExcelOps
         Protected MustOverride Sub CreateWorkbook()
 
         ''' <summary>
-        ''' Create a new workbook
+        ''' Creates a new workbook.
         ''' </summary>
         ''' <param name="intendedFilePath">If the file path is already known, the file will be checked to not exist already and the file path will be used for later saving</param>
         Protected Sub CreateAndInitializeWorkbookFile(intendedFilePath As String, options As ExcelDataOperationsOptions)
@@ -974,7 +974,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Assign default options, perform required calculations
+        ''' Assign default options, perform required calculations.
         ''' </summary>
         ''' <param name="options"></param>
         Protected Sub PostLoadOrCreateWorkbook(options As ExcelDataOperationsOptions)
@@ -992,7 +992,7 @@ Namespace ExcelOps
         Public MustOverride Sub CleanupRangeNames()
 
         ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content column index (zero-based index) (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Function LookupLastContentColumnIndex(sheetName As String) As Integer
@@ -1000,7 +1000,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content column index (zero-based index) (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="lastMergedCellNotEmpty"></param>
@@ -1030,7 +1030,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content row index (zero-based index) (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Overridable Function LookupLastContentRowIndex(sheetName As String) As Integer
@@ -1038,7 +1038,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content row index (zero-based index) (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="lastMergedCellNotEmpty"></param>
@@ -1068,7 +1068,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
+        ''' Looks up the last content cell (the last content cell might differ from Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <remarks>Please note: there might be a performance impact (especially with MS Excel interop) in comparison to <see cref="LookupLastCell(String)"/> to check all relevant cells due to required COM overhead</remarks>
@@ -1081,7 +1081,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last column index (zero based index) (the last content cell equals to Excel's special cell xlLastCell)
+        ''' Looks up the last column index (zero-based index) (the last content cell equals to Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Function LookupLastColumnIndex(sheetName As String) As Integer
@@ -1089,7 +1089,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last row index (zero based index) (the last content cell equals to Excel's special cell xlLastCell)
+        ''' Looks up the last row index (zero-based index) (the last content cell equals to Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Function LookupLastRowIndex(sheetName As String) As Integer
@@ -1097,13 +1097,13 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the last cell (the last content cell equals to Excel's special cell xlLastCell)
+        ''' Looks up the last cell (the last content cell equals to Excel's special cell xlLastCell).
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Function LookupLastCell(sheetName As String) As ExcelCell
 
         ''' <summary>
-        ''' Lookup the first unlocked cell (search row by row, then column by column)
+        ''' Looks up the first unlocked cell (search row by row, then column by column).
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <returns></returns>
@@ -1127,7 +1127,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the first unlocked cell (search row by row, then column by column) or alternatively the first cell (A1)
+        ''' Looks up the first unlocked cell (search row by row, then column by column) or alternatively the first cell (A1).
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <returns></returns>
@@ -1141,22 +1141,22 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Lookup the row index (zero based index)
+        ''' Looks up the row index (zero-based index).
         ''' </summary>
         ''' <param name="cell"></param>
         Public MustOverride Function LookupRowIndex(cell As ExcelOps.ExcelCell) As Integer
 
         ''' <summary>
-        ''' Lookup the column index (zero based index)
+        ''' Looks up the column index (zero-based index).
         ''' </summary>
         ''' <param name="cell"></param>
         Public MustOverride Function LookupColumnIndex(cell As ExcelOps.ExcelCell) As Integer
 
         ''' <summary>
-        ''' Remove specified rows
+        ''' Removes specified rows.
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="startRowIndex">0-based row number</param>
+        ''' <param name="startRowIndex">zero-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
         <Obsolete("Use overloaded methods", False)>
         Public Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
@@ -1164,7 +1164,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Insert one or more columns.
+        ''' Inserts one or more columns.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet to change</param>
         ''' <param name="columnIndex">Zero-based index of the column to insert before</param>
@@ -1173,7 +1173,7 @@ Namespace ExcelOps
         Public MustOverride Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
-        ''' Insert one or more rows.
+        ''' Inserts one or more rows.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet to change</param>
         ''' <param name="rowIndex">Zero-based index of the row to insert before</param>
@@ -1182,7 +1182,7 @@ Namespace ExcelOps
         Public MustOverride Sub AddRow(sheetName As String, rowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
-        ''' Insert a rectangular cell range.
+        ''' Inserts a rectangular cell range.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet to change</param>
         ''' <param name="rowIndex">Zero-based row index of the upper-left cell of the insertion range</param>
@@ -1194,7 +1194,7 @@ Namespace ExcelOps
         Public MustOverride Sub AddCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellInsertShiftDirection, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
-        ''' Remove one or more columns.
+        ''' Removes one or more columns.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet to change</param>
         ''' <param name="startColumnIndex">Zero-based column index of the first column to remove</param>
@@ -1203,7 +1203,7 @@ Namespace ExcelOps
         Public MustOverride Sub RemoveColumns(sheetName As String, startColumnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
-        ''' Remove one or more rows.
+        ''' Removes one or more rows.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet to change</param>
         ''' <param name="startRowIndex">Zero-based row index of the first row to remove</param>
@@ -1212,7 +1212,7 @@ Namespace ExcelOps
         Public MustOverride Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
-        ''' Remove a rectangular cell range.
+        ''' Removes a rectangular cell range.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet to change</param>
         ''' <param name="rowIndex">Zero-based row index of the upper-left cell of the removal range</param>
@@ -1224,7 +1224,7 @@ Namespace ExcelOps
         Public MustOverride Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
-        ''' Remove a sheet
+        ''' Removes a sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub RemoveSheet(sheetName As String)
@@ -1245,7 +1245,7 @@ Namespace ExcelOps
         Public MustOverride Sub AddSheet(sheetName As String, beforeSheetName As String)
 
         ''' <summary>
-        ''' Determine if a cell contains empty content
+        ''' Determines whether a cell contains empty content.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex">Zero-based index</param>
@@ -1253,7 +1253,7 @@ Namespace ExcelOps
         Public MustOverride Function IsEmptyCell(sheetName As String, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
 
         ''' <summary>
-        ''' Determine if a cell contains empty content
+        ''' Determines whether a cell contains empty content.
         ''' </summary>
         Public Function IsEmptyCell(cell As ExcelCell) As Boolean
             If cell.ValidateFullCellAddressInclSheetName() = False Then Throw New ExcelOps.InvalidCellAddressException(cell)
@@ -1261,7 +1261,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Recalculate everything
+        ''' Recalculates everything.
         ''' </summary>
         Public Sub RecalculateAll()
             Me.RecalculateAllInternal()
@@ -1269,18 +1269,18 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Recalculate everything
+        ''' Recalculates everything.
         ''' </summary>
         Protected MustOverride Sub RecalculateAllInternal()
 
         ''' <summary>
-        ''' Recalculate all cells of a sheet
+        ''' Recalculates all cells of a sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub RecalculateSheet(sheetName As String)
 
         ''' <summary>
-        ''' Recalculate a cell based on its formula
+        ''' Recalculates a cell based on its formula.
         ''' </summary>
         ''' <param name="cell"></param>
         Public Sub RecalculateCell(cell As ExcelCell)
@@ -1289,26 +1289,26 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Recalculate a cell based on its formula
+        ''' Recalculates a cell based on its formula.
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         Public Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.RecalculateCell(sheetName, rowIndex, columnIndex, True)
         End Sub
 
         ''' <summary>
-        ''' Recalculate a cell based on its formula
+        ''' Recalculates a cell based on its formula.
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <param name="rowIndex">zero-based row number</param>
+        ''' <param name="columnIndex">zero-based column number</param>
         Public MustOverride Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
 
         ''' <summary>
-        ''' Try to lookup the cell's value to a string anyhow
+        ''' Try to lookup the cell's value to a string anyhow.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex"></param>
@@ -1318,7 +1318,7 @@ Namespace ExcelOps
         Public MustOverride Function LookupCellFormattedText(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
 
         ''' <summary>
-        ''' Try to lookup the cell's value to a string anyhow
+        ''' Try to lookup the cell's value to a string anyhow.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -1329,7 +1329,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Read the cell format string
+        ''' Reads the cell format string.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex"></param>
@@ -1338,7 +1338,7 @@ Namespace ExcelOps
         Public MustOverride Function LookupCellFormat(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
 
         ''' <summary>
-        ''' Read the cell format string
+        ''' Reads the cell format string.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -1349,7 +1349,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Unprotect all sheets
+        ''' Unprotects all sheets.
         ''' </summary>
         Public Sub UnprotectSheets()
             For Each sheetName As String In Me.SheetNames
@@ -1358,7 +1358,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Unprotect all sheets
+        ''' Unprotects all sheets.
         ''' </summary>
         Public Sub UnhideSheets()
             For Each sheetName As String In Me.SheetNames
@@ -1367,7 +1367,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Unprotect selected sheet
+        ''' Unprotects selected sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub UnprotectSheet(sheetName As String)
@@ -1377,48 +1377,48 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum ProtectionLevel As Byte
             ''' <summary>
-            ''' Select all cells, edit unlocked cells
+            ''' Selects all cells, edit unlocked cells.
             ''' </summary>
             Standard = 20
             ''' <summary>
-            ''' Select and edit unlocked cells
+            ''' Selects and edit unlocked cells.
             ''' </summary>
             SelectAndEditUnlockedCellsOnly = 100
             ''' <summary>
-            ''' Select all cells, edit unlocked cells, insert/remove rows
+            ''' Selects all cells, edit unlocked cells, insert/remove rows.
             ''' </summary>
             StandardWithInsertDeleteRows = 18
             ''' <summary>
-            ''' Select unlocked and locked cells, edit their formulas/cell content, but never edit formattings, objects, row set, column set, pivot/charts, insert links or anything similar
+            ''' Selects unlocked and locked cells, edit their formulas/cell content, but never edit formattings, objects, row set, column set, pivot/charts, insert links or anything similar.
             ''' </summary>
             SelectAndEditAllCellsButNoFurtherEditing = 101
             ''' <summary>
-            ''' No selection of unlocked or locked cells, and never review/edit their formulas/cell content, formattings, objects, row set, column set, pivot/charts, insert links or anything similar
+            ''' No selection of unlocked or locked cells, and never review/edit their formulas/cell content, formattings, objects, row set, column set, pivot/charts, insert links or anything similar.
             ''' </summary>
             SelectNoCellsAndNoEditing = 200
         End Enum
 
         ''' <summary>
-        ''' Protect selected sheet
+        ''' Protects selected sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub ProtectSheet(sheetName As String, level As ProtectionLevel)
 
         ''' <summary>
-        ''' Is a sheet in protected state
+        ''' Gets whether a sheet is protected.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <returns></returns>
         Public MustOverride Function IsProtectedSheet(sheetName As String) As Boolean
 
         ''' <summary>
-        ''' Unprotect selected sheet
+        ''' Unprotects selected sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub UnhideSheet(sheetName As String)
 
         ''' <summary>
-        ''' Protect selected sheet
+        ''' Protects selected sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public Sub HideSheet(sheetName As String)
@@ -1426,13 +1426,13 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Protect selected sheet
+        ''' Protects selected sheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub HideSheet(sheetName As String, stronglyHide As Boolean)
 
         ''' <summary>
-        ''' Is a sheet in protected state
+        ''' Gets whether a sheet is protected.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <returns></returns>
@@ -1443,35 +1443,35 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum MatrixContent As Byte
             ''' <summary>
-            ''' Static values only
+            ''' Static values only.
             ''' </summary>
             StaticValues = 0
             ''' <summary>
-            ''' Formulas only
+            ''' Formulas only.
             ''' </summary>
             Formulas = 1
             ''' <summary>
-            ''' Values of locked cells only
+            ''' Values of locked cells only.
             ''' </summary>
             ValuesOfLockedCells = 2
             ''' <summary>
-            ''' Values of unlocked cells only
+            ''' Values of unlocked cells only.
             ''' </summary>
             ValuesOfUnlockedCells = 6
             ''' <summary>
-            ''' The cell's formula or the cell's value
+            ''' The cell's formula or the cell's value.
             ''' </summary>
             FormulaOrFormattedText = 3
             ''' <summary>
-            ''' Static values or the value of the last calculation in case of a formula
+            ''' Static values or the value of the last calculation in case of a formula.
             ''' </summary>
             StaticOrCalculatedValues = 4
             ''' <summary>
-            ''' Static values or the value of the last calculation in case of a formula
+            ''' Static values or the value of the last calculation in case of a formula.
             ''' </summary>
             FormattedText = 5
             ''' <summary>
-            ''' Errors only
+            ''' Errors only.
             ''' </summary>
             Errors = 7
         End Enum
@@ -1534,7 +1534,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Check for errors in cell
+        ''' Checks for errors in cell.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex"></param>
@@ -1543,7 +1543,7 @@ Namespace ExcelOps
         Public MustOverride Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="range"></param>
         Public Sub ClearCells(range As ExcelRange)
@@ -1551,7 +1551,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="range"></param>
         Public Sub ClearCells(overrideSheetName As String, range As ExcelRange)
@@ -1561,7 +1561,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <param name="rangeFirstCell"></param>
@@ -1569,7 +1569,7 @@ Namespace ExcelOps
         Public MustOverride Sub ClearCells(overrideSheetName As String, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <param name="cell"></param>
@@ -1578,7 +1578,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="cell"></param>
         Public Sub ClearCells(cell As ExcelCell)
@@ -1587,7 +1587,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="rangeFirstCell"></param>
         ''' <param name="rangeLastCell"></param>
@@ -1600,7 +1600,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="range"></param>
         Public Sub ClearCellContent(overrideSheetName As String, range As ExcelRange)
@@ -1610,7 +1610,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="range"></param>
         Public Sub ClearCellContent(overrideSheetName As String, range As ExcelRange, onlyIfUnlockedCell As Boolean)
@@ -1620,7 +1620,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="cell"></param>
         Public Sub ClearCellContent(cell As ExcelCell)
@@ -1629,7 +1629,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="cell"></param>
         Public Sub ClearCellContent(cell As ExcelCell, onlyIfUnlockedCell As Boolean)
@@ -1640,7 +1640,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <param name="rangeFirstCell"></param>
@@ -1655,7 +1655,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <param name="cell"></param>
@@ -1669,7 +1669,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="overrideSheetName"></param>
         ''' <param name="rangeFirstCell"></param>
@@ -1684,7 +1684,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="rangeFirstCell"></param>
         ''' <param name="rangeLastCell"></param>
@@ -1697,7 +1697,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="rangeFirstCell"></param>
         ''' <param name="rangeLastCell"></param>
@@ -1710,7 +1710,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="range"></param>
         Public Sub ClearCellContent(range As ExcelRange)
@@ -1720,7 +1720,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cell content
+        ''' Clears cell content.
         ''' </summary>
         ''' <param name="range"></param>
         Public Sub ClearCellContent(range As ExcelRange, onlyIfUnlockedCell As Boolean)
@@ -1730,25 +1730,25 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Clear cells
+        ''' Clears cells.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub ClearSheet(sheetName As String)
 
         ''' <summary>
-        ''' The currently selected sheet name
+        ''' Gets the currently selected sheet name.
         ''' </summary>
         ''' <returns></returns>
         Public MustOverride Function SelectedSheetName() As String
 
         ''' <summary>
-        ''' Select a worksheet
+        ''' Selects a worksheet.
         ''' </summary>
         ''' <param name="sheetName"></param>
         Public MustOverride Sub SelectSheet(sheetName As String)
 
         ''' <summary>
-        ''' Select a worksheet
+        ''' Selects a worksheet.
         ''' </summary>
         ''' <param name="sheetIndex"></param>
         Public MustOverride Sub SelectSheet(sheetIndex As Integer)
@@ -1850,13 +1850,13 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Select a cell.
+        ''' Selects a cell.
         ''' </summary>
         ''' <param name="cell">Cell to select</param>
         Public MustOverride Sub SelectCell(cell As ExcelCell)
 
         ''' <summary>
-        ''' Select a cell (without selecting the sheet)
+        ''' Selects a cell (without selecting the sheet).
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="specialCell"></param>
@@ -1878,7 +1878,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' In all sheets, set the active cell to the top position
+        ''' In all sheets, set the active cell to the top position.
         ''' </summary>
         Public Sub SelectFirstUnlockedCellOrFirstCellInAllSheets()
             For Each SheetName As String In Me.SheetNames
@@ -2091,7 +2091,7 @@ Namespace ExcelOps
         Public MustOverride Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
 
         ''' <summary>
-        ''' Find all error cells of a workbook
+        ''' Finds all error cells of a workbook.
         ''' </summary>
         ''' <param name="filterForErrorValues">The error values to find, e.g. "#REF!", "#NAME?", or null/Nothing/0-array for all types of error cells</param>
         ''' <returns></returns>
@@ -2112,7 +2112,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Find all error cells of a sheet
+        ''' Finds all error cells of a sheet.
         ''' </summary>
         ''' <param name="sheetName">Name of sheet</param>
         ''' <param name="filterForErrorValues">The error values to find, e.g. "#REF!", "#NAME?", or null/Nothing/0-array for all types of error cells</param>
@@ -2174,7 +2174,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="fileName"></param>
         ''' <param name="options"></param>
@@ -2192,7 +2192,7 @@ Namespace ExcelOps
 
 #If Not NETFRAMEWORK Then
         ''' <summary>
-        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="fileName"></param>
         ''' <param name="options"></param>
@@ -2205,7 +2205,7 @@ Namespace ExcelOps
 #End If
 
         ''' <summary>
-        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="options"></param>
         Public Function ExportWorkbookToHtml(options As HtmlWorkbookExportOptions) As System.Text.StringBuilder
@@ -2254,7 +2254,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Save single worksheet to HTML (including HTML document header/footer, images as HTML inline data)
+        ''' Saves single worksheet to HTML (including HTML document header/footer, images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="fileName"></param>
@@ -2273,7 +2273,7 @@ Namespace ExcelOps
 
 #If Not NETFRAMEWORK Then
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="fileName"></param>
@@ -2287,7 +2287,7 @@ Namespace ExcelOps
 #End If
 
         ''' <summary>
-        ''' Save single worksheet to HTML (including HTML document header/footer, images as HTML inline data)
+        ''' Saves single worksheet to HTML (including HTML document header/footer, images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         Public Function ExportSheetToHtml(worksheetName As String, options As HtmlSheetExportOptions) As System.Text.StringBuilder
@@ -2297,7 +2297,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="sb"></param>
@@ -2322,17 +2322,17 @@ Namespace ExcelOps
 
         Public Enum HtmlDocumentExportParts As Byte
             ''' <summary>
-            ''' Create a full HTML document with header tags, style tags, etc.
+            ''' Creates a full HTML document with header tags, style tags, etc.
             ''' </summary>
             FullHtmlDocument = 1
             ''' <summary>
-            ''' Export HTML table code only
+            ''' Exports HTML table code only.
             ''' </summary>
             ContentOnly = 2
         End Enum
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="sb"></param>
@@ -2340,7 +2340,7 @@ Namespace ExcelOps
 
 #Region "Colors and Theming (Helpers for e.g. ExcelColorToCssHex() in depending classes)"
         ''' <summary>
-        ''' Default-Office-Theme (Office-Standard „Office“)
+        ''' Default-Office-Theme (Office-Standard „Office“).
         ''' </summary>
         ''' <param name="themeIndex"></param>
         ''' <returns></returns>
@@ -2368,7 +2368,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Excel-Tint-Regel (heller/dunkler)
+        ''' Excel-Tint-Regel (heller/dunkler).
         ''' </summary>
         ''' <param name="hex"></param>
         ''' <param name="tint"></param>

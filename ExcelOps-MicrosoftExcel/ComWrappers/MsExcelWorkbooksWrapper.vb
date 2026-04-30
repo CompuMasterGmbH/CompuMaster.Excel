@@ -3,7 +3,7 @@
 Namespace Global.CompuMaster.Excel.MsExcelCom
 
     ''' <summary>
-    ''' COM Wrapper class for MS Excel workbooks collection
+    ''' COM Wrapper class for MS Excel workbooks collection.
     ''' </summary>
     Public Class MsExcelWorkbooksWrapper
         Inherits CompuMaster.ComInterop.ComChildObject(Of CompuMaster.ComInterop.ComApplication(Of MsExcel.Application), MsExcel.Workbooks)
@@ -24,7 +24,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Public ReadOnly Property ParentWrapper As MsExcelApplicationWrapper
 
         ''' <summary>
-        ''' Create a new workbook
+        ''' Creates a new workbook.
         ''' </summary>
         ''' <returns></returns>
         Public Function Add() As MsExcelWorkbookWrapper
@@ -32,7 +32,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Open an existing workbook
+        ''' Opens an existing workbook.
         ''' </summary>
         ''' <param name="path"></param>
         ''' <param name="[readOnly]"></param>
@@ -60,9 +60,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' COM wrapper for Workbook
+        ''' COM wrapper for Workbook.
         ''' </summary>
-        ''' <param name="index1Based">1-based index</param>
+        ''' <param name="index1Based">one-based index</param>
         ''' <returns></returns>
         Public Function Workbook(index1Based As Integer) As MsExcelWorkbookWrapper
             Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Item(index1Based))
@@ -75,7 +75,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Count of opened workbooks
+        ''' Count of opened workbooks.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property Count() As Integer
@@ -89,7 +89,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Property
 
         ''' <summary>
-        ''' Close all opened workbooks
+        ''' Closes all opened workbooks.
         ''' </summary>
         Public Sub CloseAllWorkbooks()
             For MyCounter As Integer = Me.Count - 1 To 0 Step -1

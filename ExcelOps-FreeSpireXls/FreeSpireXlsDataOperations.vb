@@ -12,7 +12,7 @@ Imports Spire.Xls.Collections
 Namespace ExcelOps
 
     ''' <summary>
-    ''' An Excel operations engine based on FreeSpire.Xls
+    ''' An Excel operations engine based on FreeSpire.Xls.
     ''' </summary>
     ''' <remarks>
     ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
@@ -36,7 +36,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates or opens a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
@@ -50,7 +50,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -59,7 +59,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -68,7 +68,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
@@ -85,7 +85,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file"></param>
         ''' <param name="mode"></param>
@@ -134,7 +134,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <remarks>
@@ -146,7 +146,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <param name="options"></param>
@@ -159,7 +159,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime"></param>
         ''' <remarks>
@@ -193,7 +193,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save workbook with its sheets to HTML (including images as HTML inline data)
+        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="fileName"></param>
         ''' <param name="skipHiddenSheets"></param>
@@ -203,7 +203,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="fileName"></param>
@@ -219,7 +219,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
+        ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
         ''' <param name="worksheetName"></param>
         ''' <param name="stream"></param>

@@ -16,7 +16,7 @@ Namespace ExcelOps
         Implements ICloneable, IDisposable
 
         ''' <summary>
-        ''' A new instance of TextTable
+        ''' A new instance of TextTable.
         ''' </summary>
         Public Sub New()
             Me.Table = New DataTable
@@ -27,7 +27,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' A new instance of TextTable based on values of System.DataTable
+        ''' A new instance of TextTable based on values of System.DataTable.
         ''' </summary>
         ''' <param name="table"></param>
         Public Sub New(table As DataTable)
@@ -239,7 +239,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Translate row/column index to MS Excel sheet address (e.g. 'A1')
+        ''' Translate row/column index to MS Excel sheet address (e.g. 'A1').
         ''' </summary>
         ''' <param name="rowIndex"></param>
         ''' <param name="columnIndex"></param>
@@ -281,11 +281,11 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum DiffMode As Byte
             ''' <summary>
-            ''' Cells with different content (after trimming) 
+            ''' Cells with different content (after trimming).
             ''' </summary>
             DifferentTrimmedCells = 0
             ''' <summary>
-            ''' Cells with content (after trimming) are equal in both tables
+            ''' Cells with content (after trimming) are equal in both tables.
             ''' </summary>
             EqualTrimmedCellsWithContent = 1
         End Enum
@@ -295,21 +295,21 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum DiffCellOutput As Byte
             ''' <summary>
-            ''' Cells without difference are null/Nothing, empty cells in this table but with different value in comparison table are String.Empty, else cells contain content of this table
+            ''' Cells without difference are null/Nothing, empty cells in this table but with different value in comparison table are String.Empty, else cells contain content of this table.
             ''' </summary>
             CellContentOfThisTable = 0
             ''' <summary>
-            ''' 'D' for a diff-match, 'E' for an equal-match, null/Nothing for non-match
+            ''' 'D' for a diff-match, 'E' for an equal-match, null/Nothing for non-match.
             ''' </summary>
             Bool = 1
             ''' <summary>
-            ''' 'A' for added values, 'M' for modified values, 'R' for removed values
+            ''' 'A' for added values, 'M' for modified values, 'R' for removed values.
             ''' </summary>
             ChangeType = 2
         End Enum
 
         ''' <summary>
-        ''' Compare this table with another table and create a new table with just filtered cells of this table
+        ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
         ''' <param name="comparisonTable"></param>
         ''' <param name="diffType"></param>
@@ -319,7 +319,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Compare this table with another table and create a new table with just filtered cells of this table
+        ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
         ''' <param name="comparisonTable"></param>
         ''' <param name="diffType"></param>
@@ -332,7 +332,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Compare this table with another table and create a new table with just filtered cells of this table
+        ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
         ''' <param name="comparisonTable"></param>
         ''' <param name="diffType"></param>
@@ -442,7 +442,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Compare this table with another table and create a new table with just filtered cells of this table
+        ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
         ''' <param name="comparisonTable"></param>
         ''' <param name="diffType"></param>
@@ -452,7 +452,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Compare this table with another table and create a new table with just filtered cells of this table
+        ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
         ''' <param name="comparisonTable"></param>
         ''' <param name="diffType"></param>
@@ -464,7 +464,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Compare this table with another table and create a new table with just filtered cells of this table
+        ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
         ''' <param name="comparisonTable"></param>
         ''' <param name="diffType"></param>
@@ -577,7 +577,7 @@ Namespace ExcelOps
         End Operator
 
         ''' <summary>
-        ''' Create a list with values of all filled cells
+        ''' Creates a list with values of all filled cells.
         ''' </summary>
         ''' <returns></returns>
         Public Function ToCellValuesList(basedOnSheetName As String) As List(Of TextTableCell)

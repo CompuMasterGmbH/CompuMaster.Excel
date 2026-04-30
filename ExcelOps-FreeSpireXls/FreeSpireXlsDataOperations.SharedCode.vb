@@ -62,7 +62,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Setter for workbook filename in SpireXls
+        ''' Setter for workbook filename in SpireXls.
         ''' </summary>
         ''' <param name="fileName"></param>
         ''' <remarks>WORKAROUND FEATURE: required for methods
@@ -96,7 +96,7 @@ Namespace ExcelOps
         End Property
 
         ''' <inheritdoc/>
-        ''' <remarks>WARNING: due to lack of engine feature, the order is always: 1st work sheets, 2nd chart sheets</remarks>
+        ''' <remarks>WARNING: due to lack of engine feature, the order is always: 1st worksheets, 2nd chart sheets</remarks>
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
@@ -478,7 +478,7 @@ Namespace ExcelOps
 
 #Disable Warning CA1822 ' Member als statisch markieren
         ''' <summary>
-        ''' Determine if a cell contains empty content (cells with formulas are always considered as filled cells)
+        ''' Determines whether a cell contains empty content (cells with formulas are always considered as filled cells).
         ''' </summary>
         ''' <param name="sheet"></param>
         ''' <param name="rowIndex">Zero-based index</param>

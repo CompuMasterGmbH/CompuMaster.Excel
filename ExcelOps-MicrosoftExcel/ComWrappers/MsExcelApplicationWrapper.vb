@@ -4,7 +4,7 @@ Imports MsExcel = Microsoft.Office.Interop.Excel
 Namespace Global.CompuMaster.Excel.MsExcelCom
 
     ''' <summary>
-    ''' An MS Excel wrapper for safe COM object handling and release
+    ''' An MS Excel wrapper for safe COM object handling and release.
     ''' </summary>
     ''' <remarks>
     ''' For proper Microsoft Excel licensing, please contact Microsoft.
@@ -18,7 +18,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Friend Const ExpectedProcessName As String = "EXCEL"
 
         ''' <summary>
-        ''' Create a new MS Excel instance within its wrapper instance
+        ''' Creates a new MS Excel instance within its wrapper instance.
         ''' </summary>
         Public Sub New()
             Me._ComApp = New CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)(CreateMsExcelApplication, Function(x) New IntPtr(x.ComObjectStronglyTyped.Hwnd), AddressOf OnClosing, ExpectedProcessName)
@@ -43,7 +43,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Required close commands for the COM object like App.Quit() or Document.Close()
+        ''' Required close commands for the COM object like App.Quit() or Document.Close().
         ''' </summary>
         Private Shared Sub OnClosing(comApplicationObject As CompuMaster.ComInterop.ComApplication(Of MsExcel.Application))
             If Not comApplicationObject.IsDisposedComObject Then
@@ -97,7 +97,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
 
         Private _Workbooks As MsExcelWorkbooksWrapper
         ''' <summary>
-        ''' The Excel workbooks collection
+        ''' The Excel workbooks collection.
         ''' </summary>
         ''' <returns></returns>
         Public ReadOnly Property Workbooks As MsExcelWorkbooksWrapper
@@ -127,7 +127,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Is MS Excel application closed
+        ''' Gets whether the Microsoft Excel application is closed.
         ''' </summary>
         Public ReadOnly Property IsClosed() As Boolean
             Get
@@ -136,7 +136,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Property
 
         ''' <summary>
-        ''' Close MS Excel application
+        ''' Closes MS Excel application.
         ''' </summary>
         Public Sub Close()
             If _ComApp IsNot Nothing Then
@@ -153,7 +153,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
 
 #Region "Invoke methods"
         ''' <summary>
-        ''' Invoke function member
+        ''' Invoke function member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -164,7 +164,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Invoke method member
+        ''' Invoke method member.
         ''' </summary>
         ''' <param name="name"></param>
         ''' <param name="values">Arguments for the called member, remember to use System.Reflection.Missing.Value where required</param>
@@ -173,7 +173,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Invoke property-get member
+        ''' Invoke property-get member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -183,7 +183,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Invoke property-get member
+        ''' Invoke property-get member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -194,7 +194,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Invoke property-set member
+        ''' Invoke property-set member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -204,7 +204,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Invoke property-set member
+        ''' Invoke property-set member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -214,7 +214,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Invoke field-get member
+        ''' Invoke field-get member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -224,7 +224,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Function
 
         ''' <summary>
-        ''' Invoke field-set member
+        ''' Invoke field-set member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>
@@ -234,7 +234,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         End Sub
 
         ''' <summary>
-        ''' Invoke field-set member
+        ''' Invoke field-set member.
         ''' </summary>
         ''' <typeparam name="T"></typeparam>
         ''' <param name="name"></param>

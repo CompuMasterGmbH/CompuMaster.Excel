@@ -548,7 +548,7 @@ Namespace ExcelOps
 
 #Disable Warning CA1822 ' Member als statisch markieren
         ''' <summary>
-        ''' Determine if a cell contains empty content (cells with formulas are always considered as filled cells)
+        ''' Determines whether a cell contains empty content (cells with formulas are always considered as filled cells).
         ''' </summary>
         ''' <param name="sheet"></param>
         ''' <param name="rowIndex">Zero-based index</param>
@@ -658,7 +658,7 @@ Namespace ExcelOps
     End Function
 
     ''' <summary>
-    ''' Detect custom date/time format strings which haven't been detected by Epplus
+    ''' Detect custom date/time format strings which haven't been detected by Epplus.
     ''' </summary>
     ''' <param name="cellFormat"></param>
     ''' <returns></returns>

@@ -4,7 +4,7 @@ Imports CompuMaster.Excel.MsExcelCom
 Namespace Global.CompuMaster.Excel.MsExcelCom
 
     ''' <summary>
-    ''' Tools for Microsoft Excel automation
+    ''' Tools for Microsoft Excel automation.
     ''' </summary>
     ''' <remarks>
     ''' PLEASE NOTE: Considerations for server-side Automation of Office https://support.microsoft.com/en-us/topic/considerations-for-server-side-automation-of-office-48bcfe93-8a89-47f1-0bce-017433ad79e2
@@ -12,7 +12,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
     Public NotInheritable Class MsExcelTools
 
         ''' <summary>
-        ''' Are there any running MS Excel instances on the current system (owned by any user)
+        ''' Are there any running MS Excel instances on the current system (owned by any user).
         ''' </summary>
         ''' <returns></returns>
         Public Shared Function HasRunningMsExcelInstances() As Boolean

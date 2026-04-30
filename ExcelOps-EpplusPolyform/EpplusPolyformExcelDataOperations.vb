@@ -14,7 +14,7 @@ Imports OfficeOpenXml.FormulaParsing.Logging
 Namespace ExcelOps
 
     ''' <summary>
-    ''' An Excel operations engine based on Epplus with its Polyform license
+    ''' An Excel operations engine based on Epplus with its Polyform license.
     ''' </summary>
     ''' <remarks>
     ''' Correct licensing required, see <see cref="LicenseContext"/> and https://www.epplussoftware.com/en/LicenseOverview
@@ -37,7 +37,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' Create or open a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on)
+        ''' Creates or opens a workbook (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
         ''' <param name="mode">Open an existing file or (re)create a new file</param>
@@ -47,7 +47,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -56,7 +56,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         ''' <param name="data"></param>
         ''' <param name="options">File and engine options</param>
@@ -65,7 +65,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -75,7 +75,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -85,7 +85,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create or open a workbook
+        ''' Creates or opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -95,7 +95,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -105,7 +105,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -115,7 +115,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -125,7 +125,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -135,7 +135,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -145,7 +145,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Open a workbook
+        ''' Opens a workbook.
         ''' </summary>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
@@ -155,7 +155,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         Public Sub New(mode As OpenMode)
@@ -163,7 +163,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new workbook or just create an uninitialized instance of this Excel engine
+        ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
         ''' <param name="mode"></param>
         ''' <param name="options"></param>
@@ -172,7 +172,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Create a new instance for accessing Excel workbooks (still requires creating or loading of a workbook)
+        ''' Creates a new instance for accessing Excel workbooks (still requires creating or loading of a workbook).
         ''' </summary>
         ''' <param name="passwordForOpeningOnNextTime">Pre-define encryption password on future save actions</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
@@ -190,7 +190,7 @@ Namespace ExcelOps
         End Property
 
         ''' <summary>
-        ''' The license context for Epplus (see its polyform license)
+        ''' The license context for Epplus (see its polyform license).
         ''' </summary>
         ''' <remarks>https://epplussoftware.com/en/LicenseOverview/LicenseFAQ</remarks>
         ''' <returns></returns>
@@ -230,7 +230,7 @@ Namespace ExcelOps
         Public Structure EpplusLicenseActivator
 
             ''' <summary>
-            ''' Create a new EPPlus license activator.
+            ''' Creates a new EPPlus license activator.
             ''' </summary>
             ''' <param name="licenseType">EPPlus license type to activate</param>
             ''' <param name="licenseKeyOrLegalName">License key for commercial use or personal/organisation name for non-commercial use</param>
@@ -245,7 +245,7 @@ Namespace ExcelOps
             Public Property LicenseType As OfficeOpenXml.EPPlusLicenseType
 
             ''' <summary>
-            ''' License key for commercial use or personal/organisation name for non-commercial use
+            ''' License key for commercial use or personal/organisation name for non-commercial use.
             ''' </summary>
             ''' <returns></returns>
             Public Property KeyOrName As String
@@ -296,13 +296,13 @@ Namespace ExcelOps
 
 #Disable Warning CA1822 ' Member als statisch markieren
         ''' <summary>
-        ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value
+        ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Reset the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
         Private Sub ResetCellValueFromFormulaCellInWholeWorkbook()
         End Sub
 
         ''' <summary>
-        ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Has the specified cell got a formula without a calculated value
+        ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Has the specified cell got a formula without a calculated value.
         ''' </summary>
         ''' <param name="cell"></param>
         ''' <returns></returns>
@@ -311,7 +311,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Has the specified cell got a formula without a calculated value
+        ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Has the specified cell got a formula without a calculated value.
         ''' </summary>
         ''' <param name="sheetName"></param>
         ''' <param name="rowIndex"></param>
@@ -349,7 +349,7 @@ Namespace ExcelOps
 
 #Region "Colors and Theming (Helpers for e.g. ExportSheetToHtmlInternal)"
         ''' <summary>
-        ''' Zentrale Farbauflösung inkl. Cache
+        ''' Zentrale Farbauflösung inkl. Cache.
         ''' </summary>
         ''' <remarks>
         ''' Die Farbauflösung erfolgt inkl. Cache für:
@@ -423,7 +423,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Konstruiert einen stabilen Schlüssel für die Cache-Map
+        ''' Konstruiert einen stabilen Schlüssel für die Cache-Map.
         ''' </summary>
         ''' <param name="color"></param>
         ''' <returns></returns>
@@ -451,7 +451,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Enum→Index-Mapping für Default-Theme (0..11) ---
+        ''' Enum→Index-Mapping für Default-Theme (0..11) ---.
         ''' </summary>
         ''' <param name="theme"></param>
         ''' <returns></returns>

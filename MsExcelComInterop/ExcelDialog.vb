@@ -14,7 +14,7 @@ Public Class ExcelDialog
     End Sub
 
     ''' <summary>
-    ''' Show a dialog
+    ''' Show a dialog.
     ''' </summary>
     ''' <returns>True if the dialog was confirmed, false if the dialog was cancelled</returns>
     Public Function Show() As Boolean
