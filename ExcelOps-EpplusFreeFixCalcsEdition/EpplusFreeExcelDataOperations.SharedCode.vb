@@ -118,9 +118,7 @@ Namespace ExcelOps
             Return Result
         End Function
 
-        ''' <summary>
-        ''' Remove all named ranges in Excel Workbook since this feature is involved but not actively used in Master Template V15; but this feature might throw exceptions in EPPlus when removing rows
-        ''' </summary>
+        ''' <inheritdoc/>
         Public Overrides Sub CleanupRangeNames()
             Dim NamesToRemove As New List(Of String)
             For Each namedRange In Me.Workbook.Names
@@ -141,12 +139,7 @@ Namespace ExcelOps
             Next
         End Sub
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
@@ -217,26 +210,13 @@ Namespace ExcelOps
         '    End Select
         'End Function
 
-        ''' <summary>
-        ''' Read the cell format string
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormat(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return CompuMaster.Data.Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Style.Numberformat.Format)
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -273,12 +253,7 @@ Namespace ExcelOps
             End Try
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(cell As ExcelCell) As T?
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
@@ -299,14 +274,7 @@ Namespace ExcelOps
             End Try
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T?
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -327,13 +295,7 @@ Namespace ExcelOps
             End Try
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -342,24 +304,14 @@ Namespace ExcelOps
             Return Me.Workbook.Worksheets(sheetName).GetValue(rowIndex + 1, columnIndex + 1)
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormula(cell As ExcelCell) As String
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
             If Me.Workbook.Worksheets(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(cell), "Sheet not found: " & cell.SheetName)
             Return CompuMaster.Data.Utils.StringNotEmptyOrNothing(Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).Formula)
         End Function
 
-        ''' <summary>
-        ''' Read a cell formula
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
@@ -380,39 +332,21 @@ Namespace ExcelOps
             Return Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Style.Locked
         End Function
 
-        ''' <summary>
-        ''' Write a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="cell"></param>
-        ''' <param name="value"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub WriteCellValue(Of T)(cell As ExcelCell, value As T)
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
             Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).Formula = Nothing
             Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).Value = value
         End Sub
 
-        ''' <summary>
-        ''' Write a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <param name="value"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub WriteCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer, value As T)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Formula = Nothing
             Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value = value
         End Sub
 
-        ''' <summary>
-        ''' Write a cell formula
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <param name="formula"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Formula = formula
@@ -435,12 +369,7 @@ Namespace ExcelOps
 
         Public ReadOnly Property CalculationEngineLog As New FormulaParserLogger
 
-        ''' <summary>
-        ''' Recalculate a cell based on its formula
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <inheritdoc/>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Calculate
@@ -450,10 +379,7 @@ Namespace ExcelOps
             End If
         End Sub
 
-        ''' <summary>
-        ''' Recalculate all cells of a sheet
-        ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub RecalculateSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.CalculationModuleDisabled Then Throw New InvalidOperationException("Calculation engine is disabled, requested recalculation failed")
@@ -504,10 +430,7 @@ Namespace ExcelOps
             Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
         End Sub
 
-        ''' <summary>
-        ''' Lookup the last content cell (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <inheritdoc/>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
@@ -525,28 +448,17 @@ Namespace ExcelOps
             Return Result
         End Function
 
-        ''' <summary>
-        ''' Lookup the row index (zero based index)
-        ''' </summary>
-        ''' <param name="cell"></param>
+        ''' <inheritdoc/>
         Public Overrides Function LookupRowIndex(cell As ExcelOps.ExcelCell) As Integer
             Return New CompuMaster.Epplus4.ExcelCellAddress(cell.Address).Row - 1
         End Function
 
-        ''' <summary>
-        ''' Lookup the column index (zero based index)
-        ''' </summary>
-        ''' <param name="cell"></param>
+        ''' <inheritdoc/>
         Public Overrides Function LookupColumnIndex(cell As ExcelOps.ExcelCell) As Integer
             Return New CompuMaster.Epplus4.ExcelCellAddress(cell.Address).Column - 1
         End Function
 
-        ''' <summary>
-        ''' Remove specified rows
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="startrowIndex">0-based row number</param>
-        ''' <param name="rows">Number of rows to remove</param>
+        ''' <inheritdoc/>
         Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
             Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -602,12 +514,7 @@ Namespace ExcelOps
             Throw New NotSupportedException(Me.EngineName & " doesn't expose a supported public cell remove API")
         End Sub
 
-        ''' <summary>
-        ''' Clear cell content
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rangeFirstCell"></param>
-        ''' <param name="rangeLastCell"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub ClearCells(sheetName As String, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
             If rangeFirstCell.SheetName <> rangeLastCell.SheetName Then Throw New ArgumentException("Cells must be member of the same worksheet")
             If sheetName <> Nothing Then
@@ -623,12 +530,7 @@ Namespace ExcelOps
             ws.Cells(rangeFirstCell.Address & ":" & rangeLastCell.Address).Clear()
         End Sub
 
-        ''' <summary>
-        ''' Determine if a cell contains empty content
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">Zero-based index</param>
-        ''' <param name="columnIndex">Zero-based index</param>
+        ''' <inheritdoc/>
         Public Overrides Function IsEmptyCell(sheetName As String, ByVal rowIndex As Integer, ByVal columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
@@ -817,13 +719,7 @@ Namespace ExcelOps
 #End If
 #End Region
 
-        ''' <summary>
-        ''' Try to lookup the cell's value to a string anyhow
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks></remarks>
         Public Overrides Function LookupCellFormattedText(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -931,11 +827,7 @@ Namespace ExcelOps
             CompuMaster.Epplus4.CalculationExtension.Calculate(Me.Workbook)
         End Sub
 
-        ''' <summary>
-        ''' If enabled, the calculation engine will do a full recalculation after every modification.
-        ''' If disabled, the calculation engine is not allowed to automatically/continuously calculate on every change and the user has to manually force a recalculation (typically by pressing F9 key in MS Excel).
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
         Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
@@ -1219,11 +1111,7 @@ Namespace ExcelOps
             Throw New NotSupportedException("Exporting drawings/charts not supported by Epplus engine")
         End Function
 
-        ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
-        ''' </summary>
-        ''' <param name="worksheetName"></param>
-        ''' <param name="sb"></param>
+        ''' <inheritdoc/>
         Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
             ExportSheetToHtmlInternal(Me.Workbook.Worksheets(worksheetName), sb, options)
         End Sub

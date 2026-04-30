@@ -315,10 +315,7 @@ Namespace ExcelOps
             Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
         End Function
 
-        ''' <summary>
-        ''' Select a worksheet
-        ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub SelectSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim CurrentSheetNames = Me.SheetNames
@@ -333,10 +330,7 @@ Namespace ExcelOps
             End If
         End Sub
 
-        ''' <summary>
-        ''' Select a worksheet
-        ''' </summary>
-        ''' <param name="sheetIndex"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub SelectSheet(sheetIndex As Integer)
             Me.SelectSheet(Me.SheetNames(sheetIndex))
         End Sub

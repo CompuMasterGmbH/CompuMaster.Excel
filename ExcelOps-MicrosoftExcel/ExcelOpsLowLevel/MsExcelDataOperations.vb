@@ -396,11 +396,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
         End Property
 
-        ''' <summary>
-        ''' If enabled, the calculation engine will do a full recalculation after every modification.
-        ''' If disabled, the calculation engine is not allowed to automatically/continuously calculate on every change and the user has to manually force a recalculation (typically by pressing F9 key in MS Excel).
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         ''' <remarks>Please note: this property is a workbook property (not an engine property!)</remarks>
         Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
@@ -541,10 +537,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Try
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return LookupCellValue(Of Object)(sheetName, rowIndex, columnIndex)
@@ -558,12 +551,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return LookupCellValue(Of Object)(sheet, rowIndex, columnIndex)
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             Return LookupCellValue(Of T)(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell)
         End Function
@@ -580,14 +568,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Me.ConvertCellValueObjectTo(Of T)(Result)
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.LookupCellValue(Of T)(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex)
@@ -606,13 +587,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Me.ConvertCellValueObjectTo(Of T)(Result)
         End Function
 
-        ''' <summary>
-        ''' Read the cell format string
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormat(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet
@@ -642,11 +617,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormula(cell As ExcelCell) As String
             Return Me.LookupCellFormula(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell)
         End Function
@@ -665,10 +636,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.LookupCellFormula(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex)
@@ -710,11 +678,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellIsLocked(cell As ExcelCell) As Boolean
             Return Me.LookupCellIsLocked(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell)
         End Function
@@ -749,13 +713,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return CType(sheet.Range(cell.Address), MsExcel.Range).Column - 1
         End Function
 
-        ''' <summary>
-        ''' Read a cell value
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellIsLocked(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             Return Me.LookupCellIsLocked(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex)
         End Function
@@ -781,11 +739,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Me.LookupCellFormula(sheet, rowIndex, columnIndex) Is Nothing AndAlso Me.LookupCellValueAsObject(sheet, rowIndex, columnIndex) Is Nothing
         End Function
 
-        ''' <summary>
-        ''' Lookup the last content column index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="lastMergedCellNotEmpty"></param>
+        ''' <inheritdoc/>
         Protected Overrides Function LookupLastContentColumnIndex(sheetName As String, lastMergedCellNotEmpty As ExcelCell) As Integer
             'INTERNAL NOTE: method override (only) for performance reasons
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -823,11 +777,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return System.Math.Max(lastMergeCellColumnIndex, 0)
         End Function
 
-        ''' <summary>
-        ''' Lookup the last content row index (zero based index) (the last content cell might differ from Excel's special cell xlLastCell)
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="lastMergedCellNotEmpty"></param>
+        ''' <inheritdoc/>
         Protected Overrides Function LookupLastContentRowIndex(sheetName As String, lastMergedCellNotEmpty As ExcelCell) As Integer
             'INTERNAL NOTE: method override (only) for performance reasons
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -865,10 +815,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return System.Math.Max(lastMergeCellRowIndex, 0)
         End Function
 
-        ''' <summary>
-        ''' Lookup the last content cell
-        ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <inheritdoc/>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet
@@ -887,12 +834,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Tools.CombineCellAddresses(LastCell, UsedRange.AddressEnd, Tools.CellAddressCombineMode.RightLowerCorner)
         End Function
 
-        ''' <summary>
-        ''' Remove specified rows
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="startRowIndex">0-based row number</param>
-        ''' <param name="rows">Number of rows to remove</param>
+        ''' <inheritdoc/>
         Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
             Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
@@ -1077,12 +1019,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             sheet.Calculate()
         End Sub
 
-        ''' <summary>
-        ''' Recalculate a cell based on its formula
-        ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex">0-based row number</param>
-        ''' <param name="columnIndex">0-based column number</param>
+        ''' <inheritdoc/>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet
@@ -1123,12 +1060,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             sheet.Delete()
         End Sub
 
-        ''' <summary>
-        ''' Clear cell content
-        ''' </summary>
-        ''' <param name="overrideSheetName"></param>
-        ''' <param name="rangeFirstCell"></param>
-        ''' <param name="rangeLastCell"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub ClearCells(overrideSheetName As String, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
             If rangeFirstCell.SheetName <> rangeLastCell.SheetName Then Throw New ArgumentException("Cells must be member of the same worksheet")
             If overrideSheetName <> Nothing Then
@@ -1174,18 +1106,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return CType(Me.Workbook.ActiveSheet, MsExcel.Worksheet).Name
         End Function
 
-        ''' <summary>
-        ''' Select a worksheet
-        ''' </summary>
-        ''' <param name="sheetIndex"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub SelectSheet(sheetIndex As Integer)
             Me.SelectSheet(CType(Me.Workbook.Worksheets(sheetIndex + 1), MsExcel.Worksheet))
         End Sub
 
-        ''' <summary>
-        ''' Select a worksheet
-        ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <inheritdoc/>
         Public Overrides Sub SelectSheet(sheetName As String)
             If sheetName Is Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.SelectSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
@@ -1515,11 +1441,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Throw New NotImplementedException()
         End Function
 
-        ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
-        ''' </summary>
-        ''' <param name="worksheetName"></param>
-        ''' <param name="sb"></param>
+        ''' <inheritdoc/>
         Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
             Throw New NotImplementedException
         End Sub

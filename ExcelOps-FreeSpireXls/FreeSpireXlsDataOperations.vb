@@ -234,11 +234,7 @@ Namespace ExcelOps
             Worksheet.SaveToHtml(stream, Options)
         End Sub
 
-        ''' <summary>
-        ''' Save worksheet to HTML (including images as HTML inline data)
-        ''' </summary>
-        ''' <param name="worksheetName"></param>
-        ''' <param name="sb"></param>
+        ''' <inheritdoc/>
         Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As StringBuilder, options As HtmlSheetExportOptions)
             Throw New NotImplementedException
         End Sub
