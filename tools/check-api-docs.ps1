@@ -21,16 +21,7 @@ $sourceRoots = @(
 
 $excludedDocumentationScopes = @(
     "Epplus-FixCalcsEdition/EPPlus/",
-    "TestAndDemoExcelOps/",
-    "ExcelOps/ExcelOpsLowLevel/HtmlSheetExportOptions.vb",
-    "ExcelOps/ExcelOpsLowLevel/HtmlWorkbookExportOptions.vb"
-)
-
-$excludedDocumentationDeclarations = @(
-    @{
-        File = "ExcelOps/ExcelOpsLowLevel/ExcelDataOperationsBase.vb"
-        Pattern = "^\s*Public\s+Enum\s+HtmlDocumentExportParts\b"
-    }
+    "TestAndDemoExcelOps/"
 )
 
 $maxMissingDocumentation = 0
@@ -73,18 +64,6 @@ function Is-Documented([System.Collections.Generic.List[string]] $docBlock) {
 
 function Test-Inheritdoc([System.Collections.Generic.List[string]] $docBlock) {
     return (($docBlock -join "`n") -match "<inheritdoc\s*/>")
-}
-
-function Test-ExcludedDocumentationDeclaration([string] $relativeFile, [string] $declaration) {
-    $normalizedFile = $relativeFile.Replace("\", "/")
-    foreach ($excludedDeclaration in $excludedDocumentationDeclarations) {
-        if ($normalizedFile.Equals($excludedDeclaration.File, [System.StringComparison]::OrdinalIgnoreCase) -and
-            $declaration -match $excludedDeclaration.Pattern) {
-            return $true
-        }
-    }
-
-    return $false
 }
 
 $files = New-Object System.Collections.Generic.List[string]
@@ -143,10 +122,6 @@ foreach ($file in $files) {
 
         $docBlock = Get-XmlDocBlock $lines $i
         $declaration = $line.Trim()
-
-        if (Test-ExcludedDocumentationDeclaration $relativeFile $declaration) {
-            continue
-        }
 
         if (-not (Is-Documented $docBlock)) {
             $missingDocumentation.Add([pscustomobject]@{

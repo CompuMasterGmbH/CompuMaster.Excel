@@ -7,86 +7,91 @@ Imports System.Text
 Namespace ExcelOps
 
 #Disable Warning CA1805 ' Keine unnötige Initialisierung
+    ''' <summary>
+    ''' Defines options for exporting a workbook to HTML.
+    ''' </summary>
     Public Class HtmlWorkbookExportOptions
         Inherits HtmlSheetExportOptions
 
+        ''' <summary>
+        ''' Creates a new HTML workbook export options instance.
+        ''' </summary>
         Public Sub New()
             MyBase.New
         End Sub
 
+        ''' <summary>
+        ''' Defines where workbook sheet navigation is rendered.
+        ''' </summary>
         Public Enum SheetNavigationPositions As Byte
             ''' <summary>
-            ''' No code for navigation embedded (must be added afterwards)
+            ''' Does not render workbook sheet navigation.
             ''' </summary>
             None = 0
             ''' <summary>
-            ''' Code for navigation at top
+            ''' Renders workbook sheet navigation before exported sheets.
             ''' </summary>
             Top = 1
             ''' <summary>
-            ''' Code for navigation as bottom
+            ''' Renders workbook sheet navigation after exported sheets.
             ''' </summary>
             Bottom = 2
         End Enum
 
         ''' <summary>
-        ''' Display style of navigation
+        ''' Gets or sets where workbook sheet navigation is rendered.
         ''' </summary>
-        ''' <returns></returns>
         Public Property SheetNavigationPosition As SheetNavigationPositions = SheetNavigationPositions.Top
 
+        ''' <summary>
+        ''' Defines how workbook sheet navigation links behave.
+        ''' </summary>
         Public Enum SheetNavigationActionStyles As Byte
             ''' <summary>
-            ''' All sheets are always visible (ignores selected sheet of Excel workbook)
+            ''' Keeps all exported sheets visible and navigates by anchor links.
             ''' </summary>
             JumpToAnchor = 0
             ''' <summary>
-            ''' Only the selected sheet is visible
+            ''' Shows only the selected sheet and switches visible sheet sections by script.
             ''' </summary>
             SwitchVisibleSheet = 1
         End Enum
 
         ''' <summary>
-        ''' Display style of navigation
+        ''' Gets or sets how workbook sheet navigation links behave.
         ''' </summary>
-        ''' <returns></returns>
         Public Property SheetNavigationActionStyle As SheetNavigationActionStyles = SheetNavigationActionStyles.JumpToAnchor
 
         ''' <summary>
-        ''' Always show navigation while scrolling
+        ''' Gets or sets whether workbook sheet navigation remains visible while scrolling.
         ''' </summary>
-        ''' <returns></returns>
         Public Property SheetNavigationAlwaysVisible As Boolean = False
 
         ''' <summary>
-        ''' Export all sheets or visible sheets only
+        ''' Gets or sets whether hidden workbook sheets are exported.
         ''' </summary>
-        ''' <returns></returns>
         Public Property ExportHiddenSheets As Boolean = False
 
         ''' <summary>
-        ''' Export chart sheets
+        ''' Gets or sets whether chart sheets are exported.
         ''' </summary>
-        ''' <returns></returns>
         Public Property ExportChartSheets As Boolean = False
 
         ''' <summary>
-        ''' Export work sheets
+        ''' Gets or sets whether worksheets are exported.
         ''' </summary>
-        ''' <returns></returns>
         Public Property ExportWorkSheets As Boolean = True
 
 
         ''' <summary>
-        ''' The CSS class name for the worksheets navigation
+        ''' Gets or sets the CSS class name used for workbook sheet navigation.
         ''' </summary>
-        ''' <returns></returns>
         Public Property WorksheetsNavigationCssClassName As String = "cm-wb-subnav"
 
         ''' <summary>
-        ''' Style HTML for the table (&lt;style&gt;...&lt;/style&gt;)
+        ''' Gets the effective STYLE element for workbook sheet navigation.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>HTML STYLE element for workbook sheet navigation.</returns>
         Public Overridable Function EffectiveWorksheetsNavigationCssStyleHtml() As String
             Dim sb As New System.Text.StringBuilder(1024)
             sb.AppendLine("<style>")
@@ -107,10 +112,9 @@ Namespace ExcelOps
             Return sb.ToString
         End Function
 
-        ''' <summary>
-        ''' Typically html+head+styles+body tags
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
+        ''' <returns>HTML emitted before workbook sheet content.</returns>
+        ''' <remarks>Adds workbook sheet navigation styles to the base HTML document header.</remarks>
         Public Overrides Function EffectiveHtmlDocumentHeaderAndBody() As String
             Dim sb As New System.Text.StringBuilder(1024)
             sb.AppendLine(Me.EffectiveHtmlDocumentHeader)
@@ -121,17 +125,16 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' The ID attribute value for the NAV tag
+        ''' Gets or sets the ID attribute value used for the workbook sheet navigation element.
         ''' </summary>
-        ''' <returns></returns>
         Public Property WorksheetsNavigationTagId As String = "workbook-nav"
 
         ''' <summary>
-        ''' Generate the HTML code for a worksheet navigation
+        ''' Generates workbook sheet navigation HTML.
         ''' </summary>
-        ''' <param name="sb"></param>
-        ''' <param name="items">Labels for the several worksheets (typically worksheet names)</param>
-        ''' <param name="options"></param>
+        ''' <param name="sb">String builder receiving generated HTML.</param>
+        ''' <param name="items">Navigation labels, typically worksheet names.</param>
+        ''' <param name="options">Workbook export options controlling navigation output.</param>
         Public Overridable Sub GenerateWorkbookSubNavigation(sb As StringBuilder,
                                              items As IEnumerable(Of String),
                                              options As HtmlWorkbookExportOptions)
@@ -139,12 +142,12 @@ Namespace ExcelOps
         End Sub
 
         ''' <summary>
-        ''' Generate the HTML code for a worksheet navigation
+        ''' Generates workbook sheet navigation HTML.
         ''' </summary>
-        ''' <param name="sb"></param>
-        ''' <param name="navigationItemTitles">Labels for the several worksheets (typically worksheet names)</param>
-        ''' <param name="options"></param>
-        ''' <param name="anchorNames">Section/anchor names for the several worksheets</param>
+        ''' <param name="sb">String builder receiving generated HTML.</param>
+        ''' <param name="navigationItemTitles">Navigation labels, typically worksheet names.</param>
+        ''' <param name="anchorNames">Section IDs and anchor names for the worksheets.</param>
+        ''' <param name="options">Workbook export options controlling navigation output.</param>
         Public Overridable Sub GenerateWorkbookSubNavigation(sb As StringBuilder,
                                              navigationItemTitles As IEnumerable(Of String),
                                              anchorNames As IEnumerable(Of String),
