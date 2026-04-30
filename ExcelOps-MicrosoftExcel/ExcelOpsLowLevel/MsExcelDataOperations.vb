@@ -19,8 +19,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
     Public Class MsExcelDataOperations
         Inherits ExcelDataOperationsBase
 
+        ''' <summary>
+        ''' Gets or sets whether all already running Microsoft Excel instances are closed without prompting.
+        ''' </summary>
         Public Shared Property AutoKillAllExistingMsExcelInstances As Boolean
 
+        ''' <summary>
+        ''' Checks for running Microsoft Excel instances and optionally closes them before automation starts.
+        ''' </summary>
         Public Shared Sub CheckForRunningMsExcelInstancesAndAskUserToKill()
             Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             If MsExcelProcesses IsNot Nothing AndAlso MsExcelProcesses.Length > 0 Then

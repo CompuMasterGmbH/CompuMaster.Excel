@@ -17,6 +17,8 @@
 - Every new public API member must have XML documentation matching the quality of the surrounding API.
 - New protected members that define engine contracts or are intended for derived engine implementations must also have XML documentation.
 - The documentation requirements do not apply to the `EPPlus45-FixCalcsEdition.MultiTarget` project or to `TestAndDemoExcelOps`; do not make documentation-only changes there.
+- The HTML export API classes are currently excluded from documentation cleanup because they are tracked for a separate follow-up ticket.
+- Historical documentation baselines should stay at zero. If a member is intentionally out of scope, add a narrow checker exclusion instead of raising a global allowance.
 - Public enums and their values must be documented.
 - Keep `<summary>` text short and focused, for example `Insert one or more columns.`.
 - For new or substantially edited XML documentation, prefer Microsoft-style complete sentences in descriptive third-person form with a final period, for example `Inserts one or more columns.`.

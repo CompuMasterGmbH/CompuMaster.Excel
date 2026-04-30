@@ -986,6 +986,9 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <summary>
+        ''' Removes invalid or obsolete workbook range names.
+        ''' </summary>
         Public MustOverride Sub CleanupRangeNames()
 
         ''' <summary>
@@ -1226,10 +1229,19 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         Public MustOverride Sub RemoveSheet(sheetName As String)
 
+        ''' <summary>
+        ''' Adds a worksheet.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to add.</param>
         Public Sub AddSheet(sheetName As String)
             Me.AddSheet(sheetName, Nothing)
         End Sub
 
+        ''' <summary>
+        ''' Adds a worksheet before another worksheet.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to add.</param>
+        ''' <param name="beforeSheetName">Name of the worksheet before which the new worksheet is inserted, or <see langword="Nothing"/> to append it.</param>
         Public MustOverride Sub AddSheet(sheetName As String, beforeSheetName As String)
 
         ''' <summary>
@@ -1360,6 +1372,9 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         Public MustOverride Sub UnprotectSheet(sheetName As String)
 
+        ''' <summary>
+        ''' Defines worksheet protection levels.
+        ''' </summary>
         Public Enum ProtectionLevel As Byte
             ''' <summary>
             ''' Select all cells, edit unlocked cells
@@ -1423,6 +1438,9 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public MustOverride Function IsHiddenSheet(sheetName As String) As Boolean
 
+        ''' <summary>
+        ''' Defines which worksheet content is returned in a sheet content matrix.
+        ''' </summary>
         Public Enum MatrixContent As Byte
             ''' <summary>
             ''' Static values only
@@ -1458,6 +1476,12 @@ Namespace ExcelOps
             Errors = 7
         End Enum
 
+        ''' <summary>
+        ''' Reads worksheet content into a text table matrix.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to read.</param>
+        ''' <param name="contentType">Type of worksheet content to include.</param>
+        ''' <returns>Text table containing the requested worksheet content.</returns>
         Public Function SheetContentMatrix(sheetName As String, contentType As MatrixContent) As TextTable
             Dim Result As New TextTable
             Result.AddColumns(Me.LookupLastContentColumnIndex(sheetName) + 1)
@@ -1729,22 +1753,58 @@ Namespace ExcelOps
         ''' <param name="sheetIndex"></param>
         Public MustOverride Sub SelectSheet(sheetIndex As Integer)
 
+        ''' <summary>
+        ''' Copies worksheet content to another workbook using the engine-specific implementation.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the source worksheet.</param>
+        ''' <param name="targetWorkbook">Target workbook receiving the worksheet content.</param>
+        ''' <param name="targetSheetName">Name of the target worksheet.</param>
         Public MustOverride Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
 
+        ''' <summary>
+        ''' Copies worksheet content to another workbook.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the source worksheet.</param>
+        ''' <param name="targetWorkbook">Target workbook receiving the worksheet content.</param>
         Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase)
             Me.CopySheetContent(sheetName, targetWorkbook, sheetName, CopySheetOption.TargetSheetMustNotExist)
         End Sub
 
+        ''' <summary>
+        ''' Defines how the target worksheet is handled when worksheet content is copied.
+        ''' </summary>
         Public Enum CopySheetOption As Byte
+            ''' <summary>
+            ''' Requires that the target worksheet does not exist before copying.
+            ''' </summary>
             TargetSheetMustNotExist = 0
+            ''' <summary>
+            ''' Requires that the target worksheet exists before copying.
+            ''' </summary>
             TargetSheetMustExist = 1
+            ''' <summary>
+            ''' Creates the target worksheet when it does not exist.
+            ''' </summary>
             TargetSheetMightExist = 2
         End Enum
 
+        ''' <summary>
+        ''' Copies worksheet content to another workbook.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the source worksheet.</param>
+        ''' <param name="targetWorkbook">Target workbook receiving the worksheet content.</param>
+        ''' <param name="copyOption">Option defining how the target worksheet is handled.</param>
         Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, copyOption As CopySheetOption)
             Me.CopySheetContent(sheetName, targetWorkbook, sheetName, copyOption)
         End Sub
 
+        ''' <summary>
+        ''' Copies worksheet content to another workbook.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the source worksheet.</param>
+        ''' <param name="targetWorkbook">Target workbook receiving the worksheet content.</param>
+        ''' <param name="targetSheetName">Name of the target worksheet.</param>
+        ''' <param name="copyOption">Option defining how the target worksheet is handled.</param>
         Public Sub CopySheetContent(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String, copyOption As CopySheetOption)
             If sheetName Is Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook Is Nothing Then Throw New ArgumentNullException(NameOf(targetWorkbook))
@@ -1767,6 +1827,10 @@ Namespace ExcelOps
             Me.CopySheetContentInternal(sheetName, targetWorkbook, targetSheetName)
         End Sub
 
+        ''' <summary>
+        ''' Gets all formulas of all workbook sheets.
+        ''' </summary>
+        ''' <returns>List of cells containing formulas.</returns>
         Public Function AllFormulasOfWorkbook() As List(Of TextTableCell)
             Dim Result As New List(Of TextTableCell)
             Dim Sheets As List(Of String) = Me.SheetNames
@@ -1822,11 +1886,29 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <summary>
+        ''' Defines predefined cell positions for cell selection.
+        ''' </summary>
         Public Enum SpecialCells As Byte
+            ''' <summary>
+            ''' The first worksheet cell.
+            ''' </summary>
             FirstCell = 0
+            ''' <summary>
+            ''' The first unlocked worksheet cell.
+            ''' </summary>
             FirstUnlockedCell = 1
+            ''' <summary>
+            ''' The last worksheet cell containing content.
+            ''' </summary>
             LastContentCell = 2
+            ''' <summary>
+            ''' The last worksheet cell known to the engine.
+            ''' </summary>
             LastCell = 3
+            ''' <summary>
+            ''' The first unlocked worksheet cell, or the first worksheet cell when no unlocked cell exists.
+            ''' </summary>
             FirstUnlockedCellOrFirstCell = 4
         End Enum
 
@@ -1835,8 +1917,16 @@ Namespace ExcelOps
             Return "FileName=" & System.IO.Path.GetFileName(Me.FilePath) & "; ExcelEngine=" & Me.EngineName
         End Function
 
+        ''' <summary>
+        ''' Gets the Excel engine name.
+        ''' </summary>
         Public MustOverride ReadOnly Property EngineName As String
 
+        ''' <summary>
+        ''' Reads formatted worksheet text into a text table.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to read.</param>
+        ''' <returns>Text table containing the formatted worksheet text.</returns>
         Public Function ReadSheetToUITable(sheetName As String) As TextTable
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
             Dim Result As New TextTable()
@@ -1850,30 +1940,81 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <summary>
+        ''' Gets whether the workbook contains a VBA project.
+        ''' </summary>
         Public MustOverride ReadOnly Property HasVbaProject As Boolean
 
+        ''' <summary>
+        ''' Removes the VBA project from the workbook.
+        ''' </summary>
         Public MustOverride Sub RemoveVbaProject()
 
+        ''' <summary>
+        ''' Gets whether a worksheet cell belongs to a merged cell range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet containing the cell.</param>
+        ''' <param name="rowIndex">Zero-based row index of the cell.</param>
+        ''' <param name="columnIndex">Zero-based column index of the cell.</param>
+        ''' <returns><see langword="True"/> when the cell belongs to a merged cell range; otherwise, <see langword="False"/>.</returns>
         Public MustOverride Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
 
+        ''' <summary>
+        ''' Gets whether a cell belongs to a merged cell range.
+        ''' </summary>
+        ''' <param name="cell">Cell to inspect.</param>
+        ''' <returns><see langword="True"/> when the cell belongs to a merged cell range; otherwise, <see langword="False"/>.</returns>
         Public Function IsMergedCell(cell As ExcelCell) As Boolean
             Return IsMergedCell(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
         End Function
 
+        ''' <summary>
+        ''' Unmerges the merged cell range containing a worksheet cell.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet containing the cell.</param>
+        ''' <param name="rowIndex">Zero-based row index of the cell.</param>
+        ''' <param name="columnIndex">Zero-based column index of the cell.</param>
         Public MustOverride Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
 
+        ''' <summary>
+        ''' Unmerges the merged cell range containing a cell.
+        ''' </summary>
+        ''' <param name="cell">Cell inside the merged cell range to unmerge.</param>
         Public Sub UnMergeCell(cell As ExcelCell)
             UnMergeCells(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
         End Sub
 
+        ''' <summary>
+        ''' Merges a rectangular worksheet cell range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet containing the range.</param>
+        ''' <param name="fromRowIndex">Zero-based row index of the upper-left range cell.</param>
+        ''' <param name="fromColumnIndex">Zero-based column index of the upper-left range cell.</param>
+        ''' <param name="toRowIndex">Zero-based row index of the lower-right range cell.</param>
+        ''' <param name="toColumnIndex">Zero-based column index of the lower-right range cell.</param>
         Public MustOverride Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
 
+        ''' <summary>
+        ''' Merges a rectangular worksheet cell range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet containing the range.</param>
+        ''' <param name="cells">Cell range to merge.</param>
         Public Sub MergeCells(sheetName As String, cells As ExcelRange)
             Me.MergeCells(sheetName, cells.AddressStart.RowIndex, cells.AddressStart.ColumnIndex, cells.AddressEnd.RowIndex, cells.AddressEnd.ColumnIndex)
         End Sub
 
+        ''' <summary>
+        ''' Gets all merged cell ranges of a worksheet.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to inspect.</param>
+        ''' <returns>List of merged cell ranges.</returns>
         Protected Friend MustOverride Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
 
+        ''' <summary>
+        ''' Finds the lower-right cell of the last non-empty merged range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to inspect.</param>
+        ''' <returns>Lower-right cell of the last non-empty merged range, or <see langword="Nothing"/> when no matching range exists.</returns>
         Protected Overridable Function FindLastMergedCellNonEmpty(sheetName As String) As ExcelOps.ExcelCell
             Dim Result As ExcelCell = Nothing
             Dim AllMergedCells = Me.MergedCells(sheetName)
@@ -1889,6 +2030,11 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <summary>
+        ''' Finds the lower-right cell of the last merged range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to inspect.</param>
+        ''' <returns>Lower-right cell of the last merged range, or <see langword="Nothing"/> when no merged range exists.</returns>
         Protected Function FindLastMergedCell(sheetName As String) As ExcelOps.ExcelCell
             Dim Result As ExcelCell = Nothing
             Dim AllMergedCells = MergedCells(sheetName)
@@ -1902,16 +2048,46 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <summary>
+        ''' Automatically adjusts the widths of all worksheet columns.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to adjust.</param>
         Public MustOverride Sub AutoFitColumns(sheetName As String)
 
+        ''' <summary>
+        ''' Automatically adjusts the widths of all worksheet columns.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to adjust.</param>
+        ''' <param name="minimumWidth">Minimum column width to apply.</param>
         Public MustOverride Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
 
+        ''' <summary>
+        ''' Automatically adjusts the width of a worksheet column.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to adjust.</param>
+        ''' <param name="columnIndex">Zero-based index of the column to adjust.</param>
         Public MustOverride Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
 
+        ''' <summary>
+        ''' Automatically adjusts the width of a worksheet column.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to adjust.</param>
+        ''' <param name="columnIndex">Zero-based index of the column to adjust.</param>
+        ''' <param name="minimumWidth">Minimum column width to apply.</param>
         Public MustOverride Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
 
+        ''' <summary>
+        ''' Exports a chart sheet as an image.
+        ''' </summary>
+        ''' <param name="chartSheetName">Name of the chart sheet to export.</param>
+        ''' <returns>Image containing the chart sheet.</returns>
         Public MustOverride Function ExportChartSheetImage(chartSheetName As String) As System.Drawing.Image
 
+        ''' <summary>
+        ''' Exports worksheet charts as images.
+        ''' </summary>
+        ''' <param name="workSheetName">Name of the worksheet containing the charts.</param>
+        ''' <returns>Images containing the worksheet charts.</returns>
         Public MustOverride Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
 
         ''' <summary>
@@ -1970,11 +2146,25 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <summary>
+        ''' Defines Excel sheet types.
+        ''' </summary>
         Public Enum ExcelSheetTypes As Byte
+            ''' <summary>
+            ''' A regular worksheet.
+            ''' </summary>
             WorkSheet = 1
+            ''' <summary>
+            ''' A chart sheet.
+            ''' </summary>
             ChartSheet = 2
         End Enum
 
+        ''' <summary>
+        ''' Gets the type of a workbook sheet.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the sheet to inspect.</param>
+        ''' <returns>Sheet type.</returns>
         Public Function SheetType(sheetName As String) As ExcelSheetTypes
             If Me.ChartSheetNames.Contains(sheetName) Then
                 Return ExcelSheetTypes.ChartSheet

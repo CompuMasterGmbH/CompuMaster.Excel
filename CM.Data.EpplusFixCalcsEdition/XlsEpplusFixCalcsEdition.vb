@@ -432,7 +432,13 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <remarks></remarks>
         Public Enum FileFormat As Byte
+            ''' <summary>
+            ''' Excel 2007 or newer workbook format without macros.
+            ''' </summary>
             Excel2007 = 1
+            ''' <summary>
+            ''' Excel 2007 or newer macro-enabled workbook format.
+            ''' </summary>
             Excel2007Macro = 2
         End Enum
 

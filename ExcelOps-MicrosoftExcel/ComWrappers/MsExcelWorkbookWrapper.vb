@@ -24,9 +24,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             Me.Close()
         End Sub
 
-        ''' <summary>
-        ''' Close workbook
-        ''' </summary>
+        ''' <inheritdoc/>
+        ''' <remarks>
+        ''' Closes the workbook without saving changes and removes it from the parent wrapper cache.
+        ''' </remarks>
         Public Overrides Sub Close()
             If Me.ComObject IsNot Nothing Then Me.ComObjectStronglyTyped.Close(False)
             Me.Parent.RemoveWorkbookWrapper(Me)

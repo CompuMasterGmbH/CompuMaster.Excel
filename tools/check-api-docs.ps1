@@ -21,16 +21,25 @@ $sourceRoots = @(
 
 $excludedDocumentationScopes = @(
     "Epplus-FixCalcsEdition/EPPlus/",
-    "TestAndDemoExcelOps"
+    "TestAndDemoExcelOps/",
+    "ExcelOps/ExcelOpsLowLevel/HtmlSheetExportOptions.vb",
+    "ExcelOps/ExcelOpsLowLevel/HtmlWorkbookExportOptions.vb",
+    "MsExcelComInterop/Enumerations.vb"
+)
+
+$excludedDocumentationDeclarations = @(
+    @{
+        File = "ExcelOps/ExcelOpsLowLevel/ExcelDataOperationsBase.vb"
+        Pattern = "^\s*Public\s+Enum\s+HtmlDocumentExportParts\b"
+    }
 )
 
 $maxMissingDocumentation = 0
 $maxOverridesWithoutInheritdoc = 0
 
 if (-not $Strict) {
-    # Current legacy baseline. The check fails when new gaps are added.
-    $maxMissingDocumentation = 82
-    $maxOverridesWithoutInheritdoc = 2
+    $maxMissingDocumentation = 0
+    $maxOverridesWithoutInheritdoc = 0
 }
 
 function Get-RelativePath([string] $path) {
@@ -65,6 +74,18 @@ function Is-Documented([System.Collections.Generic.List[string]] $docBlock) {
 
 function Test-Inheritdoc([System.Collections.Generic.List[string]] $docBlock) {
     return (($docBlock -join "`n") -match "<inheritdoc\s*/>")
+}
+
+function Test-ExcludedDocumentationDeclaration([string] $relativeFile, [string] $declaration) {
+    $normalizedFile = $relativeFile.Replace("\", "/")
+    foreach ($excludedDeclaration in $excludedDocumentationDeclarations) {
+        if ($normalizedFile.Equals($excludedDeclaration.File, [System.StringComparison]::OrdinalIgnoreCase) -and
+            $declaration -match $excludedDeclaration.Pattern) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 $files = New-Object System.Collections.Generic.List[string]
@@ -123,6 +144,10 @@ foreach ($file in $files) {
 
         $docBlock = Get-XmlDocBlock $lines $i
         $declaration = $line.Trim()
+
+        if (Test-ExcludedDocumentationDeclaration $relativeFile $declaration) {
+            continue
+        }
 
         if (-not (Is-Documented $docBlock)) {
             $missingDocumentation.Add([pscustomobject]@{

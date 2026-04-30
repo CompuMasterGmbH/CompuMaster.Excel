@@ -57,6 +57,9 @@ Namespace ExcelOps
             Me.DisableCalculationEngine = disableCalculationEngine
         End Sub
 
+        ''' <summary>
+        ''' Defines write protection modes for workbook files.
+        ''' </summary>
         Public Enum WriteProtectionMode As Byte
             ''' <summary>
             ''' If a file path is present, ReadWrite mode is enabled, without a file path, ReadOnly mode is active

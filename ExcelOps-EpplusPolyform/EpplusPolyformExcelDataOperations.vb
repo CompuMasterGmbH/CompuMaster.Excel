@@ -224,6 +224,9 @@ Namespace ExcelOps
             End Set
         End Property
 
+        ''' <summary>
+        ''' Stores EPPlus license activation data.
+        ''' </summary>
         Public Structure EpplusLicenseActivator
 
             ''' <summary>
@@ -600,34 +603,69 @@ Namespace ExcelOps
 #End Region
 
 #Disable Warning CA1034 ' Nested types should not be visible
+        ''' <summary>
+        ''' Collects EPPlus formula parser log messages.
+        ''' </summary>
         Public Class FormulaParserLogger
 #Enable Warning CA1034 ' Nested types should not be visible
             Implements OfficeOpenXml.FormulaParsing.Logging.IFormulaParserLogger
 
+            ''' <summary>
+            ''' Gets the complete formula parser log.
+            ''' </summary>
             Public ReadOnly Property FullLog As New System.Text.StringBuilder
+            ''' <summary>
+            ''' Gets formula parser exception messages.
+            ''' </summary>
             Public ReadOnly Property ExceptionsLog As New System.Text.StringBuilder
 
+            ''' <summary>
+            ''' Logs a formula parser exception.
+            ''' </summary>
+            ''' <param name="context">Formula parser context.</param>
+            ''' <param name="ex">Exception to log.</param>
             Public Sub Log(context As ParsingContext, ex As Exception) Implements IFormulaParserLogger.Log
                 Me.FullLog.AppendLine("ERROR at " & context.ToString & ": " & ex.ToString)
                 Me.ExceptionsLog.AppendLine("ERROR at " & context.ToString & ": " & ex.Message)
             End Sub
 
+            ''' <summary>
+            ''' Logs a formula parser warning for a parsing context.
+            ''' </summary>
+            ''' <param name="context">Formula parser context.</param>
+            ''' <param name="message">Warning message to log.</param>
             Public Sub Log(context As ParsingContext, message As String) Implements IFormulaParserLogger.Log
                 Me.FullLog.AppendLine("WARNING at " & context.Parser.ToString & ": " & message)
             End Sub
 
+            ''' <summary>
+            ''' Logs a formula parser warning.
+            ''' </summary>
+            ''' <param name="message">Warning message to log.</param>
             Public Sub Log(message As String) Implements IFormulaParserLogger.Log
                 Me.FullLog.AppendLine("WARNING: " & message)
             End Sub
 
+            ''' <summary>
+            ''' Logs that a cell was counted by the formula parser.
+            ''' </summary>
             Public Sub LogCellCounted() Implements IFormulaParserLogger.LogCellCounted
                 Me.FullLog.AppendLine("INFO: CellCounted")
             End Sub
 
+            ''' <summary>
+            ''' Logs a formula function call.
+            ''' </summary>
+            ''' <param name="func">Function name to log.</param>
             Public Sub LogFunction(func As String) Implements IFormulaParserLogger.LogFunction
                 Me.FullLog.AppendLine("FUNC: " & func)
             End Sub
 
+            ''' <summary>
+            ''' Logs a formula function call with elapsed time.
+            ''' </summary>
+            ''' <param name="func">Function name to log.</param>
+            ''' <param name="milliseconds">Elapsed time in milliseconds.</param>
             Public Sub LogFunction(func As String, milliseconds As Long) Implements IFormulaParserLogger.LogFunction
                 Me.FullLog.AppendLine("FUNC: " & func & " (required " & milliseconds & " ms)")
             End Sub
@@ -636,6 +674,10 @@ Namespace ExcelOps
             Private disposedValue As Boolean ' Dient zur Erkennung redundanter Aufrufe.
 
             ' IDisposable
+            ''' <summary>
+            ''' Releases resources used by the formula parser logger.
+            ''' </summary>
+            ''' <param name="disposing"><see langword="True"/> to release managed resources; otherwise, <see langword="False"/>.</param>
             Protected Overridable Sub Dispose(disposing As Boolean)
                 If Not disposedValue Then
                     If disposing Then
@@ -656,6 +698,9 @@ Namespace ExcelOps
             'End Sub
 
             ' Dieser Code wird von Visual Basic hinzugefügt, um das Dispose-Muster richtig zu implementieren.
+            ''' <summary>
+            ''' Releases resources used by the formula parser logger.
+            ''' </summary>
             Public Sub Dispose() Implements IDisposable.Dispose
                 ' Ändern Sie diesen Code nicht. Fügen Sie Bereinigungscode in Dispose(disposing As Boolean) weiter oben ein.
                 Dispose(True)
