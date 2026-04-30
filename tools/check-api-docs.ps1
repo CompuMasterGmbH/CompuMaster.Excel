@@ -23,8 +23,7 @@ $excludedDocumentationScopes = @(
     "Epplus-FixCalcsEdition/EPPlus/",
     "TestAndDemoExcelOps/",
     "ExcelOps/ExcelOpsLowLevel/HtmlSheetExportOptions.vb",
-    "ExcelOps/ExcelOpsLowLevel/HtmlWorkbookExportOptions.vb",
-    "MsExcelComInterop/Enumerations.vb"
+    "ExcelOps/ExcelOpsLowLevel/HtmlWorkbookExportOptions.vb"
 )
 
 $excludedDocumentationDeclarations = @(

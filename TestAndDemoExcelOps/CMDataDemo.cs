@@ -23,7 +23,7 @@
             if (System.IO.File.Exists(targetTestFile))
                 System.IO.File.Delete(targetTestFile);
             wb = excelApp!.Workbooks.Open(sourceTestFile);
-            wb.ExportAsFixedFormat(CompuMaster.Excel.MsExcelComInterop.Enumerations.XlFixedFormatType.XlTypePDF, targetTestFile);
+            wb.ExportAsFixedFormat(CompuMaster.Excel.MsExcelComInterop.Enumerations.XlFixedFormatType.xlTypePDF, targetTestFile);
         }
         finally
         {

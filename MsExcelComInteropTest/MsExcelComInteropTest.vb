@@ -60,7 +60,7 @@ Namespace MsExcelComInteropTest
                 Dim TargetTestFile As String = "test.pdf"
                 If System.IO.File.Exists(TargetTestFile) Then System.IO.File.Delete(TargetTestFile)
                 Wb = ExcelApp.Workbooks.Open(SourceTestFile)
-                Wb.ExportAsFixedFormat(CompuMaster.Excel.MsExcelComInterop.Enumerations.XlFixedFormatType.XlTypePDF, TargetTestFile)
+                Wb.ExportAsFixedFormat(CompuMaster.Excel.MsExcelComInterop.Enumerations.XlFixedFormatType.xlTypePDF, TargetTestFile)
             Finally
                 'Close and dispose everything
                 If Wb IsNot Nothing AndAlso Wb.IsClosed = False Then Wb.Close()
@@ -77,7 +77,7 @@ Namespace MsExcelComInteropTest
                                        )
             If System.IO.File.Exists(TargetTestFile) Then System.IO.File.Delete(TargetTestFile)
             Dim Wb = OpenExcelAppAndWorkbook(TestFiles.TestFileExcelOpsTestCollection.FullName)
-            Wb.ExportAsFixedFormat(MsExcelComInterop.Enumerations.XlFixedFormatType.XlTypePDF, TargetTestFile)
+            Wb.ExportAsFixedFormat(MsExcelComInterop.Enumerations.XlFixedFormatType.xlTypePDF, TargetTestFile)
             ClassicAssert.True(System.IO.File.Exists(TargetTestFile))
             Wb.Close()
         End Sub
