@@ -223,6 +223,11 @@ Namespace ExcelOps
 
         Public Structure EpplusLicenseActivator
 
+            ''' <summary>
+            ''' Create a new EPPlus license activator.
+            ''' </summary>
+            ''' <param name="licenseType">EPPlus license type to activate</param>
+            ''' <param name="licenseKeyOrLegalName">License key for commercial use or personal/organisation name for non-commercial use</param>
             Public Sub New(licenseType As OfficeOpenXml.EPPlusLicenseType, licenseKeyOrLegalName As String)
                 Me.LicenseType = licenseType
                 Me.KeyOrName = licenseKeyOrLegalName

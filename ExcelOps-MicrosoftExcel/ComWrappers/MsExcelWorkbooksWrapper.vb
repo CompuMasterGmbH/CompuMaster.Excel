@@ -60,6 +60,8 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Item(index1Based))
         End Function
 
+        ''' <inheritdoc cref="Workbook(Integer)"/>
+        ''' <param name="name">Workbook name</param>
         Public Function Workbook(name As String) As MsExcelWorkbookWrapper
             Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Item(name))
         End Function

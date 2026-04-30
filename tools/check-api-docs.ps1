@@ -24,7 +24,7 @@ $maxOverridesWithoutInheritdoc = 0
 
 if (-not $Strict) {
     # Current legacy baseline. The check fails when new gaps are added.
-    $maxMissingDocumentation = 302
+    $maxMissingDocumentation = 287
     $maxOverridesWithoutInheritdoc = 127
 }
 

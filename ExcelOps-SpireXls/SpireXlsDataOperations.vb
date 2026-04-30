@@ -89,13 +89,17 @@ Namespace ExcelOps
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
-        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
+        ''' <inheritdoc cref="New(Byte(), ExcelDataOperationsOptions)"/>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
+        <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         Public Sub New(data As Byte(), passwordForOpening As String)
             MyBase.New(data, True, False, passwordForOpening)
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
+        ''' <inheritdoc cref="New(Byte(), ExcelDataOperationsOptions)"/>
+        ''' <param name="disableInitialCalculation">If set to true, no initial calculation of formulas is performed when opening/loading an Excel file</param>
+        ''' <param name="disableCalculationEngine">If set to true, the calculation engine is disabled and no formula calculations are performed</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
@@ -103,6 +107,7 @@ Namespace ExcelOps
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
+        ''' <inheritdoc cref="New(System.IO.Stream, ExcelDataOperationsOptions)"/>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
@@ -110,6 +115,9 @@ Namespace ExcelOps
             If AllowInstancingForNonLicencedContextForTestingPurposesOnly = False AndAlso IsLicensedContext = False Then Throw New LicenseException(GetType(Spire.License.LicenseProvider), Nothing, "Correct licensing required, see Spire.License.LicenseProvider and https://www.e-iceblue.com/")
         End Sub
 
+        ''' <inheritdoc cref="New(System.IO.Stream, ExcelDataOperationsOptions)"/>
+        ''' <param name="disableInitialCalculation">If set to true, no initial calculation of formulas is performed when opening/loading an Excel file</param>
+        ''' <param name="disableCalculationEngine">If set to true, the calculation engine is disabled and no formula calculations are performed</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)

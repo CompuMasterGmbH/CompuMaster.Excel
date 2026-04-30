@@ -1431,6 +1431,8 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc cref="LookupCellErrorValue(String, Integer, Integer)"/>
+        ''' <param name="cell">Cell to check for errors</param>
         Public Function LookupCellErrorValue(cell As ExcelCell) As String
             If cell.ValidateFullCellAddressInclSheetName() = False Then Throw New ExcelOps.InvalidCellAddressException(cell)
             Return Me.LookupCellErrorValue(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
@@ -1704,10 +1706,18 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc cref="SelectCell(ExcelCell)"/>
+        ''' <param name="sheetName">Name of the worksheet containing the cell</param>
+        ''' <param name="rowIndex">Zero-based row index</param>
+        ''' <param name="columnIndex">Zero-based column index</param>
         Public Sub SelectCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             Me.SelectCell(New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All))
         End Sub
 
+        ''' <summary>
+        ''' Select a cell.
+        ''' </summary>
+        ''' <param name="cell">Cell to select</param>
         Public MustOverride Sub SelectCell(cell As ExcelCell)
 
         ''' <summary>

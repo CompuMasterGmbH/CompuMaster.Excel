@@ -11,10 +11,12 @@ Namespace ExcelOps
     ''' </summary>
     Public Class ExcelDataOperationsOptions
 
+        ''' <inheritdoc cref="New(WriteProtectionMode, String, Boolean?, Boolean?, Boolean?)"/>
         Public Sub New(fileProtection As WriteProtectionMode)
             Me.FileWriteProtection = fileProtection
         End Sub
 
+        ''' <inheritdoc cref="New(WriteProtectionMode, String, Boolean?, Boolean?, Boolean?)"/>
         Public Sub New(fileProtection As WriteProtectionMode, passwordForOpening As String)
             Me.FileWriteProtection = fileProtection
             Me.PasswordForOpening = passwordForOpening
