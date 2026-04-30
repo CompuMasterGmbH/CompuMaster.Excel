@@ -681,6 +681,11 @@ Namespace ExcelOps
             ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired = 3
         End Enum
 
+        ''' <summary>
+        ''' Performs the engine-specific save operation to the specified file path.
+        ''' </summary>
+        ''' <param name="fileName">Target workbook file path.</param>
+        ''' <param name="cachedCalculationsOption">Option for handling cached formula results while saving.</param>
         Protected MustOverride Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
         ''' <summary>
@@ -820,8 +825,20 @@ Namespace ExcelOps
         ''' <returns></returns>
         Public MustOverride Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
 
+        ''' <summary>
+        ''' Determines whether a cell is locked.
+        ''' </summary>
+        ''' <param name="cell">Cell address to inspect.</param>
+        ''' <returns><see langword="True"/> when the cell is locked; otherwise <see langword="False"/>.</returns>
         Public MustOverride Function LookupCellIsLocked(cell As ExcelCell) As Boolean
 
+        ''' <summary>
+        ''' Determines whether a cell is locked.
+        ''' </summary>
+        ''' <param name="sheetName">Worksheet name.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns><see langword="True"/> when the cell is locked; otherwise <see langword="False"/>.</returns>
         Public MustOverride Function LookupCellIsLocked(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
 
         ''' <summary>
@@ -865,8 +882,17 @@ Namespace ExcelOps
             End Set
         End Property
 
+        ''' <summary>
+        ''' Loads a workbook from a file.
+        ''' </summary>
+        ''' <param name="file">Workbook file to load.</param>
         Protected MustOverride Sub LoadWorkbook(file As System.IO.FileInfo)
 
+        ''' <summary>
+        ''' Loads a workbook file and applies post-load initialization.
+        ''' </summary>
+        ''' <param name="inputPath">Workbook file path to load.</param>
+        ''' <param name="options">Load options to apply after loading.</param>
         Protected Sub LoadAndInitializeWorkbookFile(inputPath As String, options As ExcelDataOperationsOptions)
             If inputPath = Nothing Then Throw New ArgumentNullException(NameOf(inputPath))
             '1st, close an exsting workbook instance, preserving most valuable states (e.g. selected sheet)
@@ -883,8 +909,17 @@ Namespace ExcelOps
             Me.PostLoadOrCreateWorkbook(options)
         End Sub
 
+        ''' <summary>
+        ''' Loads a workbook from binary data.
+        ''' </summary>
+        ''' <param name="data">Workbook binary data.</param>
         Protected MustOverride Sub LoadWorkbook(data As Byte())
 
+        ''' <summary>
+        ''' Loads a workbook from binary data and applies post-load initialization.
+        ''' </summary>
+        ''' <param name="data">Workbook binary data.</param>
+        ''' <param name="options">Load options to apply after loading.</param>
         Protected Sub LoadAndInitializeWorkbookFile(data As Byte(), options As ExcelDataOperationsOptions)
             '1st, close an exsting workbook instance
             If Me.IsClosed = False Then Me.Close()
@@ -894,8 +929,17 @@ Namespace ExcelOps
             Me.PostLoadOrCreateWorkbook(options)
         End Sub
 
+        ''' <summary>
+        ''' Loads a workbook from a stream.
+        ''' </summary>
+        ''' <param name="data">Workbook data stream.</param>
         Protected MustOverride Sub LoadWorkbook(data As System.IO.Stream)
 
+        ''' <summary>
+        ''' Loads a workbook from a stream and applies post-load initialization.
+        ''' </summary>
+        ''' <param name="data">Workbook data stream.</param>
+        ''' <param name="options">Load options to apply after loading.</param>
         Protected Sub LoadAndInitializeWorkbookFile(data As System.IO.Stream, options As ExcelDataOperationsOptions)
             '1st, close an exsting workbook instance
             If Me.IsClosed = False Then Me.Close()
@@ -905,6 +949,9 @@ Namespace ExcelOps
             Me.PostLoadOrCreateWorkbook(options)
         End Sub
 
+        ''' <summary>
+        ''' Creates a new workbook in the current engine.
+        ''' </summary>
         Protected MustOverride Sub CreateWorkbook()
 
         ''' <summary>

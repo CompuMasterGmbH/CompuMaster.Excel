@@ -19,6 +19,8 @@
 - The documentation requirements do not apply to the `EPPlus45-FixCalcsEdition.MultiTarget` project or to `TestAndDemoExcelOps`; do not make documentation-only changes there.
 - Public enums and their values must be documented.
 - Keep `<summary>` text short and focused, for example `Insert one or more columns.`.
+- For new or substantially edited XML documentation, prefer Microsoft-style complete sentences in descriptive third-person form with a final period, for example `Inserts one or more columns.`.
+- Treat broad cleanup of older XML documentation style as a separate follow-up task instead of mixing it into feature or targeted documentation commits.
 - Put details such as zero-based indexing, insertion position, behavior contracts, and parameter semantics into `<param>`, `<returns>`, `<remarks>`, or `<exception>` elements as appropriate.
 - Prefer simple grammar that is easy to understand for non-native English speakers.
 - For overrides, always add an explicit `<inheritdoc/>` when the inherited documentation applies. Do not rely on implicit inherited documentation from an undocumented override.
