@@ -1,9 +1,12 @@
-''' <summary>
+﻿''' <summary>
 ''' A wrapper for an Excel application instance created with Interaction.CreateObject without requiring MS Office type libraries
 ''' </summary>
 Public Class ExcelApplication
     Inherits ComRootObject(Of Object)
 
+    ''' <summary>
+    ''' Creates a new Microsoft Excel application instance.
+    ''' </summary>
     Public Sub New()
 #Disable Warning CA1416
         MyBase.New(CreateObject("Excel.Application"), Sub(instance) If instance IsNot Nothing Then instance.InvokeMethod("Quit"))
@@ -11,8 +14,14 @@ Public Class ExcelApplication
         Me.Workbooks = New ExcelWorkbooksCollection(Me)
     End Sub
 
+    ''' <summary>
+    ''' Gets the workbook collection for this Excel application.
+    ''' </summary>
     Public ReadOnly Property Workbooks As ExcelWorkbooksCollection
 
+    ''' <summary>
+    ''' Gets or sets whether the Excel application is controlled by the user.
+    ''' </summary>
     Public Property UserControl As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("UserControl")
@@ -22,6 +31,9 @@ Public Class ExcelApplication
         End Set
     End Property
 
+    ''' <summary>
+    ''' Gets or sets whether Excel displays alerts.
+    ''' </summary>
     Public Property DisplayAlerts As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("DisplayAlerts")
@@ -31,6 +43,9 @@ Public Class ExcelApplication
         End Set
     End Property
 
+    ''' <summary>
+    ''' Gets or sets whether the Excel application window is visible.
+    ''' </summary>
     Public Property Visible As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("Visible")
@@ -40,6 +55,9 @@ Public Class ExcelApplication
         End Set
     End Property
 
+    ''' <summary>
+    ''' Gets or sets whether Excel accepts user interaction.
+    ''' </summary>
     Public Property Interactive As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("Interactive")
@@ -49,6 +67,9 @@ Public Class ExcelApplication
         End Set
     End Property
 
+    ''' <summary>
+    ''' Gets or sets whether Excel updates the screen while operations run.
+    ''' </summary>
     Public Property ScreenUpdating As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("ScreenUpdating")
@@ -91,14 +112,30 @@ Public Class ExcelApplication
         End Set
     End Property
 
+    ''' <summary>
+    ''' Gets a built-in Excel dialog.
+    ''' </summary>
+    ''' <param name="type">Built-in dialog type.</param>
+    ''' <returns>A wrapper for the requested Excel dialog.</returns>
     Public Function Dialogs(type As Enumerations.XlBuiltInDialog) As ExcelDialog
         Return New ExcelDialog(Me, InvokePropertyGet(Of Object)("Dialogs", CType(type, Integer)))
     End Function
 
+    ''' <summary>
+    ''' Runs a VBA method.
+    ''' </summary>
+    ''' <param name="vbaMethodNameInclWorkbookName">VBA method name, optionally including the workbook name.</param>
+    ''' <returns>The value returned by Excel.</returns>
     Public Function Run(vbaMethodNameInclWorkbookName As String) As Object
         Return InvokeFunction(Of Object)("Run", New Object() {vbaMethodNameInclWorkbookName})
     End Function
 
+    ''' <summary>
+    ''' Runs a VBA method in a workbook.
+    ''' </summary>
+    ''' <param name="workbookName">Workbook name containing the VBA method.</param>
+    ''' <param name="vbaMethod">VBA method name to run.</param>
+    ''' <returns>The value returned by Excel.</returns>
     Public Function Run(workbookName As String, vbaMethod As String) As Object
         Return InvokeFunction(Of Object)("Run", New Object() {"'" & workbookName & "'!" & vbaMethod})
     End Function

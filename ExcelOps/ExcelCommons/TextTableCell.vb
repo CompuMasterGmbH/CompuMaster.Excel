@@ -5,6 +5,12 @@
     ''' </summary>
     Public Class TextTableCell
 
+        ''' <summary>
+        ''' Creates a text table cell reference.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet containing the cell.</param>
+        ''' <param name="address">Cell address without the worksheet name.</param>
+        ''' <param name="formula">Formula or cell content stored for the cell.</param>
         Public Sub New(sheetName As String, address As String, formula As String)
             Me.SheetName = sheetName
             Me.Address = address
@@ -26,10 +32,7 @@
         ''' </summary>
         Public Property Address As String
 
-        ''' <summary>
-        ''' A text representation of sheet name and address and it's formula/cell content
-        ''' </summary>
-        ''' <returns></returns>
+        ''' <inheritdoc/>
         Public Overrides Function ToString() As String
             Return "'" & Me.SheetName & "'!" & Me.Address & ":" & Me.CellContent
         End Function

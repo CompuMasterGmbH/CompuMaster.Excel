@@ -24,8 +24,8 @@ $maxOverridesWithoutInheritdoc = 0
 
 if (-not $Strict) {
     # Current legacy baseline. The check fails when new gaps are added.
-    $maxMissingDocumentation = 287
-    $maxOverridesWithoutInheritdoc = 5
+    $maxMissingDocumentation = 190
+    $maxOverridesWithoutInheritdoc = 4
 }
 
 function Get-RelativePath([string] $path) {

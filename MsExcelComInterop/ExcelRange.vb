@@ -1,4 +1,7 @@
-﻿Public Class ExcelRange
+﻿''' <summary>
+''' A wrapper for an Excel range.
+''' </summary>
+Public Class ExcelRange
     Inherits ComChildObject(Of ExcelSheet, Object)
 
     Friend Sub New(parentItemResponsibleForDisposal As ExcelSheet, sheet As ExcelSheet, rangeName As String)

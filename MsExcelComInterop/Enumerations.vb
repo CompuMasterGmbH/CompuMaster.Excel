@@ -1,4 +1,7 @@
-﻿Public Class Enumerations
+﻿''' <summary>
+''' Contains Excel COM enumeration values used by the lightweight interop wrapper.
+''' </summary>
+Public Class Enumerations
 
     Public Enum XlSheetVisibility As Integer
         xlSheetHidden = 0

@@ -9,11 +9,18 @@
 #Enable Warning CA2237 ' Mark ISerializable types with serializable
         Inherits System.Exception
 
+        ''' <summary>
+        ''' Creates an exception for an existing file path.
+        ''' </summary>
+        ''' <param name="filePath">Path of the file that already exists.</param>
         Public Sub New(filePath As String)
             MyBase.New("File already exists: " & filePath)
             Me.FilePath = filePath
         End Sub
 
+        ''' <summary>
+        ''' Gets or sets the path of the file that already exists.
+        ''' </summary>
         Public Property FilePath As String
 
     End Class

@@ -9,11 +9,18 @@
 #Enable Warning CA2237 ' Mark ISerializable types with serializable
         Inherits System.Exception
 
+        ''' <summary>
+        ''' Creates an exception for a workbook that still requires calculation.
+        ''' </summary>
+        ''' <param name="filePath">Path of the workbook.</param>
         Public Sub New(filePath As String)
             MyBase.New("Workbook must not require any re-calculations: " & filePath)
             Me.FilePath = filePath
         End Sub
 
+        ''' <summary>
+        ''' Gets or sets the workbook file path.
+        ''' </summary>
         Public Property FilePath As String
 
     End Class

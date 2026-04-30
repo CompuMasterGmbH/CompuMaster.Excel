@@ -1,3 +1,6 @@
+﻿''' <summary>
+''' A wrapper for an Excel workbook collection.
+''' </summary>
 <CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
 Public Class ExcelWorkbooksCollection
     Inherits ComChildObject(Of ExcelApplication, Object)
@@ -6,8 +9,16 @@ Public Class ExcelWorkbooksCollection
         MyBase.New(app, app.InvokePropertyGet(Of Object)("Workbooks"))
     End Sub
 
+    ''' <summary>
+    ''' Gets or sets the workbook wrappers opened through this collection.
+    ''' </summary>
     Public Property Workbooks As New List(Of ExcelWorkbook)
 
+    ''' <summary>
+    ''' Opens a workbook file.
+    ''' </summary>
+    ''' <param name="path">Path of the workbook file to open.</param>
+    ''' <returns>The opened workbook.</returns>
     Public Function Open(path As String) As ExcelWorkbook
         Dim wb As New ExcelWorkbook(Me, path)
         Me.Workbooks.Add(wb)

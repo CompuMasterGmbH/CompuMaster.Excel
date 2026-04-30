@@ -1,3 +1,6 @@
+﻿''' <summary>
+''' A wrapper for an Excel worksheet.
+''' </summary>
 Public Class ExcelSheet
     Inherits ComChildObject(Of ExcelSheetCollection, Object)
 
@@ -5,34 +8,52 @@ Public Class ExcelSheet
         MyBase.New(parent, sheetComObject)
     End Sub
 
+    ''' <summary>
+    ''' Gets the worksheet name.
+    ''' </summary>
     Public ReadOnly Property Name As String
         Get
             Return InvokePropertyGet(Of String)("Name")
         End Get
     End Property
 
+    ''' <summary>
+    ''' Gets the worksheet code name.
+    ''' </summary>
     Public ReadOnly Property CodeName As String
         Get
             Return InvokePropertyGet(Of String)("CodeName")
         End Get
     End Property
 
+    ''' <summary>
+    ''' Selects the worksheet in Excel.
+    ''' </summary>
     Public Sub [Select]()
         InvokeMethod("Select")
     End Sub
 
+    ''' <summary>
+    ''' Deletes the worksheet.
+    ''' </summary>
     Public Sub Delete()
         InvokeMethod("Delete")
     End Sub
 
     Private oRanges As New List(Of ExcelRange)
 
+    ''' <summary>
+    ''' Gets the zero-based worksheet index.
+    ''' </summary>
     Public ReadOnly Property Index As Integer
         Get
             Return InvokePropertyGet(Of Integer)("Index") - 1
         End Get
     End Property
 
+    ''' <summary>
+    ''' Gets or sets worksheet visibility.
+    ''' </summary>
     Public Property Visible As Enumerations.XlSheetVisibility
         Get
             Return InvokePropertyGet(Of Enumerations.XlSheetVisibility)("Visible")
@@ -42,6 +63,7 @@ Public Class ExcelSheet
         End Set
     End Property
 
+    ''' <inheritdoc cref="ExcelWorkbook.ExportAsFixedFormat"/>
     Public Sub ExportAsFixedFormat(type As Enumerations.XlFixedFormatType,
                                    fileName As String,
                                    Optional quality As Enumerations.XlFixedFormatQuality = Enumerations.XlFixedFormatQuality.xlQualityStandard,
@@ -53,6 +75,7 @@ Public Class ExcelSheet
         InvokeMethod("ExportAsFixedFormat", type, fileName, quality, includeDocProperties, ignorePrintAreas, fromPageIndex + 1, toPageIndex + 1, openAfterPublish)
     End Sub
 
+    ''' <inheritdoc cref="ExcelWorkbook.PrintOut"/>
     Public Sub PrintOut(Optional fromPageIndex As Integer = 0,
                         Optional toPageIndex As Integer = Int16.MaxValue - 1,
                         Optional copies As Integer = 1,

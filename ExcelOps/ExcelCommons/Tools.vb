@@ -5,10 +5,22 @@ Imports System.IO.Compression
 Imports System.Xml
 
 Namespace ExcelOps
+    ''' <summary>
+    ''' Provides helper methods for cell addresses, formulas, numeric values, and workbook files.
+    ''' </summary>
     Public NotInheritable Class Tools
 
+        ''' <summary>
+        ''' Defines which corner shall be returned when two cell addresses are combined.
+        ''' </summary>
         Public Enum CellAddressCombineMode As Byte
+            ''' <summary>
+            ''' Return the upper-left corner of both cell addresses.
+            ''' </summary>
             LeftUpperCorner = 0
+            ''' <summary>
+            ''' Return the lower-right corner of both cell addresses.
+            ''' </summary>
             RightLowerCorner = 1
         End Enum
 
@@ -31,6 +43,9 @@ Namespace ExcelOps
             End Select
         End Function
 
+        ''' <summary>
+        ''' Defines which cell address shall be returned from a range address.
+        ''' </summary>
         Public Enum LookupCellAddresFromRangeMode As Integer
             ''' <summary>
             ''' 1st address part of range
@@ -63,6 +78,13 @@ Namespace ExcelOps
             End Select
         End Function
 
+        ''' <summary>
+        ''' Replaces a value only when it exactly matches the search value.
+        ''' </summary>
+        ''' <param name="value">Value to inspect.</param>
+        ''' <param name="searchValue">Value that must match completely.</param>
+        ''' <param name="replacementValue">Value returned when <paramref name="value"/> matches <paramref name="searchValue"/>.</param>
+        ''' <returns>The replacement value when the whole value matches; otherwise the original value.</returns>
         Public Shared Function ReplaceWholeValue(value As String, searchValue As String, replacementValue As String) As String
             If value = searchValue Then
                 Return replacementValue
@@ -224,6 +246,13 @@ Namespace ExcelOps
             Return False
         End Function
 
+        ''' <summary>
+        ''' Parses a numeric text value with culture-tolerant decimal and thousands separators.
+        ''' </summary>
+        ''' <param name="s">Text value to parse.</param>
+        ''' <returns>The parsed double value.</returns>
+        ''' <exception cref="ArgumentNullException">Thrown when <paramref name="s"/> is <see langword="Nothing"/>.</exception>
+        ''' <exception cref="FormatException">Thrown when the value cannot be parsed safely.</exception>
         Public Shared Function ParseToDoubleCultureSafe(s As String) As Double
             Dim Result As Double
             If s = Nothing Then
@@ -235,6 +264,12 @@ Namespace ExcelOps
             End If
         End Function
 
+        ''' <summary>
+        ''' Tries to parse a numeric text value with culture-tolerant decimal and thousands separators.
+        ''' </summary>
+        ''' <param name="s">Text value to parse.</param>
+        ''' <param name="result">Parsed double value when parsing succeeds.</param>
+        ''' <returns><see langword="True"/> when parsing succeeds; otherwise <see langword="False"/>.</returns>
         Public Shared Function TryParseToDoubleCultureSafe(s As String, ByRef result As Double) As Boolean
             Dim sb As New System.Text.StringBuilder(s.Trim)
 
