@@ -21,6 +21,7 @@
 - Put details such as zero-based indexing, insertion position, behavior contracts, and parameter semantics into `<param>`, `<returns>`, `<remarks>`, or `<exception>` elements as appropriate.
 - Prefer simple grammar that is easy to understand for non-native English speakers.
 - For overrides, use `<inheritdoc/>` when the base documentation is sufficient. Add `<remarks>` only for engine-specific behavior or limitations.
+- Run `./tools/check-api-docs.ps1` before committing API changes. The script enforces the current documentation baseline and prevents new undocumented public/protected API members or additional overrides without `<inheritdoc/>`.
 
 ## Excel Engine Behavior
 

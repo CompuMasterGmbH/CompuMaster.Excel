@@ -66,6 +66,10 @@ jobs:
             - name: Clone code+test files for subsequent projects
               shell: pwsh
               run: ./clone-build-files.ps1
+
+            - name: Check API documentation
+              shell: pwsh
+              run: ./tools/check-api-docs.ps1
           
             - name: Setup .NET Core
               uses: actions/setup-dotnet@v4
