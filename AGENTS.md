@@ -37,3 +37,9 @@
 - Test methods should include short comments or XML summaries explaining why the test exists and what workbook behavior it verifies.
 - Static test workbooks belong in the appropriate `test_data` directories.
 - When repository copy/clone scripts generate or synchronize shared source or test files, include the resulting copied files in the same change.
+
+## File Encoding and Line Endings
+
+- Save text files as UTF-8 with BOM and CRLF line endings, matching `.editorconfig`.
+- Keep `.gitattributes` line-ending rules intact and mark binary workbook/image/archive formats as binary.
+- When normalizing encoding or line endings, keep that work in a separate mechanical commit whenever possible.
