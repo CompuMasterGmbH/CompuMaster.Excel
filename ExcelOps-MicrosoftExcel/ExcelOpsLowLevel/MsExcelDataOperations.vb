@@ -1,4 +1,4 @@
-﻿Option Explicit On
+Option Explicit On
 Option Strict On
 
 Imports System.Text
@@ -44,6 +44,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
                 Return New ExcelEngineDefaultOptions(False, False)
+            End Get
+        End Property
+
+        Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
+            Get
+                Return True
             End Get
         End Property
 
@@ -864,7 +870,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="startRowIndex">0-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
-        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
+        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet
             Try
@@ -890,10 +897,74 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
             Dim CellOfFirstRow As MsExcel.Range = CType(sheet.Cells(startRowIndex + 1, 1), MsExcel.Range)
-            Dim CellOfLastRow As MsExcel.Range = CType(sheet.Cells(startRowIndex + rows - 1, 1), MsExcel.Range)
+            Dim CellOfLastRow As MsExcel.Range = CType(sheet.Cells(startRowIndex + rows, 1), MsExcel.Range)
             Dim RangeRemovalRows As MsExcel.Range = sheet.Range(CellOfFirstRow, CellOfLastRow)
             Dim RemovalRows As MsExcel.Range = RangeRemovalRows.EntireRow
             RemovalRows.Delete(MsExcel.XlDeleteShiftDirection.xlShiftUp)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If columns = 0 Then Return
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim FirstCell As MsExcel.Range = CType(Sheet.Cells(1, columnIndex + 1), MsExcel.Range)
+            Dim LastCell As MsExcel.Range = CType(Sheet.Cells(1, columnIndex + columns), MsExcel.Range)
+            Sheet.Range(FirstCell, LastCell).EntireColumn.Insert(MsExcel.XlInsertShiftDirection.xlShiftToRight)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddRow(sheetName As String, rowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If rows = 0 Then Return
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim FirstCell As MsExcel.Range = CType(Sheet.Cells(rowIndex + 1, 1), MsExcel.Range)
+            Dim LastCell As MsExcel.Range = CType(Sheet.Cells(rowIndex + rows, 1), MsExcel.Range)
+            Sheet.Range(FirstCell, LastCell).EntireRow.Insert(MsExcel.XlInsertShiftDirection.xlShiftDown)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellInsertShiftDirection, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If rows = 0 OrElse columns = 0 Then Return
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim LastRowIndex As Integer = rowIndex + rows - 1
+            Dim LastColumnIndex As Integer = columnIndex + columns - 1
+            Dim Range As MsExcel.Range = Sheet.Range(CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range), CType(Sheet.Cells(LastRowIndex + 1, LastColumnIndex + 1), MsExcel.Range))
+            Range.Insert(If(shiftDirection = CellInsertShiftDirection.ShiftCellsDown, MsExcel.XlInsertShiftDirection.xlShiftDown, MsExcel.XlInsertShiftDirection.xlShiftToRight))
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub RemoveColumns(sheetName As String, startColumnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If columns = 0 Then Return
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim FirstCell As MsExcel.Range = CType(Sheet.Cells(1, startColumnIndex + 1), MsExcel.Range)
+            Dim LastCell As MsExcel.Range = CType(Sheet.Cells(1, startColumnIndex + columns), MsExcel.Range)
+            Sheet.Range(FirstCell, LastCell).EntireColumn.Delete(MsExcel.XlDeleteShiftDirection.xlShiftToLeft)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If rows = 0 OrElse columns = 0 Then Return
+            Dim Sheet As MsExcel.Worksheet = CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            Dim LastRowIndex As Integer = rowIndex + rows - 1
+            Dim LastColumnIndex As Integer = columnIndex + columns - 1
+            Dim Range As MsExcel.Range = Sheet.Range(CType(Sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range), CType(Sheet.Cells(LastRowIndex + 1, LastColumnIndex + 1), MsExcel.Range))
+            Range.Delete(If(shiftDirection = CellRemoveShiftDirection.ShiftCellsUp, MsExcel.XlDeleteShiftDirection.xlShiftUp, MsExcel.XlDeleteShiftDirection.xlShiftToLeft))
         End Sub
 
         Public Overrides Sub WriteCellValue(Of T)(cell As ExcelCell, value As T)

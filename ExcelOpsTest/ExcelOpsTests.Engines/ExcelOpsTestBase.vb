@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Option Explicit On
 
 Imports CompuMaster.Epplus4.FormulaParsing.Excel.Functions.Text
@@ -766,6 +766,244 @@ Namespace ExcelOpsTests.Engines
             eppeo.AddSheet(SheetNameTopPosition, BeforeSheet)
             NewSheetNamesList = eppeo.SheetNames
             ClassicAssert.AreEqual(ExpectedSheetNamesList.ToArray, NewSheetNamesList.ToArray)
+        End Sub
+
+        ''' <summary>
+        ''' Verifies that structural column/row insertion moves cell contents and updates formulas, cross-sheet references and named-range formulas when the engine supports automatic reference updates.
+        ''' Example: inserting a column before B changes B1=10 to C1=10 and formula D1=B1 to E1=C1.
+        ''' </summary>
+        <Test> Public Sub StructuralChanges_InsertColumnAndRow_UpdateFormulaReferences()
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "StructuralChangesFormulaReferences.xlsx")
+
+            Dim workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddColumn("Data", 1, 1, True)
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                    Return
+                End Try
+                ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 2), "B1 must move to C1")
+                ClassicAssert.AreEqual("C1", workbook.LookupCellFormula("Data", 0, 4), "Formula moved from D1 to E1 and must reference moved B1/C1")
+                ClassicAssert.AreEqual("SUM(C1:D1)", workbook.LookupCellFormula("Data", 0, 5), "Range formula moved from E1 to F1 and must reference moved B1:C1/C1:D1")
+                ClassicAssert.AreEqual("DATA!C1", workbook.LookupCellFormula("Refs", 0, 0).Replace("'", "").ToUpperInvariant, "Cross-sheet single-cell reference must follow Data!B1 to Data!C1")
+                ClassicAssert.AreEqual("SUM(DATA!C1:D1)", workbook.LookupCellFormula("Refs", 0, 1).Replace("'", "").ToUpperInvariant, "Cross-sheet range reference must follow Data!B1:C1 to Data!C1:D1")
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                workbook.AddRow("Data", 1, 1, True)
+                ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 2, 1), "Row 2 must move to row 3")
+                ClassicAssert.AreEqual("B3", workbook.LookupCellFormula("Data", 2, 3), "Formula moved from D2 to D3 and must reference moved B2/B3")
+                ClassicAssert.AreEqual("SUM(B3:C3)", workbook.LookupCellFormula("Data", 2, 4), "Range formula moved from E2 to E3 and must reference moved row")
+                ClassicAssert.AreEqual("SUM(DataValues)", workbook.LookupCellFormula("Refs", 1, 0), "Named range formula must stay syntactically stable")
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Verifies that structural column/row removal shifts remaining cells and updates formulas when automatic reference updates are requested.
+        ''' Example: removing column C keeps B1=10 in B1 and moves formula D1=B1 to C1=B1.
+        ''' </summary>
+        <Test> Public Sub StructuralChanges_RemoveColumnAndRow_UpdateFormulaReferences()
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "StructuralChangesFormulaReferences.xlsx")
+
+            Dim workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.RemoveColumns("Data", 2, 1, True)
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                    Return
+                End Try
+                ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 1), "B1 must remain in B1 when deleting C")
+                ClassicAssert.AreEqual("B1", workbook.LookupCellFormula("Data", 0, 2), "Formula moved from D1 to C1 and must still reference B1")
+                ClassicAssert.That(workbook.LookupCellFormula("Data", 0, 3), [Is].AnyOf("SUM(B1)", "SUM(B1:B1)"), "Range formula moved from E1 to D1 and must shrink after deleting C")
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                workbook.RemoveRows("Data", 2, 1, True)
+                ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 1, 1), "Row 2 must remain in row 2 when deleting row 3")
+                ClassicAssert.AreEqual("B2", workbook.LookupCellFormula("Data", 1, 3), "Formula in D2 must still reference B2")
+                ClassicAssert.AreEqual("SUM(B2:C2)", workbook.LookupCellFormula("Data", 1, 4), "Range formula in E2 must still reference row 2")
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Verifies insertion/removal of partial cell ranges for supported engines and requires unsupported engines to report this explicitly.
+        ''' Examples: inserting 1x1 at B1 shifts B1=10 to C1; inserting 1x3 shifts B1=10 to E1; inserting 3x5 shifts B1=10 to G1 or B4 depending on shift direction.
+        ''' </summary>
+        <Test> Public Sub StructuralChanges_CellInsertRemove_UpdateFormulaReferencesOrReportUnsupported()
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "StructuralChangesFormulaReferences.xlsx")
+
+            Dim workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsRight, True)
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 2), "B1 must move right to C1")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddCells("Data", 0, 1, 1, 3, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsRight, True)
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 4), "B1 must move right to E1 when inserting 3 cells")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 5), "C1 must move right to F1 when inserting 3 cells")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddCells("Data", 0, 1, 3, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 3, 1), "B1 must move down to B4 when inserting 3 cells")
+                    ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 4, 1), "B2 must move down to B5 when inserting 3 cells")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddCells("Data", 0, 1, 3, 5, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsRight, True)
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 6), "B1 must move right to G1 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 7), "C1 must move right to H1 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual("G1", workbook.LookupCellFormula("Data", 0, 8), "Formula from D1 must move right and reference moved B1")
+                    ClassicAssert.AreEqual("SUM(G1:H1)", workbook.LookupCellFormula("Data", 0, 9), "Formula from E1 must move right and reference moved B1:C1")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddCells("Data", 0, 1, 3, 5, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 3, 1), "B1 must move down to B4 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 3, 2), "C1 must move down to C4 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual("B4", workbook.LookupCellFormula("Data", 3, 3), "Formula from D1 must move down and reference moved B1")
+                    ClassicAssert.AreEqual("SUM(B4:C4)", workbook.LookupCellFormula("Data", 3, 4), "Formula from E1 must move down and reference moved B1:C1")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.AddCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 1, 1), "B1 must move down to B2")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.RemoveCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellRemoveShiftDirection.ShiftCellsLeft, True)
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 1), "C1 must move left to B1")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+
+            workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                Try
+                    workbook.RemoveCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellRemoveShiftDirection.ShiftCellsUp, True)
+                    ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 0, 1), "B2 must move up to B1")
+                Catch ex As NotSupportedException
+                    ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
+                End Try
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Verifies the API contract that engines must reject a requested formula/reference update mode they cannot provide instead of silently doing the opposite.
+        ''' Current engines automatically update references for structural changes, so updateFormulasAndReferences=False must throw.
+        ''' </summary>
+        <Test> Public Sub StructuralChanges_UnsupportedFormulaReferenceUpdateModeThrows()
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "StructuralChangesFormulaReferences.xlsx")
+            Dim workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                ClassicAssert.Throws(Of NotSupportedException)(Sub() workbook.AddColumn("Data", 1, 1, False))
+                ClassicAssert.Throws(Of NotSupportedException)(Sub() workbook.AddRow("Data", 1, 1, False))
+                ClassicAssert.Throws(Of NotSupportedException)(Sub() workbook.RemoveColumns("Data", 1, 1, False))
+                ClassicAssert.Throws(Of NotSupportedException)(Sub() workbook.RemoveRows("Data", 1, 1, False))
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' Replays the sample-app scenario in-memory, persists it to a temporary file and checks whether the formula in H2 matches the requested reference-update behavior.
+        ''' Example: adding three columns before D changes E2=SUM(A2:D2) to H2=SUM(A2:G2) when updates are supported and requested.
+        ''' </summary>
+        <Test> Public Sub StructuralChanges_AddColumnSampleFormulaReferenceMode(<Values(True, False)> updateFormulasAndReferences As Boolean)
+            Dim tempFile As String = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CompuMaster.Excel.StructuralChanges." & Guid.NewGuid().ToString("N") & ".xlsx")
+
+            Dim workbook As T = Nothing
+            Try
+                workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile))
+                workbook.CalculationModuleDisabled = True
+                Dim firstSheetName As String = workbook.SheetNames()(0)
+                workbook.WriteCellValue(Of Integer)(firstSheetName, 0, 0, 123)
+                workbook.WriteCellValue(Of Double)(New ExcelCell(firstSheetName, "B1", ExcelCell.ValueTypes.All), 456.123)
+                workbook.WriteCellFormula(firstSheetName, 0, 2, "SUM(A1:B1)", True)
+                workbook.WriteCellFormula(firstSheetName, 0, 3, "SUM(A1:B1)", False)
+                workbook.WriteCellFormula(firstSheetName, 1, 4, "SUM(A2:D2)", False)
+
+                Try
+                    workbook.AddColumn(firstSheetName, 3, 3, updateFormulasAndReferences)
+                Catch ex As NotSupportedException
+                    TestContext.WriteLine(workbook.EngineName & " doesn't support AddColumn with updateFormulasAndReferences = " & updateFormulasAndReferences.ToString())
+                    Return
+                End Try
+
+                workbook.SaveAs(tempFile, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+
+                Dim expectedFormula As String = If(updateFormulasAndReferences, "SUM(A2:G2)", "SUM(A2:D2)")
+                Dim actualFormula As String = workbook.LookupCellFormula(firstSheetName, 1, 7)
+                ClassicAssert.AreEqual(expectedFormula, actualFormula, "Formula in H2 must match the requested formula/reference update mode")
+            Finally
+                If workbook IsNot Nothing AndAlso workbook.IsClosed = False Then
+                    workbook.Close()
+                End If
+                If System.IO.File.Exists(tempFile) Then
+                    System.IO.File.Delete(tempFile)
+                End If
+            End Try
         End Sub
 
         <Test> Public Sub AllFormulasOfWorkbook()

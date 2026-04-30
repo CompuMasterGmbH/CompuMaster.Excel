@@ -28,6 +28,34 @@ Namespace ExcelOps
         End Enum
 
         ''' <summary>
+        ''' Defines how existing cells are shifted when inserting cells.
+        ''' </summary>
+        Public Enum CellInsertShiftDirection As Byte
+            ''' <summary>
+            ''' Shift existing cells to the right.
+            ''' </summary>
+            ShiftCellsRight = 0
+            ''' <summary>
+            ''' Shift existing cells down.
+            ''' </summary>
+            ShiftCellsDown = 1
+        End Enum
+
+        ''' <summary>
+        ''' Defines how remaining cells are shifted when removing cells.
+        ''' </summary>
+        Public Enum CellRemoveShiftDirection As Byte
+            ''' <summary>
+            ''' Shift remaining cells from the right.
+            ''' </summary>
+            ShiftCellsLeft = 0
+            ''' <summary>
+            ''' Shift remaining cells from below.
+            ''' </summary>
+            ShiftCellsUp = 1
+        End Enum
+
+        ''' <summary>
         ''' Create or open a workbook
         ''' </summary>
         ''' <param name="file">Path to a file which shall be loaded or null if a new workbook shall be created</param>
@@ -143,6 +171,26 @@ Namespace ExcelOps
         ''' </summary>
         ''' <returns></returns>
         Protected Friend MustOverride ReadOnly Property DefaultCalculationOptions() As ExcelEngineDefaultOptions
+
+        ''' <summary>
+        ''' Defines whether the engine automatically updates formulas and references during structural worksheet changes.
+        ''' </summary>
+        ''' <remarks>
+        ''' Engine implementations must return the behavior they can actually provide. If an engine always updates formulas and references, this property must return true. If it never updates them, this property must return false.
+        ''' </remarks>
+        ''' <returns>True if formulas and references are automatically updated during structural worksheet changes; otherwise false.</returns>
+        Protected Friend MustOverride ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
+
+        ''' <summary>
+        ''' Validate the requested formula/reference update behavior.
+        ''' </summary>
+        ''' <param name="updateFormulasAndReferences">Requested behavior for automatic formula/reference updates.</param>
+        ''' <exception cref="NotSupportedException">The engine cannot provide the requested formula/reference update behavior.</exception>
+        Protected Sub ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences As Boolean)
+            If updateFormulasAndReferences <> Me.AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges Then
+                Throw New NotSupportedException(Me.EngineName & " doesn't support structural worksheet changes with updateFormulasAndReferences = " & updateFormulasAndReferences.ToString)
+            End If
+        End Sub
 
         Protected Shared Function ConvertToUnvalidatedOptions(autoCalculationOnLoad As Boolean, calculationModuleDisabled As Boolean, [readOnly] As Boolean, passwordForOpening As String) As ExcelDataOperationsOptions
             Return New ExcelDataOperationsOptions(If([readOnly], ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite),
@@ -1034,9 +1082,72 @@ Namespace ExcelOps
         ''' Remove specified rows
         ''' </summary>
         ''' <param name="sheetName"></param>
-        ''' <param name="startrowIndex">0-based row number</param>
+        ''' <param name="startRowIndex">0-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
-        Public MustOverride Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
+        <Obsolete("Use overloaded methods", False)>
+        Public Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
+            Me.RemoveRows(sheetName, startRowIndex, rows, Me.AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges)
+        End Sub
+
+        ''' <summary>
+        ''' Insert one or more columns.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to change</param>
+        ''' <param name="columnIndex">Zero-based index of the column to insert before</param>
+        ''' <param name="columns">Number of columns to insert</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
+        Public MustOverride Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+
+        ''' <summary>
+        ''' Insert one or more rows.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to change</param>
+        ''' <param name="rowIndex">Zero-based index of the row to insert before</param>
+        ''' <param name="rows">Number of rows to insert</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
+        Public MustOverride Sub AddRow(sheetName As String, rowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+
+        ''' <summary>
+        ''' Insert a rectangular cell range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to change</param>
+        ''' <param name="rowIndex">Zero-based row index of the upper-left cell of the insertion range</param>
+        ''' <param name="columnIndex">Zero-based column index of the upper-left cell of the insertion range</param>
+        ''' <param name="rows">Number of rows in the insertion range</param>
+        ''' <param name="columns">Number of columns in the insertion range</param>
+        ''' <param name="shiftDirection">Direction in which existing cells shall be shifted</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
+        Public MustOverride Sub AddCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellInsertShiftDirection, updateFormulasAndReferences As Boolean)
+
+        ''' <summary>
+        ''' Remove one or more columns.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to change</param>
+        ''' <param name="startColumnIndex">Zero-based column index of the first column to remove</param>
+        ''' <param name="columns">Number of columns to remove</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
+        Public MustOverride Sub RemoveColumns(sheetName As String, startColumnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+
+        ''' <summary>
+        ''' Remove one or more rows.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to change</param>
+        ''' <param name="startRowIndex">Zero-based row index of the first row to remove</param>
+        ''' <param name="rows">Number of rows to remove</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
+        Public MustOverride Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+
+        ''' <summary>
+        ''' Remove a rectangular cell range.
+        ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet to change</param>
+        ''' <param name="rowIndex">Zero-based row index of the upper-left cell of the removal range</param>
+        ''' <param name="columnIndex">Zero-based column index of the upper-left cell of the removal range</param>
+        ''' <param name="rows">Number of rows in the removal range</param>
+        ''' <param name="columns">Number of columns in the removal range</param>
+        ''' <param name="shiftDirection">Direction from which remaining cells shall be shifted into the removed range</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
+        Public MustOverride Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
 
         ''' <summary>
         ''' Remove a sheet

@@ -1,6 +1,7 @@
 ﻿using CompuMaster.Excel.ExcelOps;
 
+Samples.DemoAddColumnsAndCheckForReferenceUpdates();
 CMDataDemo.WriteAndReadTableEpplusLgpl();
 CMDataDemo.WriteAndReadTableEpplusPolyform();
-SampleCollection.SeveralDemos();
+Samples.SeveralDemos();
 MsExcelComInteropDemo.Demo();

@@ -532,13 +532,59 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="startrowIndex">0-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
-        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
+        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
             Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet.Dimension Is Nothing Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Sheet.DeleteRow(startRowIndex + 1, rows)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If columns = 0 Then Return
+            Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            Sheet.InsertColumn(columnIndex + 1, columns)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddRow(sheetName As String, rowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If rows = 0 Then Return
+            Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            Sheet.InsertRow(rowIndex + 1, rows)
+        End Sub
+
+        ''' <inheritdoc/>
+        ''' <remarks>EPPlus doesn't expose a supported public API for inserting partial cell ranges.</remarks>
+        Public Overrides Sub AddCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellInsertShiftDirection, updateFormulasAndReferences As Boolean)
+            Throw New NotSupportedException(Me.EngineName & " doesn't expose a supported public cell insert API")
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub RemoveColumns(sheetName As String, startColumnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If columns = 0 Then Return
+            Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
+            If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            Sheet.DeleteColumn(startColumnIndex + 1, columns)
+        End Sub
+
+        ''' <inheritdoc/>
+        ''' <remarks>EPPlus doesn't expose a supported public API for removing partial cell ranges.</remarks>
+        Public Overrides Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
+            Throw New NotSupportedException(Me.EngineName & " doesn't expose a supported public cell remove API")
         End Sub
 
         ''' <summary>

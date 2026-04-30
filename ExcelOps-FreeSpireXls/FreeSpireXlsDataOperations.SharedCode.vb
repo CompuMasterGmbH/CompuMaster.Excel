@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Option Explicit On
 
 'NOTE:    THIS FILE IS UPDATED IN DIRECTORY ExcelOps-FreeSpireXls FIRST AND COPIED TO ExcelOps-SpireXls AFTERWARDS
@@ -456,13 +456,81 @@ Namespace ExcelOps
         ''' <param name="sheetName"></param>
         ''' <param name="startrowIndex">0-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
-        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer)
+        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Sheet.DeleteRow(startRowIndex + 1, rows)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If columns = 0 Then Return
+            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
+            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            Try
+                Sheet.InsertColumn(columnIndex + 1, columns)
+            Catch ex As Exception When ex.Message.IndexOf("Invalid Column name", StringComparison.OrdinalIgnoreCase) >= 0
+                Throw New NotSupportedException(Me.EngineName & " doesn't support column insertion for this workbook structure (usual failure reasons: print titles, named ranges)", ex)
+            End Try
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddRow(sheetName As String, rowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If rows = 0 Then Return
+            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
+            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            Sheet.InsertRow(rowIndex + 1, rows)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub AddCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellInsertShiftDirection, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If rows = 0 OrElse columns = 0 Then Return
+            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
+            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            Sheet.InsertRange(rowIndex + 1, columnIndex + 1, rows, columns, If(shiftDirection = CellInsertShiftDirection.ShiftCellsDown, InsertMoveOption.MoveDown, InsertMoveOption.MoveRight), InsertOptionsType.FormatDefault)
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub RemoveColumns(sheetName As String, startColumnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If columns = 0 Then Return
+            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
+            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            Try
+                Sheet.DeleteColumn(startColumnIndex + 1, columns)
+            Catch ex As Exception When ex.Message.IndexOf("Invalid Column name", StringComparison.OrdinalIgnoreCase) >= 0
+                Throw New NotSupportedException(Me.EngineName & " doesn't support column removal for this workbook structure (usual failure reasons: print titles, named ranges)", ex)
+            End Try
+        End Sub
+
+        ''' <inheritdoc/>
+        Public Overrides Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
+            Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
+            If columns < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columns), "Column number must be a positive value or zero")
+            If rows = 0 OrElse columns = 0 Then Return
+            Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
+            If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            Dim toRowIndex As Integer = rowIndex + rows - 1
+            Dim toColumnIndex As Integer = columnIndex + columns - 1
+            Sheet.DeleteRange(Sheet.Range(rowIndex + 1, columnIndex + 1, toRowIndex + 1, toColumnIndex + 1), If(shiftDirection = CellRemoveShiftDirection.ShiftCellsUp, DeleteOption.MoveUp, DeleteOption.MoveLeft))
         End Sub
 
         ''' <summary>

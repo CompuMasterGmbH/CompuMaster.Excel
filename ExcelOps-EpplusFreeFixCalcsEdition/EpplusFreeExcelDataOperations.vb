@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Option Explicit On
 
 Imports System.ComponentModel
@@ -22,6 +22,12 @@ Namespace ExcelOps
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
                 Return New ExcelEngineDefaultOptions(False, True)
+            End Get
+        End Property
+
+        Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
+            Get
+                Return True
             End Get
         End Property
 
