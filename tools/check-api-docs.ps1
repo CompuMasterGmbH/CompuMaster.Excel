@@ -24,7 +24,7 @@ $maxOverridesWithoutInheritdoc = 0
 
 if (-not $Strict) {
     # Current legacy baseline. The check fails when new gaps are added.
-    $maxMissingDocumentation = 549
+    $maxMissingDocumentation = 302
     $maxOverridesWithoutInheritdoc = 127
 }
 
@@ -116,6 +116,10 @@ foreach ($file in $files) {
         $declaration = $line.Trim()
 
         if (-not (Is-Documented $docBlock)) {
+            if ($declaration -match "\bOverrides\b") {
+                continue
+            }
+
             $missingDocumentation.Add([pscustomobject]@{
                 File = $relativeFile
                 Line = $i + 1
