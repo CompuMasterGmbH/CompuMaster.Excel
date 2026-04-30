@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Option Explicit On
 
 'NOTE:    THIS FILE IS UPDATED IN DIRECTORY ExcelOps-FreeSpireXls FIRST AND COPIED TO ExcelOps-SpireXls AFTERWARDS
@@ -28,25 +28,30 @@ Namespace ExcelOps
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides Sub Close()
             If Me.IsClosed = False Then Me._Workbook.Dispose()
             Me._Workbook = Nothing
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property IsClosed As Boolean
             Get
                 Return Me._Workbook Is Nothing
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Me._Workbook.SaveToFile(Me.FilePath) 'NOTE: _Workbook.Save is forbidden since the file path might have changed in background due to a workaround required for RemoveVbaProject
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             MyBase.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Me._Workbook.OpenPassword = Me.PasswordForOpening
             Me._Workbook.SaveToFile(fileName)
@@ -106,6 +111,7 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function WorkSheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
@@ -114,6 +120,7 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function ChartSheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For MyCounter As Integer = 0 To Me.Workbook.Chartsheets.Count - 1
@@ -318,10 +325,12 @@ Namespace ExcelOps
             End If
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellIsLocked(cell As ExcelCell) As Boolean
             Return Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber).Style.Locked
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellIsLocked(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).Style.Locked
@@ -394,6 +403,7 @@ Namespace ExcelOps
             Me.Workbook.Worksheets.Item(sheetName).CalculateAllValue()
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub CreateWorkbook()
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.Worksheets(0).Name = "Sheet1"
@@ -402,12 +412,14 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.OpenPassword = Me.PasswordForOpening
             Me.Workbook.LoadFromFile(file.FullName)
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(data() As Byte)
             Dim ms As New MemoryStream()
             ms.Write(data, 0, data.Length)
@@ -415,6 +427,7 @@ Namespace ExcelOps
             Me.LoadWorkbook(ms)
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(data As IO.Stream)
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.OpenPassword = Me.PasswordForOpening
@@ -623,11 +636,13 @@ Namespace ExcelOps
             End Try
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub UnprotectSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets.Item(sheetName).Unprotect()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub ProtectSheet(sheetName As String, level As ProtectionLevel)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Select Case level
@@ -646,6 +661,7 @@ Namespace ExcelOps
             End Select
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub RecalculateAllInternal()
             'Throw New NotSupportedException("Epplus can't successfully calculate all formulas")
             If Me.CalculationModuleDisabled Then Throw New InvalidOperationException("Calculation engine is disabled, requested recalculation failed")
@@ -676,16 +692,19 @@ Namespace ExcelOps
             End Set
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides Function IsProtectedSheet(sheetName As String) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.Workbook.Worksheets.Item(sheetName).ProtectContents
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub RemoveSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets.Remove(sheetName)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AddSheet(sheetName As String, beforeSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim ws As Worksheet = Me.Workbook.Worksheets.Add(sheetName)
@@ -696,6 +715,7 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
             Return Me.Workbook.ActiveSheet.Name
         End Function
@@ -717,16 +737,19 @@ Namespace ExcelOps
             Me.SelectSheet(Me.SheetNames(sheetIndex))
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub CloseExcelAppInstance()
             Me.Close()
             'No external excel engine application to close
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub UnhideSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets.Item(sheetName).Visibility = WorksheetVisibility.Visible
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub HideSheet(sheetName As String, stronglyHide As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If stronglyHide Then
@@ -736,6 +759,7 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function IsHiddenSheet(sheetName As String) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.Workbook.Worksheets.Item(sheetName).Visibility <> WorksheetVisibility.Visible
@@ -838,6 +862,7 @@ Namespace ExcelOps
             WorkSheet.TabColor = System.Drawing.Color.Black
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets(sheetName).Range(rowIndex + 1, columnIndex + 1).HasFormulaErrorValue Then
@@ -849,23 +874,27 @@ Namespace ExcelOps
             End If
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub ClearSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.Workbook.Worksheets.Item(sheetName).Clear()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub SelectCell(cell As ExcelCell)
             If cell.SheetName = Nothing Then Throw New ArgumentException("Sheet name required", NameOf(cell))
             Dim WorkSheet As Worksheet = Me.Workbook.Worksheets.Item(cell.SheetName)
             WorkSheet.Range(cell.Address(False)).Activate(True)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property HasVbaProject As Boolean
             Get
                 Return Me.Workbook.HasMacros
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides Sub RemoveVbaProject()
             If Me.Workbook.HasMacros = False Then Return 'Shortcut and circumvent following workaround
 
@@ -897,6 +926,7 @@ Namespace ExcelOps
             Me.Workbook.IsSaved = PreservedIsSavedState
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
             Dim Result As New List(Of ExcelOps.ExcelRange)
             Dim Sheet = Me.Workbook.Worksheets.Item(sheetName)
@@ -912,18 +942,22 @@ Namespace ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             Return Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).HasMerged
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             Me.Workbook.Worksheets.Item(sheetName).Range(rowIndex + 1, columnIndex + 1).MergeArea.UnMerge()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
             Me.Workbook.Worksheets.Item(sheetName).Range(fromRowIndex + 1, fromColumnIndex + 1, toRowIndex + 1, toColumnIndex + 1).Merge(True)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String)
             Dim LastColumnIndex = Me.LookupLastColumnIndex(sheetName)
             For ColumnIndex As Integer = 0 To LastColumnIndex
@@ -931,6 +965,7 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
             Dim LastColumnIndex = Me.LookupLastColumnIndex(sheetName)
             For ColumnIndex As Integer = 0 To LastColumnIndex
@@ -938,10 +973,12 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
             Me.Workbook.Worksheets.Item(sheetName).AutoFitColumn(columnIndex + 1) 'NOTE: AutoFitColumn's argument "columnIndex" seems to be 1-based
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
             Me.AutoFitColumns(sheetName, columnIndex)
             If Me.Workbook.Worksheets.Item(sheetName).Columns(columnIndex).ColumnWidth < minimumWidth Then
@@ -949,11 +986,13 @@ Namespace ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function ExportChartSheetImage(chartSheetName As String) As Image
             Dim ChartSheet = Me.Workbook.GetChartSheetByName(chartSheetName)
             Return Workbook.SaveChartAsImage(ChartSheet)
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
             Dim WorkSheet = Me.Workbook.Worksheets(workSheetName)
             Return Workbook.SaveChartAsImage(WorkSheet)

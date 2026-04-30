@@ -19,12 +19,14 @@ Namespace ExcelOps
     Public Class EpplusFreeExcelDataOperations
         Inherits ExcelDataOperationsBase
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
                 Return New ExcelEngineDefaultOptions(False, True)
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
             Get
                 Return True
@@ -140,6 +142,7 @@ Namespace ExcelOps
             MyBase.New(False, True, True, passwordForOpeningOnNextTime)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property EngineName As String
             Get
                 Return "Epplus 4 (LGPL)"
@@ -316,6 +319,7 @@ Namespace ExcelOps
             Return CheckResult
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
             Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
         End Function

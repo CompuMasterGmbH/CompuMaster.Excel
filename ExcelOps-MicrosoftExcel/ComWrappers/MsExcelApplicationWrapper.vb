@@ -1,4 +1,4 @@
-﻿Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Interop.Excel
 Imports MsExcel = Microsoft.Office.Interop.Excel
 
 Namespace Global.CompuMaster.Excel.MsExcelCom
@@ -126,6 +126,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function ToString() As String
             Return NameOf(MsExcelApplicationWrapper) & " (" & _ComApp.ToString() & ")"
         End Function

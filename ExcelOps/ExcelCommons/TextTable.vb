@@ -1,4 +1,4 @@
-﻿Imports System.Data
+Imports System.Data
 
 Namespace ExcelOps
 #If NETFRAMEWORK Then
@@ -440,6 +440,7 @@ Namespace ExcelOps
             Return rowIndex < Me.RowCount AndAlso columnIndex < Me.ColumnCount
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function Equals(obj As Object) As Boolean
             If obj Is Nothing OrElse obj.GetType() IsNot GetType(TextTable) Then
                 Return False
@@ -448,6 +449,7 @@ Namespace ExcelOps
             End If
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function GetHashCode() As Integer
             Dim AutoTrimClone As TextTable = CType(Me.Clone(), TextTable)
             AutoTrimClone.AutoTrim()

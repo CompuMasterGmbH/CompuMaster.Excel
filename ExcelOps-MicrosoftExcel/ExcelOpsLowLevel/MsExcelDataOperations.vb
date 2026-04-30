@@ -41,12 +41,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
                 Return New ExcelEngineDefaultOptions(False, False)
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
             Get
                 Return True
@@ -269,6 +271,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
             If options.DisableCalculationEngine.Value = True Then Throw New NotSupportedException("MS Excel doesn't support disabling of calculation engine")
             MyBase.ValidateLoadOptions(options)
@@ -297,6 +300,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides Sub Close()
             If Me._Workbook IsNot Nothing Then
                 Me.Workbook.Close(SaveChanges:=False)
@@ -305,6 +309,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub CloseExcelAppInstance()
             'Close workbook if still open
             Me.Close()
@@ -330,12 +335,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property IsClosed As Boolean
             Get
                 Return Me._Workbook Is Nothing
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.PasswordForOpening <> Nothing Then
                 Me.Workbook.Protect(Me.PasswordForOpening)
@@ -343,6 +350,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.Save()
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Select Case cachedCalculationsOption
                 Case SaveOptionsForDisabledCalculationEngines.DefaultBehaviour, SaveOptionsForDisabledCalculationEngines.NoReset
@@ -352,6 +360,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             MyBase.SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.PasswordForOpening <> Nothing Then
                 Me.Workbook.Protect(Me.PasswordForOpening)
@@ -413,6 +422,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Set
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides Sub CreateWorkbook()
             'If Me._Workbook IsNot Nothing Then
             '    If Me.WorkbookFilePath IsNot Nothing Then Throw New UnauthorizedAccessException("Found another workbook opened and in access by current MS Excel instance which hasn't been opened/created by (this) code")
@@ -432,6 +442,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.EnableAutoRecover = False
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
             If file.Exists = False Then Throw New System.IO.FileNotFoundException("Workbook file must exist for loading from disk", file.FullName)
             If Me._Workbook Is Nothing Then
@@ -461,18 +472,22 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.EnableAutoRecover = False
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(data() As Byte)
             Throw New NotSupportedException()
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(data As IO.Stream)
             Throw New NotSupportedException()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub CleanupRangeNames()
             'do nothing - just needs to be done once, see Epplus implementation
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function SheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For Each s As Object In Me.Workbook.Sheets
@@ -489,6 +504,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function WorkSheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For Each ws As MsExcel.Worksheet In Me.Workbook.Worksheets
@@ -497,6 +513,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function ChartSheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For Each ws As MsExcel.Chart In Me.Workbook.Charts
@@ -505,6 +522,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(cell As ExcelCell) As T?
             Try
                 Return LookupCellValue(Of T)(cell)
@@ -513,6 +531,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Try
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T?
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Try
@@ -670,6 +689,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellFormattedText(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.LookupCellFormattedText(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex)
@@ -709,6 +729,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return CType(CType(CType(sheet.Range(cell.Address), MsExcel.Range).Style, MsExcel.Style).Locked, Boolean)
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupRowIndex(cell As ExcelCell) As Integer
             Return Me.LookupRowIndex(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell)
         End Function
@@ -718,6 +739,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return CType(sheet.Range(cell.Address), MsExcel.Range).Row - 1
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupColumnIndex(cell As ExcelCell) As Integer
             Return Me.LookupColumnIndex(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell)
         End Function
@@ -749,6 +771,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return CType(CType(sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).Locked, Boolean)
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function IsEmptyCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.IsEmptyCell(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex)
@@ -967,6 +990,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Range.Delete(If(shiftDirection = CellRemoveShiftDirection.ShiftCellsUp, MsExcel.XlDeleteShiftDirection.xlShiftUp, MsExcel.XlDeleteShiftDirection.xlShiftToLeft))
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub WriteCellValue(Of T)(cell As ExcelCell, value As T)
             Me.WriteCellValue(Of T)(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell, value)
         End Sub
@@ -976,6 +1000,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(sheet.Range(cell.Address), MsExcel.Range).Value = value
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub WriteCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer, value As T)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.WriteCellValue(Of T)(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex, value)
@@ -985,6 +1010,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(sheet.Cells(rowIndex + 1, columnIndex + 1), MsExcel.Range).Value = value
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.WriteCellFormula(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex, formula, immediatelyCalculateCellValue)
@@ -1003,12 +1029,14 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub UnprotectSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Unprotect()
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).EnableSelection = MsExcel.XlEnableSelection.xlNoRestrictions
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub ProtectSheet(sheetName As String, level As ProtectionLevel)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Select Case level
@@ -1032,11 +1060,13 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Select
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Sub RecalculateAllInternal()
             If Me.CalculationModuleDisabled Then Throw New InvalidOperationException("Calculation engine is disabled, requested recalculation failed")
             Me.Workbook.Application.CalculateFullRebuild()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub RecalculateSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Me.RecalculateSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
@@ -1074,6 +1104,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function IsProtectedSheet(sheetName As String) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.IsProtectedSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
@@ -1083,6 +1114,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return sheet.ProtectionMode OrElse sheet.ProtectContents OrElse sheet.ProtectScenarios OrElse sheet.ProtectDrawingObjects
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub RemoveSheet(sheetName As String)
             Me.RemoveSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
         End Sub
@@ -1123,6 +1155,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             ClearingRange.Clear()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AddSheet(sheetName As String, beforeSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim AddedSheet As Object
@@ -1136,6 +1169,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(AddedSheet, MsExcel.Worksheet).Name = sheetName
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
             Return CType(Me.Workbook.ActiveSheet, MsExcel.Worksheet).Name
         End Function
@@ -1166,11 +1200,13 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             sheet.Select()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub UnhideSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Visible = MsExcel.XlSheetVisibility.xlSheetVisible
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub HideSheet(sheetName As String, stronglyHide As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If stronglyHide Then
@@ -1180,6 +1216,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function IsHiddenSheet(sheetName As String) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.IsHiddenSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
@@ -1189,6 +1226,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return sheet.Visible <> MsExcel.XlSheetVisibility.xlSheetVisible
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim CellValue As Object = Me.LookupCellValueAsObject(sheetName, rowIndex, columnIndex)
@@ -1264,11 +1302,13 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub ClearSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells.Clear()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(MsExcelDataOperations) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")
@@ -1278,23 +1318,27 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet).Cells.Copy(TargetWorkSheet.Cells)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub SelectCell(cell As ExcelCell)
             If cell.SheetName = Nothing Then Throw New ArgumentException("Sheet name required", NameOf(cell))
             CType(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet).Cells(cell.RowIndex + 1, cell.ColumnIndex + 1), MsExcel.Range).Select()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property EngineName As String
             Get
                 Return "Microsoft Excel (2013 or higher)"
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property HasVbaProject As Boolean
             Get
                 Return Me.Workbook.HasVBProject
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property WorkbookFilePath As String
             Get
                 If Me.IsClosed Then
@@ -1307,6 +1351,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides Sub RemoveVbaProject()
             If Me.Workbook.HasVBProject = False Then Return 'Shortcut and circumvent following workaround
 
@@ -1340,6 +1385,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.Workbook.Saved = PreservedIsSavedState
         End Sub
 
+        ''' <inheritdoc/>
         Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet
@@ -1369,19 +1415,23 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Return Result
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return CType(LookupCell(sheetName, rowIndex, columnIndex).MergeCells, Boolean)
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             LookupCell(sheetName, rowIndex, columnIndex).MergeArea.UnMerge()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
             LookupRange(sheetName, fromRowIndex, fromColumnIndex, toRowIndex, toColumnIndex).Merge()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet
@@ -1398,6 +1448,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Sheet.Columns.AutoFit()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String, minimumWidth As Double)
             Dim LastColIndex As Integer = Me.LookupLastColumnIndex(sheetName)
             Dim Sheet As MsExcel.Worksheet
@@ -1419,6 +1470,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Next
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer)
             Dim Sheet As MsExcel.Worksheet
             Try
@@ -1434,6 +1486,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             CType(Sheet.Columns(columnIndex + 1), Range).AutoFit()
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String, columnIndex As Integer, minimumWidth As Double)
             Dim Sheet As MsExcel.Worksheet
             Try
@@ -1452,10 +1505,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             End If
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides Function ExportChartSheetImage(chartSheetName As String) As System.Drawing.Image
             Throw New NotImplementedException()
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
             Throw New NotImplementedException()
         End Function

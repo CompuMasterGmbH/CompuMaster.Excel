@@ -1,4 +1,4 @@
-﻿<CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
+<CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
 Public Class ExcelWorkbooksCollection
     Inherits ComChildObject(Of ExcelApplication, Object)
 
@@ -14,6 +14,7 @@ Public Class ExcelWorkbooksCollection
         Return wb
     End Function
 
+    ''' <inheritdoc/>
     Protected Overrides Sub OnDisposeChildren()
         For MyCounter As Integer = Workbooks.Count - 1 To 0 Step -1
             Workbooks(MyCounter).Dispose()

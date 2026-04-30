@@ -1,4 +1,4 @@
-﻿Public Class ExcelSheet
+Public Class ExcelSheet
     Inherits ComChildObject(Of ExcelSheetCollection, Object)
 
     Friend Sub New(parent As ExcelSheetCollection, sheetComObject As Object)
@@ -65,6 +65,7 @@
         InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, activePrinter, printToFile, collatePages, printToFileName, ignorePrintAreas)
     End Sub
 
+    ''' <inheritdoc/>
     Protected Overrides Sub OnDisposeChildren()
         For MyCounter As Integer = oRanges.Count - 1 To 0 Step -1
             oRanges(MyCounter).Dispose()

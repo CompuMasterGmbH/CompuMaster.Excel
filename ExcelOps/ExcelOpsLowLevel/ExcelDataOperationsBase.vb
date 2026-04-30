@@ -1,4 +1,4 @@
-﻿Option Explicit On
+Option Explicit On
 Option Strict On
 
 Imports System.IO
@@ -1759,6 +1759,7 @@ Namespace ExcelOps
             FirstUnlockedCellOrFirstCell = 4
         End Enum
 
+        ''' <inheritdoc/>
         Public Overrides Function ToString() As String
             Return "FileName=" & System.IO.Path.GetFileName(Me.FilePath) & "; ExcelEngine=" & Me.EngineName
         End Function

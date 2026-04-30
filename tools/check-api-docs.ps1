@@ -116,10 +116,6 @@ foreach ($file in $files) {
         $declaration = $line.Trim()
 
         if (-not (Is-Documented $docBlock)) {
-            if ($declaration -match "\bOverrides\b") {
-                continue
-            }
-
             $missingDocumentation.Add([pscustomobject]@{
                 File = $relativeFile
                 Line = $i + 1

@@ -1,4 +1,4 @@
-﻿Public Class ExcelWorkbook
+Public Class ExcelWorkbook
     Inherits ComChildObject(Of ExcelWorkbooksCollection, Object)
 
     Friend Sub New(parentItem As ExcelWorkbooksCollection, path As String)
@@ -44,14 +44,17 @@
         InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, activePrinter, printToFile, collatePages, printToFileName, ignorePrintAreas)
     End Sub
 
+    ''' <inheritdoc/>
     Protected Overrides Sub OnDisposeChildren()
         Sheets.Dispose()
     End Sub
 
+    ''' <inheritdoc/>
     Protected Overrides Sub OnClosing()
         InvokeMethod("Close")
     End Sub
 
+    ''' <inheritdoc/>
     Protected Overrides Sub OnClosed()
         Me.Parent.Workbooks.Remove(Me)
     End Sub

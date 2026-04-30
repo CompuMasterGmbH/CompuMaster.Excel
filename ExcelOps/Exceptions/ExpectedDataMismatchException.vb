@@ -1,4 +1,4 @@
-﻿Namespace ExcelOps
+Namespace ExcelOps
 #Disable Warning CA2237 ' Mark ISerializable types with serializable
 #Disable Warning CA1032 ' Implement standard exception constructors
     ''' <summary>
@@ -54,6 +54,7 @@
             Return Cell.Address(True)
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property Message As String
             Get
                 If Me.Table IsNot Nothing Then

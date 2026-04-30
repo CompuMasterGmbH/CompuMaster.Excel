@@ -21,12 +21,14 @@ Namespace ExcelOps
     Public Class FreeSpireXlsDataOperations
         Inherits ExcelDataOperationsBase
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
                 Return New ExcelEngineDefaultOptions(False, False)
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
             Get
                 Return True
@@ -170,12 +172,14 @@ Namespace ExcelOps
             MyBase.New(True, False, True, passwordForOpeningOnNextTime)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property EngineName As String
             Get
                 Return "FreeSpire.Xls"
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(Spire.Xls.Workbook) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")

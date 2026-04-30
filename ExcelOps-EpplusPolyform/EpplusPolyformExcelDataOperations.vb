@@ -22,12 +22,14 @@ Namespace ExcelOps
     Public Class EpplusPolyformExcelDataOperations
         Inherits ExcelDataOperationsBase
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property DefaultCalculationOptions As ExcelEngineDefaultOptions
             Get
                 Return New ExcelEngineDefaultOptions(False, False)
             End Get
         End Property
 
+        ''' <inheritdoc/>
         Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
             Get
                 Return True
@@ -180,6 +182,7 @@ Namespace ExcelOps
             ValidateLicenseContext(Me)
         End Sub
 
+        ''' <inheritdoc/>
         Public Overrides ReadOnly Property EngineName As String
             Get
                 Return "Epplus (Polyform license edition)"
@@ -307,6 +310,7 @@ Namespace ExcelOps
         End Function
 #Enable Warning CA1822 ' Member als statisch markieren
 
+        ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
             Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
         End Function

@@ -1,4 +1,4 @@
-﻿''' <summary>
+''' <summary>
 ''' A wrapper for an Excel application instance created with Interaction.CreateObject without requiring MS Office type libraries
 ''' </summary>
 Public Class ExcelApplication
@@ -105,10 +105,12 @@ Public Class ExcelApplication
 
     Private AdditionalDisposeChildrenList As New List(Of ComObjectBase)
 
+    ''' <inheritdoc/>
     Protected Overrides Sub OnDisposeChildren()
         If Me.Workbooks IsNot Nothing Then Me.Workbooks.Dispose()
     End Sub
 
+    ''' <inheritdoc/>
     Protected Overrides Sub onBeforeClosing()
         UserControl = True
     End Sub

@@ -1,4 +1,4 @@
-﻿Namespace ExcelOps
+Namespace ExcelOps
 
 #If NETFRAMEWORK Then
     <CodeAnalysis.SuppressMessage("Naming", "CA1708:Bezeichner dürfen sich nicht nur durch die Groß-/Kleinschreibung unterscheiden", Justification:=".NET 8 doesn't implement this rule any more, so might be applicable for .NET Framework only, but .NET 4.8 seems to handle everything correctly")>
@@ -217,6 +217,7 @@
             Return CType(x, ExcelRange) = CType(y, ExcelRange)
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function Equals(obj As Object) As Boolean
             Return Me = CType(obj, ExcelRange)
         End Function
@@ -234,6 +235,7 @@
             Return CType(obj, ExcelRange).GetHashCode
         End Function
 
+        ''' <inheritdoc/>
         Public Overrides Function GetHashCode() As Integer
             Return Me.ToString(True).GetHashCode
         End Function
