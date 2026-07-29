@@ -466,7 +466,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     End If
                 Catch ex As System.Runtime.InteropServices.COMException
                     If ex.ErrorCode = &H800A03EC Then
-                        Throw New FileCorruptedOrInvalidFileFormatException(file, ex)
+                        If IsPasswordProtectedFilePasswordMismatch(file) Then
+                            Throw New FilePasswordProtectedMismatchException(file, ex)
+                        Else
+                            Throw New FileCorruptedOrInvalidFileFormatException(file, ex)
+                        End If
                     Else
                         Throw
                     End If
@@ -489,6 +493,64 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Protected Overrides Sub LoadWorkbook(data As IO.Stream)
             Throw New NotSupportedException()
         End Sub
+
+        Private Shared Function IsPasswordProtectedFilePasswordMismatch(file As System.IO.FileInfo) As Boolean
+            Using stream As System.IO.FileStream = file.OpenRead()
+                Return IsOleCompoundDocument(stream) AndAlso ContainsOleDirectoryName(stream, "EncryptedPackage")
+            End Using
+        End Function
+
+        Private Shared Function IsOleCompoundDocument(stream As System.IO.Stream) As Boolean
+            Dim header = ReadHeader(stream, 8)
+            Dim oleHeader As Byte() = {&HD0, &HCF, &H11, &HE0, &HA1, &HB1, &H1A, &HE1}
+            Return ContainsBytes(header, oleHeader)
+        End Function
+
+        Private Shared Function ContainsOleDirectoryName(stream As System.IO.Stream, name As String) As Boolean
+            Dim originalPosition As Long? = Nothing
+            If stream.CanSeek Then originalPosition = stream.Position
+            Try
+                If stream.CanSeek Then stream.Position = 0
+                Using copy As New System.IO.MemoryStream()
+                    stream.CopyTo(copy)
+                    Dim data As Byte() = copy.ToArray()
+                    Dim asciiNeedle As Byte() = Encoding.ASCII.GetBytes(name)
+                    Dim unicodeNeedle As Byte() = Encoding.Unicode.GetBytes(name)
+                    Return ContainsBytes(data, asciiNeedle) OrElse ContainsBytes(data, unicodeNeedle)
+                End Using
+            Finally
+                If originalPosition.HasValue Then stream.Position = originalPosition.Value
+            End Try
+        End Function
+
+        Private Shared Function ReadHeader(stream As System.IO.Stream, count As Integer) As Byte()
+            Dim originalPosition As Long? = Nothing
+            If stream.CanSeek Then originalPosition = stream.Position
+            Try
+                If stream.CanSeek Then stream.Position = 0
+                Dim buffer(count - 1) As Byte
+                Dim read As Integer = stream.Read(buffer, 0, buffer.Length)
+                If read <> buffer.Length Then Array.Resize(buffer, read)
+                Return buffer
+            Finally
+                If originalPosition.HasValue Then stream.Position = originalPosition.Value
+            End Try
+        End Function
+
+        Private Shared Function ContainsBytes(data As Byte(), pattern As Byte()) As Boolean
+            If pattern.Length = 0 OrElse data.Length < pattern.Length Then Return False
+            For index As Integer = 0 To data.Length - pattern.Length
+                Dim found As Boolean = True
+                For patternIndex As Integer = 0 To pattern.Length - 1
+                    If data(index + patternIndex) <> pattern(patternIndex) Then
+                        found = False
+                        Exit For
+                    End If
+                Next
+                If found Then Return True
+            Next
+            Return False
+        End Function
 
         ''' <inheritdoc/>
         Public Overrides Sub CleanupRangeNames()
