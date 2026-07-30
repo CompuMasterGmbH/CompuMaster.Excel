@@ -407,15 +407,34 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
-            If Me.PasswordForOpening <> Nothing Then
-                Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file, Me.PasswordForOpening)
-            Else
-                Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file)
+            If IsUnsupportedBinaryXlsFile(file) Then
+                Throw New BinaryXlsFileNotSupportedException(file)
             End If
-            Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
+            If IsUnsupportedBinaryXlsbFile(file) Then
+                Throw New BinaryXlsbFileNotSupportedException(file)
+            End If
+            Try
+                If Me.PasswordForOpening <> Nothing Then
+                    Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file, Me.PasswordForOpening)
+                Else
+                    Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(file)
+                End If
+            Catch ex As Exception When IsUnsupportedBinaryXlsFile(file)
+                Throw New BinaryXlsFileNotSupportedException(file, ex)
+            Catch ex As Exception When IsPasswordProtectedFilePasswordMismatch(file)
+                Throw New FilePasswordProtectedMismatchException(file, ex)
+            End Try
+            If String.Equals(file.Extension, ".xlsb", StringComparison.OrdinalIgnoreCase) Then
+                Throw New BinaryXlsbFileNotSupportedException(file)
+            End If
+            Try
+                Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
-            'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+                'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
+                Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Catch ex As System.Xml.XmlException
+                Throw New FileCorruptedOrInvalidFileFormatException(file, ex)
+            End Try
         End Sub
 
         ''' <inheritdoc/>
@@ -428,16 +447,130 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub LoadWorkbook(data As System.IO.Stream)
-            If Me.PasswordForOpening <> Nothing Then
-                Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(data, Me.PasswordForOpening)
-            Else
-                Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(data)
+            If IsUnsupportedBinaryXlsData(data) Then
+                Throw New BinaryXlsFileNotSupportedException(CType(Nothing, String))
             End If
-            Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
+            If IsUnsupportedBinaryXlsbData(data) Then
+                Throw New BinaryXlsbFileNotSupportedException(CType(Nothing, String))
+            End If
+            Try
+                If Me.PasswordForOpening <> Nothing Then
+                    Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(data, Me.PasswordForOpening)
+                Else
+                    Me._WorkbookPackage = New CompuMaster.Epplus4.ExcelPackage(data)
+                End If
+            Catch ex As Exception When IsUnsupportedBinaryXlsData(data)
+                Throw New BinaryXlsFileNotSupportedException(CType(Nothing, String), ex)
+            Catch ex As Exception When IsPasswordProtectedDataPasswordMismatch(data)
+                Throw New FilePasswordProtectedMismatchException(CType(Nothing, String), ex)
+            End Try
+            Try
+                Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
-            'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+                'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
+                Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Catch ex As System.Xml.XmlException
+                Throw New FileCorruptedOrInvalidFileFormatException(CType(Nothing, String), ex)
+            End Try
         End Sub
+
+        Private Shared Function IsUnsupportedBinaryXlsFile(file As FileInfo) As Boolean
+            Using stream As FileStream = file.OpenRead()
+                Return IsUnsupportedBinaryXlsData(stream)
+            End Using
+        End Function
+
+        Private Shared Function IsUnsupportedBinaryXlsbFile(file As FileInfo) As Boolean
+            Using stream As FileStream = file.OpenRead()
+                Return IsUnsupportedBinaryXlsbData(stream)
+            End Using
+        End Function
+
+        Private Shared Function IsPasswordProtectedFilePasswordMismatch(file As FileInfo) As Boolean
+            Using stream As FileStream = file.OpenRead()
+                Return IsPasswordProtectedDataPasswordMismatch(stream)
+            End Using
+        End Function
+
+        Private Shared Function IsUnsupportedBinaryXlsData(stream As Stream) As Boolean
+            Return IsOleCompoundDocument(stream) AndAlso Not ContainsOleDirectoryName(stream, "EncryptedPackage")
+        End Function
+
+        Private Shared Function IsUnsupportedBinaryXlsbData(stream As Stream) As Boolean
+            Return ContainsZipEntryName(stream, "xl/workbook.bin")
+        End Function
+
+        Private Shared Function IsPasswordProtectedDataPasswordMismatch(stream As Stream) As Boolean
+            Return IsOleCompoundDocument(stream) AndAlso ContainsOleDirectoryName(stream, "EncryptedPackage")
+        End Function
+
+        Private Shared Function IsOleCompoundDocument(stream As Stream) As Boolean
+            Dim header = ReadHeader(stream, 8)
+            Dim oleHeader As Byte() = {&HD0, &HCF, &H11, &HE0, &HA1, &HB1, &H1A, &HE1}
+            Return ContainsBytes(header, oleHeader)
+        End Function
+
+        Private Shared Function ContainsOleDirectoryName(stream As Stream, name As String) As Boolean
+            Dim originalPosition As Long? = Nothing
+            If stream.CanSeek Then originalPosition = stream.Position
+            Try
+                If stream.CanSeek Then stream.Position = 0
+                Using copy As New MemoryStream()
+                    stream.CopyTo(copy)
+                    Dim data As Byte() = copy.ToArray()
+                    Dim asciiNeedle As Byte() = Encoding.ASCII.GetBytes(name)
+                    Dim unicodeNeedle As Byte() = Encoding.Unicode.GetBytes(name)
+                    Return ContainsBytes(data, asciiNeedle) OrElse ContainsBytes(data, unicodeNeedle)
+                End Using
+            Finally
+                If originalPosition.HasValue Then stream.Position = originalPosition.Value
+            End Try
+        End Function
+
+        Private Shared Function ContainsZipEntryName(stream As Stream, name As String) As Boolean
+            Dim originalPosition As Long? = Nothing
+            If stream.CanSeek Then originalPosition = stream.Position
+            Try
+                If stream.CanSeek Then stream.Position = 0
+                Using copy As New MemoryStream()
+                    stream.CopyTo(copy)
+                    Dim data As Byte() = copy.ToArray()
+                    Dim asciiNeedle As Byte() = Encoding.ASCII.GetBytes(name)
+                    Return ContainsBytes(data, asciiNeedle)
+                End Using
+            Finally
+                If originalPosition.HasValue Then stream.Position = originalPosition.Value
+            End Try
+        End Function
+
+        Private Shared Function ReadHeader(stream As Stream, count As Integer) As Byte()
+            Dim originalPosition As Long? = Nothing
+            If stream.CanSeek Then originalPosition = stream.Position
+            Try
+                If stream.CanSeek Then stream.Position = 0
+                Dim buffer(count - 1) As Byte
+                Dim read As Integer = stream.Read(buffer, 0, buffer.Length)
+                If read <> buffer.Length Then Array.Resize(buffer, read)
+                Return buffer
+            Finally
+                If originalPosition.HasValue Then stream.Position = originalPosition.Value
+            End Try
+        End Function
+
+        Private Shared Function ContainsBytes(data As Byte(), pattern As Byte()) As Boolean
+            If pattern.Length = 0 OrElse data.Length < pattern.Length Then Return False
+            For index As Integer = 0 To data.Length - pattern.Length
+                Dim found As Boolean = True
+                For patternIndex As Integer = 0 To pattern.Length - 1
+                    If data(index + patternIndex) <> pattern(patternIndex) Then
+                        found = False
+                        Exit For
+                    End If
+                Next
+                If found Then Return True
+            Next
+            Return False
+        End Function
 
         ''' <inheritdoc/>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell

@@ -2320,6 +2320,9 @@ Namespace ExcelOps
             End Select
         End Sub
 
+        ''' <summary>
+        ''' Defines which parts of an HTML document are emitted for worksheet export.
+        ''' </summary>
         Public Enum HtmlDocumentExportParts As Byte
             ''' <summary>
             ''' Creates a full HTML document with header tags, style tags, etc.

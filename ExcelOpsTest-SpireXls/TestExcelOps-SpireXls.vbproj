@@ -33,6 +33,12 @@
     <None Remove="test_data\SampleTable01.xlsx" />
     <None Remove="test_data\StructuralChangesFormulaReferences.xlsx" />
     <None Remove="test_data\VbaProject.xlsm" />
+    <None Remove="test_data\WorkbookNoPassword.xls" />
+    <None Remove="test_data\WorkbookNoPassword.xlsb" />
+    <None Remove="test_data\WorkbookNoPassword.xlsx" />
+    <None Remove="test_data\WorkbookPasswordProtected.xls" />
+    <None Remove="test_data\WorkbookPasswordProtected.xlsb" />
+    <None Remove="test_data\WorkbookPasswordProtected.xlsx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -88,6 +94,24 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="test_data\VbaProject.xlsm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\WorkbookNoPassword.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\WorkbookNoPassword.xlsb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\WorkbookNoPassword.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\WorkbookPasswordProtected.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\WorkbookPasswordProtected.xlsb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\WorkbookPasswordProtected.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

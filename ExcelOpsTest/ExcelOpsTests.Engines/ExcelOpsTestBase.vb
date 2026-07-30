@@ -366,26 +366,87 @@ Namespace ExcelOpsTests.Engines
 
         <Test> Public Sub PasswordForOpening()
             Dim Wb As T
-            'Testfile without password
-            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "ExcelOpsGrund01.xlsx")
+            'Testfile without password.
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookNoPassword.xlsx")
             Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
-            ClassicAssert.AreEqual("Grunddaten", Wb.SheetNames(0))
-
-            'Now, save it with password
-            Wb.PasswordForOpening = "dummy"
-            Dim NewXlsxTargetPath As String = TestEnvironment.FullPathOfDynTestFile(Wb, "PasswordProtectedFile.xlsx")
-            Wb.SaveAs(NewXlsxTargetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
-            'Console.WriteLine("Saved password protected file to: " & NewXlsxTargetPath)
+            ClassicAssert.Greater(Wb.SheetNames.Count, 0)
             Wb.Close()
 
-            'Try to reload it without password -> it must fail
-            ClassicAssert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
-            ClassicAssert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
-            ClassicAssert.Catch(Of Exception)(Sub() Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
+            Dim PasswordProtectedTestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookPasswordProtected.xlsx")
 
-            'Reload it with password -> now it must succeed
-            Wb = Me.CreateInstance(NewXlsxTargetPath, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "dummy"))
-            ClassicAssert.AreEqual("Grunddaten", Wb.SheetNames(0))
+            'Try to reload it without password -> it must fail.
+            ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
+            ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
+            ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
+            Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "test"))
+            ClassicAssert.Greater(Wb.SheetNames.Count, 0)
+            Wb.Close()
+
+        End Sub
+
+        <Test> Public Sub PasswordForOpeningXls()
+            Dim Wb As T
+            Dim PasswordProtectedTestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookPasswordProtected.xls")
+
+            Select Case Me.CreateInstanceUninitialized().EngineName
+                Case "Epplus 4 (LGPL)", "Epplus (Polyform license edition)"
+                    ClassicAssert.Throws(Of BinaryXlsFileNotSupportedException)(Sub() Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
+                    ClassicAssert.Throws(Of BinaryXlsFileNotSupportedException)(Sub() Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
+                    ClassicAssert.Throws(Of BinaryXlsFileNotSupportedException)(Sub() Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
+                    ClassicAssert.Throws(Of BinaryXlsFileNotSupportedException)(Sub() Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "test")))
+                Case Else
+                    ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
+                    ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
+                    ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
+                    Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "test"))
+                    ClassicAssert.Greater(Wb.SheetNames.Count, 0)
+                    Wb.Close()
+            End Select
+
+        End Sub
+
+        <Test> Public Sub PasswordForOpeningXlsb()
+            Dim Wb As T
+            'Testfile without password.
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookNoPassword.xlsb")
+
+            Select Case Me.CreateInstanceUninitialized().EngineName
+                Case "Epplus 4 (LGPL)", "Epplus (Polyform license edition)"
+                    ClassicAssert.Throws(Of BinaryXlsbFileNotSupportedException)(Sub() Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)))
+                Case Else
+                    Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+                    ClassicAssert.Greater(Wb.SheetNames.Count, 0)
+                    Wb.Close()
+            End Select
+
+            Dim PasswordProtectedTestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookPasswordProtected.xlsb")
+
+            'Try to reload it without password -> it must fail.
+            ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "something else")))
+            ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "")))
+            ClassicAssert.Catch(Of FilePasswordProtectedMismatchException)(Sub() Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, Nothing)))
+            Select Case Me.CreateInstanceUninitialized().EngineName
+                Case "Epplus 4 (LGPL)", "Epplus (Polyform license edition)"
+                    ClassicAssert.Throws(Of BinaryXlsbFileNotSupportedException)(Sub() Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "test")))
+                Case Else
+                    Wb = Me.CreateInstance(PasswordProtectedTestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly, "test"))
+                    ClassicAssert.Greater(Wb.SheetNames.Count, 0)
+                    Wb.Close()
+            End Select
+
+        End Sub
+
+        <Test> Public Sub BinaryXlsFileNotSupported()
+            Dim Wb As T
+            Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookNoPassword.xls")
+
+            Select Case Me.CreateInstanceUninitialized().EngineName
+                Case "Epplus 4 (LGPL)", "Epplus (Polyform license edition)"
+                    ClassicAssert.Throws(Of BinaryXlsFileNotSupportedException)(Sub() Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)))
+                Case Else
+                    Wb = Me.CreateInstance(TestFile, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+                    ClassicAssert.Greater(Wb.SheetNames.Count, 0)
+            End Select
         End Sub
 
         <Test> Public Sub CreateWorkbookWithoutFilePath()

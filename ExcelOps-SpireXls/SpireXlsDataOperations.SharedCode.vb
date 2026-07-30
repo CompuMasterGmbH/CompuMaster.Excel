@@ -339,7 +339,11 @@ Namespace ExcelOps
         Protected Overrides Sub LoadWorkbook(file As System.IO.FileInfo)
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.OpenPassword = Me.PasswordForOpening
-            Me.Workbook.LoadFromFile(file.FullName)
+            Try
+                Me.Workbook.LoadFromFile(file.FullName)
+            Catch ex As Exception When IsPasswordProtectedFilePasswordMismatch(ex)
+                Throw New FilePasswordProtectedMismatchException(file, ex)
+            End Try
         End Sub
 
         ''' <inheritdoc/>
@@ -354,8 +358,18 @@ Namespace ExcelOps
         Protected Overrides Sub LoadWorkbook(data As IO.Stream)
             Me._Workbook = New Spire.Xls.Workbook
             Me.Workbook.OpenPassword = Me.PasswordForOpening
-            Me.Workbook.LoadFromStream(data)
+            Try
+                Me.Workbook.LoadFromStream(data)
+            Catch ex As Exception When IsPasswordProtectedFilePasswordMismatch(ex)
+                Throw New FilePasswordProtectedMismatchException(CType(Nothing, String), ex)
+            End Try
         End Sub
+
+        Private Shared Function IsPasswordProtectedFilePasswordMismatch(ex As Exception) As Boolean
+            Return ex IsNot Nothing AndAlso ex.Message IsNot Nothing AndAlso
+                (ex.Message.IndexOf("Invalid password", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                 ex.Message.IndexOf("provide password", StringComparison.OrdinalIgnoreCase) >= 0)
+        End Function
 
         ''' <inheritdoc/>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell

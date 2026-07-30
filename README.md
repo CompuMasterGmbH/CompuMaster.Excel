@@ -230,3 +230,14 @@ leads to following output
 ```
 </details>
 
+## File format support by engine
+
+The following table summarizes the expected behavior when opening static test workbooks with or without a password. Password-protected test workbooks use `test` as the valid password.
+
+| Engine | `.xlsx` without password | `.xlsx` with missing/wrong password | `.xlsx` with correct password | `.xls` without password | `.xls` with missing/wrong password | `.xls` with correct password | `.xlsb` without password | `.xlsb` with missing/wrong password | `.xlsb` with correct password |
+|---|---|---|---|---|---|---|---|---|---|
+| Microsoft Excel | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported |
+| EPPlus 4 / Free FixCalcs | Supported | `FilePasswordProtectedMismatchException` | Supported | `BinaryXlsFileNotSupportedException` | `BinaryXlsFileNotSupportedException` | `BinaryXlsFileNotSupportedException` | `BinaryXlsbFileNotSupportedException` | `FilePasswordProtectedMismatchException` | `BinaryXlsbFileNotSupportedException` |
+| EPPlus Polyform | Supported | `FilePasswordProtectedMismatchException` | Supported | `BinaryXlsFileNotSupportedException` | `BinaryXlsFileNotSupportedException` | `BinaryXlsFileNotSupportedException` | `BinaryXlsbFileNotSupportedException` | `FilePasswordProtectedMismatchException` | `BinaryXlsbFileNotSupportedException` |
+| Spire.Xls | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported |
+| FreeSpire.Xls | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported |
