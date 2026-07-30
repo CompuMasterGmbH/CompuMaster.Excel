@@ -466,7 +466,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
                     End If
                 Catch ex As System.Runtime.InteropServices.COMException
                     If ex.ErrorCode = &H800A03EC Then
-                        If IsPasswordProtectedFilePasswordMismatch(file) Then
+                        If IsPasswordProtectedFilePasswordMismatch(file) OrElse IsPasswordProtectedFilePasswordMismatch(ex) Then
                             Throw New FilePasswordProtectedMismatchException(file, ex)
                         Else
                             Throw New FileCorruptedOrInvalidFileFormatException(file, ex)
@@ -498,6 +498,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Using stream As System.IO.FileStream = file.OpenRead()
                 Return IsOleCompoundDocument(stream) AndAlso ContainsOleDirectoryName(stream, "EncryptedPackage")
             End Using
+        End Function
+
+        Private Shared Function IsPasswordProtectedFilePasswordMismatch(ex As Exception) As Boolean
+            If ex Is Nothing OrElse ex.Message Is Nothing Then Return False
+            Return ex.Message.IndexOf("password", StringComparison.OrdinalIgnoreCase) >= 0 OrElse ex.Message.IndexOf("Kennwort", StringComparison.OrdinalIgnoreCase) >= 0
         End Function
 
         Private Shared Function IsOleCompoundDocument(stream As System.IO.Stream) As Boolean

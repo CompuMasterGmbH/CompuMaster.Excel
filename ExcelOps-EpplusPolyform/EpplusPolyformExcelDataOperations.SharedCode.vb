@@ -410,6 +410,9 @@ Namespace ExcelOps
             If IsUnsupportedBinaryXlsFile(file) Then
                 Throw New BinaryXlsFileNotSupportedException(file)
             End If
+            If IsUnsupportedBinaryXlsbFile(file) Then
+                Throw New BinaryXlsbFileNotSupportedException(file)
+            End If
             Try
                 If Me.PasswordForOpening <> Nothing Then
                     Me._WorkbookPackage = New OfficeOpenXml.ExcelPackage(file, Me.PasswordForOpening)
@@ -421,10 +424,17 @@ Namespace ExcelOps
             Catch ex As Exception When IsPasswordProtectedFilePasswordMismatch(file)
                 Throw New FilePasswordProtectedMismatchException(file, ex)
             End Try
-            Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
+            If String.Equals(file.Extension, ".xlsb", StringComparison.OrdinalIgnoreCase) Then
+                Throw New BinaryXlsbFileNotSupportedException(file)
+            End If
+            Try
+                Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
-            'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+                'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
+                Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Catch ex As System.Xml.XmlException
+                Throw New FileCorruptedOrInvalidFileFormatException(file, ex)
+            End Try
         End Sub
 
         ''' <inheritdoc/>
@@ -440,6 +450,9 @@ Namespace ExcelOps
             If IsUnsupportedBinaryXlsData(data) Then
                 Throw New BinaryXlsFileNotSupportedException(CType(Nothing, String))
             End If
+            If IsUnsupportedBinaryXlsbData(data) Then
+                Throw New BinaryXlsbFileNotSupportedException(CType(Nothing, String))
+            End If
             Try
                 If Me.PasswordForOpening <> Nothing Then
                     Me._WorkbookPackage = New OfficeOpenXml.ExcelPackage(data, Me.PasswordForOpening)
@@ -451,15 +464,25 @@ Namespace ExcelOps
             Catch ex As Exception When IsPasswordProtectedDataPasswordMismatch(data)
                 Throw New FilePasswordProtectedMismatchException(CType(Nothing, String), ex)
             End Try
-            Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
+            Try
+                Me._WorkbookPackage.Compatibility.IsWorksheets1Based = False
 
-            'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
-            Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+                'set workbook FullCalcOnLoad always to False since it's already triggered using property of Me.AutoCalculationOnLoad
+                Me.Workbook.FullCalcOnLoad = Me.AutoCalculationOnLoad 'unknown if executed after loading already completed or if it's a workbook setting with effect on opening as user in MS Excel, too
+            Catch ex As System.Xml.XmlException
+                Throw New FileCorruptedOrInvalidFileFormatException(CType(Nothing, String), ex)
+            End Try
         End Sub
 
         Private Shared Function IsUnsupportedBinaryXlsFile(file As FileInfo) As Boolean
             Using stream As FileStream = file.OpenRead()
                 Return IsUnsupportedBinaryXlsData(stream)
+            End Using
+        End Function
+
+        Private Shared Function IsUnsupportedBinaryXlsbFile(file As FileInfo) As Boolean
+            Using stream As FileStream = file.OpenRead()
+                Return IsUnsupportedBinaryXlsbData(stream)
             End Using
         End Function
 
@@ -471,6 +494,10 @@ Namespace ExcelOps
 
         Private Shared Function IsUnsupportedBinaryXlsData(stream As Stream) As Boolean
             Return IsOleCompoundDocument(stream) AndAlso Not ContainsOleDirectoryName(stream, "EncryptedPackage")
+        End Function
+
+        Private Shared Function IsUnsupportedBinaryXlsbData(stream As Stream) As Boolean
+            Return ContainsZipEntryName(stream, "xl/workbook.bin")
         End Function
 
         Private Shared Function IsPasswordProtectedDataPasswordMismatch(stream As Stream) As Boolean
@@ -494,6 +521,22 @@ Namespace ExcelOps
                     Dim asciiNeedle As Byte() = Encoding.ASCII.GetBytes(name)
                     Dim unicodeNeedle As Byte() = Encoding.Unicode.GetBytes(name)
                     Return ContainsBytes(data, asciiNeedle) OrElse ContainsBytes(data, unicodeNeedle)
+                End Using
+            Finally
+                If originalPosition.HasValue Then stream.Position = originalPosition.Value
+            End Try
+        End Function
+
+        Private Shared Function ContainsZipEntryName(stream As Stream, name As String) As Boolean
+            Dim originalPosition As Long? = Nothing
+            If stream.CanSeek Then originalPosition = stream.Position
+            Try
+                If stream.CanSeek Then stream.Position = 0
+                Using copy As New MemoryStream()
+                    stream.CopyTo(copy)
+                    Dim data As Byte() = copy.ToArray()
+                    Dim asciiNeedle As Byte() = Encoding.ASCII.GetBytes(name)
+                    Return ContainsBytes(data, asciiNeedle)
                 End Using
             Finally
                 If originalPosition.HasValue Then stream.Position = originalPosition.Value
