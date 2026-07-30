@@ -42,6 +42,14 @@
 - Static test workbooks belong in the appropriate `test_data` directories.
 - When repository copy/clone scripts generate or synchronize shared source or test files, include the resulting copied files in the same change.
 
+## Release Process
+
+- Create releases only from the repository's primary integration branch, currently `main` or `master`.
+- Do not create a release from a feature branch, ticket branch, Codex branch, or any other branch that has not been merged into the primary integration branch.
+- Before creating a release, ensure the pull request has been created, reviewed as required, merged into the primary integration branch, and the build-and-test workflow for that branch has completed successfully.
+- If the workflow is configured to run on pull requests and on pushes to the primary integration branch, wait for the relevant successful run after merge before creating the release.
+- If a release is requested before these prerequisites are met, create or update the pull request first and explicitly tell the user that the release must wait for the successful build-and-test pipeline on the primary integration branch.
+
 ## File Encoding and Line Endings
 
 - Save text files as UTF-8 with BOM and CRLF line endings, matching `.editorconfig`.
