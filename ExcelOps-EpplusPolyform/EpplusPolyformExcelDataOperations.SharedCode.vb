@@ -1179,9 +1179,16 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Sub RemoveVbaProject()
-            If Me.Workbook.VbaProject IsNot Nothing Then
-                Me.Workbook.VbaProject.Remove()
-            End If
+            Try
+                If Me.Workbook.VbaProject IsNot Nothing Then
+                    'known to fail with files saved by newer MS Excel versions
+                    'failure is not critical since next Me.Workbook.RemoveVBAProject() also does some cleanups to delete VBA from file
+                    '=> so we just ignore these errors here
+                    Me.Workbook.VbaProject.Remove()
+                End If
+            Catch ex As NullReferenceException
+            Catch ex As System.IO.EndOfStreamException
+            End Try
             Me.Workbook.RemoveVBAProject()
         End Sub
 
