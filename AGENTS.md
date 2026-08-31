@@ -50,6 +50,14 @@
 - If the workflow is configured to run on pull requests and on pushes to the primary integration branch, wait for the relevant successful run after merge before creating the release.
 - If a release is requested before these prerequisites are met, create or update the pull request first and explicitly tell the user that the release must wait for the successful build-and-test pipeline on the primary integration branch.
 
+## Branch Cleanup
+
+- After a pull request is merged, delete its feature, ticket, or Codex branch both locally and on the remote only after all associated pipelines have completed successfully, including pull-request checks, post-merge builds and tests, and any requested release or deployment workflows.
+- Keep branch references available while any associated workflow is queued, running, waiting for approval, or requires a retry. Premature deletion can cause checkout failures.
+- Before cleanup, verify that the exact branch tip is fully integrated into the primary integration branch and that no uncommitted work or unmerged commits would be lost.
+- Switch the primary worktree back to the primary integration branch and update it by fast-forward. Safely detach any other clean worktree that still has the feature branch checked out before deleting the branch. Do not remove worktrees or their files without authorization.
+- If a pipeline fails or its status is uncertain, retain the branch and report the outstanding condition instead of treating cleanup as complete.
+
 ## File Encoding and Line Endings
 
 - Save text files as UTF-8 with BOM and CRLF line endings, matching `.editorconfig`.
