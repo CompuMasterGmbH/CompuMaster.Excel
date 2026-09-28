@@ -73,7 +73,7 @@ Write-SourceCodeTargetFileWithReadonlyFlag -TargetFile $TargetFile -SourceCode $
 "TASK 4: INCLUDE LATEST LOGIC FROM XlsEpplusFixCalcsEdition edition into XlsEpplusPolyformEdition edition"
 
 # clone files XlsEpplusFixCalcsEdition => XlsEpplusPolyformEdition
-$SourceCode = (gc -Raw CM.Data.EpplusFixCalcsEdition/XlsEpplusFixCalcsEdition.vb) -replace 'Public Class XlsEpplusFixCalcsEdition', 'Public Class XlsEpplusPolyformEdition' -replace 'CompuMaster.Epplus4', 'OfficeOpenXml'
+$SourceCode = (gc -Raw CM.Data.EpplusFixCalcsEdition/XlsEpplusFixCalcsEdition.vb) -replace 'Public NotInheritable Class XlsEpplusFixCalcsEdition', 'Public NotInheritable Class XlsEpplusPolyformEdition' -replace 'CompuMaster.Epplus4', 'OfficeOpenXml'
 $TargetFile = 'CM.Data.EpplusPolyformEdition/XlsEpplusPolyformEdition.vb'
 Write-SourceCodeTargetFileWithReadonlyFlag -TargetFile $TargetFile -SourceCode $SourceCode -SetReadOnly
 
