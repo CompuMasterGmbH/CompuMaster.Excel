@@ -16,7 +16,7 @@ A bunch of libraries to access and edit Excel files with common interface for se
   * **CompuMaster.Excel.MicrosoftExcel**
     * Use Microsoft.Office.Interop.Excel v15 (MS Office 2013) or higher, for solutions targetting .NET Framework 4.8 or .NET 6 or higher
   * **CompuMaster.Excel.EpplusFreeFixCalcsEdition** 
-    * Use Epplus 4.5 with LGPL license for solutions targetting .NET Framework 4.8 or .NET 6 or higher
+    * Use EPPlus 4.5 with LGPL license for solutions targeting .NET Framework 4.8, .NET Standard 2.0, .NET 6, or .NET 8 and higher
   * **CompuMaster.Excel.EpplusPolyformEdition**
     * Use latest Epplus with Epplus Software's polyform license for solutions targetting .NET Framework 4.8 or .NET 6 or higher
   * **CompuMaster.Excel.FreeSpireXls**

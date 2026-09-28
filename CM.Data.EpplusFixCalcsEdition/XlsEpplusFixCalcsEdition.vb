@@ -26,7 +26,31 @@ Namespace CompuMaster.Data
     ''' 	[adminwezel]	30.05.2005	Created
     ''' </history>
     ''' -----------------------------------------------------------------------------
-    Public Class XlsEpplusFixCalcsEdition
+    Public NotInheritable Class XlsEpplusFixCalcsEdition
+
+        Private Sub New()
+        End Sub
+
+        Private Enum VariantType
+            Empty
+            [Object]
+            [Error]
+            [Boolean]
+            [Byte]
+            [Short]
+            [Integer]
+            [Long]
+            [Single]
+            [Double]
+            [Decimal]
+            [Currency]
+            [Date]
+            [String]
+            [Char]
+        End Enum
+
+        Private Shared ReadOnly CarriageReturn As String = Char.ConvertFromUtf32(13)
+        Private Shared ReadOnly LineFeed As String = Char.ConvertFromUtf32(10)
 
         Private Shared _ErrorLevel As Byte = 0
         ''' -----------------------------------------------------------------------------
@@ -341,14 +365,14 @@ Namespace CompuMaster.Data
                 For RowCounter As Integer = 0 To dataTable.Rows.Count - 1
                     For ColCounter As Integer = 0 To dataTable.Columns.Count - 1
                         Dim value As Object = dataTable.Rows(RowCounter)(ColCounter)
-                        If IsDBNull(value) Then
+                        If Convert.IsDBNull(value) Then
                             WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = Nothing
                         ElseIf value.GetType Is GetType(String) Then
                             'Excel requires line-breaks to be an LF character only, not a windows typical CR+LF
                             Dim cell As CompuMaster.Epplus4.ExcelRange = WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1)
                             If CType(value, String) <> "" Then
-                                value = Replace(CType(value, String), ControlChars.CrLf, ControlChars.Lf) 'Windows line breaks
-                                value = Replace(CType(value, String), ControlChars.Cr, ControlChars.Lf) 'Mac or Linux line break
+                                value = CType(value, String).Replace(CarriageReturn & LineFeed, LineFeed) 'Windows line breaks
+                                value = CType(value, String).Replace(CarriageReturn, LineFeed) 'Mac or Linux line break
                             End If
                             cell.Formula = ""
                             cell.Value = value
@@ -442,7 +466,6 @@ Namespace CompuMaster.Data
             Excel2007Macro = 2
         End Enum
 
-#Disable Warning CA1822 ' Mark members as static
         ''' <summary>
         ''' Updates or creates an Excel file, writes data into it, and saves the file to the output stream.
         ''' </summary>
@@ -451,8 +474,7 @@ Namespace CompuMaster.Data
         ''' <param name="dataTables">Some datatables to write into the workbook</param>
         ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
         ''' <remarks></remarks>
-        Public Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
-#Enable Warning CA1822 ' Mark members as static
+        Public Shared Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
             exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
             If exportWorkbook Is Nothing Then
@@ -468,39 +490,71 @@ Namespace CompuMaster.Data
             End If
         End Sub
 
-        '''' <summary>
-        '''' Directly send the new workbook file to the browser
-        '''' </summary>
-        '''' <param name="inputPath">An optional path to a template</param>
-        '''' <param name="dataTables">Some datatables to write into the workbook</param>
-        '''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
-        '''' <param name="httpContext">The current HTTP context</param>
-        '''' <remarks></remarks>
-        'Public Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Web.HttpContext, ByVal fileFormat As FileFormat)
-        '    If dataTables Is Nothing Then
-        '        Throw New ArgumentNullException("dataTables")
-        '    End If
+        ''' <summary>
+        ''' Writes a data table to an HTTP response.
+        ''' </summary>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="sheetName">The worksheet name.</param>
+        ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <param name="suggestedFileNameToBrowser">The file name suggested to the browser.</param>
+        Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal dataTable As System.Data.DataTable, ByVal sheetName As String, ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String)
+            WriteDataTableToXlsHttpResponse(String.Empty, New DataTable() {dataTable}, New String() {sheetName}, httpContext, fileFormat, suggestedFileNameToBrowser)
+        End Sub
 
-        '    Dim exportWorkbook As EpplusFreeOfficeOpenXml.ExcelPackage
-        '    exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
-        '    If exportWorkbook Is Nothing Then
-        '        Throw New Exception("Workbook creation failed - missing workbook")
-        '    End If
+        ''' <summary>
+        ''' Updates or creates a workbook and writes it to an HTTP response.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="dataTables">The data tables to write.</param>
+        ''' <param name="sheetNames">The worksheet names corresponding to <paramref name="dataTables"/>.</param>
+        ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat)
+            WriteDataTableToXlsHttpResponse(inputPath, dataTables, sheetNames, httpContext, fileFormat, String.Empty)
+        End Sub
 
-        '    ' compatible with Excel 97/2000/XP/2003/2007.
-        '    httpContext.Response.Clear()
-        '    httpContext.Response.ContentType = "application/vnd.ms-excel"
-        '    httpContext.Response.AddHeader("Content-Disposition", "attachment; filename=report.xls")
-        '    If fileFormat = FileFormat.Excel2007 Then
-        '        'Excel 2007 format
-        '        exportWorkbook.SaveAs(httpContext.Response.OutputStream)
-        '    ElseIf fileFormat = FileFormat.Excel2007Macro Then
-        '        'Excel 2007 format
-        '        exportWorkbook.SaveAs(httpContext.Response.OutputStream)
-        '    Else
-        '        Throw New NotSupportedException("value for fileformat is invalid")
-        '    End If
-        'End Sub
+        ''' <summary>
+        ''' Updates or creates a workbook and writes it to an HTTP response.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="dataTables">The data tables to write.</param>
+        ''' <param name="sheetNames">The worksheet names corresponding to <paramref name="dataTables"/>.</param>
+        ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <param name="suggestedFileNameToBrowser">The file name suggested to the browser. The default is <c>report.xlsx</c> or <c>report.xlsm</c>.</param>
+        ''' <exception cref="ArgumentNullException"><paramref name="dataTables"/> or <paramref name="httpContext"/> is <see langword="Nothing"/>.</exception>
+        ''' <exception cref="InvalidOperationException">The workbook could not be created.</exception>
+        ''' <exception cref="NotSupportedException"><paramref name="fileFormat"/> is not supported.</exception>
+        Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String)
+            If dataTables Is Nothing Then
+                Throw New ArgumentNullException(NameOf(dataTables))
+            End If
+            If httpContext Is Nothing Then
+                Throw New ArgumentNullException(NameOf(httpContext))
+            End If
+
+            Dim exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
+            If exportWorkbook Is Nothing Then
+                Throw New InvalidOperationException("Workbook creation failed - missing workbook")
+            End If
+
+            httpContext.Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            If String.IsNullOrEmpty(suggestedFileNameToBrowser) Then
+                If fileFormat = FileFormat.Excel2007Macro Then
+                    suggestedFileNameToBrowser = "report.xlsm"
+                Else
+                    suggestedFileNameToBrowser = "report.xlsx"
+                End If
+            End If
+            httpContext.Response.AddHeader("Content-Disposition", "attachment; filename=" & System.Net.WebUtility.UrlEncode(suggestedFileNameToBrowser))
+
+            If fileFormat = FileFormat.Excel2007 OrElse fileFormat = FileFormat.Excel2007Macro Then
+                exportWorkbook.SaveAs(httpContext.Response.OutputStream)
+            Else
+                Throw New NotSupportedException("value for fileformat is invalid")
+            End If
+        End Sub
 
         ''' -----------------------------------------------------------------------------
         ''' <summary>
@@ -661,7 +715,7 @@ Namespace CompuMaster.Data
 
             'Save the changed worksheet
             importWorkbook = LoadWorkbookFile(inputPath)
-            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = importWorkbook.Workbook.Worksheets(1)
+            Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = importWorkbook.Workbook.Worksheets(0)
 
             'Detect the column types which must be used
             Dim Result As DataTable = ReadDataTableFromXlsFileCreateDataTableSuggestion(Sheet, Sheet.Name, startReadingAtRowIndex, firstRowContainsColumnNames)
@@ -1060,8 +1114,8 @@ Namespace CompuMaster.Data
                         Case VariantType.String
                             Dim cellValue As String
                             cellValue = CType(sheet.Cells(rowCounter + 1, colCounter + 1).Value, String)
-                            If cellValue <> "" AndAlso System.Environment.NewLine <> ControlChars.Lf Then
-                                cellValue = Replace(cellValue, ControlChars.Lf, System.Environment.NewLine, , , CompareMethod.Binary)
+                            If cellValue <> "" AndAlso System.Environment.NewLine <> LineFeed Then
+                                cellValue = cellValue.Replace(LineFeed, System.Environment.NewLine)
                             End If
                             value = cellValue
                         Case VariantType.Date
