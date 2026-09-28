@@ -32,6 +32,26 @@ Namespace Data
         End Sub
 
         ''' <summary>
+        ''' Verifies that read and write defaults are immutable and validate row indexes.
+        ''' </summary>
+        <Test>
+        Public Sub OptionsAreImmutableAndValidated()
+            Dim readOptions = New CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadOptions(False, 2)
+            Dim writeOptions = New CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteOptions(1)
+
+            Assert.That(readOptions.FirstRowContainsColumnNames, [Is].False)
+            Assert.That(readOptions.StartReadingAtRowIndex, [Is].EqualTo(2))
+            Assert.That(writeOptions.ErrorLevel, [Is].EqualTo(1))
+            Assert.That(GetType(CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadOptions).GetProperty(NameOf(readOptions.FirstRowContainsColumnNames)).CanWrite, [Is].False)
+            Assert.That(GetType(CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadOptions).GetProperty(NameOf(readOptions.StartReadingAtRowIndex)).CanWrite, [Is].False)
+            Assert.That(GetType(CompuMaster.Data.XlsEpplusFixCalcsEdition.WriteOptions).GetProperty(NameOf(writeOptions.ErrorLevel)).CanWrite, [Is].False)
+            Assert.Throws(Of ArgumentOutOfRangeException)(
+                Sub()
+                    Dim ignored = New CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadOptions(True, -1)
+                End Sub)
+        End Sub
+
+        ''' <summary>
         ''' Verifies that the shared stream API creates a readable workbook.
         ''' </summary>
         <Test>
