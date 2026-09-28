@@ -43,12 +43,8 @@ using CompuMaster.Epplus4.Packaging.Ionic.Zlib;
 using CompuMaster.Epplus4.FormulaParsing;
 using CompuMaster.Epplus4.Encryption;
 using CompuMaster.Epplus4.Utils.CompundDocument;
-using System.Configuration;
 using CompuMaster.Epplus4.Compatibility;
 using System.Text;
-#if (Core)
-using Microsoft.Extensions.Configuration;
-#endif
 namespace CompuMaster.Epplus4
 {
     /// <summary>
@@ -528,23 +524,7 @@ namespace CompuMaster.Epplus4
             DoAdjustDrawings = true;
 #if (Core)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);  //Add Support for codepage 1252
-
-            var build = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", true,false);            
-            var c = build.Build();
-
-            //var v = c["EPPlus:ExcelPackage:Compatibility:IsWorksheets1Based"];
-#else
-            //var v = ConfigurationManager.AppSettings["EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based"];
 #endif
-            //if (v != null)
-            //{
-            //    if(Boolean.TryParse(v.ToLowerInvariant(), out bool value))
-            //    {
-            //        Compatibility.IsWorksheets1Based = value;
-            //    }
-            //}
             Compatibility.IsWorksheets1Based = false;
         }
         /// <summary>

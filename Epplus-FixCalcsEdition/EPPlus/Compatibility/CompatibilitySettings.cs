@@ -47,35 +47,10 @@ namespace CompuMaster.Epplus4.Compatibility
         {
             this.excelPackage = excelPackage;
         }
-#if Core
         /// <summary>
-        /// If the worksheets collection of the ExcelWorkbook class is 1 based.
-        /// This property can be set from appsettings.json file.
-        /// <code>
-        ///     {
-        ///       "EPPlus": {
-        ///         "ExcelPackage": {
-        ///           "Compatibility": {
-        ///             "IsWorksheets1Based": false //Default value is false
-        ///           }
-        ///         }
-        ///       }
-        ///     }
-        /// </code>
+        /// Gets or sets whether the worksheets collection of the <see cref="ExcelWorkbook"/> class is one-based.
+        /// The CompuMaster edition initializes this property to <see langword="false"/> on every target framework.
         /// </summary>
-#else
-        /// <summary>
-        /// If the worksheets collection of the ExcelWorkbook class is 1 based.
-        /// This property can be set from app.config file.
-        /// <code>
-        ///   <appSettings>
-        ///    <!--Set worksheets collection to start from zero.Default is 1, for backward compatibility reasons -->  
-        ///    <add key = "EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based" value="false" />
-        ///   </appSettings>
-        /// </code>
-        /// </summary>
-#endif
-
         public bool IsWorksheets1Based
         {
             get

@@ -65,5 +65,7 @@ using System.Security;
 //    [assembly: AssemblyVersion("4.6.2022.0110")]
 //    //[assembly: AssemblyFileVersion("4.5.0.0")]
 //#endif
+#if (!Core)
 [assembly: AllowPartiallyTrustedCallers]
+#endif
 //[assembly: AssemblyTitle("EPPlus CompuMaster-Edition")]

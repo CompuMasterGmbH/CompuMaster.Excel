@@ -2,7 +2,7 @@
 
 A library to write and read System.Data.DataTable or System.Data.DataSet
 
-Use Epplus 4.5 with LGPL license for solutions targetting .NET Framework 4.8 or .NET 6 or higher
+Use EPPlus 4.5 with LGPL license for solutions targeting .NET Framework 4.8, .NET Standard 2.0, .NET 6, or .NET 8 and higher.
 
 ## Quick & dirty engine comparison / why you shouldn't use MS Excel for all situations
 
