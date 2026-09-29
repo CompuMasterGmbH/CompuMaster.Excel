@@ -364,10 +364,10 @@ Namespace ExcelOps
         ''' <returns><see langword="True"/> if the workbook is recalculated after loading; otherwise, <see langword="False"/>.</returns>
         Public Property AutoCalculationOnLoad As Boolean
             Get
-                Return Me.LoadOptions.DisableInitialCalculation.Value
+                Return Not Me.LoadOptions.DisableInitialCalculation.Value
             End Get
             Set(value As Boolean)
-                Me.LoadOptions.DisableInitialCalculation = value
+                Me.LoadOptions.DisableInitialCalculation = Not value
             End Set
         End Property
 
