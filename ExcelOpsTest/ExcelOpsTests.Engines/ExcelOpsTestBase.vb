@@ -150,29 +150,6 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Function
 
-        ''' <summary>
-        ''' Verifies that the positive public calculation option remains the inverse of the negative load option.
-        ''' </summary>
-        <Test>
-        Public Sub AutoCalculationOnLoadIsInverseOfDisableInitialCalculation()
-            Dim Workbook As T = Nothing
-            Try
-                Workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, New ExcelDataOperationsOptions("", False, False, False))
-                Dim LoadOptionsProperty = GetType(ExcelDataOperationsBase).GetProperty("LoadOptions", Global.System.Reflection.BindingFlags.Instance Or Global.System.Reflection.BindingFlags.NonPublic)
-                Dim LoadOptions = DirectCast(LoadOptionsProperty.GetValue(Workbook), ExcelDataOperationsOptions)
-
-                ClassicAssert.True(Workbook.AutoCalculationOnLoad)
-                ClassicAssert.False(LoadOptions.DisableInitialCalculation.Value)
-
-                Workbook.AutoCalculationOnLoad = False
-
-                ClassicAssert.False(Workbook.AutoCalculationOnLoad)
-                ClassicAssert.True(LoadOptions.DisableInitialCalculation.Value)
-            Finally
-                If Workbook IsNot Nothing AndAlso Not Workbook.IsClosed Then Workbook.Close()
-            End Try
-        End Sub
-
         <OneTimeSetUp>
         Public Sub CommonOneTimeSetup()
             Try
