@@ -31,6 +31,58 @@ Namespace CompuMaster.Data
         Private Sub New()
         End Sub
 
+        ''' <summary>
+        ''' Defines immutable defaults for reading worksheet data.
+        ''' </summary>
+        Public NotInheritable Class ReadOptions
+
+            ''' <summary>
+            ''' Initializes read options.
+            ''' </summary>
+            ''' <param name="firstRowContainsColumnNames">Indicates whether the first imported row contains column names.</param>
+            ''' <param name="startReadingAtRowIndex">The zero-based row index at which reading starts.</param>
+            ''' <exception cref="ArgumentOutOfRangeException"><paramref name="startReadingAtRowIndex"/> is negative.</exception>
+            Public Sub New(Optional firstRowContainsColumnNames As Boolean = True, Optional startReadingAtRowIndex As Integer = 0)
+                If startReadingAtRowIndex < 0 Then
+                    Throw New ArgumentOutOfRangeException(NameOf(startReadingAtRowIndex), "The start row index must not be negative")
+                End If
+
+                Me.FirstRowContainsColumnNames = firstRowContainsColumnNames
+                Me.StartReadingAtRowIndex = startReadingAtRowIndex
+            End Sub
+
+            ''' <summary>
+            ''' Gets whether the first imported row contains column names.
+            ''' </summary>
+            Public ReadOnly Property FirstRowContainsColumnNames As Boolean
+
+            ''' <summary>
+            ''' Gets the zero-based row index at which reading starts.
+            ''' </summary>
+            Public ReadOnly Property StartReadingAtRowIndex As Integer
+
+        End Class
+
+        ''' <summary>
+        ''' Defines immutable defaults for writing worksheet data.
+        ''' </summary>
+        Public NotInheritable Class WriteOptions
+
+            ''' <summary>
+            ''' Initializes write options.
+            ''' </summary>
+            ''' <param name="errorLevel">The compatibility error level. Zero writes fallback error values; any other value throws for invalid values.</param>
+            Public Sub New(Optional errorLevel As Byte = 0)
+                Me.ErrorLevel = errorLevel
+            End Sub
+
+            ''' <summary>
+            ''' Gets the compatibility error level used while writing values.
+            ''' </summary>
+            Public ReadOnly Property ErrorLevel As Byte
+
+        End Class
+
         Private Enum VariantType
             Empty
             [Object]
@@ -73,6 +125,24 @@ Namespace CompuMaster.Data
             End Set
         End Property
 
+        Private Shared Function LegacyWriteOptions() As WriteOptions
+            Return New WriteOptions(ErrorLevel)
+        End Function
+
+        Private Shared Function RequiredReadOptions(ByVal options As ReadOptions) As ReadOptions
+            If options Is Nothing Then
+                Throw New ArgumentNullException(NameOf(options))
+            End If
+            Return options
+        End Function
+
+        Private Shared Function RequiredWriteOptions(ByVal options As WriteOptions) As WriteOptions
+            If options Is Nothing Then
+                Throw New ArgumentNullException(NameOf(options))
+            End If
+            Return options
+        End Function
+
         ''' -----------------------------------------------------------------------------
         ''' <summary>
         ''' Creates a new Excel file with data.
@@ -89,6 +159,16 @@ Namespace CompuMaster.Data
             WriteDataSetToXlsFile(Nothing, outputPath, dataSet)
         End Sub
 
+        ''' <summary>
+        ''' Creates a workbook from a data set using explicit write options.
+        ''' </summary>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataSet">The data set to write.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataSetToXlsFileWithOptions(ByVal outputPath As String, ByVal dataSet As System.Data.DataSet, ByVal options As WriteOptions)
+            WriteDataSetToXlsFileWithOptions(Nothing, outputPath, dataSet, options)
+        End Sub
+
         ''' -----------------------------------------------------------------------------
         ''' <summary>
         ''' Loads an Excel file, writes data into it, and saves the file again.
@@ -103,6 +183,18 @@ Namespace CompuMaster.Data
         ''' </history>
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataSetToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataSet As System.Data.DataSet)
+            WriteDataSetToXlsFileWithOptions(inputPath, outputPath, dataSet, LegacyWriteOptions())
+        End Sub
+
+        ''' <summary>
+        ''' Updates or creates a workbook from a data set using explicit write options.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataSet">The data set to write.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataSetToXlsFileWithOptions(ByVal inputPath As String, ByVal outputPath As String, ByVal dataSet As System.Data.DataSet, ByVal options As WriteOptions)
+            options = RequiredWriteOptions(options)
             Dim tables As New ArrayList
             Dim tableNames As New ArrayList
             If Not dataSet Is Nothing AndAlso dataSet.Tables.Count > 0 Then
@@ -111,7 +203,7 @@ Namespace CompuMaster.Data
                     tableNames.Add(dataSet.Tables(MyCounter).TableName)
                 Next
             End If
-            WriteDataTableToXlsFile(inputPath, outputPath, CType(tables.ToArray(GetType(DataTable)), DataTable()), CType(tableNames.ToArray(GetType(String)), String()))
+            WriteDataTableToXlsFileWithOptions(inputPath, outputPath, CType(tables.ToArray(GetType(DataTable)), DataTable()), CType(tableNames.ToArray(GetType(String)), String()), options)
         End Sub
 
         ''' -----------------------------------------------------------------------------
@@ -131,6 +223,16 @@ Namespace CompuMaster.Data
             WriteDataTableToXlsFile(Nothing, outputPath, dataTable, CType(Nothing, String))
         End Sub
 
+        ''' <summary>
+        ''' Creates a workbook from a data table using explicit write options.
+        ''' </summary>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsFileWithOptions(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal options As WriteOptions)
+            WriteDataTableToXlsFileWithOptions(Nothing, outputPath, dataTable, CType(Nothing, String), options)
+        End Sub
+
         ''' -----------------------------------------------------------------------------
         ''' <summary>
         ''' Creates a new Excel file with data.
@@ -145,12 +247,23 @@ Namespace CompuMaster.Data
         ''' </history>
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataTableToXlsFileAndFirstSheet(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable)
+            WriteDataTableToXlsFileAndFirstSheetWithOptions(outputPath, dataTable, LegacyWriteOptions())
+        End Sub
+
+        ''' <summary>
+        ''' Writes a data table to the first worksheet using explicit write options.
+        ''' </summary>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsFileAndFirstSheetWithOptions(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal options As WriteOptions)
+            options = RequiredWriteOptions(options)
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(outputPath), "The output filename is required")
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
-            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, Array.Empty(Of String)(), SpecialSheet.FirstSheet)
+            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, Array.Empty(Of String)(), SpecialSheet.FirstSheet, options)
             If exportWorkbook Is Nothing Then
                 Return
             End If
@@ -171,12 +284,23 @@ Namespace CompuMaster.Data
         ''' </history>
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataTableToXlsFileAndCurrentSheet(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable)
+            WriteDataTableToXlsFileAndCurrentSheetWithOptions(outputPath, dataTable, LegacyWriteOptions())
+        End Sub
+
+        ''' <summary>
+        ''' Writes a data table to the current worksheet using explicit write options.
+        ''' </summary>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsFileAndCurrentSheetWithOptions(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal options As WriteOptions)
+            options = RequiredWriteOptions(options)
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(outputPath), "The output filename is required")
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
-            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, Array.Empty(Of String)(), SpecialSheet.CurrentSheet)
+            exportWorkbook = OpenAndWriteDataTableToXlsFile(Nothing, New DataTable() {dataTable}, Array.Empty(Of String)(), SpecialSheet.CurrentSheet, options)
             If exportWorkbook Is Nothing Then
                 Return
             End If
@@ -200,6 +324,17 @@ Namespace CompuMaster.Data
             WriteDataTableToXlsFile(Nothing, outputPath, dataTable, sheetName)
         End Sub
 
+        ''' <summary>
+        ''' Creates a workbook with a named worksheet using explicit write options.
+        ''' </summary>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="sheetName">The worksheet name.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsFileWithOptions(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal sheetName As String, ByVal options As WriteOptions)
+            WriteDataTableToXlsFileWithOptions(Nothing, outputPath, dataTable, sheetName, options)
+        End Sub
+
         ''' -----------------------------------------------------------------------------
         ''' <summary>
         ''' Loads an Excel file, writes data into it, and saves the file again.
@@ -218,6 +353,18 @@ Namespace CompuMaster.Data
             WriteDataTableToXlsFile(inputPath, outputPath, New DataTable() {dataTable}, New String() {sheetName})
         End Sub
 
+        ''' <summary>
+        ''' Updates or creates a named worksheet using explicit write options.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="sheetName">The worksheet name.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsFileWithOptions(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal sheetName As String, ByVal options As WriteOptions)
+            WriteDataTableToXlsFileWithOptions(inputPath, outputPath, New DataTable() {dataTable}, New String() {sheetName}, options)
+        End Sub
+
         ''' -----------------------------------------------------------------------------
         ''' <summary>
         ''' Updates or creates an Excel file, writes data into it, and saves the file again.
@@ -233,12 +380,25 @@ Namespace CompuMaster.Data
         ''' </history>
         ''' -----------------------------------------------------------------------------
         Public Shared Sub WriteDataTableToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String())
+            WriteDataTableToXlsFileWithOptions(inputPath, outputPath, dataTables, sheetNames, LegacyWriteOptions())
+        End Sub
+
+        ''' <summary>
+        ''' Updates or creates worksheets using explicit write options.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="outputPath">The output file name.</param>
+        ''' <param name="dataTables">The data tables to write.</param>
+        ''' <param name="sheetNames">The corresponding worksheet names.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsFileWithOptions(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal options As WriteOptions)
+            options = RequiredWriteOptions(options)
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(outputPath), "The output filename is required")
             End If
 
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
-            exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
+            exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection, options)
             If exportWorkbook Is Nothing Then
                 Return
             End If
@@ -283,7 +443,7 @@ Namespace CompuMaster.Data
         ''' <param name="specialSheet">A special sheet</param>
         ''' <returns>A Workbook object</returns>
         ''' <remarks></remarks>
-        Private Shared Function OpenAndWriteDataTableToXlsFile(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetnames As String(), ByVal specialSheet As SpecialSheet) As CompuMaster.Epplus4.ExcelPackage
+        Private Shared Function OpenAndWriteDataTableToXlsFile(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetnames As String(), ByVal specialSheet As SpecialSheet, ByVal options As WriteOptions) As CompuMaster.Epplus4.ExcelPackage
 
             'Some parameter validation, first
             If dataTables Is Nothing Then
@@ -394,7 +554,7 @@ Namespace CompuMaster.Data
                                     End If
                                 End If
                             Catch ex As Exception
-                                If ErrorLevel = 0 Then
+                                If options.ErrorLevel = 0 Then
                                     WorkSheet.Cells(RowCounter + 1 + 1, ColCounter + 1).Value = Double.NaN
                                 Else
                                     Throw New InvalidOperationException("Error writing a date/time value """ & datevalue.ToString(System.Globalization.CultureInfo.InvariantCulture) & """ in row " & (RowCounter + 1), ex)
@@ -475,8 +635,22 @@ Namespace CompuMaster.Data
         ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
         ''' <remarks></remarks>
         Public Shared Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
+            WriteDataTableToXlsStreamWithOptions(inputPath, outputStream, dataTables, sheetNames, fileFormat, LegacyWriteOptions())
+        End Sub
+
+        ''' <summary>
+        ''' Updates or creates a workbook and writes it to a stream using explicit write options.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="outputStream">The opened output stream.</param>
+        ''' <param name="dataTables">The data tables to write.</param>
+        ''' <param name="sheetNames">The corresponding worksheet names.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsStreamWithOptions(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat, ByVal options As WriteOptions)
+            options = RequiredWriteOptions(options)
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
-            exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
+            exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection, options)
             If exportWorkbook Is Nothing Then
                 Return
             Else
@@ -503,6 +677,19 @@ Namespace CompuMaster.Data
         End Sub
 
         ''' <summary>
+        ''' Writes a data table to an HTTP response using explicit write options.
+        ''' </summary>
+        ''' <param name="dataTable">The data table to write.</param>
+        ''' <param name="sheetName">The worksheet name.</param>
+        ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <param name="suggestedFileNameToBrowser">The file name suggested to the browser.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsHttpResponseWithOptions(ByVal dataTable As System.Data.DataTable, ByVal sheetName As String, ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String, ByVal options As WriteOptions)
+            WriteDataTableToXlsHttpResponseWithOptions(String.Empty, New DataTable() {dataTable}, New String() {sheetName}, httpContext, fileFormat, suggestedFileNameToBrowser, options)
+        End Sub
+
+        ''' <summary>
         ''' Updates or creates a workbook and writes it to an HTTP response.
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template.</param>
@@ -512,6 +699,19 @@ Namespace CompuMaster.Data
         ''' <param name="fileFormat">The workbook file format.</param>
         Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat)
             WriteDataTableToXlsHttpResponse(inputPath, dataTables, sheetNames, httpContext, fileFormat, String.Empty)
+        End Sub
+
+        ''' <summary>
+        ''' Updates or creates a workbook and writes it to an HTTP response using explicit write options.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="dataTables">The data tables to write.</param>
+        ''' <param name="sheetNames">The corresponding worksheet names.</param>
+        ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <param name="options">The immutable write options.</param>
+        Public Shared Sub WriteDataTableToXlsHttpResponseWithOptions(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal options As WriteOptions)
+            WriteDataTableToXlsHttpResponseWithOptions(inputPath, dataTables, sheetNames, httpContext, fileFormat, String.Empty, options)
         End Sub
 
         ''' <summary>
@@ -527,6 +727,24 @@ Namespace CompuMaster.Data
         ''' <exception cref="InvalidOperationException">The workbook could not be created.</exception>
         ''' <exception cref="NotSupportedException"><paramref name="fileFormat"/> is not supported.</exception>
         Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String)
+            WriteDataTableToXlsHttpResponseWithOptions(inputPath, dataTables, sheetNames, httpContext, fileFormat, suggestedFileNameToBrowser, LegacyWriteOptions())
+        End Sub
+
+        ''' <summary>
+        ''' Updates or creates a workbook and writes it to an HTTP response using explicit write options.
+        ''' </summary>
+        ''' <param name="inputPath">An optional path to a template.</param>
+        ''' <param name="dataTables">The data tables to write.</param>
+        ''' <param name="sheetNames">The corresponding worksheet names.</param>
+        ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
+        ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <param name="suggestedFileNameToBrowser">The file name suggested to the browser.</param>
+        ''' <param name="options">The immutable write options.</param>
+        ''' <exception cref="ArgumentNullException"><paramref name="dataTables"/>, <paramref name="httpContext"/>, or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        ''' <exception cref="InvalidOperationException">The workbook could not be created.</exception>
+        ''' <exception cref="NotSupportedException"><paramref name="fileFormat"/> is not supported.</exception>
+        Public Shared Sub WriteDataTableToXlsHttpResponseWithOptions(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String, ByVal options As WriteOptions)
+            options = RequiredWriteOptions(options)
             If dataTables Is Nothing Then
                 Throw New ArgumentNullException(NameOf(dataTables))
             End If
@@ -534,7 +752,7 @@ Namespace CompuMaster.Data
                 Throw New ArgumentNullException(NameOf(httpContext))
             End If
 
-            Dim exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection)
+            Dim exportWorkbook = OpenAndWriteDataTableToXlsFile(inputPath, dataTables, sheetNames, SpecialSheet.AsDefinedInSheetNamesCollection, options)
             If exportWorkbook Is Nothing Then
                 Throw New InvalidOperationException("Workbook creation failed - missing workbook")
             End If
@@ -583,6 +801,21 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Function ReadDataSetFromXlsFile(ByVal inputPath As String, ByVal firstRowContainsColumnNames As Boolean) As DataSet
 
+            Return ReadDataSetFromXlsFileWithOptions(inputPath, New ReadOptions(firstRowContainsColumnNames))
+
+        End Function
+
+        ''' <summary>
+        ''' Reads all worksheets into a data set using explicit read options.
+        ''' </summary>
+        ''' <param name="inputPath">The workbook file name.</param>
+        ''' <param name="options">The immutable read options.</param>
+        ''' <returns>A data set containing one table for each worksheet.</returns>
+        ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        Public Shared Function ReadDataSetFromXlsFileWithOptions(ByVal inputPath As String, ByVal options As ReadOptions) As DataSet
+
+            options = RequiredReadOptions(options)
+
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             End If
@@ -598,10 +831,10 @@ Namespace CompuMaster.Data
                 Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = importWorkbook.Workbook.Worksheets(sheetCounter)
 
                 'Detect the column types which must be used
-                Dim sheetData As DataTable = ReadDataTableFromXlsFileCreateDataTableSuggestion(Sheet, Sheet.Name, 0, firstRowContainsColumnNames)
+                Dim sheetData As DataTable = ReadDataTableFromXlsFileCreateDataTableSuggestion(Sheet, Sheet.Name, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames)
 
                 'Read all data and put it into the datatable
-                ReadDataTableFromXlsFile(Sheet, 0, firstRowContainsColumnNames, sheetData)
+                ReadDataTableFromXlsFile(Sheet, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, sheetData)
 
                 Result.Tables.Add(sheetData)
             Next
@@ -648,6 +881,18 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String) As DataTable
             Return ReadDataTableFromXlsFile(inputPath, True)
+        End Function
+
+        ''' <summary>
+        ''' Reads the first worksheet into a data table using explicit read options.
+        ''' </summary>
+        ''' <param name="inputPath">The workbook file name.</param>
+        ''' <param name="options">The immutable read options.</param>
+        ''' <returns>A data table containing the worksheet data.</returns>
+        ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        Public Shared Function ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal options As ReadOptions) As DataTable
+            options = RequiredReadOptions(options)
+            Return ReadDataTableFromXlsFile(inputPath, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames)
         End Function
 
         ''' -----------------------------------------------------------------------------
@@ -754,6 +999,19 @@ Namespace CompuMaster.Data
         ''' -----------------------------------------------------------------------------
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String) As DataTable
             Return ReadDataTableFromXlsFile(inputPath, sheetName, True)
+        End Function
+
+        ''' <summary>
+        ''' Reads a named worksheet into a data table using explicit read options.
+        ''' </summary>
+        ''' <param name="inputPath">The workbook file name.</param>
+        ''' <param name="sheetName">The worksheet name, or <see langword="Nothing"/> for the first worksheet.</param>
+        ''' <param name="options">The immutable read options.</param>
+        ''' <returns>A data table containing the worksheet data.</returns>
+        ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        Public Shared Function ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal sheetName As String, ByVal options As ReadOptions) As DataTable
+            options = RequiredReadOptions(options)
+            Return ReadDataTableFromXlsFile(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames)
         End Function
 
         ''' -----------------------------------------------------------------------------
@@ -866,6 +1124,19 @@ Namespace CompuMaster.Data
         End Sub
 
         ''' <summary>
+        ''' Reads a named worksheet into an existing data table using explicit read options.
+        ''' </summary>
+        ''' <param name="inputPath">The workbook file name.</param>
+        ''' <param name="sheetName">The worksheet name, or <see langword="Nothing"/> for the first worksheet.</param>
+        ''' <param name="options">The immutable read options.</param>
+        ''' <param name="data">The data table to fill.</param>
+        ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/>, <paramref name="options"/>, or <paramref name="data"/> is <see langword="Nothing"/>.</exception>
+        Public Shared Sub ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal sheetName As String, ByVal options As ReadOptions, ByVal data As DataTable)
+            options = RequiredReadOptions(options)
+            ReadDataTableFromXlsFile(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, data)
+        End Sub
+
+        ''' <summary>
         ''' Reads the data from first sheet of an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
@@ -937,7 +1208,7 @@ Namespace CompuMaster.Data
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = LookupWorksheet(importWorkbook, sheetName)
 
             'Extend table's column set as long as columns count matches
-            ReadDataTableFromXlsFileExtendDataTableColumns(data, Sheet, 0, firstRowContainsColumnNames)
+            ReadDataTableFromXlsFileExtendDataTableColumns(data, Sheet, startReadingAtRowIndex, firstRowContainsColumnNames)
 
             'Read all data and put it into the datatable
             ReadDataTableFromXlsFile(Sheet, startReadingAtRowIndex, firstRowContainsColumnNames, data)

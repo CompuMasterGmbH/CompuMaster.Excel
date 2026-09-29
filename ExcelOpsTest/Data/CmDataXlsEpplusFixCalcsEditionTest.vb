@@ -7,6 +7,9 @@ Option Strict On
 
 Imports NUnit.Framework
 Imports NUnit.Framework.Legacy
+Imports System.Data
+Imports System.IO
+Imports System.Linq
 
 Namespace Data
 
@@ -17,6 +20,31 @@ Namespace Data
             Dim Path As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "SampleTable01.xlsx")
             Dim t = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataSetFromXlsFile(Path, False).Tables
             ClassicAssert.AreEqual(1, t.Count)
+        End Sub
+
+        ''' <summary>
+        ''' Verifies that the options overload applies the requested zero-based start row and header behavior.
+        ''' </summary>
+        <Test>
+        Public Sub ReadSingleWorksheetWithOptions()
+            Dim inputPath = TestEnvironment.FullPathOfDynTestFile(GetType(CmDataXlsEpplusFixCalcsEditionTest), "OptionsStartRow.xlsx")
+            Using workbook As New CompuMaster.Epplus4.ExcelPackage()
+                Dim worksheet = workbook.Workbook.Worksheets.Add("Data")
+                worksheet.Cells(1, 1).Value = "Introduction"
+                worksheet.Cells(2, 1).Value = "Name"
+                worksheet.Cells(2, 2).Value = "Value"
+                worksheet.Cells(3, 1).Value = "First"
+                worksheet.Cells(3, 2).Value = 42
+                workbook.SaveAs(New FileInfo(inputPath))
+            End Using
+            Dim options = New CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadOptions(True, 1)
+
+            Dim result = CompuMaster.Data.XlsEpplusFixCalcsEdition.ReadDataTableFromXlsFileWithOptions(inputPath, options)
+
+            Assert.That(result.Columns.Cast(Of DataColumn)().Select(Function(column) column.ColumnName), [Is].EqualTo(New String() {"Name", "Value"}))
+            Assert.That(result.Rows, Has.Count.EqualTo(1))
+            Assert.That(result.Rows(0)("Name"), [Is].EqualTo("First"))
+            Assert.That(result.Rows(0)("Value"), [Is].EqualTo(42))
         End Sub
 
         Private Function SampleTableDyn01() As System.Data.DataTable
