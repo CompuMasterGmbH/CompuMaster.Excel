@@ -66,6 +66,16 @@ function Test-Inheritdoc([System.Collections.Generic.List[string]] $docBlock) {
     return (($docBlock -join "`n") -match "<inheritdoc\s*/>")
 }
 
+function Get-DeclarationWithoutInlineAttributes([string] $line) {
+    $declaration = $line.Trim()
+
+    while ($declaration -match '^<[^>]+>\s*') {
+        $declaration = $declaration.Substring($matches[0].Length).TrimStart()
+    }
+
+    return $declaration
+}
+
 $files = New-Object System.Collections.Generic.List[string]
 foreach ($sourceRoot in $sourceRoots) {
     $rootPath = Join-Path $repoRoot $sourceRoot
@@ -80,7 +90,9 @@ foreach ($sourceRoot in $sourceRoots) {
     }
 }
 
-$declarationPattern = '^\s*(Public|Protected Friend|Protected)\s+(?:(?:Shared|Overrides|Overridable|MustOverride|MustInherit|NotInheritable|ReadOnly|WriteOnly|Partial|Default|Shadows)\s+)*(Class|Structure|Enum|Interface|Delegate|Event|Property|Function|Sub|Operator)\b'
+$memberModifierPattern = '(?:Shared|Overrides|Overridable|MustOverride|MustInherit|NotInheritable|ReadOnly|WriteOnly|Partial|Default|Shadows|Overloads|Widening|Narrowing|Custom|Async|Iterator|Declare|Auto|Ansi|Unicode)'
+$declarationPattern = "^(Public|Protected Friend|Protected)\s+(?:$memberModifierPattern\s+)*(Class|Structure|Enum|Interface|Module|Delegate|Event|Property|Function|Sub|Operator)\b"
+$fieldPattern = "^(Public|Protected Friend|Protected)\s+(?:(?:Shared|ReadOnly|Const|WithEvents|Shadows)\s+)*[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*(?:,|As\b|=)"
 
 $missingDocumentation = New-Object System.Collections.Generic.List[object]
 $overridesWithoutInheritdoc = New-Object System.Collections.Generic.List[object]
@@ -92,36 +104,35 @@ foreach ($file in $files) {
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
-        $trimmedLine = $line.Trim()
+        $declarationLine = Get-DeclarationWithoutInlineAttributes $line
 
         if ($insidePublicOrProtectedEnum) {
-            if ($trimmedLine -match "^End\s+Enum\b") {
+            if ($declarationLine -match "^End\s+Enum\b") {
                 $insidePublicOrProtectedEnum = $false
                 continue
             }
 
-            if ($trimmedLine.Length -gt 0 -and
-                -not $trimmedLine.StartsWith("'") -and
-                -not $trimmedLine.StartsWith("<") -and
-                $trimmedLine -match "^[A-Za-z_][A-Za-z0-9_]*\b") {
+            if ($declarationLine.Length -gt 0 -and
+                -not $declarationLine.StartsWith("'") -and
+                $declarationLine -match "^[A-Za-z_][A-Za-z0-9_]*\b") {
 
                 $docBlock = Get-XmlDocBlock $lines $i
                 if (-not (Is-Documented $docBlock)) {
                     $missingDocumentation.Add([pscustomobject]@{
                         File = $relativeFile
                         Line = $i + 1
-                        Declaration = $trimmedLine
+                        Declaration = $declarationLine
                     })
                 }
             }
         }
 
-        if ($line -notmatch $declarationPattern) {
+        if ($declarationLine -notmatch $declarationPattern -and $declarationLine -notmatch $fieldPattern) {
             continue
         }
 
         $docBlock = Get-XmlDocBlock $lines $i
-        $declaration = $line.Trim()
+        $declaration = $declarationLine
 
         if (-not (Is-Documented $docBlock)) {
             $missingDocumentation.Add([pscustomobject]@{

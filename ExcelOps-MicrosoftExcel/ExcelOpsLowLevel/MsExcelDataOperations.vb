@@ -1093,6 +1093,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.RecalculateSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
         End Sub
 
+        ''' <summary>
+        ''' Recalculates the specified Microsoft Excel worksheet.
+        ''' </summary>
+        ''' <param name="sheet">The worksheet to recalculate.</param>
         Public Overloads Sub RecalculateSheet(sheet As MsExcel.Worksheet)
             If Me.CalculationModuleDisabled Then Throw New InvalidOperationException("Calculation engine is disabled, requested recalculation failed")
             sheet.Calculate()
@@ -1135,6 +1139,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Me.RemoveSheet(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet))
         End Sub
 
+        ''' <summary>
+        ''' Removes the specified Microsoft Excel worksheet.
+        ''' </summary>
+        ''' <param name="sheet">The worksheet to remove.</param>
         Public Overloads Sub RemoveSheet(sheet As MsExcel.Worksheet)
             sheet.Delete()
         End Sub

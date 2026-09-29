@@ -428,8 +428,9 @@ Namespace ExcelOps
             End Get
         End Property
 
-
-
+        ''' <summary>
+        ''' Stores the workbook file path supplied during initialization or intended for the first save.
+        ''' </summary>
         <CodeAnalysis.SuppressMessage("Design", "CA1051:Sichtbare Instanzfelder nicht deklarieren")>
         Protected _FilePath As String
         ''' <summary>
@@ -666,6 +667,9 @@ Namespace ExcelOps
         ''' Defines how cached formula results are handled when saving with disabled calculation engines.
         ''' </summary>
         Public Enum SaveOptionsForDisabledCalculationEngines As Byte
+            ''' <summary>
+            ''' Uses the engine's default handling for cached formula results.
+            ''' </summary>
             <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)> DefaultBehaviour = 0
             ''' <summary>
             ''' No reset of cached calculation values of formula cells.
