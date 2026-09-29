@@ -12,6 +12,7 @@ Public Class ExcelWorkbooksCollection
     ''' <summary>
     ''' Gets or sets the workbook wrappers opened through this collection.
     ''' </summary>
+    ''' <value>The workbook collection.</value>
     Public Property Workbooks As New List(Of ExcelWorkbook)
 
     ''' <summary>

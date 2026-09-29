@@ -49,7 +49,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
-        ''' <param name="data"></param>
+        ''' <param name="data">Workbook data.</param>
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
@@ -58,7 +58,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
-        ''' <param name="data"></param>
+        ''' <param name="data">Workbook data.</param>
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
@@ -67,6 +67,12 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates or opens a workbook.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
+        ''' <param name="disableCalculationEngine">Whether the calculation engine is disabled.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
@@ -77,6 +83,11 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates or opens a workbook.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
@@ -87,6 +98,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates or opens a workbook.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
@@ -97,6 +112,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
@@ -107,6 +124,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
+        ''' <param name="disableCalculationEngine">Whether the calculation engine is disabled.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
@@ -117,6 +138,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
@@ -127,6 +151,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
@@ -137,6 +163,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
+        ''' <param name="disableCalculationEngine">Whether the calculation engine is disabled.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean, disableCalculationEngine As Boolean)
@@ -147,6 +177,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
@@ -157,7 +190,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
         Public Sub New(mode As OpenMode)
             MyBase.New(mode)
         End Sub
@@ -165,8 +198,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
-        ''' <param name="options"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
             MyBase.New(mode, options)
         End Sub
@@ -193,7 +226,7 @@ Namespace ExcelOps
         ''' The license context for Epplus (see its polyform license).
         ''' </summary>
         ''' <remarks>https://epplussoftware.com/en/LicenseOverview/LicenseFAQ</remarks>
-        ''' <returns></returns>
+        ''' <returns>The license context.</returns>
         Public Shared Property LicenseContext As EpplusLicenseActivator?
             Get
                 If OfficeOpenXml.ExcelPackage.License.LicenseType Is Nothing Then
@@ -242,12 +275,13 @@ Namespace ExcelOps
             ''' <summary>
             ''' Gets or sets the EPPlus license type to activate.
             ''' </summary>
+            ''' <value>The configured license type.</value>
             Public Property LicenseType As OfficeOpenXml.EPPlusLicenseType
 
             ''' <summary>
             ''' License key for commercial use or personal/organisation name for non-commercial use.
             ''' </summary>
-            ''' <returns></returns>
+            ''' <returns>The name.</returns>
             Public Property KeyOrName As String
 
         End Structure
@@ -262,6 +296,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the underlying EPPlus workbook package.
         ''' </summary>
+        ''' <value>The underlying workbook package.</value>
         Public ReadOnly Property WorkbookPackage As OfficeOpenXml.ExcelPackage
             Get
                 ValidateLicenseContext(Me)
@@ -275,6 +310,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the underlying EPPlus workbook.
         ''' </summary>
+        ''' <value>The underlying workbook instance.</value>
         Public ReadOnly Property Workbook As OfficeOpenXml.ExcelWorkbook
             Get
                 ValidateLicenseContext(Me)
@@ -304,8 +340,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Has the specified cell got a formula without a calculated value.
         ''' </summary>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <param name="cell">Target cell.</param>
+        ''' <returns><see langword="True"/> if a formula cell has no cached calculated value; otherwise, <see langword="False"/>.</returns>
         Public Function IsMissingCalculatedCellValueFromFormulaCell(cell As ExcelCell) As Boolean
             Return False
         End Function
@@ -313,10 +349,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' NOT AVAILABLE, but implemented as stub method for SharedCode compatibility: Has the specified cell got a formula without a calculated value.
         ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns><see langword="True"/> if a formula cell has no cached calculated value; otherwise, <see langword="False"/>.</returns>
         Public Function IsMissingCalculatedCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             Return False
         End Function
@@ -613,10 +649,12 @@ Namespace ExcelOps
             ''' <summary>
             ''' Gets the complete formula parser log.
             ''' </summary>
+            ''' <value>All messages recorded while processing the workbook.</value>
             Public ReadOnly Property FullLog As New System.Text.StringBuilder
             ''' <summary>
             ''' Gets formula parser exception messages.
             ''' </summary>
+            ''' <value>Exceptions recorded while processing the workbook.</value>
             Public ReadOnly Property ExceptionsLog As New System.Text.StringBuilder
 
             ''' <summary>

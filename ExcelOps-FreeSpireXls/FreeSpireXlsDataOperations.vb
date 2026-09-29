@@ -52,7 +52,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
-        ''' <param name="data"></param>
+        ''' <param name="data">Workbook data.</param>
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
@@ -61,7 +61,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
-        ''' <param name="data"></param>
+        ''' <param name="data">Workbook data.</param>
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
@@ -70,10 +70,12 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
-        ''' <param name="file"></param>
-        ''' <param name="mode"></param>
-        ''' <param name="[readOnly]"></param>
-        ''' <param name="passwordForOpening"></param>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
+        ''' <param name="disableCalculationEngine">Whether the calculation engine is disabled.</param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
@@ -87,10 +89,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
-        ''' <param name="file"></param>
-        ''' <param name="mode"></param>
-        ''' <param name="[readOnly]"></param>
-        ''' <param name="passwordForOpening"></param>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
@@ -136,7 +138,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
@@ -148,8 +150,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
-        ''' <param name="options"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
@@ -161,7 +163,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new excel engine instance (reminder: set System.Threading.Thread.CurrentThread.CurrentCulture as required BEFORE creating the instance to ensure the engine uses the correct culture later on).
         ''' </summary>
-        ''' <param name="passwordForOpeningOnNextTime"></param>
+        ''' <param name="passwordForOpeningOnNextTime">Password required the next time the workbook is opened, or <see langword="Nothing"/> to remove the password.</param>
         ''' <remarks>
         ''' Just as a reminder for usage of FreeSpire.Xls: the manufacturer has limited the feature set for this component. Free version is limited to 5 sheets per workbook and 150 rows per sheet. 
         ''' See https://www.e-iceblue.com/ for more details on limitations and licensing.
@@ -195,8 +197,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
         ''' </summary>
-        ''' <param name="fileName"></param>
-        ''' <param name="skipHiddenSheets"></param>
+        ''' <param name="fileName">Path of the target HTML file.</param>
+        ''' <param name="skipHiddenSheets">Whether hidden worksheets are excluded.</param>
         ''' <remarks>Supported on Windows platforms only, e.g. Linux is known to throw TypeInitializationExceptions</remarks>
         Public Sub SaveToHtml(fileName As String, skipHiddenSheets As Boolean)
             Me._Workbook.SaveToHtml(fileName, skipHiddenSheets)
@@ -205,8 +207,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
-        ''' <param name="worksheetName"></param>
-        ''' <param name="fileName"></param>
+        ''' <param name="worksheetName">Name of the worksheet.</param>
+        ''' <param name="fileName">Path of the target HTML file.</param>
         ''' <remarks>Supported on Windows platforms only, e.g. Linux is known to throw TypeInitializationExceptions</remarks>
         Public Sub SaveWorksheetToHtml(worksheetName As String, fileName As String)
             Dim Options As New Core.Spreadsheet.HTMLOptions With {
@@ -221,8 +223,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Saves worksheet to HTML (including images as HTML inline data).
         ''' </summary>
-        ''' <param name="worksheetName"></param>
-        ''' <param name="stream"></param>
+        ''' <param name="worksheetName">Name of the worksheet.</param>
+        ''' <param name="stream">Stream receiving the generated HTML.</param>
         ''' <remarks>Supported on Windows platforms only, e.g. Linux is known to throw TypeInitializationExceptions</remarks>
         Public Sub SaveWorksheetToHtml(worksheetName As String, stream As System.IO.Stream)
             Dim Options As New Core.Spreadsheet.HTMLOptions With {

@@ -41,6 +41,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets where workbook sheet navigation is rendered.
         ''' </summary>
+        ''' <value>The position of worksheet navigation in the generated HTML.</value>
         Public Property SheetNavigationPosition As SheetNavigationPositions = SheetNavigationPositions.Top
 
         ''' <summary>
@@ -60,32 +61,38 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets how workbook sheet navigation links behave.
         ''' </summary>
+        ''' <value>The interaction style used for worksheet navigation.</value>
         Public Property SheetNavigationActionStyle As SheetNavigationActionStyles = SheetNavigationActionStyles.JumpToAnchor
 
         ''' <summary>
         ''' Gets or sets whether workbook sheet navigation remains visible while scrolling.
         ''' </summary>
+        ''' <value>Whether worksheet navigation remains visible while scrolling.</value>
         Public Property SheetNavigationAlwaysVisible As Boolean = False
 
         ''' <summary>
         ''' Gets or sets whether hidden workbook sheets are exported.
         ''' </summary>
+        ''' <value>Whether hidden worksheets are exported.</value>
         Public Property ExportHiddenSheets As Boolean = False
 
         ''' <summary>
         ''' Gets or sets whether chart sheets are exported.
         ''' </summary>
+        ''' <value>Whether chart sheets are exported.</value>
         Public Property ExportChartSheets As Boolean = False
 
         ''' <summary>
         ''' Gets or sets whether worksheets are exported.
         ''' </summary>
+        ''' <value>Whether worksheets are exported.</value>
         Public Property ExportWorkSheets As Boolean = True
 
 
         ''' <summary>
         ''' Gets or sets the CSS class name used for workbook sheet navigation.
         ''' </summary>
+        ''' <value>The CSS class name assigned to worksheet navigation.</value>
         Public Property WorksheetsNavigationCssClassName As String = "cm-wb-subnav"
 
         ''' <summary>
@@ -127,6 +134,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets the ID attribute value used for the workbook sheet navigation element.
         ''' </summary>
+        ''' <value>The HTML element ID assigned to worksheet navigation.</value>
         Public Property WorksheetsNavigationTagId As String = "workbook-nav"
 
         ''' <summary>

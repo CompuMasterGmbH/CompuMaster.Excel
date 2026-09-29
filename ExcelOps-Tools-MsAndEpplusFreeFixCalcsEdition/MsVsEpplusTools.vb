@@ -14,7 +14,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Due to a bug in EPPlus, the Excel workbook file contains calculated caches which are used by MS Excel but never reset by MS Excel, for this it might be required to reset all cached calucations.
         ''' </summary>
-        ''' <param name="path"></param>
+        ''' <param name="path">Path of the workbook file.</param>
         Public Shared Sub OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path As String)
             OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path, Nothing)
         End Sub
@@ -22,7 +22,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Due to a bug in EPPlus, the Excel workbook file contains calculated caches which are used by MS Excel but never reset by MS Excel, for this it might be required to reset all cached calucations.
         ''' </summary>
-        ''' <param name="path"></param>
+        ''' <param name="path">Path of the workbook file.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         Public Shared Sub OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path As String, passwordForOpening As String)
             Dim Wb As New ExcelOps.EpplusFreeExcelDataOperations(path, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)) With {
                 .RecalculationRequired = True,
@@ -36,7 +37,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Execute a full recalculation.
         ''' </summary>
-        ''' <param name="path"></param>
+        ''' <param name="path">Path of the workbook file.</param>
         Public Shared Sub OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path As String)
             OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path, Nothing)
         End Sub
@@ -44,7 +45,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Execute a full recalculation.
         ''' </summary>
-        ''' <param name="path"></param>
+        ''' <param name="path">Path of the workbook file.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         Public Shared Sub OpenAndClearCalculationCachesAndRecalculateAndCloseExcelWorkbookWithMsExcel(path As String, passwordForOpening As String)
             OpenAndClearCalculatedValuesToForceRecalculationOnNextOpeningWithMsExcelAndCloseExcelWorkbookWithEpplus(path)
             Dim MSExcel As MsExcelCom.MsExcelApplicationWrapper = Nothing

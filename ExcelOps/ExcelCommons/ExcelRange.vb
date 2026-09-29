@@ -17,8 +17,8 @@
         ''' <summary>
         ''' Creates a range from two cells including all cells within the rectangle.
         ''' </summary>
-        ''' <param name="addressStart"></param>
-        ''' <param name="addressEnd"></param>
+        ''' <param name="addressStart">First cell address of the range.</param>
+        ''' <param name="addressEnd">Last cell address of the range.</param>
         Public Sub New(addressStart As ExcelCell, addressEnd As ExcelCell)
             If addressStart.SheetName <> addressEnd.SheetName Then Throw New ArgumentException("Cells must be member of the same sheet")
             If addressStart.DataType <> addressEnd.DataType Then
@@ -34,7 +34,7 @@
         ''' <summary>
         ''' Creates a range from a single cell.
         ''' </summary>
-        ''' <param name="singleCell"></param>
+        ''' <param name="singleCell">Cell defining the range.</param>
         Public Sub New(singleCell As ExcelCell)
             Me.New(singleCell, singleCell)
         End Sub
@@ -42,8 +42,8 @@
         ''' <summary>
         ''' Creates a range from an address string.
         ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="range"></param>
+        ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <param name="range">Target cell range.</param>
         Public Sub New(sheetName As String, range As String)
             Me.New(
                     New ExcelOps.ExcelCell(sheetName, Tools.LookupCellAddresFromRange(range, Tools.LookupCellAddresFromRangeMode.FirstCell), ExcelCell.ValueTypes.All),
@@ -54,19 +54,19 @@
         ''' <summary>
         ''' First cell of range.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The first cell of the range.</returns>
         Public Property AddressStart As ExcelCell
 
         ''' <summary>
         ''' Last cell of range.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The last cell of the range.</returns>
         Public Property AddressEnd As ExcelCell
 
         ''' <summary>
         ''' Name of sheet.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The worksheet name.</returns>
         Public Property SheetName As String
             Get
                 Return Me.AddressStart.SheetName
@@ -80,7 +80,7 @@
         ''' <summary>
         ''' An address like "A1:B2".
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The address without a worksheet name.</returns>
         Public Function LocalAddress() As String
             Return Me.ToString(False)
         End Function
@@ -88,7 +88,7 @@
         ''' <summary>
         ''' An address like "Sheetname!A1:B2".
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The address including the worksheet name.</returns>
         Public Function FullAddress() As String
             Return Me.ToString(True)
         End Function
@@ -101,8 +101,8 @@
         ''' <summary>
         ''' A string representation of the address.
         ''' </summary>
-        ''' <param name="inclusiveSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="inclusiveSheetName">Whether the returned address includes the worksheet name.</param>
+        ''' <returns>The formatted address.</returns>
         Public Overloads Function ToString(inclusiveSheetName As Boolean) As String
             Return Me.AddressStart.ToString(inclusiveSheetName) & ":" & Me.AddressEnd.ToString(False)
         End Function
@@ -110,7 +110,7 @@
         ''' <summary>
         ''' Number of cells in range.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The number of cells in the range.</returns>
         Public Function CellCount() As Integer
             Dim Cols As Integer = Me.AddressEnd.ColumnIndex - Me.AddressStart.ColumnIndex + 1
             Dim Rows As Integer = Me.AddressEnd.RowIndex - Me.AddressStart.RowIndex + 1
@@ -118,9 +118,9 @@
         End Function
 
         ''' <summary>
-        ''' An enumerator for a cells in this range.
+        ''' An enumerator for the cells in this range.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>An enumerator over the cells in the range.</returns>
         Public Function GetEnumerator() As IEnumerator(Of ExcelCell) Implements IEnumerable(Of ExcelCell).GetEnumerator
             Return New ExcelRangeEnum(Me.AddressStart, Me.AddressEnd)
         End Function
@@ -136,7 +136,7 @@
         ''' <summary>
         ''' An independent clone of this ExcelRange.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone() As ExcelRange
             Return New ExcelRange(Me.AddressStart.Clone, Me.AddressEnd.Clone)
         End Function
@@ -144,8 +144,8 @@
         ''' <summary>
         ''' Creates a clone and overrides the sheet name with the specified name.
         ''' </summary>
-        ''' <param name="overrideSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="overrideSheetName">Worksheet name to use instead of the name stored in the address, or <see langword="Nothing"/> to keep the stored name.</param>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone(overrideSheetName As String) As ExcelRange
             Dim Result As ExcelRange = Me.Clone
             Result.SheetName = overrideSheetName
@@ -155,8 +155,8 @@
         ''' <summary>
         ''' A cell of this range.
         ''' </summary>
-        ''' <param name="index"></param>
-        ''' <returns></returns>
+        ''' <param name="index">Zero-based index.</param>
+        ''' <returns>The requested cell.</returns>
         Public ReadOnly Property Cell(index As Integer) As ExcelCell
             Get
                 Return Me.Cell(index, CellAccessDirection.AllCellsOfARowThenNextRow)
@@ -166,9 +166,9 @@
         ''' <summary>
         ''' A cell of this range.
         ''' </summary>
-        ''' <param name="index"></param>
-        ''' <param name="accessDirection"></param>
-        ''' <returns></returns>
+        ''' <param name="index">Zero-based index.</param>
+        ''' <param name="accessDirection">Direction used to enumerate cells.</param>
+        ''' <returns>The requested cell.</returns>
         Public ReadOnly Property Cell(index As Integer, accessDirection As CellAccessDirection) As ExcelCell
             Get
                 If index < 0 OrElse index + 1 > Me.Count Then Throw New IndexOutOfRangeException("Invalid index: " & index.ToString)
@@ -208,7 +208,7 @@
         End Enum
 
         ''' <summary>
-        ''' An enumerator for a cells in this range.
+        ''' An enumerator for the cells in this range.
         ''' </summary>
         ''' <returns></returns>
         Private Function IEnumerable_GetEnumerator() As IEnumerator Implements IEnumerable.GetEnumerator
@@ -298,7 +298,7 @@
 #End Region
 
         ''' <summary>
-        ''' An enumerator for a cells in this range.
+        ''' An enumerator for the cells in this range.
         ''' </summary>
         <CodeAnalysis.SuppressMessage("Naming", "CA1711:Bezeichner dürfen kein falsches Suffix aufweisen", Justification:="<Ausstehend>")>
         Public Class ExcelRangeEnum
@@ -322,6 +322,7 @@
             ''' <summary>
             ''' Gets the current cell in the range.
             ''' </summary>
+            ''' <value>The current item.</value>
             Public ReadOnly Property Current As ExcelCell Implements IEnumerator(Of ExcelCell).Current
                 Get
                     Return AllCells(position)

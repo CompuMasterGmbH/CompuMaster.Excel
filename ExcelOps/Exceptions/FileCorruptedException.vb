@@ -47,6 +47,7 @@
         ''' <summary>
         ''' Gets or sets the affected file path.
         ''' </summary>
+        ''' <value>The workbook file path.</value>
         Public Property FilePath As String
 
     End Class

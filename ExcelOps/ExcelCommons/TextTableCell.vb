@@ -20,16 +20,19 @@
         ''' <summary>
         ''' The formula (or cell content as value).
         ''' </summary>
+        ''' <value>The cell content.</value>
         Public Property CellContent As String
 
         ''' <summary>
         ''' Sheet name containing the formula.
         ''' </summary>
+        ''' <value>The worksheet name.</value>
         Public Property SheetName As String
 
         ''' <summary>
         ''' Cell address containing the formula.
         ''' </summary>
+        ''' <value>The cell address.</value>
         Public Property Address As String
 
         ''' <inheritdoc/>
@@ -40,7 +43,7 @@
         ''' <summary>
         ''' The excel cell address representation of this text table cell.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The corresponding Excel cell address.</returns>
         Public Function ToExcelCellAddress() As Excel.ExcelOps.ExcelCell
             Return New Excel.ExcelOps.ExcelCell(Me.SheetName, Me.Address, Excel.ExcelOps.ExcelCell.ValueTypes.All)
         End Function

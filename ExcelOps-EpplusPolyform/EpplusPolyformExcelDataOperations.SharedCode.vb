@@ -376,6 +376,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the calculation engine log collector.
         ''' </summary>
+        ''' <value>Messages produced by the calculation engine.</value>
         Public ReadOnly Property CalculationEngineLog As New FormulaParserLogger
 
         ''' <inheritdoc/>

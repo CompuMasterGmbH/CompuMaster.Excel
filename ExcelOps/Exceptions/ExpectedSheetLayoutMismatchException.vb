@@ -31,6 +31,7 @@
         ''' <summary>
         ''' Gets or sets the worksheet name with the unexpected layout.
         ''' </summary>
+        ''' <value>The worksheet name.</value>
         Public Property TargetSheetName As String
 
     End Class

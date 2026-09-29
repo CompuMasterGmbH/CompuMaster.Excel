@@ -17,11 +17,13 @@ Public Class ExcelApplication
     ''' <summary>
     ''' Gets the workbook collection for this Excel application.
     ''' </summary>
+    ''' <value>The workbook collection.</value>
     Public ReadOnly Property Workbooks As ExcelWorkbooksCollection
 
     ''' <summary>
     ''' Gets or sets whether the Excel application is controlled by the user.
     ''' </summary>
+    ''' <value>Whether the Excel application is controlled by the user.</value>
     Public Property UserControl As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("UserControl")
@@ -34,6 +36,7 @@ Public Class ExcelApplication
     ''' <summary>
     ''' Gets or sets whether Excel displays alerts.
     ''' </summary>
+    ''' <value>Whether Excel displays alerts.</value>
     Public Property DisplayAlerts As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("DisplayAlerts")
@@ -46,6 +49,7 @@ Public Class ExcelApplication
     ''' <summary>
     ''' Gets or sets whether the Excel application window is visible.
     ''' </summary>
+    ''' <value>Whether the object is visible.</value>
     Public Property Visible As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("Visible")
@@ -58,6 +62,7 @@ Public Class ExcelApplication
     ''' <summary>
     ''' Gets or sets whether Excel accepts user interaction.
     ''' </summary>
+    ''' <value>Whether Excel accepts user interaction.</value>
     Public Property Interactive As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("Interactive")
@@ -70,6 +75,7 @@ Public Class ExcelApplication
     ''' <summary>
     ''' Gets or sets whether Excel updates the screen while operations run.
     ''' </summary>
+    ''' <value>Whether Excel updates the screen while operations run.</value>
     Public Property ScreenUpdating As Boolean
         Get
             Return InvokePropertyGet(Of Boolean)("ScreenUpdating")
@@ -102,7 +108,7 @@ Public Class ExcelApplication
     ''' <summary>
     ''' Configure security level for macros/VBA.
     ''' </summary>
-    ''' <returns></returns>
+    ''' <returns>The current Office automation security mode.</returns>
     Public Property AutomationSecurity As MsoAutomationSecurity
         Get
             Return CType(InvokePropertyGet(Of Integer)("AutomationSecurity"), MsoAutomationSecurity)

@@ -30,6 +30,7 @@
         ''' <summary>
         ''' Gets or sets the name of the disabled feature.
         ''' </summary>
+        ''' <value>The disabled feature name.</value>
         Public Property FeatureName As String
 
     End Class

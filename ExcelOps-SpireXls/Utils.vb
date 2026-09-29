@@ -8,7 +8,7 @@ Namespace ExcelOps
         ''' Returns the specified string or String.Empty when it is Nothing.
         ''' </summary>
         ''' <param name="value">The string to be validated</param>
-        ''' <returns></returns>
+        ''' <returns><see langword="True"/> if the value is a non-empty string; otherwise, <see langword="False"/>.</returns>
         <DebuggerHidden()> Public Shared Function StringNotEmptyOrNothing(ByVal value As String) As String
             If value = Nothing Then
                 Return Nothing

@@ -29,7 +29,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' A new instance of TextTable based on values of System.DataTable.
         ''' </summary>
-        ''' <param name="table"></param>
+        ''' <param name="table">Source table.</param>
         Public Sub New(table As DataTable)
             Me.New
             LoadFromDataTable(table)
@@ -261,6 +261,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the number of columns.
         ''' </summary>
+        ''' <value>The number of columns.</value>
         Public ReadOnly Property ColumnCount As Integer
             Get
                 Return Me.Table.Columns.Count
@@ -270,6 +271,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the number of rows.
         ''' </summary>
+        ''' <value>The number of rows.</value>
         Public ReadOnly Property RowCount As Integer
             Get
                 Return Me.Table.Rows.Count
@@ -311,9 +313,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
-        ''' <param name="comparisonTable"></param>
-        ''' <param name="diffType"></param>
-        ''' <returns></returns>
+        ''' <param name="comparisonTable">Table to compare with the current table.</param>
+        ''' <param name="diffType">Type of differences to include.</param>
+        ''' <param name="outputStyle">Controls how differences are represented in the result.</param>
+        ''' <returns>The detected cell differences.</returns>
         Public Function CompareCells(comparisonTable As TextTable, diffType As DiffMode, outputStyle As DiffCellOutput) As TextTable
             Return Me.CompareCells(comparisonTable, diffType, outputStyle, 0, 0, -1, -1)
         End Function
@@ -321,12 +324,12 @@ Namespace ExcelOps
         ''' <summary>
         ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
-        ''' <param name="comparisonTable"></param>
-        ''' <param name="diffType"></param>
-        ''' <param name="outputStyle"></param>
-        ''' <param name="comparisonStartRowIndex"></param>
-        ''' <param name="comparisonStartColumnIndex"></param>
-        ''' <returns></returns>
+        ''' <param name="comparisonTable">Table to compare with the current table.</param>
+        ''' <param name="diffType">Type of differences to include.</param>
+        ''' <param name="outputStyle">Controls how differences are represented in the result.</param>
+        ''' <param name="comparisonStartRowIndex">Zero-based starting row index in the comparison table.</param>
+        ''' <param name="comparisonStartColumnIndex">Zero-based starting column index in the comparison table.</param>
+        ''' <returns>The detected cell differences.</returns>
         Public Function CompareCells(comparisonTable As TextTable, diffType As DiffMode, outputStyle As DiffCellOutput, comparisonStartRowIndex As Integer, comparisonStartColumnIndex As Integer) As TextTable
             Return Me.CompareCells(comparisonTable, diffType, outputStyle, comparisonStartRowIndex, comparisonStartColumnIndex, -1, -1)
         End Function
@@ -334,14 +337,14 @@ Namespace ExcelOps
         ''' <summary>
         ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
-        ''' <param name="comparisonTable"></param>
-        ''' <param name="diffType"></param>
-        ''' <param name="outputStyle"></param>
-        ''' <param name="comparisonStartRowIndex"></param>
-        ''' <param name="comparisonStartColumnIndex"></param>
+        ''' <param name="comparisonTable">Table to compare with the current table.</param>
+        ''' <param name="diffType">Type of differences to include.</param>
+        ''' <param name="outputStyle">Controls how differences are represented in the result.</param>
+        ''' <param name="comparisonStartRowIndex">Zero-based starting row index in the comparison table.</param>
+        ''' <param name="comparisonStartColumnIndex">Zero-based starting column index in the comparison table.</param>
         ''' <param name="comparisonLastRowIndex">-1 for Auto</param>
         ''' <param name="comparisonLastColumnIndex">-1 for Auto</param>
-        ''' <returns></returns>
+        ''' <returns>The detected cell differences.</returns>
         Public Function CompareCells(comparisonTable As TextTable, diffType As DiffMode, outputStyle As DiffCellOutput, comparisonStartRowIndex As Integer, comparisonStartColumnIndex As Integer, comparisonLastRowIndex As Integer, comparisonLastColumnIndex As Integer) As TextTable
             If comparisonTable Is Nothing Then
                 Throw New ArgumentNullException(NameOf(comparisonTable))
@@ -444,9 +447,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
-        ''' <param name="comparisonTable"></param>
-        ''' <param name="diffType"></param>
-        ''' <returns></returns>
+        ''' <param name="comparisonTable">Table to compare with the current table.</param>
+        ''' <param name="diffType">Type of differences to include.</param>
+        ''' <returns>The detected cell differences.</returns>
         Public Function CompareCells(comparisonTable As TextTable, diffType As DiffMode) As List(Of String)
             Return Me.CompareCells(comparisonTable, diffType, 0, 0, -1, -1)
         End Function
@@ -454,11 +457,11 @@ Namespace ExcelOps
         ''' <summary>
         ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
-        ''' <param name="comparisonTable"></param>
-        ''' <param name="diffType"></param>
-        ''' <param name="comparisonStartRowIndex"></param>
-        ''' <param name="comparisonStartColumnIndex"></param>
-        ''' <returns></returns>
+        ''' <param name="comparisonTable">Table to compare with the current table.</param>
+        ''' <param name="diffType">Type of differences to include.</param>
+        ''' <param name="comparisonStartRowIndex">Zero-based starting row index in the comparison table.</param>
+        ''' <param name="comparisonStartColumnIndex">Zero-based starting column index in the comparison table.</param>
+        ''' <returns>The detected cell differences.</returns>
         Public Function CompareCells(comparisonTable As TextTable, diffType As DiffMode, comparisonStartRowIndex As Integer, comparisonStartColumnIndex As Integer) As List(Of String)
             Return Me.CompareCells(comparisonTable, diffType, comparisonStartRowIndex, comparisonStartColumnIndex, -1, -1)
         End Function
@@ -466,13 +469,13 @@ Namespace ExcelOps
         ''' <summary>
         ''' Compare this table with another table and create a new table with just filtered cells of this table.
         ''' </summary>
-        ''' <param name="comparisonTable"></param>
-        ''' <param name="diffType"></param>
-        ''' <param name="comparisonStartRowIndex"></param>
-        ''' <param name="comparisonStartColumnIndex"></param>
+        ''' <param name="comparisonTable">Table to compare with the current table.</param>
+        ''' <param name="diffType">Type of differences to include.</param>
+        ''' <param name="comparisonStartRowIndex">Zero-based starting row index in the comparison table.</param>
+        ''' <param name="comparisonStartColumnIndex">Zero-based starting column index in the comparison table.</param>
         ''' <param name="comparisonLastRowIndex">-1 for Auto</param>
         ''' <param name="comparisonLastColumnIndex">-1 for Auto</param>
-        ''' <returns></returns>
+        ''' <returns>The detected cell differences.</returns>
         Public Function CompareCells(comparisonTable As TextTable, diffType As DiffMode, comparisonStartRowIndex As Integer, comparisonStartColumnIndex As Integer, comparisonLastRowIndex As Integer, comparisonLastColumnIndex As Integer) As List(Of String)
             Dim Result As New List(Of String)
             For MyColCounter As Integer = comparisonStartColumnIndex To If(
@@ -579,7 +582,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a list with values of all filled cells.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <param name="basedOnSheetName">Worksheet name assigned to the resulting cells.</param>
+        ''' <returns>The table cells converted to Excel cell values.</returns>
         Public Function ToCellValuesList(basedOnSheetName As String) As List(Of TextTableCell)
             Dim Result As New List(Of TextTableCell)
             For MyRowCounter As Integer = 0 To Me.RowCount - 1

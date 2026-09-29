@@ -54,6 +54,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets the wrapped COM application helper.
         ''' </summary>
+        ''' <value>The underlying Excel application instance.</value>
         Public ReadOnly Property ComApp As CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
             Get
                 Return _ComApp
@@ -63,6 +64,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets the raw Excel application COM object.
         ''' </summary>
+        ''' <value>The underlying COM object.</value>
         Public ReadOnly Property ComObject As Object
             Get
                 Return _ComApp.ComObject
@@ -72,6 +74,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets the strongly typed Excel application COM object.
         ''' </summary>
+        ''' <value>The underlying strongly typed COM object.</value>
         Public ReadOnly Property ComObjectStronglyTyped As Application
             Get
                 Return _ComApp.ComObjectStronglyTyped
@@ -81,6 +84,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets the process id of the Excel application instance.
         ''' </summary>
+        ''' <value>The operating-system process ID of the Excel instance.</value>
         Public ReadOnly Property ExcelProcessId As Integer
             Get
                 Return _ComApp.ProcessId
@@ -99,7 +103,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' The Excel workbooks collection.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The workbook collection.</returns>
         Public ReadOnly Property Workbooks As MsExcelWorkbooksWrapper
             Get
                 If _Workbooks Is Nothing Then
@@ -129,6 +133,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets whether the Microsoft Excel application is closed.
         ''' </summary>
+        ''' <value>Whether the Excel application is closed.</value>
         Public ReadOnly Property IsClosed() As Boolean
             Get
                 Return _ComApp Is Nothing OrElse _ComApp.IsClosed
@@ -155,10 +160,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke function member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
         ''' <param name="values">Arguments for the called member, remember to use System.Reflection.Missing.Value where required</param>
-        ''' <returns></returns>
+        ''' <returns>The value returned by the COM member.</returns>
         Public Function InvokeFunction(Of T)(name As String, ParamArray values As Object()) As T
             Return _ComApp.InvokeFunction(Of T)(name, values)
         End Function
@@ -166,7 +171,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke method member.
         ''' </summary>
-        ''' <param name="name"></param>
+        ''' <param name="name">Name of the member.</param>
         ''' <param name="values">Arguments for the called member, remember to use System.Reflection.Missing.Value where required</param>
         Public Sub InvokeMethod(name As String, ParamArray values As Object())
             _ComApp.InvokeMethod(name, values)
@@ -175,9 +180,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke property-get member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
-        ''' <returns></returns>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
+        ''' <returns>The value returned by the COM member.</returns>
         Public Function InvokePropertyGet(Of T)(name As String) As T
             Return _ComApp.InvokePropertyGet(Of T)(name)
         End Function
@@ -185,10 +190,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke property-get member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
         ''' <param name="propertyArrayItem">Arguments for the called member, remember to use System.Reflection.Missing.Value where required</param>
-        ''' <returns></returns>
+        ''' <returns>The value returned by the COM member.</returns>
         Public Function InvokePropertyGet(Of T)(name As String, propertyArrayItem As Object) As T
             Return _ComApp.InvokePropertyGet(Of T)(name, propertyArrayItem)
         End Function
@@ -196,9 +201,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke property-set member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
-        ''' <param name="value"></param>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
+        ''' <param name="value">Value to assign.</param>
         Public Sub InvokePropertySet(Of T)(name As String, value As T)
             _ComApp.InvokePropertySet(Of T)(name, value)
         End Sub
@@ -206,8 +211,8 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke property-set member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
         ''' <param name="values">Arguments for the called member, remember to use System.Reflection.Missing.Value where required</param>
         Public Sub InvokePropertySet(Of T)(name As String, values As T())
             _ComApp.InvokePropertySet(Of T)(name, values)
@@ -216,9 +221,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke field-get member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
-        ''' <returns></returns>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
+        ''' <returns>The value returned by the COM member.</returns>
         Public Function InvokeFieldGet(Of T)(name As String) As T
             Return _ComApp.InvokeFieldGet(Of T)(name)
         End Function
@@ -226,9 +231,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke field-set member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
-        ''' <param name="value"></param>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
+        ''' <param name="value">Value to assign.</param>
         Public Sub InvokeFieldSet(Of T)(name As String, value As T)
             _ComApp.InvokeFieldSet(Of T)(name, value)
         End Sub
@@ -236,9 +241,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Invoke field-set member.
         ''' </summary>
-        ''' <typeparam name="T"></typeparam>
-        ''' <param name="name"></param>
-        ''' <param name="values"></param>
+        ''' <typeparam name="T">Type expected from the COM member.</typeparam>
+        ''' <param name="name">Name of the member.</param>
+        ''' <param name="values">Arguments supplied to the member invocation.</param>
         Public Sub InvokeFieldSet(Of T)(name As String, values As T())
             _ComApp.InvokeFieldSet(Of T)(name, values)
         End Sub
@@ -250,6 +255,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets whether this wrapper has been disposed.
         ''' </summary>
+        ''' <value>Whether the wrapper has been disposed.</value>
         Public ReadOnly Property IsDisposed As Boolean
             Get
                 Return disposedValue

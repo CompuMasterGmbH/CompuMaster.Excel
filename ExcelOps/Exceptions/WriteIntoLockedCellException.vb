@@ -41,18 +41,22 @@
         ''' <summary>
         ''' Gets or sets the worksheet name containing the locked cell.
         ''' </summary>
+        ''' <value>The worksheet name.</value>
         Public Property TargetSheetName As String
         ''' <summary>
         ''' Gets or sets the zero-based row index of the locked cell.
         ''' </summary>
+        ''' <value>The zero-based row index.</value>
         Public Property CellRowIndex As Integer
         ''' <summary>
         ''' Gets or sets the zero-based column index of the locked cell.
         ''' </summary>
+        ''' <value>The zero-based column index.</value>
         Public Property CellColumnIndex As Integer
         ''' <summary>
         ''' Gets or sets the template version that caused the cell to be treated as locked.
         ''' </summary>
+        ''' <value>The workbook template version.</value>
         Public Property TemplateVersion As Integer
 
         Private Shared Function CellAddress(targetSheetName As String, rowIndex As Integer, columnIndex As Integer) As String

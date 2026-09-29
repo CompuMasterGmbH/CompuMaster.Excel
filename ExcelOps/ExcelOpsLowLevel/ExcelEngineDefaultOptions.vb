@@ -24,11 +24,13 @@ Namespace ExcelOps
         ''' <summary>
         ''' If set to true, the calculation engine is disabled and no formula calculations are performed, if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
+        ''' <value>Whether the calculation engine is disabled.</value>
         Public ReadOnly Property DisableCalculationEngine As Boolean
 
         ''' <summary>
         ''' If set to true, no initial calculation of formulas is performed when opening/loading an Excel file, if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
+        ''' <value>Whether calculation is disabled while loading the workbook.</value>
         Public ReadOnly Property DisableInitialCalculation As Boolean
 
     End Class

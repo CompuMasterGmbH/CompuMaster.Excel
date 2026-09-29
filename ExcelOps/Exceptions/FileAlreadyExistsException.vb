@@ -21,6 +21,7 @@
         ''' <summary>
         ''' Gets or sets the path of the file that already exists.
         ''' </summary>
+        ''' <value>The workbook file path.</value>
         Public Property FilePath As String
 
     End Class

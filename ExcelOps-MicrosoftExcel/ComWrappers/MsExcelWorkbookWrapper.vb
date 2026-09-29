@@ -37,7 +37,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Workbook name.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The name.</returns>
         Public ReadOnly Property Name As String = Me.ComObjectStronglyTyped.Name
 
     End Class

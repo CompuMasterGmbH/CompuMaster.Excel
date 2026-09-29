@@ -36,6 +36,7 @@ Namespace ExcelOps
         ''' <param name="passwordForOpening">Password for opening protected Excel files</param>
         ''' <param name="disableInitialCalculation">If set to true, no initial calculation of formulas is performed when opening/loading an Excel file</param>
         ''' <param name="disableCalculationEngine">If set to true, the calculation engine is disabled and no formula calculations are performed</param>
+        ''' <param name="disableAutoCalculation">Whether automatic calculation is disabled.</param>
         Public Sub New(passwordForOpening As String, disableInitialCalculation As Boolean?, disableAutoCalculation As Boolean?, disableCalculationEngine As Boolean?)
             Me.PasswordForOpening = passwordForOpening
             Me.DisableInitialCalculation = disableInitialCalculation
@@ -49,6 +50,8 @@ Namespace ExcelOps
         ''' <param name="passwordForOpening">Password for opening protected Excel files</param>
         ''' <param name="disableInitialCalculation">If set to true, no initial calculation of formulas is performed when opening/loading an Excel file</param>
         ''' <param name="disableCalculationEngine">If set to true, the calculation engine is disabled and no formula calculations are performed</param>
+        ''' <param name="fileProtection">Workbook file protection settings.</param>
+        ''' <param name="disableAutoCalculation">Whether automatic calculation is disabled.</param>
         Public Sub New(fileProtection As WriteProtectionMode, passwordForOpening As String, disableInitialCalculation As Boolean?, disableAutoCalculation As Boolean?, disableCalculationEngine As Boolean?)
             Me.FileWriteProtection = fileProtection
             Me.PasswordForOpening = passwordForOpening
@@ -78,31 +81,34 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets whether write protection for this file prevents Save but still allows SaveAs.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The write-protection behavior.</returns>
         Public Property FileWriteProtection As WriteProtectionMode = WriteProtectionMode.ReadOnly
 
         ''' <summary>
         ''' If set to true, the calculation engine is disabled and no formula calculations are performed, if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
+        ''' <value>Whether the calculation engine is disabled.</value>
         ''' <remarks>Feature belongs to Excel engine</remarks>
         Public Property DisableCalculationEngine As Boolean?
 
         ''' <summary>
         ''' If set to true, no initial calculation of formulas is performed when opening/loading an Excel file, if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
+        ''' <value>Whether calculation is disabled while loading the workbook.</value>
         ''' <remarks>Feature belongs to Excel engine</remarks>
         Public Property DisableInitialCalculation As Boolean?
 
         ''' <summary>
         ''' If set to true, automatic calculation mode is disabled in workbook (only manual calculation mode is used), if set to false, the calculation engine is enabled, if null/not set, the engine default is used.
         ''' </summary>
+        ''' <value>Whether automatic workbook calculation is disabled.</value>
         ''' <remarks>Feature belongs to workbook and changes permanently the workbook's behaviour when saved</remarks>
         Public Property DisableAutoCalculationInWorkbook As Boolean?
 
         ''' <summary>
         ''' Password for opening protected Excel files.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The password required to open the workbook, or <see langword="Nothing"/> when no password is configured.</returns>
         Public Property PasswordForOpening As String
 
         ''' <summary>

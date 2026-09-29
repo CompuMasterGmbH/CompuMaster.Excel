@@ -85,26 +85,32 @@
         ''' <summary>
         ''' Gets or sets the optional table snapshot appended to the exception message.
         ''' </summary>
+        ''' <value>The underlying data table.</value>
         Public Property Table As TextTable
         ''' <summary>
         ''' Gets or sets the worksheet name containing the mismatch.
         ''' </summary>
+        ''' <value>The worksheet name.</value>
         Public Property TargetSheetName As String
         ''' <summary>
         ''' Gets or sets the zero-based row index of the mismatching cell.
         ''' </summary>
+        ''' <value>The zero-based row index.</value>
         Public Property CellRowIndex As Integer
         ''' <summary>
         ''' Gets or sets the zero-based column index of the mismatching cell.
         ''' </summary>
+        ''' <value>The zero-based column index.</value>
         Public Property CellColumnIndex As Integer
         ''' <summary>
         ''' Gets or sets the expected cell value.
         ''' </summary>
+        ''' <value>The expected value.</value>
         Public Property ExpectedValue As String
         ''' <summary>
         ''' Gets or sets the found cell value.
         ''' </summary>
+        ''' <value>The value found in the cell.</value>
         Public Property FoundValue As String
 
         Private Shared Function CellAddress(targetSheetName As String, rowIndex As Integer, columnIndex As Integer) As String

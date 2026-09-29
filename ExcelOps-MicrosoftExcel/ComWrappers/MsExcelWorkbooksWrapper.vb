@@ -21,12 +21,13 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Gets the parent Excel application wrapper.
         ''' </summary>
+        ''' <value>The parent application wrapper.</value>
         Public ReadOnly Property ParentWrapper As MsExcelApplicationWrapper
 
         ''' <summary>
         ''' Creates a new workbook.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The workbook wrapper.</returns>
         Public Function Add() As MsExcelWorkbookWrapper
             Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Add())
         End Function
@@ -34,10 +35,10 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Opens an existing workbook.
         ''' </summary>
-        ''' <param name="path"></param>
-        ''' <param name="[readOnly]"></param>
-        ''' <param name="passwordForOpening"></param>
-        ''' <returns></returns>
+        ''' <param name="path">Path of the workbook file.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <returns>The workbook wrapper.</returns>
         Public Function Open(path As String, [readOnly] As Boolean, passwordForOpening As String) As MsExcelWorkbookWrapper
             Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Open(path, False, [readOnly], Nothing, If(passwordForOpening = Nothing, Nothing, passwordForOpening)))
         End Function
@@ -63,7 +64,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' COM wrapper for Workbook.
         ''' </summary>
         ''' <param name="index1Based">one-based index</param>
-        ''' <returns></returns>
+        ''' <returns>The workbook wrapper.</returns>
         Public Function Workbook(index1Based As Integer) As MsExcelWorkbookWrapper
             Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Item(index1Based))
         End Function
@@ -77,7 +78,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Count of opened workbooks.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The number of open workbooks.</returns>
         Public ReadOnly Property Count() As Integer
             Get
                 If Me.ComObject Is Nothing Then

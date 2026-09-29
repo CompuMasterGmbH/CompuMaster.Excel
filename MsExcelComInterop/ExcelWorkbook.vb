@@ -13,16 +13,19 @@ Public Class ExcelWorkbook
     ''' <summary>
     ''' Gets the worksheet collection of this workbook.
     ''' </summary>
+    ''' <value>The worksheet collection.</value>
     Public ReadOnly Property Sheets() As ExcelSheetCollection
 
     ''' <summary>
     ''' Gets the workbook file path.
     ''' </summary>
+    ''' <value>The workbook file path.</value>
     Public ReadOnly Property FilePath As String
 
     ''' <summary>
     ''' Gets the workbook name.
     ''' </summary>
+    ''' <value>The name.</value>
     Public ReadOnly Property Name As String
         Get
             Return InvokePropertyGet(Of String)("Name")

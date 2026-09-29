@@ -69,9 +69,9 @@
         ''' <summary>
         ''' Translate row/column index to a local Excel sheet address without sheetname (e.g. 'A1').
         ''' </summary>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns>The cell address.</returns>
         <Obsolete("Use LocalCellAddress instead"), System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Shared ReadOnly Property Address(rowIndex As Integer, columnIndex As Integer) As String
             Get
@@ -82,9 +82,9 @@
         ''' <summary>
         ''' Translate row/column index to a local Excel sheet address without sheetname (e.g. 'A1').
         ''' </summary>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns>The cell address.</returns>
         Public Shared Function LocalCellAddress(rowIndex As Integer, columnIndex As Integer) As String
             If rowIndex < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rowIndex), "Must be positive or zero")
             If columnIndex < 0 Then Throw New ArgumentOutOfRangeException(NameOf(columnIndex), "Must be positive or zero")
@@ -94,7 +94,7 @@
         ''' <summary>
         ''' Validates that the sheet name and cell address are assigned and valid.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns><see langword="True"/> if the address is valid; otherwise, <see langword="False"/>.</returns>
         Public Function ValidateFullCellAddressInclSheetName() As Boolean
             Return Me.SheetName <> Nothing AndAlso Me.Address <> Nothing And IsValidAddress(Me.Address, True)
         End Function
@@ -132,14 +132,14 @@
         ''' <summary>
         ''' Name of sheet.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The worksheet name.</returns>
         Public Property SheetName As String
 
         Private _Address As String
         ''' <summary>
         ''' An Excel cell address like A1 (without absolute $-addressing like $A$1).
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The cell address.</returns>
         Public Property Address As String
             Get
                 Return _Address
@@ -153,8 +153,8 @@
         ''' <summary>
         ''' An Excel cell address like A1 (without absolute $-addressing like $A$1), optionally inclusive sheet name.
         ''' </summary>
-        ''' <param name="inclusiveSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="inclusiveSheetName">Whether the returned address includes the worksheet name.</param>
+        ''' <returns>The cell address.</returns>
         Public ReadOnly Property Address(inclusiveSheetName As Boolean) As String
             Get
                 Dim Result As String = Nothing
@@ -172,7 +172,7 @@
         ''' <param name="inclusiveSheetName">Add sheetname to address</param>
         ''' <param name="useAbsoluteAddressingForColumn">Use $-addressing for column like $A</param>
         ''' <param name="useAbsoluteAddressingForRow">Use $-addressing for row like $1</param>
-        ''' <returns></returns>
+        ''' <returns>The cell address.</returns>
         Public ReadOnly Property Address(inclusiveSheetName As Boolean, useAbsoluteAddressingForColumn As Boolean, useAbsoluteAddressingForRow As Boolean) As String
             Get
                 Dim Result As String = Nothing
@@ -188,8 +188,8 @@
         ''' <summary>
         ''' An Excel cell address like R1C1, optionally inclusive sheet name.
         ''' </summary>
-        ''' <param name="inclusiveSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="inclusiveSheetName">Whether the returned address includes the worksheet name.</param>
+        ''' <returns>The cell address in R1C1 notation.</returns>
         Public ReadOnly Property AddressR1C1(inclusiveSheetName As Boolean) As String
             Get
                 Dim Result As String = Nothing
@@ -204,7 +204,7 @@
         ''' <summary>
         ''' An address like "A1".
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The address without a worksheet name.</returns>
         Public Function LocalAddress() As String
             Return Me.Address(False)
         End Function
@@ -212,7 +212,7 @@
         ''' <summary>
         ''' An address like "R1C1".
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The address without a worksheet name in R1C1 notation.</returns>
         Public Function LocalAddressR1C1() As String
             Return Me.AddressR1C1(False)
         End Function
@@ -220,7 +220,7 @@
         ''' <summary>
         ''' An address like "Sheetname!A1".
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The address including the worksheet name.</returns>
         Public Function FullAddress() As String
             Return Me.Address(True)
         End Function
@@ -228,7 +228,7 @@
         ''' <summary>
         ''' An address like "Sheetname!R1C1".
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The address including the worksheet name in R1C1 notation.</returns>
         Public Function FullAddressR1C1() As String
             Return Me.AddressR1C1(True)
         End Function
@@ -236,7 +236,7 @@
         ''' <summary>
         ''' Expected cell value type.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The cell data type.</returns>
         Public Property DataType As ValueTypes
 
         Friend Shared ReadOnly Property ExcelColumnName(columnIndex As Integer) As String
@@ -259,7 +259,7 @@
         ''' <summary>
         ''' zero-based index.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The zero-based row index.</returns>
         Public ReadOnly Property RowIndex() As Integer
             Get
                 Return Me.RowNumber - 1
@@ -269,7 +269,7 @@
         ''' <summary>
         ''' zero-based index.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The zero-based column index.</returns>
         Public ReadOnly Property ColumnIndex() As Integer
             Get
                 Return CalculateColumnIndex(Me.ColumnName)
@@ -279,7 +279,7 @@
         ''' <summary>
         ''' one-based index.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The one-based column number.</returns>
         Public ReadOnly Property ColumnNumber() As Integer
             Get
                 Return CalculateColumnIndex(Me.ColumnName) + 1
@@ -290,7 +290,7 @@
         ''' zero-based index.
         ''' </summary>
         ''' <param name="columnAddressPart">Column letters, e.g. "A", "B", ..., "AA", "AB", ...</param>
-        ''' <returns></returns>
+        ''' <returns>The zero-based column index.</returns>
         Public Shared Function CalculateColumnIndex(columnAddressPart As String) As Integer
             Dim Result As Integer = 0
             Dim ColName As String = columnAddressPart.ToUpperInvariant
@@ -306,9 +306,9 @@
         ''' <summary>
         ''' Validates if a potential address is a valid Excel cell address.
         ''' </summary>
-        ''' <param name="cellAddress"></param>
+        ''' <param name="cellAddress">Cell address to validate.</param>
         ''' <param name="allowAbsoluteAddressing">Allow absolute addresses like $A$1</param>
-        ''' <returns></returns>
+        ''' <returns><see langword="True"/> if the address is valid; otherwise, <see langword="False"/>.</returns>
         Public Shared Function IsValidAddress(ByVal cellAddress As String, allowAbsoluteAddressing As Boolean) As Boolean
             If cellAddress = Nothing Then Return False
             If cellAddress.StartsWith("""", StringComparison.InvariantCulture) Then Return False 'invalid address - is a string
@@ -356,7 +356,7 @@
         ''' <summary>
         ''' Column letters, e.g. "A", "B", ..., "AA", "AB", ...
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The Excel column name.</returns>
         Public ReadOnly Property ColumnName As String
             Get
                 Return Me.Address.Substring(0, Me.AddressRowNumberStartIndex)
@@ -366,7 +366,7 @@
         ''' <summary>
         ''' one-based index.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>The one-based row number.</returns>
         Public ReadOnly Property RowNumber As Integer
             Get
                 Return Integer.Parse(Me.Address.Substring(Me.AddressRowNumberStartIndex))
@@ -391,8 +391,8 @@
         ''' <summary>
         ''' A string representation of the address.
         ''' </summary>
-        ''' <param name="inclusiveSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="inclusiveSheetName">Whether the returned address includes the worksheet name.</param>
+        ''' <returns>The formatted address.</returns>
         Public Overloads Function ToString(inclusiveSheetName As Boolean) As String
             Return Me.Address(inclusiveSheetName)
         End Function
@@ -408,7 +408,7 @@
         ''' <summary>
         ''' An independent clone of this ExcelCell.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone() As ExcelCell
             Return New ExcelCell(Me.SheetName, Me.Address, Me.DataType)
         End Function
@@ -416,8 +416,8 @@
         ''' <summary>
         ''' Creates a clone and overrides the sheet name with the specified name.
         ''' </summary>
-        ''' <param name="overrideSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="overrideSheetName">Worksheet name to use instead of the name stored in the address, or <see langword="Nothing"/> to keep the stored name.</param>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone(overrideSheetName As String) As ExcelCell
             Return New ExcelCell(overrideSheetName, Me.Address, Me.DataType)
         End Function
@@ -425,8 +425,9 @@
         ''' <summary>
         ''' Creates a clone and overrides the sheet name and data type with the specified values.
         ''' </summary>
-        ''' <param name="overrideSheetName"></param>
-        ''' <returns></returns>
+        ''' <param name="overrideSheetName">Worksheet name to use instead of the name stored in the address, or <see langword="Nothing"/> to keep the stored name.</param>
+        ''' <param name="dataType">Cell data type to assign.</param>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone(overrideSheetName As String, dataType As ExcelCell.ValueTypes) As ExcelCell
             Return New ExcelCell(overrideSheetName, Me.Address, dataType)
         End Function
@@ -434,8 +435,8 @@
         ''' <summary>
         ''' Creates a clone and overrides the data type with the specified value.
         ''' </summary>
-        ''' <param name="dataType"></param>
-        ''' <returns></returns>
+        ''' <param name="dataType">Cell data type to assign.</param>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone(dataType As ExcelCell.ValueTypes) As ExcelCell
             Return New ExcelCell(Me.SheetName, Me.Address, dataType)
         End Function
@@ -443,7 +444,9 @@
         ''' <summary>
         ''' Creates a clone and overrides the data type with the specified value.
         ''' </summary>
-        ''' <returns></returns>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns>A copy of the current object.</returns>
         Public Function Clone(rowIndex As Integer, columnIndex As Integer) As ExcelCell
             Return New ExcelCell(Me.SheetName, rowIndex, columnIndex, Me.DataType)
         End Function
@@ -451,9 +454,9 @@
         ''' <summary>
         ''' Creates a clone pointing to a new cell position relative to the current cell.
         ''' </summary>
-        ''' <param name="addRows"></param>
-        ''' <param name="addColumns"></param>
-        ''' <returns></returns>
+        ''' <param name="addRows">Number of rows to move; negative values move upward.</param>
+        ''' <param name="addColumns">Number of columns to move; negative values move left.</param>
+        ''' <returns>A cell at the requested relative position.</returns>
         Public Function GoToRelativePosition(addRows As Integer, addColumns As Integer) As ExcelCell
             Return New ExcelCell(Me.SheetName, Me.RowIndex + addRows, Me.ColumnIndex + addColumns, Me.DataType)
         End Function

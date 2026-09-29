@@ -33,26 +33,32 @@
         ''' <summary>
         ''' Gets or sets the worksheet name containing the invalid value.
         ''' </summary>
+        ''' <value>The worksheet name.</value>
         Public Property TargetSheetName As String
         ''' <summary>
         ''' Gets or sets the zero-based row index of the cell.
         ''' </summary>
+        ''' <value>The zero-based row index.</value>
         Public Property CellRowIndex As Integer
         ''' <summary>
         ''' Gets or sets the zero-based column index of the cell.
         ''' </summary>
+        ''' <value>The zero-based column index.</value>
         Public Property CellColumnIndex As Integer
         ''' <summary>
         ''' Gets or sets the expected data type.
         ''' </summary>
+        ''' <value>The expected data type.</value>
         Public Property ExpectedDataType As Type
         ''' <summary>
         ''' Gets or sets the formatted display text found in the cell.
         ''' </summary>
+        ''' <value>The formatted display text found in the cell.</value>
         Public Property FoundFormattedText As String
         ''' <summary>
         ''' Gets or sets the formula found in the cell.
         ''' </summary>
+        ''' <value>The formula found in the cell, or <see langword="Nothing"/>.</value>
         Public Property FoundFormula As String
 
         Private Shared Function CellAddress(targetSheetName As String, rowIndex As Integer, columnIndex As Integer) As String

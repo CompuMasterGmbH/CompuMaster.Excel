@@ -27,10 +27,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Finds the corner cell of two cells.
         ''' </summary>
-        ''' <param name="cell1"></param>
-        ''' <param name="cell2"></param>
-        ''' <param name="mode"></param>
-        ''' <returns></returns>
+        ''' <param name="cell1">First cell address.</param>
+        ''' <param name="cell2">Second cell address.</param>
+        ''' <param name="mode">Determines which corner cell is returned.</param>
+        ''' <returns>The combined cell range.</returns>
         Public Shared Function CombineCellAddresses(cell1 As ExcelCell, cell2 As ExcelCell, mode As CellAddressCombineMode) As ExcelCell
             If cell1.SheetName <> cell2.SheetName Then Throw New ArgumentException("Cell must be member of the same sheet as cell1", NameOf(cell2))
             Select Case mode
@@ -96,8 +96,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula without cell references contain just simple mathematic operations such as *, /, +, -, ^, (, ).
         ''' </summary>
-        ''' <param name="formula"></param>
-        ''' <returns></returns>
+        ''' <param name="formula">Formula to inspect.</param>
+        ''' <returns><see langword="True"/> if the formula matches the requested pattern; otherwise, <see langword="False"/>.</returns>
         Public Shared Function IsFormulaWithoutCellReferences(formula As String) As Boolean
             Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators, StringSplitOptions.RemoveEmptyEntries)
             For Each Part As String In Parts
@@ -111,8 +111,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula without cell references contain just simple mathematic operations such as *, /, +, -, ^, (, ).
         ''' </summary>
-        ''' <param name="formula"></param>
-        ''' <returns></returns>
+        ''' <param name="formula">Formula to inspect.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <returns><see langword="True"/> if the formula matches the requested pattern; otherwise, <see langword="False"/>.</returns>
         Public Shared Function IsFormulaWithoutCellReferencesOrCellReferenceInSameRow(formula As String, rowIndex As Integer) As Boolean
             Dim Parts As String() = formula.Split(IsFormulaWithoutCellReferences_Separators, StringSplitOptions.RemoveEmptyEntries)
             For Each Part As String In Parts
@@ -131,8 +132,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula is just a simple cell reference like "Grunddaten!B4".
         ''' </summary>
-        ''' <param name="formula"></param>
-        ''' <returns></returns>
+        ''' <param name="formula">Formula to inspect.</param>
+        ''' <returns><see langword="True"/> if the formula matches the requested pattern; otherwise, <see langword="False"/>.</returns>
         Public Shared Function IsFormulaSimpleCellReference(formula As String) As Boolean
             Return ExcelCell.IsValidAddress(formula, True)
         End Function
@@ -143,8 +144,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula is just a simple SUM function with a cell range.
         ''' </summary>
-        ''' <param name="formula"></param>
-        ''' <returns></returns>
+        ''' <param name="formula">Formula to inspect.</param>
+        ''' <returns><see langword="True"/> if the formula matches the requested pattern; otherwise, <see langword="False"/>.</returns>
         Public Shared Function IsFormulaSimpleSumFunction(formula As String) As Boolean
             If formula.StartsWith("SUM(", StringComparison.Ordinal) = False Then
                 Return False
@@ -164,8 +165,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula contains a reference to specified sheet.
         ''' </summary>
-        ''' <param name="formula"></param>
-        ''' <returns></returns>
+        ''' <param name="formula">Formula to inspect.</param>
+        ''' <param name="checkForSheetName">Worksheet name to search for in formulas.</param>
+        ''' <returns><see langword="True"/> if the formula matches the requested pattern; otherwise, <see langword="False"/>.</returns>
         Public Shared Function IsFormulaWithSheetReference(formula As String, checkForSheetName As String) As Boolean
             If formula = Nothing Then
                 Return False
@@ -177,8 +179,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula contains a reference to specified sheet.
         ''' </summary>
-        ''' <param name="formulas"></param>
-        ''' <returns></returns>
+        ''' <param name="formulas">Formulas to inspect.</param>
+        ''' <param name="checkForSheetNameInFormula">Worksheet name to search for in formulas.</param>
+        ''' <param name="dontSearchInThisSheetName">Worksheet name to exclude from the search.</param>
+        ''' <returns>The matching formulas.</returns>
         Public Shared Function FormulasWithSheetReferencesToSheet(formulas As List(Of TextTableCell), checkForSheetNameInFormula As String, dontSearchInThisSheetName As String) As List(Of TextTableCell)
             Dim Result As New List(Of TextTableCell)
             For MyFormulaCounter As Integer = 0 To formulas.Count - 1
@@ -194,8 +198,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula contains a reference to specified sheet.
         ''' </summary>
-        ''' <param name="formulas"></param>
-        ''' <returns></returns>
+        ''' <param name="formulas">Formulas to inspect.</param>
+        ''' <param name="checkForSheetNameInFormula">Worksheet name to search for in formulas.</param>
+        ''' <param name="dontSearchInThisSheetName">Worksheet name to exclude from the search.</param>
+        ''' <returns><see langword="True"/> if matching formulas exist; otherwise, <see langword="False"/>.</returns>
         Public Shared Function ContainsFormulasWithSheetReferencesToSheet(formulas As List(Of TextTableCell), checkForSheetNameInFormula As String, dontSearchInThisSheetName As String) As Boolean
             For MyFormulaCounter As Integer = 0 To formulas.Count - 1
                 If dontSearchInThisSheetName = Nothing OrElse dontSearchInThisSheetName <> formulas(MyFormulaCounter).SheetName Then
@@ -210,8 +216,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula contains a reference to specified sheet.
         ''' </summary>
-        ''' <param name="formulas"></param>
-        ''' <returns></returns>
+        ''' <param name="formulas">Formulas to inspect.</param>
+        ''' <param name="searchInThisSheetName">Name of the worksheet whose formulas are searched.</param>
+        ''' <param name="checkForSheetNamesInFormula">Worksheet names to search for in formulas.</param>
+        ''' <returns>The matching formulas.</returns>
         Public Shared Function FormulasWithSheetReferencesFromSheet(searchInThisSheetName As String, formulas As List(Of TextTableCell), checkForSheetNamesInFormula As String()) As List(Of TextTableCell)
             Dim Result As New List(Of TextTableCell)
             If searchInThisSheetName = Nothing Then Throw New ArgumentNullException(NameOf(searchInThisSheetName))
@@ -230,8 +238,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Formula contains a reference to specified sheet.
         ''' </summary>
-        ''' <param name="formulas"></param>
-        ''' <returns></returns>
+        ''' <param name="formulas">Formulas to inspect.</param>
+        ''' <param name="searchInThisSheetName">Name of the worksheet whose formulas are searched.</param>
+        ''' <param name="checkForSheetNamesInFormula">Worksheet names to search for in formulas.</param>
+        ''' <returns><see langword="True"/> if matching formulas exist; otherwise, <see langword="False"/>.</returns>
         Public Shared Function ContainsFormulasWithSheetReferencesFromSheet(searchInThisSheetName As String, formulas As List(Of TextTableCell), checkForSheetNamesInFormula As String()) As Boolean
             If searchInThisSheetName = Nothing Then Throw New ArgumentNullException(NameOf(searchInThisSheetName))
             For MyFormulaCounter As Integer = 0 To formulas.Count - 1
@@ -493,9 +503,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Converts a Double value from Excel to a DateTime value.
         ''' </summary>
-        ''' <param name="excelDate"></param>
-        ''' <param name="baseDateValue"></param>
-        ''' <returns></returns>
+        ''' <param name="excelDate">Excel serial date value.</param>
+        ''' <param name="baseDateValue">Date used as the origin of the Excel serial date.</param>
+        ''' <returns>The converted date and time.</returns>
         Public Shared Function ConvertExcelDateToDateTime(excelDate As Double, baseDateValue As XlsxDateSystem) As DateTime
             Dim baseDate As DateTime
             Select Case baseDateValue

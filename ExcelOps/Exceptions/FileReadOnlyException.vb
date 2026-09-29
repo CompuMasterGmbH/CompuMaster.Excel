@@ -21,6 +21,7 @@
         ''' <summary>
         ''' Gets or sets the path of the read-only file.
         ''' </summary>
+        ''' <value>The workbook file path.</value>
         Public Property FilePath As String
 
     End Class

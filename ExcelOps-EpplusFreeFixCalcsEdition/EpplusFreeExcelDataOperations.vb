@@ -46,7 +46,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
         Public Sub New(mode As OpenMode)
             MyBase.New(mode)
         End Sub
@@ -54,8 +54,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
-        ''' <param name="options"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         Public Sub New(mode As OpenMode, options As ExcelDataOperationsOptions)
             MyBase.New(mode, options)
         End Sub
@@ -63,7 +63,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
-        ''' <param name="data"></param>
+        ''' <param name="data">Workbook data.</param>
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
@@ -72,7 +72,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
-        ''' <param name="data"></param>
+        ''' <param name="data">Workbook data.</param>
         ''' <param name="options">File and engine options</param>
         Public Sub New(data As System.IO.Stream, options As ExcelDataOperationsOptions)
             MyBase.New(data, options)
@@ -81,6 +81,11 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates or opens a workbook.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String, disableInitialCalculation As Boolean)
@@ -90,6 +95,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Creates or opens a workbook.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(file As String, mode As OpenMode, [readOnly] As Boolean, passwordForOpening As String)
@@ -99,6 +108,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String)
@@ -108,6 +119,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As Byte(), passwordForOpening As String, disableInitialCalculation As Boolean)
@@ -117,6 +131,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String)
@@ -126,6 +142,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Opens a workbook.
         ''' </summary>
+        ''' <param name="data">Workbook data.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
+        ''' <param name="disableInitialCalculation">Whether calculation is disabled while the workbook is loaded.</param>
         <Obsolete("Use overloaded method with ExcelDataOperationsOptions", False)>
         <System.ComponentModel.EditorBrowsable(ComponentModel.EditorBrowsableState.Never)>
         Public Sub New(data As System.IO.Stream, passwordForOpening As String, disableInitialCalculation As Boolean)
@@ -153,6 +172,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the underlying EPPlus workbook package.
         ''' </summary>
+        ''' <value>The underlying workbook package.</value>
         Public ReadOnly Property WorkbookPackage As CompuMaster.Epplus4.ExcelPackage
             Get
                 If Me._WorkbookPackage Is Nothing Then
@@ -165,6 +185,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the underlying EPPlus workbook.
         ''' </summary>
+        ''' <value>The underlying workbook instance.</value>
         Public ReadOnly Property Workbook As CompuMaster.Epplus4.ExcelWorkbook
             Get
                 If Me._WorkbookPackage Is Nothing Then
@@ -187,7 +208,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <param name="sheetName">Name of the worksheet.</param>
         Public Sub ResetCellValueFromFormulaCell(sheetName As String)
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
             For MyRowIndexCounter As Integer = 0 To LastCell.RowIndex
@@ -202,6 +223,9 @@ Namespace ExcelOps
         ''' <summary>
         ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
+        ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
         Public Sub ResetCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim CurrentCellFormula As String = Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Formula
@@ -215,7 +239,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Resets the calculated cell value from a cell with formula to force MS Excel calculation engine to recalculate the cell value.
         ''' </summary>
-        ''' <param name="cell"></param>
+        ''' <param name="cell">Target cell.</param>
         Public Sub ResetCellValueFromFormulaCell(cell As ExcelCell)
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
             Dim CurrentCellFormula As String = Me.Workbook.Worksheets(cell.SheetName).Cells(MyExcelCellAddress.Row, MyExcelCellAddress.Column).Formula
@@ -229,6 +253,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets whether the workbook some cells which got a formula without a calculated value.
         ''' </summary>
+        ''' <returns>The first formula cell without a cached calculated value, or <see langword="Nothing"/> when none is found.</returns>
         Public Function FindMissingCalculatedCellValueFromFormulaCell() As List(Of MissingCalculatedCellValueException)
             Dim Result As New List(Of MissingCalculatedCellValueException)
             Dim AllSheetNames As List(Of String) = Me.SheetNames
@@ -241,7 +266,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets whether the specified sheet some cells which got a formula without a calculated value.
         ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <returns>The first formula cell without a cached calculated value, or <see langword="Nothing"/> when none is found.</returns>
         Public Function FindMissingCalculatedCellValueFromFormulaCell(sheetName As String) As List(Of MissingCalculatedCellValueException)
             Dim Result As New List(Of MissingCalculatedCellValueException)
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
@@ -261,6 +287,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets whether the workbook some cells which got a formula without a calculated value.
         ''' </summary>
+        ''' <returns><see langword="True"/> if a formula cell has no cached calculated value; otherwise, <see langword="False"/>.</returns>
         Public Function HasMissingCalculatedCellValueFromFormulaCell() As Boolean
             Dim AllSheetNames As List(Of String) = Me.SheetNames
             For Each SheetName As String In AllSheetNames
@@ -275,7 +302,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets whether the specified sheet some cells which got a formula without a calculated value.
         ''' </summary>
-        ''' <param name="sheetName"></param>
+        ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <returns><see langword="True"/> if a formula cell has no cached calculated value; otherwise, <see langword="False"/>.</returns>
         Public Function HasMissingCalculatedCellValueFromFormulaCell(sheetName As String) As Boolean
             Dim LastCell As ExcelCell = Me.LookupLastCell(sheetName)
             For MyRowIndexCounter As Integer = 0 To LastCell.RowIndex
@@ -294,8 +322,8 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets whether the specified cell got a formula without a calculated value.
         ''' </summary>
-        ''' <param name="cell"></param>
-        ''' <returns></returns>
+        ''' <param name="cell">Target cell.</param>
+        ''' <returns><see langword="True"/> if a formula cell has no cached calculated value; otherwise, <see langword="False"/>.</returns>
         Public Function IsMissingCalculatedCellValueFromFormulaCell(cell As ExcelCell) As Boolean
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
             If Me.Workbook.Worksheets(cell.SheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(cell), "Sheet not found: " & cell.SheetName)
@@ -310,10 +338,10 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets whether the specified cell got a formula without a calculated value.
         ''' </summary>
-        ''' <param name="sheetName"></param>
-        ''' <param name="rowIndex"></param>
-        ''' <param name="columnIndex"></param>
-        ''' <returns></returns>
+        ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <param name="rowIndex">Zero-based row index.</param>
+        ''' <param name="columnIndex">Zero-based column index.</param>
+        ''' <returns><see langword="True"/> if a formula cell has no cached calculated value; otherwise, <see langword="False"/>.</returns>
         Public Function IsMissingCalculatedCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
@@ -596,10 +624,12 @@ Namespace ExcelOps
             ''' <summary>
             ''' Gets the complete formula parser log.
             ''' </summary>
+            ''' <value>All messages recorded while processing the workbook.</value>
             Public ReadOnly Property FullLog As New System.Text.StringBuilder
             ''' <summary>
             ''' Gets formula parser exception messages.
             ''' </summary>
+            ''' <value>Exceptions recorded while processing the workbook.</value>
             Public ReadOnly Property ExceptionsLog As New System.Text.StringBuilder
 
             ''' <summary>

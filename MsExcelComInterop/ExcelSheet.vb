@@ -11,6 +11,7 @@ Public Class ExcelSheet
     ''' <summary>
     ''' Gets the worksheet name.
     ''' </summary>
+    ''' <value>The name.</value>
     Public ReadOnly Property Name As String
         Get
             Return InvokePropertyGet(Of String)("Name")
@@ -20,6 +21,7 @@ Public Class ExcelSheet
     ''' <summary>
     ''' Gets the worksheet code name.
     ''' </summary>
+    ''' <value>The name.</value>
     Public ReadOnly Property CodeName As String
         Get
             Return InvokePropertyGet(Of String)("CodeName")
@@ -45,6 +47,7 @@ Public Class ExcelSheet
     ''' <summary>
     ''' Gets the zero-based worksheet index.
     ''' </summary>
+    ''' <value>The zero-based index.</value>
     Public ReadOnly Property Index As Integer
         Get
             Return InvokePropertyGet(Of Integer)("Index") - 1
@@ -54,6 +57,7 @@ Public Class ExcelSheet
     ''' <summary>
     ''' Gets or sets worksheet visibility.
     ''' </summary>
+    ''' <value>The worksheet visibility state.</value>
     Public Property Visible As Enumerations.XlSheetVisibility
         Get
             Return InvokePropertyGet(Of Enumerations.XlSheetVisibility)("Visible")

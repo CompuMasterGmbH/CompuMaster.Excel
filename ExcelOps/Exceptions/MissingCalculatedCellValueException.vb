@@ -38,16 +38,19 @@
         ''' <summary>
         ''' Gets or sets the formula cell without a cached calculated value.
         ''' </summary>
+        ''' <value>The cell.</value>
         Public Property Cell As ExcelCell
 
         ''' <summary>
         ''' Gets or sets the formula found in the cell.
         ''' </summary>
+        ''' <value>The formula found in the cell, or <see langword="Nothing"/>.</value>
         Public Property FoundFormula As String
 
         ''' <summary>
         ''' Gets or sets the workbook file path.
         ''' </summary>
+        ''' <value>The workbook file path.</value>
         Public Property FilePath As String
 
     End Class

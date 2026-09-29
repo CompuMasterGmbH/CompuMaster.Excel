@@ -17,15 +17,11 @@
         }
     }
 
-    # Schreiben mit passendem Encoding
-    if ($PSVersionTable.PSVersion.Major -ge 7) {
-        # pwsh: UTF8 ohne BOM wäre Default → wir erzwingen BOM
-        $SourceCode | Out-File -LiteralPath $TargetFile -Encoding UTF8BOM -Force
-    }
-    else {
-        # Windows PowerShell: UTF8 = UTF8 mit BOM
-        $SourceCode | Out-File -LiteralPath $TargetFile -Encoding UTF8 -Force
-    }
+    # Normalize generated source files to the repository format without adding a second trailing newline.
+    $NormalizedSourceCode = ($SourceCode -join "`r`n") -replace "`r`n|`r|`n", "`r`n"
+    $NormalizedSourceCode = $NormalizedSourceCode.TrimEnd("`r", "`n") + "`r`n"
+    $Utf8WithBom = New-Object System.Text.UTF8Encoding($true)
+    [System.IO.File]::WriteAllText((Join-Path $PSScriptRoot $TargetFile), $NormalizedSourceCode, $Utf8WithBom)
 
     # Optional wieder ReadOnly setzen
     if ($SetReadOnly) {

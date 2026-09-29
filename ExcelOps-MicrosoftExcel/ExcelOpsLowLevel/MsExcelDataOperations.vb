@@ -22,6 +22,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Gets or sets whether all already running Microsoft Excel instances are closed without prompting.
         ''' </summary>
+        ''' <value>Whether existing Excel processes may be terminated automatically.</value>
         Public Shared Property AutoKillAllExistingMsExcelInstances As Boolean
 
         ''' <summary>
@@ -64,7 +65,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
         ''' <remarks>
         ''' For holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
         ''' Use with pattern
@@ -84,8 +85,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Creates a new workbook or creates an uninitialized instance of this Excel engine.
         ''' </summary>
-        ''' <param name="mode"></param>
-        ''' <param name="options"></param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         ''' <remarks>
         ''' For holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!)
         ''' Use with pattern
@@ -105,6 +106,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
@@ -124,6 +129,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="unprotectWorksheets">Whether protected worksheets are unprotected while opening the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
@@ -143,6 +153,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="msExcelApp">Excel application instance to use.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
@@ -163,6 +178,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="msExcelApp">Excel application instance to use.</param>
+        ''' <param name="unprotectWorksheets">Whether protected worksheets are unprotected while opening the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
@@ -183,6 +204,12 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
         ''' <param name="disableAutoCalculation">Disable initial and auto-calculations</param>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="msExcelApp">Excel application instance to use.</param>
+        ''' <param name="unprotectWorksheets">Whether protected worksheets are unprotected while opening the workbook.</param>
+        ''' <param name="readOnly">Whether the workbook is opened read-only.</param>
+        ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
@@ -221,6 +248,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
@@ -238,6 +268,10 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Class for holding a reference to Excel.Application (ATTENTION: watch for advised Try-Finally pattern!).
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="unprotectWorksheets">Whether protected worksheets are unprotected while opening the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelOps As New MsExcelDataOperations(fileName)
@@ -255,6 +289,11 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!) incl. unprotection of sheets.
         ''' </summary>
+        ''' <param name="file">Workbook file.</param>
+        ''' <param name="mode">Mode used to open the workbook.</param>
+        ''' <param name="msExcelApp">Excel application instance to use.</param>
+        ''' <param name="unprotectWorksheets">Whether protected worksheets are unprotected while opening the workbook.</param>
+        ''' <param name="options">Options controlling the operation.</param>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
@@ -287,6 +326,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!).
         ''' </summary>
+        ''' <value>The underlying Excel application instance.</value>
         ''' <remarks>Use with pattern
         ''' <code>
         ''' Dim MsExcelApp As New MsExcelDataOperations.MsAppInstance
@@ -334,6 +374,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Gets the underlying Excel workbooks COM collection.
         ''' </summary>
+        ''' <value>The workbook collection.</value>
         Public ReadOnly Property Workbooks As MsExcel.Workbooks
             Get
                 If _Workbooks Is Nothing Then
@@ -398,6 +439,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Gets the underlying Excel workbook COM object.
         ''' </summary>
+        ''' <value>The underlying workbook instance.</value>
         Public ReadOnly Property Workbook As MsExcel.Workbook
             Get
                 If _Workbook Is Nothing Then
@@ -934,7 +976,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Removes specified rows.
         ''' </summary>
-        ''' <param name="sheet"></param>
+        ''' <param name="sheet">Target worksheet.</param>
         ''' <param name="startRowIndex">zero-based row number</param>
         ''' <param name="rows">Number of rows to remove</param>
         Public Overloads Sub RemoveRows(sheet As MsExcel.Worksheet, startRowIndex As Integer, rows As Integer)
@@ -1164,9 +1206,9 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Clears cell content.
         ''' </summary>
-        ''' <param name="sheet"></param>
-        ''' <param name="rangeFirstCell"></param>
-        ''' <param name="rangeLastCell"></param>
+        ''' <param name="sheet">Target worksheet.</param>
+        ''' <param name="rangeFirstCell">First cell of the target range.</param>
+        ''' <param name="rangeLastCell">Last cell of the target range.</param>
         Public Overloads Sub ClearCells(sheet As MsExcel.Worksheet, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
             If rangeFirstCell.SheetName <> rangeLastCell.SheetName Then Throw New ArgumentException("Cells must be member of the same worksheet")
             If rangeFirstCell.SheetName = Nothing Then Throw New ArgumentNullException(NameOf(rangeFirstCell))
@@ -1207,7 +1249,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <summary>
         ''' Selects a worksheet.
         ''' </summary>
-        ''' <param name="sheet"></param>
+        ''' <param name="sheet">Target worksheet.</param>
         Public Overloads Sub SelectSheet(sheet As MsExcel.Worksheet)
             If sheet Is Nothing Then Throw New ArgumentNullException(NameOf(sheet))
             sheet.Select()

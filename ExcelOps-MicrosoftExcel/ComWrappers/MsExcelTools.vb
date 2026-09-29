@@ -14,7 +14,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <summary>
         ''' Are there any running MS Excel instances on the current system (owned by any user).
         ''' </summary>
-        ''' <returns></returns>
+        ''' <returns><see langword="True"/> if at least one Excel process is running; otherwise, <see langword="False"/>.</returns>
         Public Shared Function HasRunningMsExcelInstances() As Boolean
             Dim MsExcelProcesses As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Return MsExcelProcesses IsNot Nothing AndAlso MsExcelProcesses.Length > 0

@@ -56,60 +56,72 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets how the worksheet name is rendered before worksheet data.
         ''' </summary>
+        ''' <value>The rendering style for worksheet names.</value>
         Public Property ExportSheetNameAsTitle As SheetTitleStyles
 
         ''' <summary>
         ''' Gets or sets row indexes whose cells are rendered as TH elements instead of TD elements.
         ''' </summary>
+        ''' <value>The zero-based row indexes rendered as table headers.</value>
         Public Property ConsiderRowIndexesAsTableHeader As List(Of Integer)
 
         ''' <summary>
         ''' Gets or sets the CSS class name used for generated worksheet tables.
         ''' </summary>
+        ''' <value>The CSS class name assigned to exported tables.</value>
         Public Property TableCssClassName As String = "xlTable"
 
 #Disable Warning CA1805 ' Keine unnötige Initialisierung
         ''' <summary>
         ''' Gets or sets the zero-based index of the first worksheet row to export.
         ''' </summary>
+        ''' <value>The zero-based row index.</value>
         Public Property FirstRowIndex As Integer = 0
         ''' <summary>
         ''' Gets or sets the zero-based index of the first worksheet column to export.
         ''' </summary>
+        ''' <value>The zero-based column index.</value>
         Public Property FirstColumnIndex As Integer = 0
         ''' <summary>
         ''' Gets or sets the zero-based index of the last worksheet row to export.
         ''' </summary>
+        ''' <value>The zero-based row index.</value>
         Public Property LastRowIndex As Integer?
         ''' <summary>
         ''' Gets or sets the zero-based index of the last worksheet column to export.
         ''' </summary>
+        ''' <value>The zero-based column index.</value>
         Public Property LastColumnIndex As Integer?
 #Enable Warning CA1805 ' Keine unnötige Initialisierung
 
         ''' <summary>
         ''' Gets or sets the HTML emitted when a worksheet has no exportable content.
         ''' </summary>
+        ''' <value>The HTML emitted for an empty worksheet.</value>
         Public Property HtmlForEmptySheet As String
 
         ''' <summary>
         ''' Gets or sets the HTML emitted before generated worksheet content, including HTML and HEAD tags.
         ''' </summary>
+        ''' <value>The HTML document header.</value>
         Public Property HtmlDocumentHeader As String
 
         ''' <summary>
         ''' Gets or sets the HTML emitted between the document header and exported worksheets.
         ''' </summary>
+        ''' <value>The HTML separating the document header from the body.</value>
         Public Property HtmlDocumentHeaderEndAndBeginOfBody As String
 
         ''' <summary>
         ''' Gets or sets the HTML emitted after generated worksheet content.
         ''' </summary>
+        ''' <value>The HTML closing markup.</value>
         Public Property HtmlDocumentEnd As String
 
         ''' <summary>
         ''' Gets the default HTML document header.
         ''' </summary>
+        ''' <value>The HTML document header.</value>
         Protected Friend ReadOnly Property DefaultHtmlDocumentHeader As String =
             "<!doctype html><html><head>" & ControlChars.CrLf &
             "<meta http-equiv=""X-UA-Compatible"" content=""IE=edge"">" & ControlChars.CrLf &
@@ -118,16 +130,19 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the default HTML fragment that closes HEAD and opens BODY.
         ''' </summary>
+        ''' <value>The HTML separating the document header from the body.</value>
         Protected Friend ReadOnly Property DefaultHtmlDocumentHeaderEndAndBeginOfBody As String = "</head><body>"
 
         ''' <summary>
         ''' Gets the default HTML document ending.
         ''' </summary>
+        ''' <value>The HTML closing markup.</value>
         Protected Friend ReadOnly Property DefaultHtmlDocumentEnd As String = "</body></html>"
 
         ''' <summary>
         ''' Gets the default HTML emitted for an empty worksheet.
         ''' </summary>
+        ''' <value>The HTML emitted for an empty worksheet.</value>
         Protected Friend ReadOnly Property DefaultHtmlForEmptySheet As String = "-/-"
 
         ''' <summary>
@@ -228,6 +243,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets the CSS class name used for generated worksheet titles.
         ''' </summary>
+        ''' <value>The CSS class name assigned to worksheet titles.</value>
         Public Property WorksheetTitleCssClassName As String = "cm-wb-sheet-title"
 
         ''' <summary>

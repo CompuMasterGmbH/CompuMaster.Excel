@@ -22,6 +22,7 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets the underlying Spire workbook instance.
         ''' </summary>
+        ''' <value>The underlying workbook instance.</value>
         Public ReadOnly Property Workbook As Spire.Xls.Workbook
             Get
                 If Me._Workbook Is Nothing Then

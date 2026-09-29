@@ -52,6 +52,7 @@
         ''' <summary>
         ''' Gets or sets the invalid cell address.
         ''' </summary>
+        ''' <value>The cell address.</value>
         Public Property CellAddress As ExcelCell
 
         Private Shared Function CalculatedCellAddress(targetSheetName As String, rowIndex As Integer, columnIndex As Integer) As ExcelCell

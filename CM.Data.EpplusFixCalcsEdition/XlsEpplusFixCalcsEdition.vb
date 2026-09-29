@@ -49,11 +49,13 @@ Namespace CompuMaster.Data
             ''' <summary>
             ''' Gets whether the first imported row contains column names.
             ''' </summary>
+            ''' <value>Whether the first imported row contains column names.</value>
             Public ReadOnly Property FirstRowContainsColumnNames As Boolean
 
             ''' <summary>
             ''' Gets the zero-based row index at which reading starts.
             ''' </summary>
+            ''' <value>The zero-based row index at which importing starts.</value>
             Public ReadOnly Property StartReadingAtRowIndex As Integer
 
         End Class
@@ -74,6 +76,7 @@ Namespace CompuMaster.Data
             ''' <summary>
             ''' Gets the compatibility error level used while writing values.
             ''' </summary>
+            ''' <value>The configured error reporting level.</value>
             Public ReadOnly Property ErrorLevel As Byte
 
         End Class
@@ -103,9 +106,7 @@ Namespace CompuMaster.Data
         ''' <summary>
         ''' Error level 0 doesn't throw exception when writing e.g. invalid date/time values (invalid for excel); Error level 1 throws them.
         ''' </summary>
-        ''' <value></value>
-        ''' <remarks>
-        ''' </remarks>
+        ''' <value>The configured error reporting level.</value>
         Public Shared Property ErrorLevel() As Byte
             Get
                 Return _ErrorLevel
@@ -138,8 +139,6 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataSet">A dataset to write into the workbook</param>
-        ''' <remarks>
-        ''' </remarks>
         Public Shared Sub WriteDataSetToXlsFile(ByVal outputPath As String, ByVal dataSet As System.Data.DataSet)
             WriteDataSetToXlsFile(Nothing, outputPath, dataSet)
         End Sub
@@ -160,8 +159,6 @@ Namespace CompuMaster.Data
         ''' <param name="inputPath">A file which shall be loaded</param>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataSet">A dataset to write into the workbook</param>
-        ''' <remarks>
-        ''' </remarks>
         Public Shared Sub WriteDataSetToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataSet As System.Data.DataSet)
             WriteDataSetToXlsFileWithOptions(inputPath, outputPath, dataSet, LegacyWriteOptions())
         End Sub
@@ -278,8 +275,6 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
         ''' <param name="sheetName">The name the sheet which shall be updated/added</param>
-        ''' <remarks>
-        ''' </remarks>
         Public Shared Sub WriteDataTableToXlsFile(ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal sheetName As String)
             WriteDataTableToXlsFile(Nothing, outputPath, dataTable, sheetName)
         End Sub
@@ -302,8 +297,6 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
         ''' <param name="sheetName">The name the sheet which shall be updated/added</param>
-        ''' <remarks>
-        ''' </remarks>
         Public Shared Sub WriteDataTableToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal sheetName As String)
             WriteDataTableToXlsFile(inputPath, outputPath, New DataTable() {dataTable}, New String() {sheetName})
         End Sub
@@ -325,10 +318,8 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template</param>
         ''' <param name="outputPath">The output file</param>
-        ''' <param name="dataTables">Some datatables to write into the workbook</param>
-        ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
-        ''' <remarks>
-        ''' </remarks>
+        ''' <param name="dataTables">Data tables to write to the workbook.</param>
+        ''' <param name="sheetNames">Worksheet names to update or add in the same order as <paramref name="dataTables"/>.</param>
         Public Shared Sub WriteDataTableToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String())
             WriteDataTableToXlsFileWithOptions(inputPath, outputPath, dataTables, sheetNames, LegacyWriteOptions())
         End Sub
@@ -388,8 +379,8 @@ Namespace CompuMaster.Data
         ''' Updates or creates an Excel file, writes data into it, and saves the file again.
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template</param>
-        ''' <param name="dataTables">Some datatables to write into the workbook</param>
-        ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
+        ''' <param name="dataTables">Data tables to write to the workbook.</param>
+        ''' <param name="sheetNames">Worksheet names to update or add in the same order as <paramref name="dataTables"/>.</param>
         ''' <param name="specialSheet">A special sheet</param>
         ''' <returns>A Workbook object</returns>
         ''' <remarks></remarks>
@@ -564,7 +555,6 @@ Namespace CompuMaster.Data
         ''' <summary>
         ''' Defines Excel file formats.
         ''' </summary>
-        ''' <remarks></remarks>
         Public Enum FileFormat As Byte
             ''' <summary>
             ''' Excel 2007 or newer workbook format without macros.
@@ -581,9 +571,9 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">An optional path to a template</param>
         ''' <param name="outputStream">An opened output stream</param>
-        ''' <param name="dataTables">Some datatables to write into the workbook</param>
-        ''' <param name="sheetNames">The name the sheets which shall be updated/added in the order as defined by parameter dataTables</param>
-        ''' <remarks></remarks>
+        ''' <param name="dataTables">Data tables to write to the workbook.</param>
+        ''' <param name="sheetNames">Worksheet names to update or add in the same order as <paramref name="dataTables"/>.</param>
+        ''' <param name="fileFormat">Workbook file format.</param>
         Public Shared Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
             WriteDataTableToXlsStreamWithOptions(inputPath, outputStream, dataTables, sheetNames, fileFormat, LegacyWriteOptions())
         End Sub
@@ -728,7 +718,7 @@ Namespace CompuMaster.Data
         ''' Reads all sheets from an excel sheet into a dataset.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <returns>A dataset with one or more, independent tables.</returns>
         ''' <remarks>
         '''     The table names are as the sheet names.
@@ -803,7 +793,7 @@ Namespace CompuMaster.Data
         ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
-        ''' <returns></returns>
+        ''' <returns>The worksheet data.</returns>
         ''' <remarks>
         '''     The first sheet will be used for reading data.
         '''     Values in first row will be assigned as column names.
@@ -839,8 +829,8 @@ Namespace CompuMaster.Data
         ''' Reads the data from an excel sheet into a datatable.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
-        ''' <returns></returns>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
+        ''' <returns>The worksheet data.</returns>
         ''' <remarks>
         '''     The first sheet will be used for reading data.
         ''' 
@@ -864,8 +854,8 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
-        ''' <returns></returns>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
+        ''' <returns>The worksheet data.</returns>
         ''' <remarks>
         '''     The first sheet will be used for reading data.
         ''' 
@@ -908,7 +898,7 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
-        ''' <returns></returns>
+        ''' <returns>The worksheet data.</returns>
         ''' <remarks>
         '''     Values in first row will be assigned as column names.
         '''     Conversion errors will not be ignored!
@@ -944,8 +934,8 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
-        ''' <returns></returns>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
+        ''' <returns>The worksheet data.</returns>
         ''' <remarks>
         '''     Conversion errors will not be ignored!
         '''     Excel error values
@@ -968,8 +958,8 @@ Namespace CompuMaster.Data
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
-        ''' <returns></returns>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
+        ''' <returns>The worksheet data.</returns>
         ''' <remarks>
         '''     Conversion errors will not be ignored!
         '''     Excel error values
@@ -1012,7 +1002,7 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <param name="data">The datatable which shall be filled; only columns which exist in this target table will be imported</param>
         ''' <remarks>
         '''     Conversion errors will not be ignored!
@@ -1051,7 +1041,7 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <param name="data">The datatable which shall be filled; only columns which exist in this target table will be imported</param>
         ''' <remarks>
         '''     Conversion errors will not be ignored!
@@ -1078,7 +1068,7 @@ Namespace CompuMaster.Data
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <param name="sheetName">The sheet which contains the import data</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <param name="data">The datatable which shall be filled; only columns which exist in this target table will be imported</param>
         ''' <remarks>
         '''     Conversion errors will not be ignored!
@@ -1124,9 +1114,7 @@ Namespace CompuMaster.Data
         ''' Reads the available sheet names from an XLS file.
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
-        ''' <returns></returns>
-        ''' <remarks>
-        ''' </remarks>
+        ''' <returns>The worksheet names.</returns>
         Public Shared Function ReadSheetNamesFromXlsFile(ByVal inputPath As String) As String()
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
@@ -1216,7 +1204,7 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="sheet">An excel sheet containing the required data</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <param name="data">The datatable which shall be filled; only columns which exist in this target table will be imported</param>
         ''' <remarks>
         '''     Excel error values
@@ -1380,7 +1368,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheet">A sheet</param>
         ''' <param name="tableName">A table name for the new table</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <returns>A data table with the suggested structure to be able to hold all the data of the sheet</returns>
         ''' <remarks>
         ''' </remarks>
@@ -1397,7 +1385,7 @@ Namespace CompuMaster.Data
         ''' <param name="inputTable">The target table</param>
         ''' <param name="sheet">A sheet</param>
         ''' <param name="startReadingAtRowIndex">Sometimes, excel sheets start with an introductional/explaining header instead of just column names, e.g. a table may start at row index 2 (in excel line 3)</param>
-        ''' <param name="firstRowContainsColumnNames">Indicate wether the first row contains column names (true) or values (false)</param>
+        ''' <param name="firstRowContainsColumnNames">Whether the first row contains column names instead of values.</param>
         ''' <remarks>
         ''' </remarks>
         Private Shared Sub ReadDataTableFromXlsFileExtendDataTableColumns(inputTable As System.Data.DataTable, ByVal sheet As CompuMaster.Epplus4.ExcelWorksheet, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean)
