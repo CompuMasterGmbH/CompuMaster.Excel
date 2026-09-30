@@ -49,6 +49,8 @@
 - Before creating a release, ensure the pull request has been created, reviewed as required, merged into the primary integration branch, and the build-and-test workflow for that branch has completed successfully.
 - If the workflow is configured to run on pull requests and on pushes to the primary integration branch, wait for the relevant successful run after merge before creating the release.
 - If a release is requested before these prerequisites are met, create or update the pull request first and explicitly tell the user that the release must wait for the successful build-and-test pipeline on the primary integration branch.
+- Every release description must identify the affected project or projects for each listed change. Use the exact NuGet package ID where available; otherwise, use the project or repository-infrastructure name.
+- Derive the affected-project list from the complete diff since the previous release. List all synchronized or generated project variants that changed, and label repository-wide tooling or documentation changes explicitly instead of leaving their scope ambiguous.
 
 ## Branch Cleanup
 
