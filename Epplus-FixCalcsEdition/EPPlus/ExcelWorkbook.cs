@@ -906,7 +906,7 @@ namespace CompuMaster.Epplus4
 			}
 		}
 
-        private void SaveSharedStringHandler(ZipOutputStream stream, CompressionLevel compressionLevel, string fileName)
+        private void SaveSharedStringHandler(Stream stream, CompressionLevel compressionLevel, string fileName)
 		{
             //Packaging.ZipPackagePart stringPart;
             //if (_package.Package.PartExists(SharedStringsUri))
@@ -920,11 +920,7 @@ namespace CompuMaster.Epplus4
             //}
 
 			//StreamWriter sw = new StreamWriter(stringPart.GetStream(FileMode.Create, FileAccess.Write));
-            //Init Zip
-            stream.CompressionLevel = (CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
-            stream.PutNextEntry(fileName);
-
-            var cache = new StringBuilder();            
+            var cache = new StringBuilder();
             var sw = new StreamWriter(stream);
             cache.AppendFormat("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" count=\"{0}\" uniqueCount=\"{0}\">", _sharedStrings.Count);
 			foreach (string t in _sharedStrings.Keys)

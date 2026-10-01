@@ -3,6 +3,7 @@ Option Strict On
 
 Imports System.Data
 Imports System.IO
+Imports System.IO.Compression
 Imports System.Linq
 Imports System.Reflection
 Imports NUnit.Framework
@@ -72,6 +73,36 @@ Namespace Data
                 Using workbook As New CompuMaster.Epplus4.ExcelPackage(output)
                     Assert.That(workbook.Workbook.Worksheets.Count, [Is].EqualTo(1))
                     Assert.That(workbook.Workbook.Worksheets(0).Name, [Is].EqualTo("StreamSheet"))
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>
+        ''' Verifies that the ZIP backend writes a standard XLSX archive that can be reopened.
+        ''' </summary>
+        <Test>
+        Public Sub ZipArchiveRoundTripPreservesWorksheetsAndSharedStrings()
+            Using output As New MemoryStream()
+                Using workbook As New CompuMaster.Epplus4.ExcelPackage()
+                    workbook.Workbook.Worksheets.Add("First").Cells(1, 1).Value = "Repeated text"
+                    workbook.Workbook.Worksheets.Add("Second").Cells(1, 1).Value = "Repeated text"
+                    workbook.SaveAs(output)
+                End Using
+
+                output.Position = 0
+                Using archive As New ZipArchive(output, ZipArchiveMode.Read, True)
+                    Assert.That(archive.GetEntry("[Content_Types].xml"), [Is].Not.Null)
+                    Assert.That(archive.Entries.Any(Function(entry) entry.FullName.TrimStart("/"c) = "xl/workbook.xml"), [Is].True)
+                    Assert.That(archive.Entries.Any(Function(entry) entry.FullName.TrimStart("/"c) = "xl/worksheets/sheet1.xml"), [Is].True)
+                    Assert.That(archive.Entries.Any(Function(entry) entry.FullName.TrimStart("/"c) = "xl/worksheets/sheet2.xml"), [Is].True)
+                    Assert.That(archive.Entries.Any(Function(entry) entry.FullName.TrimStart("/"c) = "xl/sharedStrings.xml"), [Is].True)
+                End Using
+
+                output.Position = 0
+                Using reopened As New CompuMaster.Epplus4.ExcelPackage(output)
+                    Assert.That(reopened.Workbook.Worksheets.Count, [Is].EqualTo(2))
+                    Assert.That(reopened.Workbook.Worksheets(0).Cells(1, 1).Text, [Is].EqualTo("Repeated text"))
+                    Assert.That(reopened.Workbook.Worksheets(1).Cells(1, 1).Text, [Is].EqualTo("Repeated text"))
                 End Using
             End Using
         End Sub

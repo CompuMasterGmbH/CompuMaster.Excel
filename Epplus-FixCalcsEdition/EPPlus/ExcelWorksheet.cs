@@ -2995,14 +2995,8 @@ namespace CompuMaster.Epplus4
                 }
             }
         }
-        internal void SaveHandler(ZipOutputStream stream, CompressionLevel compressionLevel, string fileName)
+        internal void SaveHandler(Stream stream, CompressionLevel compressionLevel, string fileName)
         {
-                    //Init Zip
-                    stream.CodecBufferSize = 8096;
-                    stream.CompressionLevel = (CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel)compressionLevel;
-                    stream.PutNextEntry(fileName);
-
-                    
                     SaveXml(stream);
         }
 

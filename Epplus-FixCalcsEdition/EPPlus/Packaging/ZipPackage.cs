@@ -34,10 +34,9 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.IO.Compression;
 using System.Xml;
 using CompuMaster.Epplus4.Utils;
-using CompuMaster.Epplus4.Packaging.Ionic.Zip;
-using Ionic.Zip;
 namespace CompuMaster.Epplus4.Packaging
 {
     /// <summary>
@@ -96,14 +95,24 @@ namespace CompuMaster.Epplus4.Packaging
             {
                 var rels = new Dictionary<string, string>();
                 stream.Seek(0, SeekOrigin.Begin);                
-                using (ZipInputStream zip = new ZipInputStream(stream))
+                ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Read, true);
+                if (zip.Entries.Count == 0)
                 {
-                    var e = zip.GetNextEntry();
-                    if(e==null)
+                    zip.Dispose();
+                    var repairedStream = RepairEmptyCentralDirectory(stream);
+                    if (repairedStream == null)
+                    {
+                        throw new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor.");
+                    }
+                    zip = new ZipArchive(repairedStream, ZipArchiveMode.Read, false);
+                }
+                using (zip)
+                {
+                    if (zip.Entries.Count == 0)
                     {
                         throw (new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor."));
                     }
-                    if (e.FileName.Contains("\\"))
+                    if (zip.Entries[0].FullName.Contains("\\"))
                     {
                         _dirSeparator = '\\';
                     }
@@ -111,40 +120,44 @@ namespace CompuMaster.Epplus4.Packaging
                     {
                         _dirSeparator = '/';
                     }
-                    while (e != null)
+                    foreach (ZipArchiveEntry e in zip.Entries)
                     {
-                        if (e.UncompressedSize > 0)
+                        if (e.Length > 0)
                         {
-                            var b = new byte[e.UncompressedSize];
-                            var size = zip.Read(b, 0, (int)e.UncompressedSize);
-                            if (e.FileName.Equals("[content_types].xml", StringComparison.OrdinalIgnoreCase))
+                            byte[] b;
+                            using (var entryStream = e.Open())
+                            using (var buffer = new MemoryStream())
+                            {
+                                entryStream.CopyTo(buffer);
+                                b = buffer.ToArray();
+                            }
+                            if (e.FullName.Equals("[content_types].xml", StringComparison.OrdinalIgnoreCase))
                             {
                                 AddContentTypes(Encoding.UTF8.GetString(b));
                                 hasContentTypeXml = true;
                             }
-                            else if (e.FileName.Equals($"_rels{_dirSeparator}.rels", StringComparison.OrdinalIgnoreCase)) 
+                            else if (e.FullName.Equals($"_rels{_dirSeparator}.rels", StringComparison.OrdinalIgnoreCase))
                             {
                                 ReadRelation(Encoding.UTF8.GetString(b), "");
                             }
                             else
                             {
-                                if (e.FileName.EndsWith(".rels", StringComparison.OrdinalIgnoreCase))
+                                if (e.FullName.EndsWith(".rels", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    rels.Add(GetUriKey(e.FileName), Encoding.UTF8.GetString(b));
+                                    rels.Add(GetUriKey(e.FullName), Encoding.UTF8.GetString(b));
                                 }
                                 else
                                 {                                    
                                     var part = new ZipPackagePart(this, e);
                                     part.Stream = new MemoryStream();
                                     part.Stream.Write(b, 0, b.Length);
-                                    Parts.Add(GetUriKey(e.FileName), part);
+                                    Parts.Add(GetUriKey(e.FullName), part);
                                 }
                             }
                         }
                         else
                         {
                         }
-                        e = zip.GetNextEntry();
                     }
 
                     foreach (var p in Parts)
@@ -173,10 +186,67 @@ namespace CompuMaster.Epplus4.Packaging
                     {
                         throw (new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor."));
                     }
-                    zip.Close();
-                    zip.Dispose();
                 }
             }
+        }
+
+        // Some older encrypted workbooks have valid central directory records but an
+        // end-of-central-directory record whose entry count and offsets are all zero.
+        // The former streaming ZIP reader ignored that record. Repair a private copy
+        // only when the complete central directory chain can be validated.
+        private static Stream RepairEmptyCentralDirectory(Stream stream)
+        {
+            stream.Seek(0, SeekOrigin.Begin);
+            byte[] data;
+            using (var copy = new MemoryStream())
+            {
+                stream.CopyTo(copy);
+                data = copy.ToArray();
+            }
+            int end = data.Length - 22;
+            if (end < 46 || !HasZipSignature(data, 0, 0x04034b50) ||
+                !HasZipSignature(data, end, 0x06054b50))
+            {
+                return null;
+            }
+            for (int offset = end + 4; offset < data.Length; offset++)
+            {
+                if (data[offset] != 0) return null;
+            }
+
+            int first = end;
+            int count = 0;
+            while (first >= 46 && count < ushort.MaxValue)
+            {
+                bool found = false;
+                for (int offset = first - 46; offset >= 0; offset--)
+                {
+                    if (!HasZipSignature(data, offset, 0x02014b50)) continue;
+                    int recordLength = 46 + BitConverter.ToUInt16(data, offset + 28) +
+                        BitConverter.ToUInt16(data, offset + 30) + BitConverter.ToUInt16(data, offset + 32);
+                    uint localOffset = BitConverter.ToUInt32(data, offset + 42);
+                    if ((long)offset + recordLength != first || localOffset >= offset ||
+                        !HasZipSignature(data, (int)localOffset, 0x04034b50)) continue;
+                    first = offset;
+                    count++;
+                    found = true;
+                    break;
+                }
+                if (!found) break;
+            }
+            if (count == 0 || first == 0) return null;
+
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)count), 0, data, end + 8, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)count), 0, data, end + 10, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((uint)(end - first)), 0, data, end + 12, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes((uint)first), 0, data, end + 16, 4);
+            return new MemoryStream(data, false);
+        }
+
+        private static bool HasZipSignature(byte[] data, int offset, uint signature)
+        {
+            return offset >= 0 && offset <= data.Length - 4 &&
+                BitConverter.ToUInt32(data, offset) == signature;
         }
 
         private void AddContentTypes(string xml)
@@ -276,20 +346,23 @@ namespace CompuMaster.Epplus4.Packaging
         internal void Save(Stream stream)
         {
             var enc = Encoding.UTF8;
-            ZipOutputStream os = new ZipOutputStream(stream, true);
-            os.CompressionLevel = (CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel)_compression;            
+            using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+            {
             /**** ContentType****/
-            var entry = os.PutNextEntry("[Content_Types].xml");
+            var entry = archive.CreateEntry("[Content_Types].xml", GetZipCompressionLevel(_compression));
             byte[] b = enc.GetBytes(GetContentTypeXml());
-            os.Write(b, 0, b.Length);
+            using (var entryStream = entry.Open())
+            {
+                entryStream.Write(b, 0, b.Length);
+            }
             /**** Top Rels ****/
-            _rels.WriteZip(os, $"_rels/.rels");
+            _rels.WriteZip(archive, $"_rels/.rels", _compression);
             ZipPackagePart ssPart=null;
             foreach(var part in Parts.Values)
             {
                 if (part.ContentType != ExcelPackage.contentTypeSharedString)
                 {
-                    part.WriteZip(os);
+                    part.WriteZip(archive);
                 }
                 else
                 {
@@ -299,14 +372,24 @@ namespace CompuMaster.Epplus4.Packaging
             //Shared strings must be saved after all worksheets. The ss dictionary is populated when that workheets are saved (to get the best performance).
             if (ssPart != null)
             {
-                ssPart.WriteZip(os);
+                ssPart.WriteZip(archive);
             }
-            os.Flush();
-            
-            os.Close();
-            os.Dispose();  
+            }
             
             //return ms;
+        }
+
+        internal static System.IO.Compression.CompressionLevel GetZipCompressionLevel(CompressionLevel level)
+        {
+            if (level == CompressionLevel.None)
+            {
+                return System.IO.Compression.CompressionLevel.NoCompression;
+            }
+            if ((int)level <= 3)
+            {
+                return System.IO.Compression.CompressionLevel.Fastest;
+            }
+            return System.IO.Compression.CompressionLevel.Optimal;
         }
 
         private string GetContentTypeXml()
