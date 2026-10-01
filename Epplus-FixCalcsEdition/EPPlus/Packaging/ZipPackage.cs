@@ -115,14 +115,21 @@ namespace CompuMaster.Epplus4.Packaging
                 var rels = new Dictionary<string, string>();
                 stream.Seek(0, SeekOrigin.Begin);                
                 ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Read, true);
-                if (zip.Entries.Count == 0)
+                bool needsRepair;
+                try
+                {
+                    needsRepair = zip.Entries.Count == 0;
+                }
+                catch (InvalidDataException)
+                {
+                    needsRepair = true;
+                }
+                if (needsRepair)
                 {
                     zip.Dispose();
-                    var repairedStream = RepairEmptyCentralDirectory(stream, loadLimits.MaxZipEntries);
+                    var repairedStream = RepairLegacyCentralDirectoryOffset(stream, loadLimits.MaxZipEntries);
                     if (repairedStream == null)
-                    {
-                        throw new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor.");
-                    }
+                        throw new InvalidDataException("The file is not a valid Package file. If the file is encrypted, supply the password when opening it.");
                     zip = new ZipArchive(repairedStream, ZipArchiveMode.Read, false);
                 }
                 using (zip)
@@ -297,11 +304,10 @@ namespace CompuMaster.Epplus4.Packaging
             }
         }
 
-        // Some older encrypted workbooks have valid central directory records but an
-        // end-of-central-directory record whose entry count and offsets are all zero.
-        // The former streaming ZIP reader ignored that record. Repair a private copy
-        // only when the complete central directory chain can be validated.
-        private static Stream RepairEmptyCentralDirectory(Stream stream, int maxEntries)
+        // Some encrypted workbooks have valid central directory records but an
+        // end-of-central-directory record with a zero offset. The former streaming
+        // reader ignored it. Repair a private copy only after validating the chain.
+        private static Stream RepairLegacyCentralDirectoryOffset(Stream stream, int maxEntries)
         {
             stream.Seek(0, SeekOrigin.Begin);
             byte[] data;
@@ -316,10 +322,11 @@ namespace CompuMaster.Epplus4.Packaging
             {
                 return null;
             }
-            for (int offset = end + 4; offset < data.Length; offset++)
-            {
-                if (data[offset] != 0) return null;
-            }
+            if (BitConverter.ToUInt16(data, end + 4) != 0 ||
+                BitConverter.ToUInt16(data, end + 6) != 0 ||
+                BitConverter.ToUInt32(data, end + 16) != 0 ||
+                BitConverter.ToUInt16(data, end + 20) != 0)
+                return null;
 
             int first = end;
             int count = 0;
@@ -344,6 +351,13 @@ namespace CompuMaster.Epplus4.Packaging
                 if (!found) break;
             }
             if (count == 0 || first == 0) return null;
+            int recordedCount = BitConverter.ToUInt16(data, end + 10);
+            int recordedDiskCount = BitConverter.ToUInt16(data, end + 8);
+            uint recordedSize = BitConverter.ToUInt32(data, end + 12);
+            if ((recordedCount != 0 && recordedCount != count) ||
+                (recordedDiskCount != 0 && recordedDiskCount != count) ||
+                (recordedSize != 0 && recordedSize != end - first))
+                return null;
 
             Buffer.BlockCopy(BitConverter.GetBytes((ushort)count), 0, data, end + 8, 2);
             Buffer.BlockCopy(BitConverter.GetBytes((ushort)count), 0, data, end + 10, 2);
