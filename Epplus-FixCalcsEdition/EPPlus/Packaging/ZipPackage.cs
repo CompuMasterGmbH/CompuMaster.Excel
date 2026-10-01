@@ -39,6 +39,16 @@ using System.Xml;
 using CompuMaster.Epplus4.Utils;
 namespace CompuMaster.Epplus4.Packaging
 {
+    internal sealed class PackageMemoryStream : MemoryStream
+    {
+        internal long XmlSizeLimit { get; }
+
+        internal PackageMemoryStream(long xmlSizeLimit)
+        {
+            XmlSizeLimit = xmlSizeLimit;
+        }
+    }
+
     /// <summary>
     /// Specifies whether the target is inside or outside the System.IO.Packaging.Package.
     /// </summary>
@@ -85,7 +95,13 @@ namespace CompuMaster.Epplus4.Packaging
         }
 
         internal ZipPackage(Stream stream)
+            : this(stream, ExcelPackageLoadLimits.Default)
         {
+        }
+
+        internal ZipPackage(Stream stream, ExcelPackageLoadLimits loadLimits)
+        {
+            if (loadLimits == null) throw new ArgumentNullException(nameof(loadLimits));
             bool hasContentTypeXml = false;
             if (stream == null || stream.Length == 0)
             {
@@ -93,13 +109,16 @@ namespace CompuMaster.Epplus4.Packaging
             }
             else
             {
+                if (stream.Length > loadLimits.MaxInputBytes)
+                    throw new InvalidDataException("The XLSX input exceeds the configured compressed input size limit.");
+                ValidateCentralDirectoryEntryCount(stream, loadLimits.MaxZipEntries);
                 var rels = new Dictionary<string, string>();
                 stream.Seek(0, SeekOrigin.Begin);                
                 ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Read, true);
                 if (zip.Entries.Count == 0)
                 {
                     zip.Dispose();
-                    var repairedStream = RepairEmptyCentralDirectory(stream);
+                    var repairedStream = RepairEmptyCentralDirectory(stream, loadLimits.MaxZipEntries);
                     if (repairedStream == null)
                     {
                         throw new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor.");
@@ -112,6 +131,13 @@ namespace CompuMaster.Epplus4.Packaging
                     {
                         throw (new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor."));
                     }
+                    if (zip.Entries.Count > loadLimits.MaxZipEntries)
+                        throw new InvalidDataException("The XLSX package exceeds the configured ZIP entry count limit.");
+                    long declaredTotal = 0;
+                    foreach (ZipArchiveEntry entry in zip.Entries)
+                    {
+                        ValidateEntryMetadata(entry, loadLimits, ref declaredTotal);
+                    }
                     if (zip.Entries[0].FullName.Contains("\\"))
                     {
                         _dirSeparator = '\\';
@@ -120,44 +146,42 @@ namespace CompuMaster.Epplus4.Packaging
                     {
                         _dirSeparator = '/';
                     }
+                    long extractedTotal = 0;
                     foreach (ZipArchiveEntry e in zip.Entries)
                     {
-                        if (e.Length > 0)
+                        MemoryStream buffer = ReadEntry(e, loadLimits, ref extractedTotal);
+                        if (e.Length == 0)
                         {
-                            byte[] b;
-                            using (var entryStream = e.Open())
-                            using (var buffer = new MemoryStream())
-                            {
-                                entryStream.CopyTo(buffer);
-                                b = buffer.ToArray();
-                            }
+                            buffer.Dispose();
+                            continue;
+                        }
+                        try
+                        {
                             if (e.FullName.Equals("[content_types].xml", StringComparison.OrdinalIgnoreCase))
                             {
-                                AddContentTypes(Encoding.UTF8.GetString(b));
+                                AddContentTypes(Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length));
                                 hasContentTypeXml = true;
                             }
                             else if (e.FullName.Equals($"_rels{_dirSeparator}.rels", StringComparison.OrdinalIgnoreCase))
                             {
-                                ReadRelation(Encoding.UTF8.GetString(b), "");
+                                ReadRelation(Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length), "");
                             }
                             else
                             {
                                 if (e.FullName.EndsWith(".rels", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    rels.Add(GetUriKey(e.FullName), Encoding.UTF8.GetString(b));
+                                    rels.Add(GetUriKey(e.FullName), Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length));
                                 }
                                 else
-                                {                                    
+                                {
                                     var part = new ZipPackagePart(this, e);
-                                    part.Stream = new MemoryStream();
-                                    part.Stream.Write(b, 0, b.Length);
+                                    part.Stream = buffer;
                                     Parts.Add(GetUriKey(e.FullName), part);
+                                    buffer = null;
                                 }
                             }
                         }
-                        else
-                        {
-                        }
+                        finally { buffer?.Dispose(); }
                     }
 
                     foreach (var p in Parts)
@@ -190,11 +214,94 @@ namespace CompuMaster.Epplus4.Packaging
             }
         }
 
+        private static bool IsXmlEntry(string name)
+        {
+            return name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith(".rels", StringComparison.OrdinalIgnoreCase) ||
+                name.EndsWith(".vml", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ValidateCentralDirectoryEntryCount(Stream stream, int maxEntries)
+        {
+            long end = stream.Length;
+            long first = Math.Max(0, end - 65557);
+            var tail = new byte[checked((int)(end - first))];
+            stream.Seek(first, SeekOrigin.Begin);
+            int read = 0;
+            while (read < tail.Length)
+            {
+                int current = stream.Read(tail, read, tail.Length - read);
+                if (current == 0) break;
+                read += current;
+            }
+            for (int offset = read - 22; offset >= 0; offset--)
+            {
+                if (!HasZipSignature(tail, offset, 0x06054b50) ||
+                    offset + 22 + BitConverter.ToUInt16(tail, offset + 20) != read)
+                    continue;
+                if (BitConverter.ToUInt16(tail, offset + 10) > maxEntries)
+                    throw new InvalidDataException("The XLSX package exceeds the configured ZIP entry count limit.");
+                break;
+            }
+        }
+
+        private static void ValidateEntryMetadata(ZipArchiveEntry entry, ExcelPackageLoadLimits limits, ref long declaredTotal)
+        {
+            long maxEntryBytes = IsXmlEntry(entry.FullName)
+                ? Math.Min(limits.MaxEntryBytes, limits.MaxXmlBytes)
+                : limits.MaxEntryBytes;
+            if (entry.Length > maxEntryBytes)
+                throw new InvalidDataException("An XLSX ZIP entry exceeds the configured uncompressed entry size limit.");
+            if (entry.Length > limits.MaxTotalUncompressedBytes - declaredTotal)
+                throw new InvalidDataException("The XLSX package exceeds the configured total uncompressed size limit.");
+            if (entry.Length > 0 && (entry.CompressedLength == 0 ||
+                (double)entry.Length / entry.CompressedLength > limits.MaxCompressionRatio))
+                throw new InvalidDataException("An XLSX ZIP entry exceeds the configured compression ratio limit.");
+            declaredTotal += entry.Length;
+        }
+
+        private static MemoryStream ReadEntry(ZipArchiveEntry entry, ExcelPackageLoadLimits limits, ref long extractedTotal)
+        {
+            long maxEntryBytes = IsXmlEntry(entry.FullName)
+                ? Math.Min(limits.MaxEntryBytes, limits.MaxXmlBytes)
+                : limits.MaxEntryBytes;
+            var result = new PackageMemoryStream(limits.MaxXmlBytes);
+            try
+            {
+                long extracted = 0;
+                var block = new byte[81920];
+                using (var source = entry.Open())
+                {
+                    int bytesRead;
+                    while ((bytesRead = source.Read(block, 0, block.Length)) != 0)
+                    {
+                        if (bytesRead > maxEntryBytes - extracted ||
+                            bytesRead > limits.MaxTotalUncompressedBytes - extractedTotal - extracted ||
+                            entry.CompressedLength == 0 ||
+                            (double)(extracted + bytesRead) / entry.CompressedLength > limits.MaxCompressionRatio)
+                            throw new InvalidDataException("An XLSX ZIP entry exceeds the configured resource limits.");
+                        result.Write(block, 0, bytesRead);
+                        extracted += bytesRead;
+                    }
+                }
+                if (extracted != entry.Length)
+                    throw new InvalidDataException("An XLSX ZIP entry has inconsistent uncompressed size metadata.");
+                extractedTotal += extracted;
+                result.Position = 0;
+                return result;
+            }
+            catch
+            {
+                result.Dispose();
+                throw;
+            }
+        }
+
         // Some older encrypted workbooks have valid central directory records but an
         // end-of-central-directory record whose entry count and offsets are all zero.
         // The former streaming ZIP reader ignored that record. Repair a private copy
         // only when the complete central directory chain can be validated.
-        private static Stream RepairEmptyCentralDirectory(Stream stream)
+        private static Stream RepairEmptyCentralDirectory(Stream stream, int maxEntries)
         {
             stream.Seek(0, SeekOrigin.Begin);
             byte[] data;
@@ -229,6 +336,8 @@ namespace CompuMaster.Epplus4.Packaging
                         !HasZipSignature(data, (int)localOffset, 0x04034b50)) continue;
                     first = offset;
                     count++;
+                    if (count > maxEntries)
+                        throw new InvalidDataException("The XLSX package exceeds the configured ZIP entry count limit.");
                     found = true;
                     break;
                 }

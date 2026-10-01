@@ -45,6 +45,8 @@ namespace CompuMaster.Epplus4.Encryption
 
         internal static EncryptionInfo ReadBinary(byte[] data)
         {
+            if (data == null || data.Length < 4)
+                throw new InvalidDataException("The XLSX encryption metadata is incomplete.");
             var majorVersion = BitConverter.ToInt16(data, 0);
             var minorVersion = BitConverter.ToInt16(data, 2);
             EncryptionInfo ret;
@@ -490,6 +492,8 @@ namespace CompuMaster.Epplus4.Encryption
         internal XmlDocument Xml {get;set;}
         internal override void Read(byte[] data)
         {
+            if (data.Length < 8)
+                throw new InvalidDataException("The XLSX encryption metadata is incomplete.");
             var byXml = new byte[data.Length - 8];
             Array.Copy(data, 8, byXml, 0, data.Length - 8);
             var xml = Encoding.UTF8.GetString(byXml);
@@ -529,8 +533,12 @@ namespace CompuMaster.Epplus4.Encryption
         internal EncryptionVerifier Verifier;
         internal override void Read(byte[] data)
         {
+            if (data.Length < 60)
+                throw new InvalidDataException("The XLSX encryption metadata is incomplete.");
             Flags = (Flags)BitConverter.ToInt32(data, 4);
             HeaderSize = (uint)BitConverter.ToInt32(data, 8);
+            if (HeaderSize < 34 || HeaderSize > data.Length - 12)
+                throw new InvalidDataException("The XLSX encryption header has an invalid size.");
 
             /**** EncryptionHeader ****/
             Header = new EncryptionHeader();
@@ -548,10 +556,15 @@ namespace CompuMaster.Epplus4.Encryption
             Header.CSPName = UTF8Encoding.Unicode.GetString(text);
 
             int pos = (int)HeaderSize + 12;
+            if (pos > data.Length - 40)
+                throw new InvalidDataException("The XLSX encryption verifier is incomplete.");
 
             /**** EncryptionVerifier ****/
             Verifier = new EncryptionVerifier();
             Verifier.SaltSize = (uint)BitConverter.ToInt32(data, pos);
+            if (Verifier.SaltSize == 0 || Verifier.SaltSize > 64 ||
+                Verifier.SaltSize > data.Length - pos - 4)
+                throw new InvalidDataException("The XLSX encryption verifier has an invalid salt size.");
             Verifier.Salt = new byte[Verifier.SaltSize];
 
             Array.Copy(data, pos + 4, Verifier.Salt, 0, (int)Verifier.SaltSize);
@@ -560,6 +573,9 @@ namespace CompuMaster.Epplus4.Encryption
             Array.Copy(data, pos + 20, Verifier.EncryptedVerifier, 0, 16);
 
             Verifier.VerifierHashSize = (uint)BitConverter.ToInt32(data, pos + 36);
+            if (Verifier.VerifierHashSize == 0 || Verifier.VerifierHashSize > 128 ||
+                Verifier.VerifierHashSize > data.Length - pos - 40)
+                throw new InvalidDataException("The XLSX encryption verifier has an invalid hash size.");
             Verifier.EncryptedVerifierHash = new byte[Verifier.VerifierHashSize];
             Array.Copy(data, pos + 40, Verifier.EncryptedVerifierHash, 0, (int)Verifier.VerifierHashSize);
         }

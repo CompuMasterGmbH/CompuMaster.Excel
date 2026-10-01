@@ -54,15 +54,18 @@ namespace CompuMaster.Epplus4.Encryption
         /// </summary>
         /// <param name="fi">The file</param>
         /// <param name="encryption"></param>
+        /// <param name="loadLimits">The resource limits for the decrypted package.</param>
         /// <returns></returns>
-        internal MemoryStream DecryptPackage(FileInfo fi, ExcelEncryption encryption)
+        internal MemoryStream DecryptPackage(FileInfo fi, ExcelEncryption encryption, ExcelPackageLoadLimits loadLimits)
         {
+            if (fi.Length > loadLimits.MaxInputBytes)
+                throw new InvalidDataException("The encrypted XLSX input exceeds the configured compressed input size limit.");
             if (CompoundDocument.IsCompoundDocument(fi))
             {
                 CompoundDocument doc = new CompoundDocument(fi);
 
                 MemoryStream ret = null;
-                ret = GetStreamFromPackage(doc, encryption);
+                ret = GetStreamFromPackage(doc, encryption, loadLimits);
                 return ret;
             }
             else
@@ -89,15 +92,18 @@ namespace CompuMaster.Epplus4.Encryption
         /// </summary>
         /// <param name="stream">The memory stream. </param>
         /// <param name="encryption">The encryption object from the Package</param>
+        /// <param name="loadLimits">The resource limits for the decrypted package.</param>
         /// <returns></returns>
-        internal MemoryStream DecryptPackage(MemoryStream stream, ExcelEncryption encryption)
+        internal MemoryStream DecryptPackage(MemoryStream stream, ExcelEncryption encryption, ExcelPackageLoadLimits loadLimits)
         {
+            if (stream.Length > loadLimits.MaxInputBytes)
+                throw new InvalidDataException("The encrypted XLSX input exceeds the configured compressed input size limit.");
             try
             {
                 if (CompoundDocument.IsCompoundDocument(stream))
                 {
                     var doc = new CompoundDocument(stream);
-                    return GetStreamFromPackage(doc, encryption);
+                    return GetStreamFromPackage(doc, encryption, loadLimits);
                 }
                 else
                 {
@@ -509,15 +515,17 @@ namespace CompuMaster.Epplus4.Encryption
                 return ms.ToArray();
             }
         }
-        private MemoryStream GetStreamFromPackage(CompoundDocument doc, ExcelEncryption encryption)
+        private MemoryStream GetStreamFromPackage(CompoundDocument doc, ExcelEncryption encryption, ExcelPackageLoadLimits loadLimits)
         {
             var ret = new MemoryStream();
-            if(doc.Storage.DataStreams.ContainsKey("EncryptionInfo") ||
+            if(doc.Storage.DataStreams.ContainsKey("EncryptionInfo") &&
                doc.Storage.DataStreams.ContainsKey("EncryptedPackage"))
             {
+                if (doc.Storage.DataStreams["EncryptionInfo"].LongLength > loadLimits.MaxEncryptionMetadataBytes)
+                    throw new InvalidDataException("The XLSX encryption metadata exceeds the configured size limit.");
                 var encryptionInfo = EncryptionInfo.ReadBinary(doc.Storage.DataStreams["EncryptionInfo"]);
                 
-                return DecryptDocument(doc.Storage.DataStreams["EncryptedPackage"], encryptionInfo, encryption.Password);
+                return DecryptDocument(doc.Storage.DataStreams["EncryptedPackage"], encryptionInfo, encryption.Password, loadLimits);
             }
             else
             {
@@ -531,10 +539,14 @@ namespace CompuMaster.Epplus4.Encryption
         /// <param name="data">The Encrypted data</param>
         /// <param name="encryptionInfo">Encryption Info object</param>
         /// <param name="password">The password</param>
+        /// <param name="loadLimits">The resource limits for the decrypted package.</param>
         /// <returns></returns>
-        private MemoryStream DecryptDocument(byte[] data, EncryptionInfo encryptionInfo, string password)
+        private MemoryStream DecryptDocument(byte[] data, EncryptionInfo encryptionInfo, string password, ExcelPackageLoadLimits loadLimits)
         {
+            if (data.Length < 8) throw new InvalidDataException("The encrypted package size is invalid.");
             long size = BitConverter.ToInt64(data, 0);
+            if (size < 0 || size > loadLimits.MaxInputBytes)
+                throw new InvalidDataException("The decrypted XLSX package exceeds the configured compressed input size limit.");
 
             var encryptedData = new byte[data.Length - 8];
             Array.Copy(data, 8, encryptedData, 0, encryptedData.Length);
@@ -545,9 +557,29 @@ namespace CompuMaster.Epplus4.Encryption
             }
             else
             {
-                return DecryptAgile((EncryptionInfoAgile)encryptionInfo, password, size, encryptedData, data);
+                var agile = (EncryptionInfoAgile)encryptionInfo;
+                ValidateAgileKeyData(agile.KeyData);
+                if (agile.KeyEncryptors.Count == 0)
+                    throw new InvalidDataException("The XLSX encryption metadata has no password key encryptor.");
+                foreach (var keyEncryptor in agile.KeyEncryptors)
+                {
+                    if (keyEncryptor.SpinCount < 0 || keyEncryptor.SpinCount > loadLimits.MaxPasswordHashIterations)
+                        throw new InvalidDataException("The encrypted XLSX package exceeds the configured password-hash iteration limit.");
+                    ValidateAgileKeyData(keyEncryptor);
+                }
+                return DecryptAgile(agile, password, size, encryptedData, data);
             }
 
+        }
+
+        private static void ValidateAgileKeyData(EncryptionInfoAgile.EncryptionKeyData keyData)
+        {
+            if (keyData.SaltSize <= 0 || keyData.SaltSize > 64 ||
+                keyData.HashSize <= 0 || keyData.HashSize > 128 ||
+                keyData.BlockSize <= 0 || keyData.BlockSize > 64 ||
+                keyData.KeyBits <= 0 || keyData.KeyBits > 512 || keyData.KeyBits % 8 != 0 ||
+                keyData.SaltValue == null || keyData.SaltValue.Length != keyData.SaltSize)
+                throw new InvalidDataException("The XLSX encryption metadata has invalid or excessive key parameters.");
         }
 
         readonly byte[] BlockKey_HashInput = new byte[] { 0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e, 0x79 };
