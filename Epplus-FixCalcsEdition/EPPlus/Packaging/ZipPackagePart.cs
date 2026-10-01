@@ -33,20 +33,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.IO.Compression;
 using CompuMaster.Epplus4.Packaging.Ionic.Zip;
 
 namespace CompuMaster.Epplus4.Packaging
 {
     internal class ZipPackagePart : ZipPackageRelationshipBase, IDisposable
     {
-        internal delegate void SaveHandlerDelegate(ZipOutputStream stream, CompressionLevel compressionLevel, string fileName);
+        internal delegate void SaveHandlerDelegate(Stream stream, CompressionLevel compressionLevel, string fileName);
 
-        internal ZipPackagePart(ZipPackage package, ZipEntry entry)
+        internal ZipPackagePart(ZipPackage package, ZipArchiveEntry entry)
         {
             Package = package;
             Entry = entry;
             SaveHandler = null;
-            Uri = new Uri(package.GetUriKey(entry.FileName), UriKind.Relative);
+            Uri = new Uri(package.GetUriKey(entry.FullName), UriKind.Relative);
         }
         internal ZipPackagePart(ZipPackage package, Uri partUri, string contentType, CompressionLevel compressionLevel)
         {
@@ -58,7 +59,7 @@ namespace CompuMaster.Epplus4.Packaging
             CompressionLevel = compressionLevel;
         }
         internal ZipPackage Package { get; set; }
-        internal ZipEntry Entry { get; set; }
+        internal ZipArchiveEntry Entry { get; set; }
         internal CompressionLevel CompressionLevel;
         MemoryStream _stream = null;
         internal MemoryStream Stream
@@ -132,7 +133,7 @@ namespace CompuMaster.Epplus4.Packaging
             get;
             set;
         }
-        internal void WriteZip(ZipOutputStream os)
+        internal void WriteZip(ZipArchive archive)
         {
             byte[] b;
             if (SaveHandler == null)
@@ -142,20 +143,26 @@ namespace CompuMaster.Epplus4.Packaging
                 {
                     return;
                 }
-                os.CompressionLevel = (CompuMaster.Epplus4.Packaging.Ionic.Zlib.CompressionLevel)CompressionLevel;
-                os.PutNextEntry(Uri.OriginalString);
-                os.Write(b, 0, b.Length);
+                var entry = archive.CreateEntry(Uri.OriginalString, ZipPackage.GetZipCompressionLevel(CompressionLevel));
+                using (var entryStream = entry.Open())
+                {
+                    entryStream.Write(b, 0, b.Length);
+                }
             }
             else
             {
-                SaveHandler(os, (CompressionLevel)CompressionLevel, Uri.OriginalString);
+                var entry = archive.CreateEntry(Uri.OriginalString, ZipPackage.GetZipCompressionLevel(CompressionLevel));
+                using (var entryStream = entry.Open())
+                {
+                    SaveHandler(entryStream, CompressionLevel, Uri.OriginalString);
+                }
             }
 
             if (_rels.Count > 0)
             {
                 string f = Uri.OriginalString;
                 var name = Path.GetFileName(f);
-                _rels.WriteZip(os, (string.Format("{0}_rels/{1}.rels", f.Substring(0, f.Length - name.Length), name)));
+                _rels.WriteZip(archive, (string.Format("{0}_rels/{1}.rels", f.Substring(0, f.Length - name.Length), name)), CompressionLevel);
             }
             b = null;
         }

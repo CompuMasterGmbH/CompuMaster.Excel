@@ -34,6 +34,7 @@ using System.Linq;
 using System.Text;
 using Ionic.Zip;
 using System.IO;
+using System.IO.Compression;
 using System.Security;
 using CompuMaster.Epplus4.Packaging.Ionic.Zip;
 
@@ -84,7 +85,7 @@ namespace CompuMaster.Epplus4.Packaging
             return ret;
         }
 
-        internal void WriteZip(ZipOutputStream os, string fileName)
+        internal void WriteZip(ZipArchive archive, string fileName, CompressionLevel compressionLevel)
         {
             StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">");
             foreach (var rel in _rels.Values)
@@ -93,9 +94,12 @@ namespace CompuMaster.Epplus4.Packaging
             }
             xml.Append("</Relationships>");
 
-            os.PutNextEntry(fileName);
+            var entry = archive.CreateEntry(fileName, ZipPackage.GetZipCompressionLevel(compressionLevel));
             byte[] b = Encoding.UTF8.GetBytes(xml.ToString());
-            os.Write(b, 0, b.Length);
+            using (var entryStream = entry.Open())
+            {
+                entryStream.Write(b, 0, b.Length);
+            }
         }
 
         public int Count
