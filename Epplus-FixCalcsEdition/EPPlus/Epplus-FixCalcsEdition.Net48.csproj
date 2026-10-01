@@ -297,6 +297,7 @@
     <Compile Include="Drawing\ExcelDrawings.cs" />
     <Compile Include="ExcelHeaderFooter.cs" />
     <Compile Include="ExcelPackage.cs" />
+    <Compile Include="ExcelPackageLoadLimits.cs" />
     <Compile Include="ExcelRange.cs" />
     <Compile Include="ExcelRow.cs" />
     <Compile Include="Drawing\ExcelShape.cs" />

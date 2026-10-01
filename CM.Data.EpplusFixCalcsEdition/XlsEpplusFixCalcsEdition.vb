@@ -44,7 +44,33 @@ Namespace CompuMaster.Data
 
                 Me.FirstRowContainsColumnNames = firstRowContainsColumnNames
                 Me.StartReadingAtRowIndex = startReadingAtRowIndex
+#If CM_FIXCALCS Then
+                Me.PackageLoadLimits = CompuMaster.Epplus4.ExcelPackageLoadLimits.Default
+#End If
             End Sub
+
+#If CM_FIXCALCS Then
+            ''' <summary>
+            ''' Initializes read options with explicit XLSX resource limits.
+            ''' </summary>
+            ''' <param name="firstRowContainsColumnNames">Indicates whether the first imported row contains column names.</param>
+            ''' <param name="startReadingAtRowIndex">The zero-based row index at which reading starts.</param>
+            ''' <param name="packageLoadLimits">The resource limits to apply while opening the XLSX file.</param>
+            ''' <exception cref="ArgumentNullException"><paramref name="packageLoadLimits"/> is <see langword="Nothing"/>.</exception>
+            ''' <exception cref="ArgumentOutOfRangeException"><paramref name="startReadingAtRowIndex"/> is negative.</exception>
+            Public Sub New(firstRowContainsColumnNames As Boolean, startReadingAtRowIndex As Integer, packageLoadLimits As CompuMaster.Epplus4.ExcelPackageLoadLimits)
+                Me.New(firstRowContainsColumnNames, startReadingAtRowIndex)
+                If packageLoadLimits Is Nothing Then
+                    Throw New ArgumentNullException(NameOf(packageLoadLimits))
+                End If
+                Me.PackageLoadLimits = packageLoadLimits
+            End Sub
+
+            ''' <summary>
+            ''' Gets the resource limits applied while opening an XLSX file.
+            ''' </summary>
+            Public ReadOnly Property PackageLoadLimits As CompuMaster.Epplus4.ExcelPackageLoadLimits
+#End If
 
             ''' <summary>
             ''' Gets whether the first imported row contains column names.
@@ -758,7 +784,11 @@ Namespace CompuMaster.Data
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
 
             'Load the worksheet
+#If CM_FIXCALCS Then
+            importWorkbook = LoadWorkbookFile(inputPath, options.PackageLoadLimits)
+#Else
             importWorkbook = LoadWorkbookFile(inputPath)
+#End If
 
             Dim Result As New DataSet
 
@@ -788,6 +818,16 @@ Namespace CompuMaster.Data
             Dim importWorkbook As New CompuMaster.Epplus4.ExcelPackage(file)
             Return importWorkbook
         End Function
+
+#If CM_FIXCALCS Then
+        Private Shared Function LoadWorkbookFile(inputPath As String, loadLimits As CompuMaster.Epplus4.ExcelPackageLoadLimits) As CompuMaster.Epplus4.ExcelPackage
+            Dim file As New System.IO.FileInfo(inputPath)
+            If Not file.Exists Then
+                Throw New System.IO.FileNotFoundException("Missing file: " & file.ToString(), file.ToString())
+            End If
+            Return CompuMaster.Epplus4.ExcelPackage.OpenWithLoadLimits(file, loadLimits)
+        End Function
+#End If
 
         ''' <summary>
         ''' Reads the data from an excel sheet into a datatable.
@@ -822,7 +862,7 @@ Namespace CompuMaster.Data
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
         Public Shared Function ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal options As ReadOptions) As DataTable
             options = RequiredReadOptions(options)
-            Return ReadDataTableFromXlsFile(inputPath, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames)
+            Return ReadDataTableFromXlsFileCore(inputPath, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, options)
         End Function
 
         ''' <summary>
@@ -871,6 +911,10 @@ Namespace CompuMaster.Data
         '''     {blank}    --> DBNull
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
+            Return ReadDataTableFromXlsFileCore(inputPath, startReadingAtRowIndex, firstRowContainsColumnNames, Nothing)
+        End Function
+
+        Private Shared Function ReadDataTableFromXlsFileCore(ByVal inputPath As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal options As ReadOptions) As DataTable
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
@@ -879,7 +923,11 @@ Namespace CompuMaster.Data
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
 
             'Save the changed worksheet
+#If CM_FIXCALCS Then
+            importWorkbook = If(options Is Nothing, LoadWorkbookFile(inputPath), LoadWorkbookFile(inputPath, options.PackageLoadLimits))
+#Else
             importWorkbook = LoadWorkbookFile(inputPath)
+#End If
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = importWorkbook.Workbook.Worksheets(0)
 
             'Detect the column types which must be used
@@ -926,7 +974,7 @@ Namespace CompuMaster.Data
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
         Public Shared Function ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal sheetName As String, ByVal options As ReadOptions) As DataTable
             options = RequiredReadOptions(options)
-            Return ReadDataTableFromXlsFile(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames)
+            Return ReadDataTableFromXlsFileCore(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, options)
         End Function
 
         ''' <summary>
@@ -973,6 +1021,10 @@ Namespace CompuMaster.Data
         '''     {blank}    --> DBNull
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
+            Return ReadDataTableFromXlsFileCore(inputPath, sheetName, startReadingAtRowIndex, firstRowContainsColumnNames, Nothing)
+        End Function
+
+        Private Shared Function ReadDataTableFromXlsFileCore(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal options As ReadOptions) As DataTable
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
             End If
@@ -980,7 +1032,11 @@ Namespace CompuMaster.Data
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
 
             'Save the changed worksheet
+#If CM_FIXCALCS Then
+            importWorkbook = If(options Is Nothing, LoadWorkbookFile(inputPath), LoadWorkbookFile(inputPath, options.PackageLoadLimits))
+#Else
             importWorkbook = LoadWorkbookFile(inputPath)
+#End If
             If sheetName = Nothing Then
                 sheetName = importWorkbook.Workbook.Worksheets.First.Name
             End If
@@ -1033,7 +1089,7 @@ Namespace CompuMaster.Data
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/>, <paramref name="options"/>, or <paramref name="data"/> is <see langword="Nothing"/>.</exception>
         Public Shared Sub ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal sheetName As String, ByVal options As ReadOptions, ByVal data As DataTable)
             options = RequiredReadOptions(options)
-            ReadDataTableFromXlsFile(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, data)
+            ReadDataTableFromXlsFileCore(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, data, options)
         End Sub
 
         ''' <summary>
@@ -1086,6 +1142,10 @@ Namespace CompuMaster.Data
         '''     Dependent on the firstRowContainsColumnNames parameter, the datatable parameter must contain a table with column names as they're defined in the first row of the excel sheet or the table's columnn must have the name of the column index in excel ("1", "2", "3", ...)
         ''' </remarks>
         Public Shared Sub ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
+            ReadDataTableFromXlsFileCore(inputPath, sheetName, startReadingAtRowIndex, firstRowContainsColumnNames, data, Nothing)
+        End Sub
+
+        Private Shared Sub ReadDataTableFromXlsFileCore(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable, ByVal options As ReadOptions)
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then
                 Throw New ArgumentNullException(NameOf(inputPath), "The input filename is required")
@@ -1096,7 +1156,11 @@ Namespace CompuMaster.Data
             Dim importWorkbook As CompuMaster.Epplus4.ExcelPackage
 
             'Save the changed worksheet
+#If CM_FIXCALCS Then
+            importWorkbook = If(options Is Nothing, LoadWorkbookFile(inputPath), LoadWorkbookFile(inputPath, options.PackageLoadLimits))
+#Else
             importWorkbook = LoadWorkbookFile(inputPath)
+#End If
             If sheetName = Nothing Then
                 sheetName = importWorkbook.Workbook.Worksheets.First.Name
             End If

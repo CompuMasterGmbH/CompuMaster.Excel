@@ -880,6 +880,7 @@ namespace CompuMaster.Epplus4
             bool doAdjust = _package.DoAdjustDrawings;
             _package.DoAdjustDrawings = false;
             Stream stream = packPart.GetStream();
+            XmlHelper.EnforcePackageXmlLimit(stream);
 
 #if Core
             var xr = XmlReader.Create(stream,new XmlReaderSettings() { DtdProcessing = DtdProcessing.Prohibit, IgnoreWhitespace = true });

@@ -826,6 +826,7 @@ namespace CompuMaster.Epplus4
 		}
         internal static void LoadXmlSafe(XmlDocument xmlDoc, Stream stream)
         {
+            EnforcePackageXmlLimit(stream);
             XmlReaderSettings settings = new XmlReaderSettings();
             //Disable entity parsing (to aviod xmlbombs, External Entity Attacks etc).
 #if(Core)
@@ -835,6 +836,12 @@ namespace CompuMaster.Epplus4
 #endif
             XmlReader reader = XmlReader.Create(stream, settings);
             xmlDoc.Load(reader);
+        }
+        internal static void EnforcePackageXmlLimit(Stream stream)
+        {
+            var packageStream = stream as Packaging.PackageMemoryStream;
+            if (packageStream != null && packageStream.Length > packageStream.XmlSizeLimit)
+                throw new InvalidDataException("An XLSX XML part exceeds the configured XML size limit.");
         }
         internal static void LoadXmlSafe(XmlDocument xmlDoc, string xml, Encoding encoding)
         {

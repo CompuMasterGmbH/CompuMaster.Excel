@@ -239,6 +239,7 @@ namespace CompuMaster.Epplus4
         internal const string contentTypeSharedString = @"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
         //Package reference
         private Packaging.ZipPackage _package;
+        private ExcelPackageLoadLimits _loadLimits;
 		internal ExcelWorkbook _workbook;
         /// <summary>
         /// Maximum number of columns in a worksheet (16384). 
@@ -262,12 +263,10 @@ namespace CompuMaster.Epplus4
         /// <summary>
 		/// Create a new instance of the ExcelPackage class based on a existing file or creates a new file. 
 		/// </summary>
-		/// <param name="newFile">If newFile exists, it is opened.  Otherwise it is created from scratch.</param>
+        /// <param name="newFile">If newFile exists, it is opened.  Otherwise it is created from scratch.</param>
         public ExcelPackage(FileInfo newFile)
-		{
-            Init();
-            File = newFile;
-            ConstructNewFile(null);
+		    : this(newFile, null, ExcelPackageLoadLimits.Default)
+        {
         }
         /// <summary>
         /// Create a new instance of the ExcelPackage class based on a existing file or creates a new file. 
@@ -275,8 +274,13 @@ namespace CompuMaster.Epplus4
         /// <param name="newFile">If newFile exists, it is opened.  Otherwise it is created from scratch.</param>
         /// <param name="password">Password for an encrypted package</param>
         public ExcelPackage(FileInfo newFile, string password)
+            : this(newFile, password, ExcelPackageLoadLimits.Default)
+        {
+        }
+        private ExcelPackage(FileInfo newFile, string password, ExcelPackageLoadLimits loadLimits)
         {
             Init();
+            _loadLimits = loadLimits ?? throw new ArgumentNullException(nameof(loadLimits));
             File = newFile;
             ConstructNewFile(password);
         }
@@ -302,6 +306,13 @@ namespace CompuMaster.Epplus4
         public ExcelPackage(FileInfo newFile, FileInfo template, string password)
         {
             Init();
+            File = newFile;
+            CreateFromTemplate(template, password);
+        }
+        private ExcelPackage(FileInfo newFile, FileInfo template, string password, ExcelPackageLoadLimits loadLimits)
+        {
+            Init();
+            _loadLimits = loadLimits ?? throw new ArgumentNullException(nameof(loadLimits));
             File = newFile;
             CreateFromTemplate(template, password);
         }
@@ -334,23 +345,21 @@ namespace CompuMaster.Epplus4
                 File = new FileInfo(Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlsx");
             }
         }
+        private ExcelPackage(FileInfo template, bool useStream, string password, ExcelPackageLoadLimits loadLimits)
+        {
+            Init();
+            _loadLimits = loadLimits ?? throw new ArgumentNullException(nameof(loadLimits));
+            CreateFromTemplate(template, password);
+            if (!useStream)
+                File = new FileInfo(Path.GetTempPath() + Guid.NewGuid().ToString() + ".xlsx");
+        }
         /// <summary>
         /// Create a new instance of the ExcelPackage class based on a stream
         /// </summary>
         /// <param name="newStream">The stream object can be empty or contain a package. The stream must be Read/Write</param>
         public ExcelPackage(Stream newStream) 
+            : this(newStream, null, ExcelPackageLoadLimits.Default)
         {
-            Init();
-            if (newStream.Length == 0)
-            {
-                _stream = newStream;
-                _isExternalStream = true;
-                ConstructNewFile(null);
-            }
-            else
-            {                
-                Load(newStream);
-            }
         }
         /// <summary>
         /// Create a new instance of the ExcelPackage class based on a stream
@@ -358,13 +367,18 @@ namespace CompuMaster.Epplus4
         /// <param name="newStream">The stream object can be empty or contain a package. The stream must be Read/Write</param>
         /// <param name="Password">The password to decrypt the document</param>
         public ExcelPackage(Stream newStream, string Password)
+            : this(newStream, Password, ExcelPackageLoadLimits.Default)
         {
-            if (!(newStream.CanRead && newStream.CanWrite))
+        }
+        private ExcelPackage(Stream newStream, string Password, ExcelPackageLoadLimits loadLimits)
+        {
+            if (!newStream.CanRead || (newStream.Length == 0 && !newStream.CanWrite))
             {
-                throw new Exception("The stream must be read/write");
+                throw new Exception("The input stream must be readable, and an empty output stream must be read/write");
             }
 
             Init();
+            _loadLimits = loadLimits ?? throw new ArgumentNullException(nameof(loadLimits));
             if (newStream.Length > 0)
             {
                 Load(newStream,Password);
@@ -378,22 +392,71 @@ namespace CompuMaster.Epplus4
             }
         }
         /// <summary>
+        /// Opens an XLSX file with explicit resource limits.
+        /// </summary>
+        /// <param name="file">The file to open.</param>
+        /// <param name="loadLimits">The resource limits to apply.</param>
+        /// <param name="password">The password for an encrypted package, or null for an unencrypted package.</param>
+        /// <returns>The opened Excel package.</returns>
+        public static ExcelPackage OpenWithLoadLimits(FileInfo file, ExcelPackageLoadLimits loadLimits, string password = null)
+        {
+            return new ExcelPackage(file, password, loadLimits);
+        }
+        /// <summary>
+        /// Opens an XLSX stream with explicit resource limits.
+        /// </summary>
+        /// <param name="stream">The readable and writable stream to open.</param>
+        /// <param name="loadLimits">The resource limits to apply.</param>
+        /// <param name="password">The password for an encrypted package, or null for an unencrypted package.</param>
+        /// <returns>The opened Excel package.</returns>
+        public static ExcelPackage OpenWithLoadLimits(Stream stream, ExcelPackageLoadLimits loadLimits, string password = null)
+        {
+            return new ExcelPackage(stream, password, loadLimits);
+        }
+        /// <summary>
+        /// Creates a package from a file template with explicit resource limits.
+        /// </summary>
+        /// <param name="newFile">The output file.</param>
+        /// <param name="template">The template file to load.</param>
+        /// <param name="loadLimits">The resource limits to apply to the template.</param>
+        /// <param name="password">The template password, or null for an unencrypted template.</param>
+        /// <returns>The package created from the template.</returns>
+        public static ExcelPackage CreateFromTemplateWithLoadLimits(FileInfo newFile, FileInfo template, ExcelPackageLoadLimits loadLimits, string password = null)
+        {
+            return new ExcelPackage(newFile, template, password, loadLimits);
+        }
+        /// <summary>
+        /// Creates a package from a file template with explicit resource limits.
+        /// </summary>
+        /// <param name="template">The template file to load.</param>
+        /// <param name="useStream">Whether the package should use a stream instead of a temporary output file.</param>
+        /// <param name="loadLimits">The resource limits to apply to the template.</param>
+        /// <param name="password">The template password, or null for an unencrypted template.</param>
+        /// <returns>The package created from the template.</returns>
+        public static ExcelPackage CreateFromTemplateWithLoadLimits(FileInfo template, bool useStream, ExcelPackageLoadLimits loadLimits, string password = null)
+        {
+            return new ExcelPackage(template, useStream, password, loadLimits);
+        }
+        /// <summary>
+        /// Creates a package from a stream template with explicit resource limits.
+        /// </summary>
+        /// <param name="newStream">The empty, readable and writable output stream.</param>
+        /// <param name="templateStream">The template stream to load.</param>
+        /// <param name="loadLimits">The resource limits to apply to the template.</param>
+        /// <param name="password">The template password, or null for an unencrypted template.</param>
+        /// <returns>The package created from the template.</returns>
+        public static ExcelPackage CreateFromTemplateWithLoadLimits(Stream newStream, Stream templateStream, ExcelPackageLoadLimits loadLimits, string password = null)
+        {
+            return new ExcelPackage(newStream, templateStream, password, loadLimits);
+        }
+        /// <summary>
         /// Create a new instance of the ExcelPackage class based on a stream
         /// </summary>
         /// <param name="newStream">The output stream. Must be an empty read/write stream.</param>
         /// <param name="templateStream">This stream is copied to the output stream at load</param>
         public ExcelPackage(Stream newStream, Stream templateStream)
+            : this(newStream, templateStream, null, ExcelPackageLoadLimits.Default)
         {
-            if (newStream.Length > 0)
-            {
-                throw(new Exception("The output stream must be empty. Length > 0"));
-            }
-            else if (!(newStream.CanRead && newStream.CanWrite))
-            {
-                throw new Exception("The stream must be read/write");
-            }
-            Init();
-            Load(templateStream, newStream, null);
         }
         /// <summary>
         /// Create a new instance of the ExcelPackage class based on a stream
@@ -402,6 +465,10 @@ namespace CompuMaster.Epplus4
         /// <param name="templateStream">This stream is copied to the output stream at load</param>
         /// <param name="Password">Password to decrypted the template</param>
         public ExcelPackage(Stream newStream, Stream templateStream, string Password)
+            : this(newStream, templateStream, Password, ExcelPackageLoadLimits.Default)
+        {
+        }
+        private ExcelPackage(Stream newStream, Stream templateStream, string password, ExcelPackageLoadLimits loadLimits)
         {
             if (newStream.Length > 0)
             {
@@ -412,7 +479,8 @@ namespace CompuMaster.Epplus4
                 throw new Exception("The stream must be read/write");
             }
             Init();
-            Load(templateStream, newStream, Password);
+            _loadLimits = loadLimits ?? throw new ArgumentNullException(nameof(loadLimits));
+            Load(templateStream, newStream, password);
         }
         #endregion
         internal ImageInfo AddImage(byte[] image)
@@ -522,6 +590,7 @@ namespace CompuMaster.Epplus4
         private void Init()
         {
             DoAdjustDrawings = true;
+            _loadLimits = ExcelPackageLoadLimits.Default;
 #if (Core)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);  //Add Support for codepage 1252
 #endif
@@ -538,6 +607,7 @@ namespace CompuMaster.Epplus4
             if (template != null) template.Refresh();
             if (template.Exists)
             {
+                CheckInputSize(template.Length);
                 if(_stream==null) _stream=new MemoryStream();
                 var ms = new MemoryStream();
                 if (password != null)
@@ -545,17 +615,20 @@ namespace CompuMaster.Epplus4
                     Encryption.IsEncrypted = true;
                     Encryption.Password = password;
                     var encrHandler = new EncryptedPackageHandler();
-                    ms = encrHandler.DecryptPackage(template, Encryption);
+                    var encryptedInput = new MemoryStream();
+                    WriteFileToStream(template.FullName, encryptedInput);
+                    ms = encrHandler.DecryptPackage(encryptedInput, Encryption, _loadLimits);
                     encrHandler = null;
                 }
                 else
                 {
                     WriteFileToStream(template.FullName, ms); 
                 }
+                CheckInputSize(ms.Length);
                 try
                 {
                     //_package = Package.Open(_stream, FileMode.Open, FileAccess.ReadWrite);
-                    _package = new Packaging.ZipPackage(ms);
+                    _package = new Packaging.ZipPackage(ms, _loadLimits);
                 }
                 catch (Exception ex)
                 {
@@ -580,22 +653,26 @@ namespace CompuMaster.Epplus4
             if (File != null) File.Refresh();
             if (File != null && File.Exists)
             {
+                CheckInputSize(File.Length);
                 if (password != null)
                 {
                     var encrHandler = new EncryptedPackageHandler();
                     Encryption.IsEncrypted = true;
                     Encryption.Password = password;
-                    ms = encrHandler.DecryptPackage(File, Encryption);
+                    var encryptedInput = new MemoryStream();
+                    WriteFileToStream(File.FullName, encryptedInput);
+                    ms = encrHandler.DecryptPackage(encryptedInput, Encryption, _loadLimits);
                     encrHandler = null;
                 }
                 else
                 {
                     WriteFileToStream(File.FullName, ms);
                 }
+                CheckInputSize(ms.Length);
                 try
                 {
                     //_package = Package.Open(_stream, FileMode.Open, FileAccess.ReadWrite);
-                    _package = new Packaging.ZipPackage(ms);
+                    _package = new Packaging.ZipPackage(ms, _loadLimits);
                 }
                 catch (Exception ex)
                {
@@ -612,25 +689,43 @@ namespace CompuMaster.Epplus4
             else
             {
                 //_package = Package.Open(_stream, FileMode.Create, FileAccess.ReadWrite);
-                _package = new Packaging.ZipPackage(ms);
+                _package = new Packaging.ZipPackage(ms, _loadLimits);
                 CreateBlankWb();
             }
         }
+        private void CheckInputSize(long size)
+        {
+            if (size > _loadLimits.MaxInputBytes)
+            {
+                throw new InvalidDataException("The XLSX input exceeds the configured compressed input size limit.");
+            }
+        }
+
         /// <summary>
         /// Pull request from  perkuypers to read open Excel workbooks
         /// </summary>
         /// <param name="path">Path</param>
         /// <param name="stream">Stream</param>
-        private static void WriteFileToStream(string path, Stream stream)
+        private void WriteFileToStream(string path, Stream stream)
         {
             using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                var buffer = new byte[4096];
-                int read;
-                while ((read = fileStream.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    stream.Write(buffer, 0, read);
-                }
+                CopyInputStream(fileStream, stream);
+            }
+        }
+
+        private void CopyInputStream(Stream input, Stream output)
+        {
+            input.Seek(0, SeekOrigin.Begin);
+            var buffer = new byte[81920];
+            long copied = 0;
+            int bytesRead;
+            while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                if (bytesRead > _loadLimits.MaxInputBytes - copied)
+                    throw new InvalidDataException("The XLSX input exceeds the configured compressed input size limit.");
+                output.Write(buffer, 0, bytesRead);
+                copied += bytesRead;
             }
         }
         private void CreateBlankWb()
@@ -1129,6 +1224,17 @@ namespace CompuMaster.Epplus4
             Load(input, new MemoryStream(), Password);
         }
         /// <summary>
+        /// Loads an XLSX stream with explicit resource limits.
+        /// </summary>
+        /// <param name="input">The input stream.</param>
+        /// <param name="password">The password for an encrypted package, or null for an unencrypted package.</param>
+        /// <param name="loadLimits">The resource limits to apply.</param>
+        public void Load(Stream input, string password, ExcelPackageLoadLimits loadLimits)
+        {
+            _loadLimits = loadLimits ?? throw new ArgumentNullException(nameof(loadLimits));
+            Load(input, new MemoryStream(), password);
+        }
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="input"></param>    
@@ -1156,26 +1262,29 @@ namespace CompuMaster.Epplus4
             }
             else
             {
+                CheckInputSize(input.Length);
                 Stream ms;
                 this._stream = output;
                 if (Password != null)
                 {
                     Stream encrStream = new MemoryStream();
-                    CopyStream(input, ref encrStream);
+                    CopyInputStream(input, encrStream);
                     EncryptedPackageHandler eph = new EncryptedPackageHandler();
                     Encryption.Password = Password;
-                    ms = eph.DecryptPackage((MemoryStream)encrStream, Encryption);
+                    ms = eph.DecryptPackage((MemoryStream)encrStream, Encryption, _loadLimits);
                 }
                 else
                 {
                     ms = new MemoryStream();
-                    CopyStream(input, ref ms);
+                    CopyInputStream(input, ms);
                 }
+
+                CheckInputSize(ms.Length);
 
                 try
                 {
                     //this._package = Package.Open(this._stream, FileMode.Open, FileAccess.ReadWrite);
-                    _package = new Packaging.ZipPackage(ms);
+                    _package = new Packaging.ZipPackage(ms, _loadLimits);
                 }
                 catch (Exception ex)
                 {
