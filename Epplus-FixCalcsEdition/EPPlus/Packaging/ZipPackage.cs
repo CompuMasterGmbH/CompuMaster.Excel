@@ -95,7 +95,18 @@ namespace CompuMaster.Epplus4.Packaging
             {
                 var rels = new Dictionary<string, string>();
                 stream.Seek(0, SeekOrigin.Begin);                
-                using (ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Read, true))
+                ZipArchive zip = new ZipArchive(stream, ZipArchiveMode.Read, true);
+                if (zip.Entries.Count == 0)
+                {
+                    zip.Dispose();
+                    var repairedStream = RepairEmptyCentralDirectory(stream);
+                    if (repairedStream == null)
+                    {
+                        throw new InvalidDataException("The file is not an valid Package file. If the file is encrypted, please supply the password in the constructor.");
+                    }
+                    zip = new ZipArchive(repairedStream, ZipArchiveMode.Read, false);
+                }
+                using (zip)
                 {
                     if (zip.Entries.Count == 0)
                     {
@@ -177,6 +188,65 @@ namespace CompuMaster.Epplus4.Packaging
                     }
                 }
             }
+        }
+
+        // Some older encrypted workbooks have valid central directory records but an
+        // end-of-central-directory record whose entry count and offsets are all zero.
+        // The former streaming ZIP reader ignored that record. Repair a private copy
+        // only when the complete central directory chain can be validated.
+        private static Stream RepairEmptyCentralDirectory(Stream stream)
+        {
+            stream.Seek(0, SeekOrigin.Begin);
+            byte[] data;
+            using (var copy = new MemoryStream())
+            {
+                stream.CopyTo(copy);
+                data = copy.ToArray();
+            }
+            int end = data.Length - 22;
+            if (end < 46 || !HasZipSignature(data, 0, 0x04034b50) ||
+                !HasZipSignature(data, end, 0x06054b50))
+            {
+                return null;
+            }
+            for (int offset = end + 4; offset < data.Length; offset++)
+            {
+                if (data[offset] != 0) return null;
+            }
+
+            int first = end;
+            int count = 0;
+            while (first >= 46 && count < ushort.MaxValue)
+            {
+                bool found = false;
+                for (int offset = first - 46; offset >= 0; offset--)
+                {
+                    if (!HasZipSignature(data, offset, 0x02014b50)) continue;
+                    int recordLength = 46 + BitConverter.ToUInt16(data, offset + 28) +
+                        BitConverter.ToUInt16(data, offset + 30) + BitConverter.ToUInt16(data, offset + 32);
+                    uint localOffset = BitConverter.ToUInt32(data, offset + 42);
+                    if ((long)offset + recordLength != first || localOffset >= offset ||
+                        !HasZipSignature(data, (int)localOffset, 0x04034b50)) continue;
+                    first = offset;
+                    count++;
+                    found = true;
+                    break;
+                }
+                if (!found) break;
+            }
+            if (count == 0 || first == 0) return null;
+
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)count), 0, data, end + 8, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)count), 0, data, end + 10, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((uint)(end - first)), 0, data, end + 12, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes((uint)first), 0, data, end + 16, 4);
+            return new MemoryStream(data, false);
+        }
+
+        private static bool HasZipSignature(byte[] data, int offset, uint signature)
+        {
+            return offset >= 0 && offset <= data.Length - 4 &&
+                BitConverter.ToUInt32(data, offset) == signature;
         }
 
         private void AddContentTypes(string xml)
