@@ -12,6 +12,13 @@ namespace CompuMaster.Epplus4
         /// <summary>
         /// Gets the default resource limits for loading an XLSX package.
         /// </summary>
+        /// <remarks>
+        /// The defaults allow 128 MiB of compressed or encrypted input, 20,000 ZIP entries,
+        /// 512 MiB per uncompressed entry, 1 GiB total uncompressed content, 512 MiB per XML,
+        /// relationships, or VML entry, a 200:1 compression ratio, 1,000,000 password-hash
+        /// iterations, and 1 MiB of encryption metadata. Use a new
+        /// <see cref="ExcelPackageLoadLimits"/> instance when different limits are required.
+        /// </remarks>
         public static ExcelPackageLoadLimits Default { get; } = new ExcelPackageLoadLimits();
 
         /// <summary>

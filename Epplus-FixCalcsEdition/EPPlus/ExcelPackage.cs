@@ -264,6 +264,7 @@ namespace CompuMaster.Epplus4
 		/// Create a new instance of the ExcelPackage class based on a existing file or creates a new file. 
 		/// </summary>
         /// <param name="newFile">If newFile exists, it is opened.  Otherwise it is created from scratch.</param>
+        /// <remarks>An existing file is opened with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="OpenWithLoadLimits(FileInfo, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(FileInfo newFile)
 		    : this(newFile, null, ExcelPackageLoadLimits.Default)
         {
@@ -273,6 +274,7 @@ namespace CompuMaster.Epplus4
         /// </summary>
         /// <param name="newFile">If newFile exists, it is opened.  Otherwise it is created from scratch.</param>
         /// <param name="password">Password for an encrypted package</param>
+        /// <remarks>An existing file is opened with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="OpenWithLoadLimits(FileInfo, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(FileInfo newFile, string password)
             : this(newFile, password, ExcelPackageLoadLimits.Default)
         {
@@ -290,6 +292,7 @@ namespace CompuMaster.Epplus4
 		/// </summary>
 		/// <param name="newFile">The name of the Excel file to be created</param>
 		/// <param name="template">The name of the Excel template to use as the basis of the new Excel file</param>
+		/// <remarks>The template is loaded with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="CreateFromTemplateWithLoadLimits(FileInfo, FileInfo, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
 		public ExcelPackage(FileInfo newFile, FileInfo template)
 		{
             Init();
@@ -303,6 +306,7 @@ namespace CompuMaster.Epplus4
         /// <param name="newFile">The name of the Excel file to be created</param>
         /// <param name="template">The name of the Excel template to use as the basis of the new Excel file</param>
         /// <param name="password">Password to decrypted the template</param>
+        /// <remarks>The template is loaded with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="CreateFromTemplateWithLoadLimits(FileInfo, FileInfo, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(FileInfo newFile, FileInfo template, string password)
         {
             Init();
@@ -321,6 +325,7 @@ namespace CompuMaster.Epplus4
         /// </summary>
         /// <param name="template">The name of the Excel template to use as the basis of the new Excel file</param>
         /// <param name="useStream">if true use a stream. If false create a file in the temp dir with a random name</param>
+        /// <remarks>The template is loaded with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="CreateFromTemplateWithLoadLimits(FileInfo, bool, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(FileInfo template, bool useStream)
         {
             Init();
@@ -336,6 +341,7 @@ namespace CompuMaster.Epplus4
         /// <param name="template">The name of the Excel template to use as the basis of the new Excel file</param>
         /// <param name="useStream">if true use a stream. If false create a file in the temp dir with a random name</param>
         /// <param name="password">Password to decrypted the template</param>
+        /// <remarks>The template is loaded with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="CreateFromTemplateWithLoadLimits(FileInfo, bool, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(FileInfo template, bool useStream, string password)
         {
             Init();
@@ -357,6 +363,7 @@ namespace CompuMaster.Epplus4
         /// Create a new instance of the ExcelPackage class based on a stream
         /// </summary>
         /// <param name="newStream">The stream object can be empty or contain a package. The stream must be Read/Write</param>
+        /// <remarks>A nonempty stream is opened with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="OpenWithLoadLimits(Stream, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(Stream newStream) 
             : this(newStream, null, ExcelPackageLoadLimits.Default)
         {
@@ -366,6 +373,7 @@ namespace CompuMaster.Epplus4
         /// </summary>
         /// <param name="newStream">The stream object can be empty or contain a package. The stream must be Read/Write</param>
         /// <param name="Password">The password to decrypt the document</param>
+        /// <remarks>A nonempty stream is opened with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="OpenWithLoadLimits(Stream, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(Stream newStream, string Password)
             : this(newStream, Password, ExcelPackageLoadLimits.Default)
         {
@@ -454,6 +462,7 @@ namespace CompuMaster.Epplus4
         /// </summary>
         /// <param name="newStream">The output stream. Must be an empty read/write stream.</param>
         /// <param name="templateStream">This stream is copied to the output stream at load</param>
+        /// <remarks>The template is loaded with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="CreateFromTemplateWithLoadLimits(Stream, Stream, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(Stream newStream, Stream templateStream)
             : this(newStream, templateStream, null, ExcelPackageLoadLimits.Default)
         {
@@ -464,6 +473,7 @@ namespace CompuMaster.Epplus4
         /// <param name="newStream">The output stream. Must be an empty read/write stream.</param>
         /// <param name="templateStream">This stream is copied to the output stream at load</param>
         /// <param name="Password">Password to decrypted the template</param>
+        /// <remarks>The template is loaded with <see cref="ExcelPackageLoadLimits.Default"/>. Use <see cref="CreateFromTemplateWithLoadLimits(Stream, Stream, ExcelPackageLoadLimits, string)"/> for different limits.</remarks>
         public ExcelPackage(Stream newStream, Stream templateStream, string Password)
             : this(newStream, templateStream, Password, ExcelPackageLoadLimits.Default)
         {
@@ -1210,6 +1220,7 @@ namespace CompuMaster.Epplus4
         /// Loads the specified package data from a stream.
         /// </summary>
         /// <param name="input">The input.</param>
+        /// <remarks>Applies this package's configured load limits, or <see cref="ExcelPackageLoadLimits.Default"/> for a package created with a standard constructor. Use <see cref="Load(Stream, string, ExcelPackageLoadLimits)"/> to specify different limits for this load.</remarks>
         public void Load(Stream input)
         {
             Load(input, new MemoryStream(), null);
@@ -1219,6 +1230,7 @@ namespace CompuMaster.Epplus4
         /// </summary>
         /// <param name="input">The input.</param>
         /// <param name="Password">The password to decrypt the document</param>
+        /// <remarks>Applies this package's configured load limits, or <see cref="ExcelPackageLoadLimits.Default"/> for a package created with a standard constructor. Use <see cref="Load(Stream, string, ExcelPackageLoadLimits)"/> to specify different limits for this load.</remarks>
         public void Load(Stream input, string Password)
         {
             Load(input, new MemoryStream(), Password);

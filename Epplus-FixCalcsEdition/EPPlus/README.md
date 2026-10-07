@@ -1,7 +1,15 @@
 ﻿# CompuMaster.EPPlus 4.5.3.3
 
+This package is based on upstream EPPlus 4.5.3.3; CompuMaster NuGet releases use date-based package versions.
+
 ## Special CompuMaster Edition
-* required for resetting internal calculation caches to force MS Excel to recalculate on next reload (otherwise cells referencing other cells with formulas won't be recalculated correctly)
+
+* Resets internal calculation caches so Microsoft Excel recalculates dependent formulas when reopening a workbook.
+* Uses zero-based worksheet indexing by default on every target framework; the existing compatibility setting can switch to one-based indexing.
+* Uses `System.IO.Compression.ZipArchive` for XLSX packaging, with compatibility handling for older encrypted workbooks.
+* Limits ZIP/XML expansion and encrypted-input work when loading XLSX files; callers can adjust the defaults for trusted files.
+
+These limits do not make arbitrary untrusted workbooks safe to parse. See the [security guidance](https://github.com/CompuMasterGmbH/CompuMaster.Excel/blob/main/CM.Data.EpplusFixCalcsEdition/README.md#security-and-untrusted-workbooks).
 
 ## Announcement: This is the last version of EPPlus under the LGPL License
 EPPlus will from version 5 be licensed under the [Polyform Noncommercial 1.0.0]( https://polyformproject.org/licenses/noncommercial/1.0.0/) license.  

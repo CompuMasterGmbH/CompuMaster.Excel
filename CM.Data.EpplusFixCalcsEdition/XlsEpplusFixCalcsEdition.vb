@@ -37,6 +37,7 @@ Namespace CompuMaster.Data
             ''' <param name="firstRowContainsColumnNames">Indicates whether the first imported row contains column names.</param>
             ''' <param name="startReadingAtRowIndex">The zero-based row index at which reading starts.</param>
             ''' <exception cref="ArgumentOutOfRangeException"><paramref name="startReadingAtRowIndex"/> is negative.</exception>
+            ''' <remarks>In the FixCalcs edition, this uses the XLSX resource limits in ExcelPackageLoadLimits.Default. Use the constructor with a packageLoadLimits argument to specify different limits.</remarks>
             Public Sub New(Optional firstRowContainsColumnNames As Boolean = True, Optional startReadingAtRowIndex As Integer = 0)
                 If startReadingAtRowIndex < 0 Then
                     Throw New ArgumentOutOfRangeException(NameOf(startReadingAtRowIndex), "The start row index must not be negative")
@@ -185,6 +186,7 @@ Namespace CompuMaster.Data
         ''' <param name="inputPath">A file which shall be loaded</param>
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataSet">A dataset to write into the workbook</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub WriteDataSetToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataSet As System.Data.DataSet)
             WriteDataSetToXlsFileWithOptions(inputPath, outputPath, dataSet, LegacyWriteOptions())
         End Sub
@@ -196,6 +198,7 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath">The output file name.</param>
         ''' <param name="dataSet">The data set to write.</param>
         ''' <param name="options">The immutable write options.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default. WriteOptions does not change package load limits.</remarks>
         Public Shared Sub WriteDataSetToXlsFileWithOptions(ByVal inputPath As String, ByVal outputPath As String, ByVal dataSet As System.Data.DataSet, ByVal options As WriteOptions)
             options = RequiredWriteOptions(options)
             Dim tables As New ArrayList
@@ -323,6 +326,7 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTable">A datatable to write into one of the sheets</param>
         ''' <param name="sheetName">The name the sheet which shall be updated/added</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub WriteDataTableToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal sheetName As String)
             WriteDataTableToXlsFile(inputPath, outputPath, New DataTable() {dataTable}, New String() {sheetName})
         End Sub
@@ -335,6 +339,7 @@ Namespace CompuMaster.Data
         ''' <param name="dataTable">The data table to write.</param>
         ''' <param name="sheetName">The worksheet name.</param>
         ''' <param name="options">The immutable write options.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default. WriteOptions does not change package load limits.</remarks>
         Public Shared Sub WriteDataTableToXlsFileWithOptions(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTable As System.Data.DataTable, ByVal sheetName As String, ByVal options As WriteOptions)
             WriteDataTableToXlsFileWithOptions(inputPath, outputPath, New DataTable() {dataTable}, New String() {sheetName}, options)
         End Sub
@@ -346,6 +351,7 @@ Namespace CompuMaster.Data
         ''' <param name="outputPath">The output file</param>
         ''' <param name="dataTables">Data tables to write to the workbook.</param>
         ''' <param name="sheetNames">Worksheet names to update or add in the same order as <paramref name="dataTables"/>.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub WriteDataTableToXlsFile(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String())
             WriteDataTableToXlsFileWithOptions(inputPath, outputPath, dataTables, sheetNames, LegacyWriteOptions())
         End Sub
@@ -358,6 +364,7 @@ Namespace CompuMaster.Data
         ''' <param name="dataTables">The data tables to write.</param>
         ''' <param name="sheetNames">The corresponding worksheet names.</param>
         ''' <param name="options">The immutable write options.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default. WriteOptions does not change package load limits.</remarks>
         Public Shared Sub WriteDataTableToXlsFileWithOptions(ByVal inputPath As String, ByVal outputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal options As WriteOptions)
             options = RequiredWriteOptions(options)
             If outputPath = Nothing OrElse (New System.IO.FileInfo(outputPath)).FullName = Nothing Then
@@ -600,6 +607,7 @@ Namespace CompuMaster.Data
         ''' <param name="dataTables">Data tables to write to the workbook.</param>
         ''' <param name="sheetNames">Worksheet names to update or add in the same order as <paramref name="dataTables"/>.</param>
         ''' <param name="fileFormat">Workbook file format.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub WriteDataTableToXlsStream(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat)
             WriteDataTableToXlsStreamWithOptions(inputPath, outputStream, dataTables, sheetNames, fileFormat, LegacyWriteOptions())
         End Sub
@@ -613,6 +621,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheetNames">The corresponding worksheet names.</param>
         ''' <param name="fileFormat">The workbook file format.</param>
         ''' <param name="options">The immutable write options.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default. WriteOptions does not change package load limits.</remarks>
         Public Shared Sub WriteDataTableToXlsStreamWithOptions(ByVal inputPath As String, ByVal outputStream As System.IO.Stream, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal fileFormat As FileFormat, ByVal options As WriteOptions)
             options = RequiredWriteOptions(options)
             Dim exportWorkbook As CompuMaster.Epplus4.ExcelPackage
@@ -663,6 +672,7 @@ Namespace CompuMaster.Data
         ''' <param name="sheetNames">The worksheet names corresponding to <paramref name="dataTables"/>.</param>
         ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
         ''' <param name="fileFormat">The workbook file format.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat)
             WriteDataTableToXlsHttpResponse(inputPath, dataTables, sheetNames, httpContext, fileFormat, String.Empty)
         End Sub
@@ -676,6 +686,7 @@ Namespace CompuMaster.Data
         ''' <param name="httpContext">The HTTP listener context receiving the response.</param>
         ''' <param name="fileFormat">The workbook file format.</param>
         ''' <param name="options">The immutable write options.</param>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default. WriteOptions does not change package load limits.</remarks>
         Public Shared Sub WriteDataTableToXlsHttpResponseWithOptions(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal options As WriteOptions)
             WriteDataTableToXlsHttpResponseWithOptions(inputPath, dataTables, sheetNames, httpContext, fileFormat, String.Empty, options)
         End Sub
@@ -692,6 +703,7 @@ Namespace CompuMaster.Data
         ''' <exception cref="ArgumentNullException"><paramref name="dataTables"/> or <paramref name="httpContext"/> is <see langword="Nothing"/>.</exception>
         ''' <exception cref="InvalidOperationException">The workbook could not be created.</exception>
         ''' <exception cref="NotSupportedException"><paramref name="fileFormat"/> is not supported.</exception>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub WriteDataTableToXlsHttpResponse(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String)
             WriteDataTableToXlsHttpResponseWithOptions(inputPath, dataTables, sheetNames, httpContext, fileFormat, suggestedFileNameToBrowser, LegacyWriteOptions())
         End Sub
@@ -709,6 +721,7 @@ Namespace CompuMaster.Data
         ''' <exception cref="ArgumentNullException"><paramref name="dataTables"/>, <paramref name="httpContext"/>, or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
         ''' <exception cref="InvalidOperationException">The workbook could not be created.</exception>
         ''' <exception cref="NotSupportedException"><paramref name="fileFormat"/> is not supported.</exception>
+        ''' <remarks>In the FixCalcs edition, an existing input workbook is opened with ExcelPackageLoadLimits.Default. WriteOptions does not change package load limits.</remarks>
         Public Shared Sub WriteDataTableToXlsHttpResponseWithOptions(ByVal inputPath As String, ByVal dataTables As System.Data.DataTable(), ByVal sheetNames As String(), ByVal httpContext As System.Net.HttpListenerContext, ByVal fileFormat As FileFormat, ByVal suggestedFileNameToBrowser As String, ByVal options As WriteOptions)
             options = RequiredWriteOptions(options)
             If dataTables Is Nothing Then
@@ -759,6 +772,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataSetFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataSetFromXlsFile(ByVal inputPath As String, ByVal firstRowContainsColumnNames As Boolean) As DataSet
 
@@ -773,6 +787,7 @@ Namespace CompuMaster.Data
         ''' <param name="options">The immutable read options.</param>
         ''' <returns>A data set containing one table for each worksheet.</returns>
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        ''' <remarks>In the FixCalcs edition, loading uses options.PackageLoadLimits, which defaults to ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Function ReadDataSetFromXlsFileWithOptions(ByVal inputPath As String, ByVal options As ReadOptions) As DataSet
 
             options = RequiredReadOptions(options)
@@ -848,6 +863,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String) As DataTable
             Return ReadDataTableFromXlsFile(inputPath, True)
@@ -860,6 +876,7 @@ Namespace CompuMaster.Data
         ''' <param name="options">The immutable read options.</param>
         ''' <returns>A data table containing the worksheet data.</returns>
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        ''' <remarks>In the FixCalcs edition, loading uses options.PackageLoadLimits, which defaults to ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Function ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal options As ReadOptions) As DataTable
             options = RequiredReadOptions(options)
             Return ReadDataTableFromXlsFileCore(inputPath, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, options)
@@ -884,6 +901,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal firstRowContainsColumnNames As Boolean) As DataTable
             Return ReadDataTableFromXlsFile(inputPath, 0, firstRowContainsColumnNames)
@@ -909,6 +927,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
             Return ReadDataTableFromXlsFileCore(inputPath, startReadingAtRowIndex, firstRowContainsColumnNames, Nothing)
@@ -959,6 +978,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String) As DataTable
             Return ReadDataTableFromXlsFile(inputPath, sheetName, True)
@@ -972,6 +992,7 @@ Namespace CompuMaster.Data
         ''' <param name="options">The immutable read options.</param>
         ''' <returns>A data table containing the worksheet data.</returns>
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/> or <paramref name="options"/> is <see langword="Nothing"/>.</exception>
+        ''' <remarks>In the FixCalcs edition, loading uses options.PackageLoadLimits, which defaults to ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Function ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal sheetName As String, ByVal options As ReadOptions) As DataTable
             options = RequiredReadOptions(options)
             Return ReadDataTableFromXlsFileCore(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, options)
@@ -995,6 +1016,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal firstRowContainsColumnNames As Boolean) As DataTable
             Return ReadDataTableFromXlsFile(inputPath, sheetName, 0, firstRowContainsColumnNames)
@@ -1019,6 +1041,7 @@ Namespace CompuMaster.Data
         '''     #NUM! 6   --> Cell value of type System.Exception with error details
         '''     #NA 7      --> Cell value of type System.Exception with error details
         '''     {blank}    --> DBNull
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Function ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean) As DataTable
             Return ReadDataTableFromXlsFileCore(inputPath, sheetName, startReadingAtRowIndex, firstRowContainsColumnNames, Nothing)
@@ -1074,6 +1097,7 @@ Namespace CompuMaster.Data
         '''     {blank}    --> DBNull
         ''' 
         '''     Dependent on the firstRowContainsColumnNames parameter, the datatable parameter must contain a table with column names as they're defined in the first row of the excel sheet or the table's columnn must have the name of the column index in excel ("1", "2", "3", ...)
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Sub ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
             ReadDataTableFromXlsFile(inputPath, sheetName, 0, firstRowContainsColumnNames, data)
@@ -1087,6 +1111,7 @@ Namespace CompuMaster.Data
         ''' <param name="options">The immutable read options.</param>
         ''' <param name="data">The data table to fill.</param>
         ''' <exception cref="ArgumentNullException"><paramref name="inputPath"/>, <paramref name="options"/>, or <paramref name="data"/> is <see langword="Nothing"/>.</exception>
+        ''' <remarks>In the FixCalcs edition, loading uses options.PackageLoadLimits, which defaults to ExcelPackageLoadLimits.Default.</remarks>
         Public Shared Sub ReadDataTableFromXlsFileWithOptions(ByVal inputPath As String, ByVal sheetName As String, ByVal options As ReadOptions, ByVal data As DataTable)
             options = RequiredReadOptions(options)
             ReadDataTableFromXlsFileCore(inputPath, sheetName, options.StartReadingAtRowIndex, options.FirstRowContainsColumnNames, data, options)
@@ -1113,6 +1138,7 @@ Namespace CompuMaster.Data
         '''     {blank}    --> DBNull
         ''' 
         '''     Dependent on the firstRowContainsColumnNames parameter, the datatable parameter must contain a table with column names as they're defined in the first row of the excel sheet or the table's columnn must have the name of the column index in excel ("1", "2", "3", ...)
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Sub ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
             ReadDataTableFromXlsFile(inputPath, Nothing, startReadingAtRowIndex, firstRowContainsColumnNames, data)
@@ -1140,6 +1166,7 @@ Namespace CompuMaster.Data
         '''     {blank}    --> DBNull
         ''' 
         '''     Dependent on the firstRowContainsColumnNames parameter, the datatable parameter must contain a table with column names as they're defined in the first row of the excel sheet or the table's columnn must have the name of the column index in excel ("1", "2", "3", ...)
+        '''     In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. Use ReadDataTableFromXlsFileWithOptions with ReadOptions configured with packageLoadLimits for different limits.
         ''' </remarks>
         Public Shared Sub ReadDataTableFromXlsFile(ByVal inputPath As String, ByVal sheetName As String, ByVal startReadingAtRowIndex As Integer, ByVal firstRowContainsColumnNames As Boolean, ByVal data As DataTable)
             ReadDataTableFromXlsFileCore(inputPath, sheetName, startReadingAtRowIndex, firstRowContainsColumnNames, data, Nothing)
@@ -1179,6 +1206,7 @@ Namespace CompuMaster.Data
         ''' </summary>
         ''' <param name="inputPath">The filename of the excel document</param>
         ''' <returns>The worksheet names.</returns>
+        ''' <remarks>In the FixCalcs edition, loading uses ExcelPackageLoadLimits.Default. To use different limits, open the package directly with ExcelPackage.OpenWithLoadLimits and read its worksheet names.</remarks>
         Public Shared Function ReadSheetNamesFromXlsFile(ByVal inputPath As String) As String()
 
             If inputPath = Nothing OrElse (New System.IO.FileInfo(inputPath)).FullName = Nothing Then

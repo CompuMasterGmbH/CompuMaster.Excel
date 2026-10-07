@@ -42,6 +42,11 @@
 - Static test workbooks belong in the appropriate `test_data` directories.
 - When repository copy/clone scripts generate or synchronize shared source or test files, include the resulting copied files in the same change.
 
+## Package README
+
+- When making meaningful changes to `CompuMaster.EPPlus4`, update the concise "Special CompuMaster Edition" feature list in `Epplus-FixCalcsEdition/EPPlus/README.md` in the same change. This file is also published as the NuGet package README.
+- Include user-relevant behavior, compatibility, platform, packaging, or security changes; leave detailed explanations and breaking-change notes to the release description.
+
 ## Release Process
 
 - Create releases only from the repository's primary integration branch, currently `main` or `master`.
@@ -51,7 +56,7 @@
 - If a release is requested before these prerequisites are met, create or update the pull request first and explicitly tell the user that the release must wait for the successful build-and-test pipeline on the primary integration branch.
 - Every release description must identify the affected project or projects for each listed change. Use the exact NuGet package ID where available; otherwise, use the project or repository-infrastructure name.
 - Derive the affected-project list from the complete diff since the previous release. List all synchronized or generated project variants that changed, and label repository-wide tooling or documentation changes explicitly instead of leaving their scope ambiguous.
-- Prefix a release-note entry for an API-breaking change with `BREAKING CHANGE: `. If a release contains multiple breaking changes, group them in a dedicated `Breaking Changes` subsection and start every entry in that subsection with `BREAKING CHANGE: `.
+- Prefix a release-note entry for a compatibility-breaking public API or default-behavior change with `BREAKING CHANGE: `. If a release contains multiple breaking changes, group them in a dedicated `Breaking Changes` subsection and start every entry in that subsection with `BREAKING CHANGE: `.
 
 ## Branch Cleanup
 
