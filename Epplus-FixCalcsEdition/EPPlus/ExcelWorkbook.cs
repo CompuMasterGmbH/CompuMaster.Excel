@@ -94,6 +94,15 @@ namespace CompuMaster.Epplus4
 		private OfficeProperties _properties;
 
 		private ExcelStyles _styles;
+        internal readonly object SyncRoot;
+
+        internal void ThrowIfDisposed()
+        {
+            if (_package == null)
+            {
+                throw new ObjectDisposedException(nameof(ExcelWorkbook));
+            }
+        }
 		#endregion
 
 		#region ExcelWorkbook Constructor
@@ -105,6 +114,7 @@ namespace CompuMaster.Epplus4
 		internal ExcelWorkbook(ExcelPackage package, XmlNamespaceManager namespaceManager) :
 			base(namespaceManager)
 		{
+            SyncRoot = package.SyncRoot;
 			_package = package;
 			WorkbookUri = new Uri("/xl/workbook.xml", UriKind.Relative);
 			SharedStringsUri = new Uri("/xl/sharedStrings.xml", UriKind.Relative);
@@ -280,6 +290,8 @@ namespace CompuMaster.Epplus4
 		{
 			get
 			{
+                lock (SyncRoot)
+                {
 				if (_worksheets == null)
 				{
 					var sheetsNode = _workbookXml.DocumentElement.SelectSingleNode("d:sheets", _namespaceManager);
@@ -291,6 +303,7 @@ namespace CompuMaster.Epplus4
 					_worksheets = new ExcelWorksheets(_package, _namespaceManager, sheetsNode);
 				}
 				return (_worksheets);
+                }
 			}
 		}
 		#endregion
@@ -312,11 +325,14 @@ namespace CompuMaster.Epplus4
         {
             get
             {
-                if (_formulaParser == null)
+                lock (SyncRoot)
                 {
-                    _formulaParser = new FormulaParser(new EpplusExcelDataProvider(_package));
+                    if (_formulaParser == null)
+                    {
+                        _formulaParser = new FormulaParser(new EpplusExcelDataProvider(_package));
+                    }
+                    return _formulaParser;
                 }
-                return _formulaParser;
             }
         }
 
@@ -324,11 +340,14 @@ namespace CompuMaster.Epplus4
 	    {
 	        get
 	        {
-	            if (_parserManager == null)
+                lock (SyncRoot)
 	            {
-	                _parserManager = new FormulaParserManager(FormulaParser);
+                    if (_parserManager == null)
+                    {
+                        _parserManager = new FormulaParserManager(FormulaParser, SyncRoot);
+                    }
+                    return _parserManager;
 	            }
-	            return _parserManager;
 	        }
 	    }
         /// <summary>
@@ -656,43 +675,46 @@ namespace CompuMaster.Epplus4
 		{
 			get
 			{
-				if (_stylesXml == null)
-				{
-					if (_package.Package.PartExists(StylesUri))
-						_stylesXml = _package.GetXmlFromUri(StylesUri);
-					else
-					{
-						// create a new styles part and add to the package
-						Packaging.ZipPackagePart part = _package.Package.CreatePart(StylesUri, @"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml", _package.Compression);
-						// create the style sheet
+                lock (SyncRoot)
+                {
+                    if (_stylesXml == null)
+                    {
+                        if (_package.Package.PartExists(StylesUri))
+                            _stylesXml = _package.GetXmlFromUri(StylesUri);
+                        else
+                        {
+                            // create a new styles part and add to the package
+                            Packaging.ZipPackagePart part = _package.Package.CreatePart(StylesUri, @"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml", _package.Compression);
+                            // create the style sheet
 
-						StringBuilder xml = new StringBuilder("<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
-						xml.Append("<numFmts />");
-						xml.Append("<fonts count=\"1\"><font><sz val=\"11\" /><name val=\"Calibri\" /></font></fonts>");
-						xml.Append("<fills><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills>");
-						xml.Append("<borders><border><left /><right /><top /><bottom /><diagonal /></border></borders>");
-						xml.Append("<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" /></cellStyleXfs>");
-						xml.Append("<cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" xfId=\"0\" /></cellXfs>");
-						xml.Append("<cellStyles><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles>");
-                        xml.Append("<dxfs count=\"0\" />");
-                        xml.Append("</styleSheet>");
+                            StringBuilder xml = new StringBuilder("<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
+                            xml.Append("<numFmts />");
+                            xml.Append("<fonts count=\"1\"><font><sz val=\"11\" /><name val=\"Calibri\" /></font></fonts>");
+                            xml.Append("<fills><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills>");
+                            xml.Append("<borders><border><left /><right /><top /><bottom /><diagonal /></border></borders>");
+                            xml.Append("<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" /></cellStyleXfs>");
+                            xml.Append("<cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" xfId=\"0\" /></cellXfs>");
+                            xml.Append("<cellStyles><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles>");
+                            xml.Append("<dxfs count=\"0\" />");
+                            xml.Append("</styleSheet>");
 						
-						_stylesXml = new XmlDocument();
-						_stylesXml.LoadXml(xml.ToString());
+                            _stylesXml = new XmlDocument();
+                            _stylesXml.LoadXml(xml.ToString());
 						
-						//Save it to the package
-						StreamWriter stream = new StreamWriter(part.GetStream(FileMode.Create, FileAccess.Write));
+                            //Save it to the package
+                            StreamWriter stream = new StreamWriter(part.GetStream(FileMode.Create, FileAccess.Write));
 
-						_stylesXml.Save(stream);
-						//stream.Close();
-						_package.Package.Flush();
+                            _stylesXml.Save(stream);
+                            //stream.Close();
+                            _package.Package.Flush();
 
-						// create the relationship between the workbook and the new shared strings part
-						_package.Workbook.Part.CreateRelationship(UriHelper.GetRelativeUri(WorkbookUri, StylesUri), Packaging.TargetMode.Internal, ExcelPackage.schemaRelationships + "/styles");
-						_package.Package.Flush();
-					}
-				}
-				return (_stylesXml);
+                            // create the relationship between the workbook and the new shared strings part
+                            _package.Workbook.Part.CreateRelationship(UriHelper.GetRelativeUri(WorkbookUri, StylesUri), Packaging.TargetMode.Internal, ExcelPackage.schemaRelationships + "/styles");
+                            _package.Package.Flush();
+                        }
+                    }
+                    return (_stylesXml);
+                }
 			}
 			set
 			{
@@ -706,11 +728,14 @@ namespace CompuMaster.Epplus4
 		{
 			get
 			{
-				if (_styles == null)
-				{
-					_styles = new ExcelStyles(NameSpaceManager, StylesXml, this);
-				}
-				return _styles;
+                lock (SyncRoot)
+                {
+                    if (_styles == null)
+                    {
+                        _styles = new ExcelStyles(NameSpaceManager, StylesXml, this);
+                    }
+                    return _styles;
+                }
 			}
 		}
 		#endregion
@@ -800,80 +825,82 @@ namespace CompuMaster.Epplus4
 		/// </summary>
 		internal void Save()  // Workbook Save
 		{
-			if (Worksheets.Count == 0)
-				throw new InvalidOperationException("The workbook must contain at least one worksheet");
-
-			DeleteCalcChain();
-
-            if (_vba == null && !_package.Package.PartExists(new Uri(ExcelVbaProject.PartUri, UriKind.Relative)))
+            lock (SyncRoot)
             {
-                if (Part.ContentType != ExcelPackage.contentTypeWorkbookDefault)
+                if (Worksheets.Count == 0)
+                    throw new InvalidOperationException("The workbook must contain at least one worksheet");
+
+                DeleteCalcChain();
+
+                if (_vba == null && !_package.Package.PartExists(new Uri(ExcelVbaProject.PartUri, UriKind.Relative)))
                 {
-                    Part.ContentType = ExcelPackage.contentTypeWorkbookDefault;
+                    if (Part.ContentType != ExcelPackage.contentTypeWorkbookDefault)
+                    {
+                        Part.ContentType = ExcelPackage.contentTypeWorkbookDefault;
+                    }
+                }
+                else
+                {
+                    if (Part.ContentType != ExcelPackage.contentTypeWorkbookMacroEnabled)
+                    {
+                        Part.ContentType = ExcelPackage.contentTypeWorkbookMacroEnabled;
+                    }
+                }
+
+                UpdateDefinedNamesXml();
+
+                // save the workbook
+                if (_workbookXml != null)
+                {
+                    _package.SavePart(WorkbookUri, _workbookXml);
+                }
+
+                // save the properties of the workbook
+                if (_properties != null)
+                {
+                    _properties.Save();
+                }
+
+                // save the style sheet
+                Styles.UpdateXml();
+                _package.SavePart(StylesUri, _stylesXml);
+
+                // save all the open worksheets
+                var isProtected = Protection.LockWindows || Protection.LockStructure;
+                foreach (ExcelWorksheet worksheet in Worksheets)
+                {
+                    if (isProtected && Protection.LockWindows)
+                    {
+                        worksheet.View.WindowProtection = true;
+                    }
+                    worksheet.Save();
+                    worksheet.Part.SaveHandler = worksheet.SaveHandler;
+                }
+
+                // Issue 15252: save SharedStrings only once
+                Packaging.ZipPackagePart part;
+                if (_package.Package.PartExists(SharedStringsUri))
+                {
+                    part = _package.Package.GetPart(SharedStringsUri);
+                }
+                else
+                {
+                    part = _package.Package.CreatePart(SharedStringsUri, @"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml", _package.Compression);
+                    Part.CreateRelationship(UriHelper.GetRelativeUri(WorkbookUri, SharedStringsUri), Packaging.TargetMode.Internal, ExcelPackage.schemaRelationships + "/sharedStrings");
+                }
+
+                part.SaveHandler = SaveSharedStringHandler;
+                //UpdateSharedStringsXml();
+
+                // Data validation
+                ValidateDataValidations();
+
+                //VBA
+                if (_vba!=null)
+                {
+                    VbaProject.Save();
                 }
             }
-            else
-            {
-                if (Part.ContentType != ExcelPackage.contentTypeWorkbookMacroEnabled)
-                {
-                    Part.ContentType = ExcelPackage.contentTypeWorkbookMacroEnabled;
-                }
-            }
-			
-            UpdateDefinedNamesXml();
-
-			// save the workbook
-			if (_workbookXml != null)
-			{
-				_package.SavePart(WorkbookUri, _workbookXml);
-			}
-
-			// save the properties of the workbook
-			if (_properties != null)
-			{
-				_properties.Save();
-			}
-
-			// save the style sheet
-			Styles.UpdateXml();
-			_package.SavePart(StylesUri, _stylesXml);
-
-			// save all the open worksheets
-			var isProtected = Protection.LockWindows || Protection.LockStructure;
-			foreach (ExcelWorksheet worksheet in Worksheets)
-			{
-				if (isProtected && Protection.LockWindows)
-				{
-					worksheet.View.WindowProtection = true;
-				}
-				worksheet.Save();
-                worksheet.Part.SaveHandler = worksheet.SaveHandler;
-			}
-
-            // Issue 15252: save SharedStrings only once
-            Packaging.ZipPackagePart part;
-            if (_package.Package.PartExists(SharedStringsUri))
-            {
-                part = _package.Package.GetPart(SharedStringsUri);
-            }
-            else
-            {
-                part = _package.Package.CreatePart(SharedStringsUri, @"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml", _package.Compression);
-                Part.CreateRelationship(UriHelper.GetRelativeUri(WorkbookUri, SharedStringsUri), Packaging.TargetMode.Internal, ExcelPackage.schemaRelationships + "/sharedStrings");
-            }
-
-            part.SaveHandler = SaveSharedStringHandler;
-            //UpdateSharedStringsXml();
-			
-			// Data validation
-			ValidateDataValidations();
-
-            //VBA
-            if (_vba!=null)
-            {
-                VbaProject.Save();
-            }
-
 		}
 		private void DeleteCalcChain()
 		{
@@ -1134,29 +1161,32 @@ namespace CompuMaster.Epplus4
 
         public void Dispose()
         {
-            if (_sharedStrings != null)
+            lock (SyncRoot)
             {
-                _sharedStrings.Clear();
-                _sharedStrings = null;
+                if (_sharedStrings != null)
+                {
+                    _sharedStrings.Clear();
+                    _sharedStrings = null;
+                }
+                if (_sharedStringsList != null)
+                {
+                    _sharedStringsList.Clear();
+                    _sharedStringsList = null;
+                }
+                _vba = null;
+                if (_worksheets != null)
+                {
+                    _worksheets.Dispose();
+                    _worksheets = null;
+                }
+                _package = null;
+                _properties = null;
+                if (_formulaParser != null)
+                {
+                    _formulaParser.Dispose();
+                    _formulaParser = null;
+                }
             }
-            if (_sharedStringsList != null)
-            {
-                _sharedStringsList.Clear();
-                _sharedStringsList = null;
-            }
-            _vba = null;
-            if (_worksheets != null)
-            {
-                _worksheets.Dispose();
-                _worksheets = null;
-            }
-            _package = null;
-            _properties = null;
-            if (_formulaParser != null)
-            {
-                _formulaParser.Dispose();
-                _formulaParser = null;
-            }   
         }
 
         internal void ReadAllTables()

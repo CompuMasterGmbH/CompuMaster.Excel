@@ -53,17 +53,14 @@ namespace CompuMaster.Epplus4.FormulaParsing.Excel.Operators
             Add("&", Operator.Concat);
         }
 
-        private static IDictionary<string, IOperator> _instance;
+        private static readonly Lazy<IDictionary<string, IOperator>> _instance =
+            new Lazy<IDictionary<string, IOperator>>(() => new OperatorsDict());
 
         public static IDictionary<string, IOperator> Instance
         {
             get 
             {
-                if (_instance == null)
-                {
-                    _instance = new OperatorsDict();
-                }
-                return _instance;
+                return _instance.Value;
             }
         }
     }

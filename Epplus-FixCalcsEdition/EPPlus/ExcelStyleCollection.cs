@@ -53,6 +53,7 @@ namespace CompuMaster.Epplus4
             _setNextIdManual = SetNextIdManual;
         }
         public XmlNode TopNode { get; set; }
+        private readonly object _syncRoot = new object();
         internal List<T> _list = new List<T>();
         Dictionary<string, int> _dic = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         internal int NextId=0;
@@ -60,7 +61,10 @@ namespace CompuMaster.Epplus4
 
         public IEnumerator<T> GetEnumerator()
         {
-            return _list.GetEnumerator();
+            lock (_syncRoot)
+            {
+                return new List<T>(_list).GetEnumerator();
+            }
         }
 
         #endregion
@@ -68,21 +72,30 @@ namespace CompuMaster.Epplus4
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return _list.GetEnumerator();
+            lock (_syncRoot)
+            {
+                return new List<T>(_list).GetEnumerator();
+            }
         }
         #endregion
         public T this[int PositionID]
         {
             get
             {
-                return _list[PositionID];
+                lock (_syncRoot)
+                {
+                    return _list[PositionID];
+                }
             }
         }
         public int Count
         {
             get
             {
-                return _list.Count;
+                lock (_syncRoot)
+                {
+                    return _list.Count;
+                }
             }
         }
         //internal int Add(T item)
@@ -93,10 +106,13 @@ namespace CompuMaster.Epplus4
         //}
         internal int Add(string key, T item)
         {
-            _list.Add(item);
-            if (!_dic.ContainsKey(key.ToLower(CultureInfo.InvariantCulture))) _dic.Add(key.ToLower(CultureInfo.InvariantCulture), _list.Count - 1);
-            if (_setNextIdManual) NextId++;
-            return _list.Count-1;
+            lock (_syncRoot)
+            {
+                _list.Add(item);
+                if (!_dic.ContainsKey(key.ToLower(CultureInfo.InvariantCulture))) _dic.Add(key.ToLower(CultureInfo.InvariantCulture), _list.Count - 1);
+                if (_setNextIdManual) NextId++;
+                return _list.Count-1;
+            }
         }
         /// <summary>
         /// Finds the key 
@@ -106,14 +122,17 @@ namespace CompuMaster.Epplus4
         /// <returns>True if found</returns>
         internal bool FindByID(string key, ref T obj)
         {
-            if (_dic.ContainsKey(key))
+            lock (_syncRoot)
             {
-                obj = _list[_dic[key.ToLower(CultureInfo.InvariantCulture)]];
-                return true;
-            }
-            else
-            {
-                return false;
+                if (_dic.ContainsKey(key))
+                {
+                    obj = _list[_dic[key.ToLower(CultureInfo.InvariantCulture)]];
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
         /// <summary>
@@ -123,22 +142,31 @@ namespace CompuMaster.Epplus4
         /// <returns></returns>
         internal int FindIndexByID(string key)
         {
-            if (_dic.ContainsKey(key))
+            lock (_syncRoot)
             {
-                return _dic[key];
-            }
-            else
-            {
-                return int.MinValue;
+                if (_dic.ContainsKey(key))
+                {
+                    return _dic[key];
+                }
+                else
+                {
+                    return int.MinValue;
+                }
             }
         }
         internal bool ExistsKey(string key)
         {
-            return _dic.ContainsKey(key);
+            lock (_syncRoot)
+            {
+                return _dic.ContainsKey(key);
+            }
         }
         internal void Sort(Comparison<T> c)
         {
-            _list.Sort(c);
+            lock (_syncRoot)
+            {
+                _list.Sort(c);
+            }
         }
     }
 }
