@@ -69,7 +69,13 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// </summary>
         public int Count
         {
-            get { return _addressCache.Count; }
+            get
+            {
+                lock (_myLock)
+                {
+                    return _addressCache.Count;
+                }
+            }
         }
 
         /// <summary>
@@ -79,8 +85,11 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// <returns></returns>
         public string Get(int id)
         {
-            if (!_addressCache.ContainsKey(id)) return string.Empty;
-            return _addressCache[id];
+            lock (_myLock)
+            {
+                string address;
+                return _addressCache.TryGetValue(id, out address) ? address : string.Empty;
+            }
         }
 
         /// <summary>

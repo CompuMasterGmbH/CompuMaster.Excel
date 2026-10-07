@@ -49,37 +49,40 @@ namespace CompuMaster.Epplus4
         }
         public static void Calculate(this ExcelWorkbook workbook, ExcelCalculationOption options)
         {
-            Init(workbook);
-
-            var dc = DependencyChainFactory.Create(workbook, options);
-            workbook.FormulaParser.InitNewCalc();
-            if (workbook.FormulaParser.Logger != null)
+            lock (workbook.SyncRoot)
             {
-                var msg = string.Format("Starting... number of cells to parse: {0}", dc.list.Count);
-                workbook.FormulaParser.Logger.Log(msg);
+                Init(workbook);
+
+                var dc = DependencyChainFactory.Create(workbook, options);
+                workbook.FormulaParser.InitNewCalc();
+                if (workbook.FormulaParser.Logger != null)
+                {
+                    var msg = string.Format("Starting... number of cells to parse: {0}", dc.list.Count);
+                    workbook.FormulaParser.Logger.Log(msg);
+                }
+
+                //TODO: Remove when tests are done. Outputs the dc to a text file.
+                //var fileDc = new System.IO.StreamWriter("c:\\temp\\dc.txt");
+
+                //for (int i = 0; i < dc.list.Count; i++)
+                //{
+                //    fileDc.WriteLine(i.ToString() + "," + dc.list[i].Column.ToString() + "," + dc.list[i].Row.ToString() + "," + (dc.list[i].ws==null ? "" : dc.list[i].ws.Name) + "," + dc.list[i].Formula);
+                //}
+                //fileDc.Close();
+                //fileDc = new System.IO.StreamWriter("c:\\temp\\dcorder.txt");
+                //for (int i = 0; i < dc.CalcOrder.Count; i++)
+                //{
+                //    fileDc.WriteLine(dc.CalcOrder[i].ToString());
+                //}
+                //fileDc.Close();
+                //fileDc = null;
+
+                //TODO: Add calculation here
+
+                CalcChain(workbook, workbook.FormulaParser, dc);
+
+                //workbook._isCalculated = true;
             }
-
-            //TODO: Remove when tests are done. Outputs the dc to a text file. 
-            //var fileDc = new System.IO.StreamWriter("c:\\temp\\dc.txt");
-                        
-            //for (int i = 0; i < dc.list.Count; i++)
-            //{
-            //    fileDc.WriteLine(i.ToString() + "," + dc.list[i].Column.ToString() + "," + dc.list[i].Row.ToString() + "," + (dc.list[i].ws==null ? "" : dc.list[i].ws.Name) + "," + dc.list[i].Formula);
-            //}
-            //fileDc.Close();
-            //fileDc = new System.IO.StreamWriter("c:\\temp\\dcorder.txt");
-            //for (int i = 0; i < dc.CalcOrder.Count; i++)
-            //{
-            //    fileDc.WriteLine(dc.CalcOrder[i].ToString());
-            //}
-            //fileDc.Close();
-            //fileDc = null;
-
-            //TODO: Add calculation here
-
-            CalcChain(workbook, workbook.FormulaParser, dc);
-
-            //workbook._isCalculated = true;
         }
         public static void Calculate(this ExcelWorksheet worksheet)
         {
@@ -87,17 +90,20 @@ namespace CompuMaster.Epplus4
         }
         public static void Calculate(this ExcelWorksheet worksheet, ExcelCalculationOption options)
         {
-            Init(worksheet.Workbook);
-            //worksheet.Workbook._formulaParser = null; TODO:Cant reset. Don't work with userdefined or overrided worksheet functions            
-            var dc = DependencyChainFactory.Create(worksheet, options);
-            var parser = worksheet.Workbook.FormulaParser;
-            parser.InitNewCalc();
-            if (parser.Logger != null)
+            lock (worksheet.Workbook.SyncRoot)
             {
-                var msg = string.Format("Starting... number of cells to parse: {0}", dc.list.Count);
-                parser.Logger.Log(msg);
+                Init(worksheet.Workbook);
+                //worksheet.Workbook._formulaParser = null; TODO:Cant reset. Don't work with userdefined or overrided worksheet functions
+                var dc = DependencyChainFactory.Create(worksheet, options);
+                var parser = worksheet.Workbook.FormulaParser;
+                parser.InitNewCalc();
+                if (parser.Logger != null)
+                {
+                    var msg = string.Format("Starting... number of cells to parse: {0}", dc.list.Count);
+                    parser.Logger.Log(msg);
+                }
+                CalcChain(worksheet.Workbook, parser, dc);
             }
-            CalcChain(worksheet.Workbook, parser, dc);
         }
         public static void Calculate(this ExcelRangeBase range)
         {
@@ -105,11 +111,14 @@ namespace CompuMaster.Epplus4
         }
         public static void Calculate(this ExcelRangeBase range, ExcelCalculationOption options)
         {
-            Init(range._workbook);
-            var parser = range._workbook.FormulaParser;
-            parser.InitNewCalc();
-            var dc = DependencyChainFactory.Create(range, options);
-            CalcChain(range._workbook, parser, dc);
+            lock (range._workbook.SyncRoot)
+            {
+                Init(range._workbook);
+                var parser = range._workbook.FormulaParser;
+                parser.InitNewCalc();
+                var dc = DependencyChainFactory.Create(range, options);
+                CalcChain(range._workbook, parser, dc);
+            }
         }
         public static object Calculate(this ExcelWorksheet worksheet, string Formula)
         {
@@ -117,25 +126,28 @@ namespace CompuMaster.Epplus4
         }
         public static object Calculate(this ExcelWorksheet worksheet, string Formula, ExcelCalculationOption options)
         {
-            try
+            lock (worksheet.Workbook.SyncRoot)
             {
-                worksheet.CheckSheetType();
-                if(string.IsNullOrEmpty(Formula.Trim())) return null;
-                Init(worksheet.Workbook);
-                var parser = worksheet.Workbook.FormulaParser;
-                parser.InitNewCalc();
-                if (Formula[0] == '=') Formula = Formula.Substring(1); //Remove any starting equal sign
-                var dc = DependencyChainFactory.Create(worksheet, Formula, options);
-                var f = dc.list[0];
-                dc.CalcOrder.RemoveAt(dc.CalcOrder.Count - 1);
+                try
+                {
+                    worksheet.CheckSheetType();
+                    if(string.IsNullOrEmpty(Formula.Trim())) return null;
+                    Init(worksheet.Workbook);
+                    var parser = worksheet.Workbook.FormulaParser;
+                    parser.InitNewCalc();
+                    if (Formula[0] == '=') Formula = Formula.Substring(1); //Remove any starting equal sign
+                    var dc = DependencyChainFactory.Create(worksheet, Formula, options);
+                    var f = dc.list[0];
+                    dc.CalcOrder.RemoveAt(dc.CalcOrder.Count - 1);
 
-                CalcChain(worksheet.Workbook, parser, dc);
+                    CalcChain(worksheet.Workbook, parser, dc);
 
-                return parser.ParseCell(f.Tokens, worksheet.Name, -1, -1);
-            }
-            catch (Exception ex)
-            {
-                return new ExcelErrorValueException(ex.Message, ExcelErrorValue.Create(eErrorType.Value));
+                    return parser.ParseCell(f.Tokens, worksheet.Name, -1, -1);
+                }
+                catch (Exception ex)
+                {
+                    return new ExcelErrorValueException(ex.Message, ExcelErrorValue.Create(eErrorType.Value));
+                }
             }
         }
         private static void CalcChain(ExcelWorkbook wb, FormulaParser parser, DependencyChain dc)
@@ -168,6 +180,7 @@ namespace CompuMaster.Epplus4
         }
         private static void Init(ExcelWorkbook workbook)
         {
+            workbook.ThrowIfDisposed();
             workbook._formulaTokens = new CellStore<List<Token>>();;
             foreach (var ws in workbook.Worksheets)
             {

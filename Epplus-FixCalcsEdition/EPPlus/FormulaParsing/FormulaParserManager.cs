@@ -45,9 +45,15 @@ namespace CompuMaster.Epplus4.FormulaParsing
     public class FormulaParserManager
     {
         private readonly FormulaParser _parser;
+        private readonly object _syncRoot;
 
-        internal FormulaParserManager(FormulaParser parser)
+        internal FormulaParserManager(FormulaParser parser) : this(parser, new object())
         {
+        }
+
+        internal FormulaParserManager(FormulaParser parser, object syncRoot)
+        {
+            _syncRoot = syncRoot;
             Require.That(parser).Named("parser").IsNotNull();
             _parser = parser;
         }
@@ -60,7 +66,10 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// <param name="module">A <see cref="IFunctionModule"/> containing <see cref="ExcelFunction"/>s.</param>
         public void LoadFunctionModule(IFunctionModule module)
         {
-            _parser.Configure(x => x.FunctionRepository.LoadModule(module));
+            lock (_syncRoot)
+            {
+                _parser.Configure(x => x.FunctionRepository.LoadModule(module));
+            }
         }
 
         /// <summary>
@@ -106,15 +115,18 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// <returns>An enumeration of <see cref="KeyValuePair{String,ExcelFunction}"/>, where the key is the function name</returns>
         public IEnumerable<KeyValuePair<string, ExcelFunction>> GetImplementedFunctions()
         {
-            var functions = new List<KeyValuePair<string, ExcelFunction>>();
-            _parser.Configure(parsingConfiguration =>
+            lock (_syncRoot)
             {
-                foreach (var name in parsingConfiguration.FunctionRepository.FunctionNames)
+                var functions = new List<KeyValuePair<string, ExcelFunction>>();
+                _parser.Configure(parsingConfiguration =>
                 {
-                    functions.Add(new KeyValuePair<string, ExcelFunction>(name, parsingConfiguration.FunctionRepository.GetFunction(name)));
-                }
-            });
-            return functions;
+                    foreach (var name in parsingConfiguration.FunctionRepository.FunctionNames)
+                    {
+                        functions.Add(new KeyValuePair<string, ExcelFunction>(name, parsingConfiguration.FunctionRepository.GetFunction(name)));
+                    }
+                });
+                return functions;
+            }
         } 
 
         /// <summary>
@@ -124,7 +136,10 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// <returns></returns>
         public object Parse(string formula)
         {
-            return _parser.Parse(formula);
+            lock (_syncRoot)
+            {
+                return _parser.Parse(formula);
+            }
         }
 
         /// <summary>
@@ -134,7 +149,10 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// <see cref="CompuMaster.Epplus4.FormulaParsing.Logging.LoggerFactory"/>
         public void AttachLogger(IFormulaParserLogger logger)
         {
-            _parser.Configure(c => c.AttachLogger(logger));
+            lock (_syncRoot)
+            {
+                _parser.Configure(c => c.AttachLogger(logger));
+            }
         }
 
         /// <summary>
@@ -143,14 +161,20 @@ namespace CompuMaster.Epplus4.FormulaParsing
         /// <param name="logfile"></param>
         public void AttachLogger(FileInfo logfile)
         {
-            _parser.Configure(c => c.AttachLogger(LoggerFactory.CreateTextFileLogger(logfile)));
+            lock (_syncRoot)
+            {
+                _parser.Configure(c => c.AttachLogger(LoggerFactory.CreateTextFileLogger(logfile)));
+            }
         }
         /// <summary>
         /// Detaches any attached logger from the formula parser.
         /// </summary>
         public void DetachLogger()
         {
-            _parser.Configure(c => c.DetachLogger());
+            lock (_syncRoot)
+            {
+                _parser.Configure(c => c.DetachLogger());
+            }
         }
     }
 }

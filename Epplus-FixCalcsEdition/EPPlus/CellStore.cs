@@ -337,6 +337,8 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         internal const int ColSizeMin = 32;
         internal const int PagesPerColumnMin = 32;
 
+        // The column index is resized; its identity must never be used as a monitor.
+        internal readonly object SyncRoot = new object();
         List<T> _values = new List<T>();
         internal ColumnIndex[] _columnIndex;
         internal IndexBase _searchIx = new IndexBase();
@@ -357,203 +359,221 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
 	    }
         internal int GetPosition(int Column)
         {
-            if(Column < ColumnCount && _columnIndex[Column].Index==Column)      //Check if th column is lesser than
+            lock (SyncRoot)
             {
-                return Column;
-            }
-            else
-            {
-                _searchIx.Index = (short)Column;
-                return Array.BinarySearch(_columnIndex, 0, ColumnCount, _searchIx);
+                if(Column < ColumnCount && _columnIndex[Column].Index==Column)      //Check if th column is lesser than
+                {
+                    return Column;
+                }
+                else
+                {
+                    _searchIx.Index = (short)Column;
+                    return Array.BinarySearch(_columnIndex, 0, ColumnCount, _searchIx);
+                }
             }
         }
         internal CellStore<T> Clone()
         {
-            int row, col;
-            var ret=new CellStore<T>();
-            for (int c = 0; c < ColumnCount; c++)
+            lock (SyncRoot)
             {
-                col = _columnIndex[c].Index;
-                for (int p = 0;p < _columnIndex[c].PageCount; p++)
+                int row, col;
+                var ret=new CellStore<T>();
+                for (int c = 0; c < ColumnCount; c++)
                 {
-                    for (int r = 0; r < _columnIndex[c]._pages[p].RowCount; r++)
+                    col = _columnIndex[c].Index;
+                    for (int p = 0;p < _columnIndex[c].PageCount; p++)
                     {
-                        row = _columnIndex[c]._pages[p].IndexOffset + _columnIndex[c]._pages[p].Rows[r].Index;
-                        ret.SetValue(row, col, _values[_columnIndex[c]._pages[p].Rows[r].IndexPointer]);
+                        for (int r = 0; r < _columnIndex[c]._pages[p].RowCount; r++)
+                        {
+                            row = _columnIndex[c]._pages[p].IndexOffset + _columnIndex[c]._pages[p].Rows[r].Index;
+                            ret.SetValue(row, col, _values[_columnIndex[c]._pages[p].Rows[r].IndexPointer]);
+                        }
                     }
                 }
+                return ret;
             }
-            return ret;
         }
         internal int Count
         {
             get
             {
-                int count=0;
-                for (int c = 0; c < ColumnCount; c++)
+                lock (SyncRoot)
                 {
-                    for (int p = 0; p < _columnIndex[c].PageCount; p++)
+                    int count=0;
+                    for (int c = 0; c < ColumnCount; c++)
                     {
-                        count += _columnIndex[c]._pages[p].RowCount;
+                        for (int p = 0; p < _columnIndex[c].PageCount; p++)
+                        {
+                            count += _columnIndex[c]._pages[p].RowCount;
+                        }
                     }
+                    return count;
                 }
-                return count;
             }
         }
         internal bool GetDimension(out int fromRow, out int fromCol, out int toRow, out int toCol)
         {
-            if (ColumnCount == 0)
+            lock (SyncRoot)
             {
-                fromRow = fromCol = toRow = toCol = 0;
-                return false;
-            }
-            else
-            {
-                fromCol=_columnIndex[0].Index;
-                var fromIndex = 0;
-                if (fromCol <= 0 && ColumnCount > 1)
-                {
-                    fromCol = _columnIndex[1].Index;
-                    fromIndex = 1;
-                }
-                else if(ColumnCount == 1 && fromCol <= 0)
-                {
-                    fromRow = fromCol = toRow = toCol = 0;
-                    return false;
-                }
-                var col = ColumnCount - 1;
-                while (col > 0)
-                {
-                    if (_columnIndex[col].PageCount == 0 || _columnIndex[col]._pages[0].RowCount > 1 || _columnIndex[col]._pages[0].Rows[0].Index > 0)
-                    {
-                        break;
-                    }
-                    col--;
-                }
-                toCol=_columnIndex[col].Index;
-                if (toCol == 0)
-                {
-                    fromRow = fromCol = toRow = toCol = 0;
-                    return false;                    
-                }
-                fromRow = toRow= 0;
-
-                for (int c = fromIndex; c < ColumnCount; c++)
-                {                    
-                    int first, last;
-                    if (_columnIndex[c].PageCount == 0) continue;                    
-                    if (_columnIndex[c]._pages[0].RowCount > 0 && _columnIndex[c]._pages[0].Rows[0].Index > 0)
-                    {
-                        first = _columnIndex[c]._pages[0].IndexOffset + _columnIndex[c]._pages[0].Rows[0].Index;
-                    }
-                    else
-                    {
-                        if(_columnIndex[c]._pages[0].RowCount>1)
-                        {
-                            first = _columnIndex[c]._pages[0].IndexOffset + _columnIndex[c]._pages[0].Rows[1].Index;
-                        }
-                        else if (_columnIndex[c].PageCount > 1)
-                        {
-                            first = _columnIndex[c]._pages[0].IndexOffset + _columnIndex[c]._pages[1].Rows[0].Index;
-                        }
-                        else
-                        {
-                            first = 0;
-                        }
-                    }
-                    var lp = _columnIndex[c].PageCount - 1;
-                    while(_columnIndex[c]._pages[lp].RowCount==0 && lp!=0)
-                    {
-                        lp--;
-                    }
-                    var p = _columnIndex[c]._pages[lp];
-                    if (p.RowCount > 0)
-                    {
-                        last = p.IndexOffset + p.Rows[p.RowCount - 1].Index;
-                    }
-                    else
-                    {
-                        last = first;
-                    }
-                    if (first > 0 && (first < fromRow || fromRow == 0))
-                    {
-                        fromRow=first;
-                    }
-                    if (first>0 && (last > toRow || toRow == 0))
-                    {
-                        toRow=last;
-                    }
-                }
-                if (fromRow <= 0 || toRow <= 0)
+                if (ColumnCount == 0)
                 {
                     fromRow = fromCol = toRow = toCol = 0;
                     return false;
                 }
                 else
                 {
-                    return true;
+                    fromCol=_columnIndex[0].Index;
+                    var fromIndex = 0;
+                    if (fromCol <= 0 && ColumnCount > 1)
+                    {
+                        fromCol = _columnIndex[1].Index;
+                        fromIndex = 1;
+                    }
+                    else if(ColumnCount == 1 && fromCol <= 0)
+                    {
+                        fromRow = fromCol = toRow = toCol = 0;
+                        return false;
+                    }
+                    var col = ColumnCount - 1;
+                    while (col > 0)
+                    {
+                        if (_columnIndex[col].PageCount == 0 || _columnIndex[col]._pages[0].RowCount > 1 || _columnIndex[col]._pages[0].Rows[0].Index > 0)
+                        {
+                            break;
+                        }
+                        col--;
+                    }
+                    toCol=_columnIndex[col].Index;
+                    if (toCol == 0)
+                    {
+                        fromRow = fromCol = toRow = toCol = 0;
+                        return false;
+                    }
+                    fromRow = toRow= 0;
+
+                    for (int c = fromIndex; c < ColumnCount; c++)
+                    {
+                        int first, last;
+                        if (_columnIndex[c].PageCount == 0) continue;
+                        if (_columnIndex[c]._pages[0].RowCount > 0 && _columnIndex[c]._pages[0].Rows[0].Index > 0)
+                        {
+                            first = _columnIndex[c]._pages[0].IndexOffset + _columnIndex[c]._pages[0].Rows[0].Index;
+                        }
+                        else
+                        {
+                            if(_columnIndex[c]._pages[0].RowCount>1)
+                            {
+                                first = _columnIndex[c]._pages[0].IndexOffset + _columnIndex[c]._pages[0].Rows[1].Index;
+                            }
+                            else if (_columnIndex[c].PageCount > 1)
+                            {
+                                first = _columnIndex[c]._pages[0].IndexOffset + _columnIndex[c]._pages[1].Rows[0].Index;
+                            }
+                            else
+                            {
+                                first = 0;
+                            }
+                        }
+                        var lp = _columnIndex[c].PageCount - 1;
+                        while(_columnIndex[c]._pages[lp].RowCount==0 && lp!=0)
+                        {
+                            lp--;
+                        }
+                        var p = _columnIndex[c]._pages[lp];
+                        if (p.RowCount > 0)
+                        {
+                            last = p.IndexOffset + p.Rows[p.RowCount - 1].Index;
+                        }
+                        else
+                        {
+                            last = first;
+                        }
+                        if (first > 0 && (first < fromRow || fromRow == 0))
+                        {
+                            fromRow=first;
+                        }
+                        if (first>0 && (last > toRow || toRow == 0))
+                        {
+                            toRow=last;
+                        }
+                    }
+                    if (fromRow <= 0 || toRow <= 0)
+                    {
+                        fromRow = fromCol = toRow = toCol = 0;
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
                 }
             }
         }
         internal int FindNext(int Column)
         {
-            var c = GetPosition(Column);
-            if (c < 0)
+            lock (SyncRoot)
             {
-                return ~c;
+                var c = GetPosition(Column);
+                if (c < 0)
+                {
+                    return ~c;
+                }
+                return c;
             }
-            return c;
         }
         internal T GetValue(int Row, int Column)
         {
-            int i = GetPointer(Row, Column);
-            if (i >= 0)
+            lock (SyncRoot)
             {
-                return _values[i];
+                int i = GetPointer(Row, Column);
+                if (i >= 0)
+                {
+                    return _values[i];
+                }
+                else
+                {
+                    return default(T);
+                }
+                //var col = GetPosition(Column);
+                //if (col >= 0)
+                //{
+                //    var pos = _columnIndex[col].GetPosition(Row);
+                //    if (pos >= 0)
+                //    {
+                //        var pageItem = _columnIndex[col].Pages[pos];
+                //        if (pageItem.MinIndex > Row)
+                //        {
+                //            pos--;
+                //            if (pos < 0)
+                //            {
+                //                return default(T);
+                //            }
+                //            else
+                //            {
+                //                pageItem = _columnIndex[col].Pages[pos];
+                //            }
+                //        }
+                //        short ix = (short)(Row - pageItem.IndexOffset);
+                //        var cellPos = Array.BinarySearch(pageItem.Rows, 0, pageItem.RowCount, new IndexBase() { Index = ix });
+                //        if (cellPos >= 0)
+                //        {
+                //            return _values[pageItem.Rows[cellPos].IndexPointer];
+                //        }
+                //        else //Cell does not exist
+                //        {
+                //            return default(T);
+                //        }
+                //    }
+                //    else //Page does not exist
+                //    {
+                //        return default(T);
+                //    }
+                //}
+                //else //Column does not exist
+                //{
+                //    return default(T);
+                //}
             }
-            else
-            {
-                return default(T);                
-            }
-            //var col = GetPosition(Column);
-            //if (col >= 0)  
-            //{
-            //    var pos = _columnIndex[col].GetPosition(Row);
-            //    if (pos >= 0) 
-            //    {
-            //        var pageItem = _columnIndex[col].Pages[pos];
-            //        if (pageItem.MinIndex > Row)
-            //        {
-            //            pos--;
-            //            if (pos < 0)
-            //            {
-            //                return default(T);
-            //            }
-            //            else
-            //            {
-            //                pageItem = _columnIndex[col].Pages[pos];
-            //            }
-            //        }
-            //        short ix = (short)(Row - pageItem.IndexOffset);
-            //        var cellPos = Array.BinarySearch(pageItem.Rows, 0, pageItem.RowCount, new IndexBase() { Index = ix });
-            //        if (cellPos >= 0) 
-            //        {
-            //            return _values[pageItem.Rows[cellPos].IndexPointer];
-            //        }
-            //        else //Cell does not exist
-            //        {
-            //            return default(T);
-            //        }
-            //    }
-            //    else //Page does not exist
-            //    {
-            //        return default(T);
-            //    }
-            //}
-            //else //Column does not exist
-            //{
-            //    return default(T);
-            //}
         }
         int GetPointer(int Row, int Column)
         {
@@ -600,24 +620,30 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         }
         internal bool Exists(int Row,int Column)
         {
-            return GetPointer(Row, Column)>=0;
+            lock (SyncRoot)
+            {
+                return GetPointer(Row, Column)>=0;
+            }
         }
         internal bool Exists(int Row, int Column, ref T value)
         {
-            var p=GetPointer(Row, Column);
-            if (p >= 0)
+            lock (SyncRoot)
             {
-                value = _values[p];
-                return true;
-            }
-            else
-            {                
-                return false;
+                var p=GetPointer(Row, Column);
+                if (p >= 0)
+                {
+                    value = _values[p];
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
         internal void SetValue(int Row, int Column, T Value)
         {
-            lock(_columnIndex)
+            lock (SyncRoot)
             {
                 var col = GetPosition(Column);          //Array.BinarySearch(_columnIndex, 0, ColumnCount, new IndexBase() { Index = (short)(Column) });
                 var page = (short)(Row >> pageBits);
@@ -689,7 +715,7 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         /// <param name="Value"></param>
         internal void SetRangeValueSpecial(int fromRow, int fromColumn, int toRow, int toColumn, SetRangeValueDelegate Updater, object Value)
         {
-            lock (_columnIndex)
+            lock (SyncRoot)
             {
                 // split row to page groups (pageIndex to RowNo List)
                 Dictionary<short, List<int>> pages = new Dictionary<short, List<int>>();
@@ -775,7 +801,7 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         // Set object's property atomically
         internal void SetValueSpecial(int Row, int Column, SetValueDelegate Updater, object Value)
         {
-            lock (_columnIndex)
+            lock (SyncRoot)
             {
                 //var col = Array.BinarySearch(_columnIndex, 0, ColumnCount, new IndexBase() { Index = (short)(Column) });
                 var col = GetPosition(Column);
@@ -840,7 +866,7 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
 
         internal void Insert(int fromRow, int fromCol, int rows, int columns)
         {
-            lock (_columnIndex)
+            lock (SyncRoot)
             {
 
                 if (columns > 0)
@@ -925,7 +951,7 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         }
         internal void Delete(int fromRow, int fromCol, int rows, int columns, bool shift)
         {
-            lock (_columnIndex)
+            lock (SyncRoot)
             {
                 if (columns > 0 && fromRow == 0 && rows >= ExcelPackage.MaxRows)
                 {
@@ -1607,16 +1633,19 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
 
         public void Dispose()
         {
-            if(_values!=null) _values.Clear();
-            for(var c=0;c<ColumnCount;c++)
+            lock (SyncRoot)
             {
-                if (_columnIndex[c] != null)
+                if(_values!=null) _values.Clear();
+                for(var c=0;c<ColumnCount;c++)
                 {
-                    ((IDisposable)_columnIndex[c]).Dispose();
+                    if (_columnIndex[c] != null)
+                    {
+                        ((IDisposable)_columnIndex[c]).Dispose();
+                    }
                 }
+                _values = null;
+                _columnIndex = null;
             }
-            _values = null;
-            _columnIndex = null;
         }
 
         //object IEnumerator.Current
@@ -1636,105 +1665,92 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
             return NextCell(ref row, ref col, 0,0, ExcelPackage.MaxRows, ExcelPackage.MaxColumns);
         }
         internal bool NextCell(ref int row, ref int col, int minRow, int minColPos,int maxRow, int maxColPos)
-        {            
-            if (minColPos >= ColumnCount)
+        {
+            lock (SyncRoot)
             {
-                return false;
-            }
-            if (maxColPos >= ColumnCount)
-            {
-                maxColPos = ColumnCount-1;
-            }
-            var c=GetPosition(col);
-            if(c>=0)
-            {
-                if (c > maxColPos)
+
+                if (minColPos >= ColumnCount)
                 {
-                    if (col <= minColPos)
+                    return false;
+                }
+                if (maxColPos >= ColumnCount)
+                {
+                    maxColPos = ColumnCount-1;
+                }
+                var c=GetPosition(col);
+                if(c>=0)
+                {
+                    if (c > maxColPos)
                     {
-                        return false;
+                        if (col <= minColPos)
+                        {
+                            return false;
+                        }
+                        col = minColPos;
+                        return NextCell(ref row, ref col);
                     }
-                    col = minColPos;
-                    return NextCell(ref row, ref col);
+                    else
+                    {
+                        var r=GetNextCell(ref row, ref c, minColPos, maxRow, maxColPos);
+                        col = _columnIndex[c].Index;
+                        return r;
+                    }
                 }
                 else
                 {
-                    var r=GetNextCell(ref row, ref c, minColPos, maxRow, maxColPos);
-                    col = _columnIndex[c].Index;
-                    return r;
-                }
-            }
-            else
-            {
-                c=~c;
-                if (c >= ColumnCount) c = ColumnCount - 1;
-                if (col > _columnIndex[c].Index)
-                {
-                    if (col <= minColPos)
+                    c=~c;
+                    if (c >= ColumnCount) c = ColumnCount - 1;
+                    if (col > _columnIndex[c].Index)
                     {
-                        return false;
+                        if (col <= minColPos)
+                        {
+                            return false;
+                        }
+                        col = minColPos;
+                        return NextCell(ref row, ref col, minRow, minColPos, maxRow, maxColPos);
                     }
-                    col = minColPos;
-                    return NextCell(ref row, ref col, minRow, minColPos, maxRow, maxColPos);
-                }
-                else
-                {                    
-                    var r=GetNextCell(ref row, ref c, minColPos, maxRow, maxColPos);
-                    col = _columnIndex[c].Index;
-                    return r;
+                    else
+                    {
+                        var r=GetNextCell(ref row, ref c, minColPos, maxRow, maxColPos);
+                        col = _columnIndex[c].Index;
+                        return r;
+                    }
                 }
             }
         }
         internal bool GetNextCell(ref int row, ref int colPos, int startColPos, int endRow, int endColPos)
         {
-            if (ColumnCount == 0)
+            lock (SyncRoot)
             {
-                return false;
-            }
-            else
-            {
-                if (++colPos < ColumnCount && colPos <=endColPos)
+                if (ColumnCount == 0)
                 {
-                    var r = _columnIndex[colPos].GetNextRow(row);
-                    if (r == row) //Exists next Row
+                    return false;
+                }
+                else
+                {
+                    if (++colPos < ColumnCount && colPos <=endColPos)
                     {
-                        return true;
-                    }
-                    else
-                    {
-                        int minRow, minCol;
-                        if (r > row)
+                        var r = _columnIndex[colPos].GetNextRow(row);
+                        if (r == row) //Exists next Row
                         {
-                            minRow = r;
-                            minCol = colPos;
+                            return true;
                         }
                         else
                         {
-                            minRow = int.MaxValue;
-                            minCol = 0;
-                        }
-
-                        var c = colPos + 1;
-                        while (c < ColumnCount && c <= endColPos)
-                        {
-                            r = _columnIndex[c].GetNextRow(row);
-                            if (r == row) //Exists next Row
-                            {
-                                colPos = c;
-                                return true;
-                            }
-                            if (r > row && r < minRow)
+                            int minRow, minCol;
+                            if (r > row)
                             {
                                 minRow = r;
-                                minCol = c;
+                                minCol = colPos;
                             }
-                            c++;
-                        }
-                        c = startColPos;
-                        if (row < endRow)
-                        {
-                            row++;
-                            while (c < colPos)
+                            else
+                            {
+                                minRow = int.MaxValue;
+                                minCol = 0;
+                            }
+
+                            var c = colPos + 1;
+                            while (c < ColumnCount && c <= endColPos)
                             {
                                 r = _columnIndex[c].GetNextRow(row);
                                 if (r == row) //Exists next Row
@@ -1742,77 +1758,100 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
                                     colPos = c;
                                     return true;
                                 }
-                                if (r > row && (r < minRow || (r==minRow && c<minCol)) && r <= endRow)
+                                if (r > row && r < minRow)
                                 {
                                     minRow = r;
                                     minCol = c;
                                 }
                                 c++;
                             }
-                        }
+                            c = startColPos;
+                            if (row < endRow)
+                            {
+                                row++;
+                                while (c < colPos)
+                                {
+                                    r = _columnIndex[c].GetNextRow(row);
+                                    if (r == row) //Exists next Row
+                                    {
+                                        colPos = c;
+                                        return true;
+                                    }
+                                    if (r > row && (r < minRow || (r==minRow && c<minCol)) && r <= endRow)
+                                    {
+                                        minRow = r;
+                                        minCol = c;
+                                    }
+                                    c++;
+                                }
+                            }
 
-                        if (minRow == int.MaxValue || minRow > endRow)
+                            if (minRow == int.MaxValue || minRow > endRow)
+                            {
+                                return false;
+                            }
+                            else
+                            {
+                                row = minRow;
+                                colPos = minCol;
+                                return true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (colPos <= startColPos || row>=endRow)
                         {
                             return false;
                         }
-                        else
-                        {
-                            row = minRow;
-                            colPos = minCol;
-                            return true;
-                        }
+                        colPos = startColPos - 1;
+                        row++;
+                        return GetNextCell(ref row, ref colPos, startColPos, endRow, endColPos);
                     }
-                }
-                else
-                {
-                    if (colPos <= startColPos || row>=endRow)
-                    {
-                        return false;
-                    }
-                    colPos = startColPos - 1;
-                    row++;
-                    return GetNextCell(ref row, ref colPos, startColPos, endRow, endColPos);
                 }
             }
         }
         internal bool GetNextCell(ref int row, ref int colPos, int startColPos, int endRow, int endColPos, ref int[] pagePos, ref int[] cellPos)
         {
-            if (colPos == endColPos)
+            lock (SyncRoot)
             {
-                colPos = startColPos;
-                row++;
-            }
-            else
-            {
-                colPos++;
-            }
-
-            if (pagePos[colPos] < 0)
-            {
-                if(pagePos[colPos]==-1)
+                if (colPos == endColPos)
                 {
-                    pagePos[colPos] = _columnIndex[colPos].GetPosition(row);
+                    colPos = startColPos;
+                    row++;
                 }
-            }
-            else if (_columnIndex[colPos]._pages[pagePos[colPos]].RowCount <= row)
-            {
-                if (_columnIndex[colPos].PageCount > pagePos[colPos])
-                    pagePos[colPos]++;
                 else
                 {
-                    pagePos[colPos]=-2;
+                    colPos++;
                 }
+
+                if (pagePos[colPos] < 0)
+                {
+                    if(pagePos[colPos]==-1)
+                    {
+                        pagePos[colPos] = _columnIndex[colPos].GetPosition(row);
+                    }
+                }
+                else if (_columnIndex[colPos]._pages[pagePos[colPos]].RowCount <= row)
+                {
+                    if (_columnIndex[colPos].PageCount > pagePos[colPos])
+                        pagePos[colPos]++;
+                    else
+                    {
+                        pagePos[colPos]=-2;
+                    }
+                }
+
+                var r = _columnIndex[colPos]._pages[pagePos[colPos]].IndexOffset + _columnIndex[colPos]._pages[pagePos[colPos]].Rows[cellPos[colPos]].Index;
+                if (r == row)
+                {
+                    row = r;
+                }
+                else
+                {
+                }
+                return true;
             }
-            
-            var r = _columnIndex[colPos]._pages[pagePos[colPos]].IndexOffset + _columnIndex[colPos]._pages[pagePos[colPos]].Rows[cellPos[colPos]].Index;
-            if (r == row)
-            {
-                row = r;
-            }
-            else
-            {
-            }
-            return true;
         }
         internal bool PrevCell(ref int row, ref int col)
         {
@@ -1820,158 +1859,164 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         }
         internal bool PrevCell(ref int row, ref int col, int minRow, int minColPos, int maxRow, int maxColPos)
         {
-            if (minColPos >= ColumnCount)
+            lock (SyncRoot)
             {
-                return false;
-            }
-            if (maxColPos >= ColumnCount)
-            {
-                maxColPos = ColumnCount - 1;
-            }
-            var c = GetPosition(col);
-            if(c>=0)
-            {
-                if (c == 0)
+                if (minColPos >= ColumnCount)
                 {
-                    if (col >= maxColPos)
+                    return false;
+                }
+                if (maxColPos >= ColumnCount)
+                {
+                    maxColPos = ColumnCount - 1;
+                }
+                var c = GetPosition(col);
+                if(c>=0)
+                {
+                    if (c == 0)
                     {
-                        return false;
+                        if (col >= maxColPos)
+                        {
+                            return false;
+                        }
+                        if (row == minRow)
+                        {
+                            return false;
+                        }
+                        row--;
+                        col = maxColPos;
+                        return PrevCell(ref row, ref col, minRow, minColPos, maxRow, maxColPos);
                     }
-                    if (row == minRow)
+                    else
                     {
-                        return false;
+                        var ret=GetPrevCell(ref row, ref c, minRow, minColPos, maxColPos);
+                        if (ret)
+                        {
+                            col = _columnIndex[c].Index;
+                        }
+                        return ret;
                     }
-                    row--;
-                    col = maxColPos;                    
-                    return PrevCell(ref row, ref col, minRow, minColPos, maxRow, maxColPos);
                 }
                 else
                 {
-                    var ret=GetPrevCell(ref row, ref c, minRow, minColPos, maxColPos);
-                    if (ret)
+                    c=~c;
+                    if (c == 0)
                     {
-                        col = _columnIndex[c].Index;
+                        if (col >= maxColPos || row<=0)
+                        {
+                            return false;
+                        }
+                        col = maxColPos;
+                        row--;
+                        return PrevCell(ref row, ref col, minRow, minColPos, maxRow, maxColPos);
                     }
-                    return ret;
-                }
-            }
-            else
-            {
-                c=~c;
-                if (c == 0)
-                {
-                    if (col >= maxColPos || row<=0)
+                    else
                     {
-                        return false;
+                        var ret = GetPrevCell(ref row, ref c, minRow, minColPos, maxColPos);
+                        if (ret)
+                        {
+                            col = _columnIndex[c].Index;
+                        }
+                        return ret;
                     }
-                    col = maxColPos;
-                    row--;
-                    return PrevCell(ref row, ref col, minRow, minColPos, maxRow, maxColPos);
-                }
-                else
-                {
-                    var ret = GetPrevCell(ref row, ref c, minRow, minColPos, maxColPos);
-                    if (ret)
-                    {
-                        col = _columnIndex[c].Index;
-                    }
-                    return ret;
                 }
             }
         }
         internal bool GetPrevCell(ref int row, ref int colPos, int startRow, int startColPos, int endColPos)
         {
-            if (ColumnCount == 0)
+            lock (SyncRoot)
             {
-                return false;
-            }
-            else
-            {
-                if (--colPos >= startColPos)
-//                if (++colPos < ColumnCount && colPos <= endColPos)
+                if (ColumnCount == 0)
                 {
-                    var r = _columnIndex[colPos].GetNextRow(row);
-                    if (r == row) //Exists next Row
+                    return false;
+                }
+                else
+                {
+                    if (--colPos >= startColPos)
+    //                if (++colPos < ColumnCount && colPos <= endColPos)
                     {
-                        return true;
-                    }
-                    else
-                    {
-                        int minRow, minCol;
-                        if (r > row && r >= startRow)
+                        var r = _columnIndex[colPos].GetNextRow(row);
+                        if (r == row) //Exists next Row
                         {
-                            minRow = r;
-                            minCol = colPos;
+                            return true;
                         }
                         else
                         {
-                            minRow = int.MaxValue;
-                            minCol = 0;
-                        }
+                            int minRow, minCol;
+                            if (r > row && r >= startRow)
+                            {
+                                minRow = r;
+                                minCol = colPos;
+                            }
+                            else
+                            {
+                                minRow = int.MaxValue;
+                                minCol = 0;
+                            }
 
-                        var c = colPos - 1;
-                        if (c >= startColPos)
-                        {
-                            while (c >= startColPos)
+                            var c = colPos - 1;
+                            if (c >= startColPos)
                             {
-                                r = _columnIndex[c].GetNextRow(row);
-                                if (r == row) //Exists next Row
+                                while (c >= startColPos)
                                 {
-                                    colPos = c;
-                                    return true;
+                                    r = _columnIndex[c].GetNextRow(row);
+                                    if (r == row) //Exists next Row
+                                    {
+                                        colPos = c;
+                                        return true;
+                                    }
+                                    if (r > row && r < minRow && r >= startRow)
+                                    {
+                                        minRow = r;
+                                        minCol = c;
+                                    }
+                                    c--;
                                 }
-                                if (r > row && r < minRow && r >= startRow)
+                            }
+                            if (row > startRow)
+                            {
+                                c = endColPos;
+                                row--;
+                                while (c > colPos)
                                 {
-                                    minRow = r;
-                                    minCol = c;
+                                    r = _columnIndex[c].GetNextRow(row);
+                                    if (r == row) //Exists next Row
+                                    {
+                                        colPos = c;
+                                        return true;
+                                    }
+                                    if (r > row && r < minRow && r >= startRow)
+                                    {
+                                        minRow = r;
+                                        minCol = c;
+                                    }
+                                    c--;
                                 }
-                                c--;
+                            }
+                            if (minRow == int.MaxValue || startRow < minRow)
+                            {
+                                return false;
+                            }
+                            else
+                            {
+                                row = minRow;
+                                colPos = minCol;
+                                return true;
                             }
                         }
-                        if (row > startRow)
+                    }
+                    else
+                    {
+                        colPos = ColumnCount;
+                        row--;
+                        if (row < startRow)
                         {
-                            c = endColPos;
-                            row--;
-                            while (c > colPos)
-                            {
-                                r = _columnIndex[c].GetNextRow(row);
-                                if (r == row) //Exists next Row
-                                {
-                                    colPos = c;
-                                    return true;
-                                }
-                                if (r > row && r < minRow && r >= startRow)
-                                {
-                                    minRow = r;
-                                    minCol = c;
-                                }
-                                c--;
-                            }
-                        }
-                        if (minRow == int.MaxValue || startRow < minRow)
-                        {
+                            Reset();
                             return false;
                         }
                         else
                         {
-                            row = minRow;
-                            colPos = minCol;
-                            return true;
+                            return GetPrevCell(ref colPos, ref row, startRow, startColPos, endColPos);
                         }
-                    }
-                }
-                else
-                {
-                    colPos = ColumnCount;
-                    row--;
-                    if (row < startRow)
-                    {
-                        Reset();
-                        return false;
-                    }
-                    else
-                    {
-                        return GetPrevCell(ref colPos, ref row, startRow, startColPos, endColPos);
                     }
                 }
             }
@@ -2020,23 +2065,26 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
 
         internal void Init()
         {
-            minRow = _startRow;
-            maxRow = _endRow;
-
-            minColPos = _cellStore.GetPosition(_startCol);
-            if (minColPos < 0) minColPos = ~minColPos;
-            maxColPos = _cellStore.GetPosition(_endCol);
-            if (maxColPos < 0) maxColPos = ~maxColPos-1;
-            row = minRow;
-            colPos = minColPos - 1;
-
-            var cols = maxColPos - minColPos + 1;
-            pagePos = new int[cols];
-            cellPos = new int[cols];
-            for (int i = 0; i < cols; i++)
+            lock (_cellStore.SyncRoot)
             {
-                pagePos[i] = -1;
-                cellPos[i] = -1;
+                minRow = _startRow;
+                maxRow = _endRow;
+
+                minColPos = _cellStore.GetPosition(_startCol);
+                if (minColPos < 0) minColPos = ~minColPos;
+                maxColPos = _cellStore.GetPosition(_endCol);
+                if (maxColPos < 0) maxColPos = ~maxColPos-1;
+                row = minRow;
+                colPos = minColPos - 1;
+
+                var cols = maxColPos - minColPos + 1;
+                pagePos = new int[cols];
+                cellPos = new int[cols];
+                for (int i = 0; i < cols; i++)
+                {
+                    pagePos[i] = -1;
+                    cellPos[i] = -1;
+                }
             }
         }
         internal int Row 
@@ -2050,23 +2098,26 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         {
             get
             {
-                if (colPos == -1) MoveNext();
-                if (colPos == -1) return 0;
-                return _cellStore._columnIndex[colPos].Index;
+                lock (_cellStore.SyncRoot)
+                {
+                    if (colPos == -1) MoveNext();
+                    if (colPos == -1) return 0;
+                    return _cellStore._columnIndex[colPos].Index;
+                }
             }
         }
         internal T Value
         {
             get
             {
-                lock (_cellStore)
+                lock (_cellStore.SyncRoot)
                 {
                     return _cellStore.GetValue(row, Column);
                 }
             }
             set
             {
-                lock (_cellStore)
+                lock (_cellStore.SyncRoot)
                 {
                     _cellStore.SetValue(row, Column, value);
                 }
@@ -2079,7 +2130,7 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
         }
         internal bool Previous()
         {
-            lock (_cellStore)
+            lock (_cellStore.SyncRoot)
             {
                 return _cellStore.GetPrevCell(ref row, ref colPos, minRow, minColPos, maxColPos);
             }
@@ -2141,14 +2192,17 @@ using CompuMaster.Epplus4.FormulaParsing.Excel.Functions.RefAndLookup;
     {
         internal void SetFlagValue(int Row, int Col, bool value, CellFlags cellFlags)
         {
-            CellFlags currentValue = (CellFlags) GetValue(Row, Col);
-            if (value)
+            lock (SyncRoot)
             {
-                SetValue(Row, Col, (byte)(currentValue | cellFlags)); // add the CellFlag bit
-            }
-            else
-            {
-                SetValue(Row, Col, (byte)(currentValue & ~cellFlags)); // remove the CellFlag bit
+                CellFlags currentValue = (CellFlags) GetValue(Row, Col);
+                if (value)
+                {
+                    SetValue(Row, Col, (byte)(currentValue | cellFlags)); // add the CellFlag bit
+                }
+                else
+                {
+                    SetValue(Row, Col, (byte)(currentValue & ~cellFlags)); // remove the CellFlag bit
+                }
             }
         }
         internal bool GetFlagValue(int Row, int Col, CellFlags cellFlags)

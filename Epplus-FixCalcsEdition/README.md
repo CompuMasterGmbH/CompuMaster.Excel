@@ -1,4 +1,28 @@
 ﻿# EPPlus
+
+## Special CompuMaster Edition
+
+This folder contains the maintained `CompuMaster.EPPlus4` fork of EPPlus 4.5.3.3. It adds calculation-cache reset behavior and other changes described in the [package README](EPPlus/README.md), which is also included in the NuGet package.
+
+## Known Issues
+
+**Warning: Epplus4 (including its fork CompuMaster.EPPlus4) is not thread-safe. Multithreaded use of the library is not supported. Concurrent access can cause exceptions and incorrect or lost cell values without an exception.**
+
+Use each `ExcelPackage` in one thread throughout its lifetime, including access to its workbook, worksheets and ranges, formula calculation, saving, and disposal. This follows [Jan Källman's recommendation to avoid multiple threads on a single workbook](https://github.com/EPPlusSoftware/EPPlus/issues/894#issuecomment-1578082491). Different worksheets in one package are not independent concurrency boundaries. If a package must be shared, serialize all access with one stable external lock per package/workbook, including complete select/read/modify/write sequences; locks per worksheet or cell are insufficient.
+
+The CompuMaster edition fixes the reproduced internal races in cell-store growth and access, workbook-wide style updates, and concurrent formula calculations. Calculation, parser-manager operations, saving, and disposal now share a package-local monitor. Regression tests cover these cases and independently owned packages. These internal fixes do not establish general thread safety or replace caller coordination. See [issue #26](https://github.com/CompuMasterGmbH/CompuMaster.Excel/issues/26) for the original failures, implementation scope, and remaining investigation items.
+
+The following known limitations remain:
+
+1. **A shared, cached `ExcelRange` can target the wrong cell.** Its indexers change the range object's address and return the same object. Another thread can change that address between selection and use. This behavior is retained for compatibility; do not share cached range objects between threads.
+2. **Compound operations and arbitrary concurrent workbook access remain unsupported.** Internal cell-store locks do not make selection followed by reading/writing atomic, provide snapshot cell enumeration, or coordinate every cell/structure change with calculation, saving, loading, or disposal. Concurrent edits can still invalidate a traversal or produce inconsistent output. Coordinate complete operations externally, including reads; direct XML/collection mutation and copying styles between workbooks also require caller coordination.
+3. **Callbacks must not reenter workbook services during calculation.** Custom functions and loggers run while the package monitor is held. Recursively calculating/parsing, saving, or disposing the same package can interfere with active parser state or workbook lifetime. Waiting for another thread that needs the same package can deadlock. The monitor permits internal nested calls but does not make such callback behavior supported.
+4. **Some stream copies are globally serialized.** The inherited `CopyStream` lock can limit throughput even for independent packages. It does not make sharing a stream safe; each package must own its stream exclusively.
+
+Use separately owned packages and streams for parallel jobs, with one thread accessing each package at a time. The independent-package regression tests cover selected operations, not every feature. Other lazy initialization paths, the shared `RAND()` seed, and publicly mutable operator/validation objects still require investigation; these code observations are not all demonstrated runtime defects.
+
+## Upstream EPPlus Archive
+
 **This repository has moved to https://github.com/EPPlusSoftware/EPPlus.** 
 
 **The code in this archive represents the final version of EPPlus under LGPL. There will be no more activity here.**  

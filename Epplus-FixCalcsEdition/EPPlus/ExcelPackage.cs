@@ -241,6 +241,8 @@ namespace CompuMaster.Epplus4
         private Packaging.ZipPackage _package;
         private ExcelPackageLoadLimits _loadLimits;
 		internal ExcelWorkbook _workbook;
+        // One reentrant monitor coordinates workbook services and package lifetime.
+        internal readonly object SyncRoot = new object();
         /// <summary>
         /// Maximum number of columns in a worksheet (16384). 
         /// </summary>
@@ -589,7 +591,7 @@ namespace CompuMaster.Epplus4
             Uri uri;
             do
             {
-                uri = new Uri(string.Format(sUri, _id++), UriKind.Relative);
+                uri = new Uri(string.Format(sUri, System.Threading.Interlocked.Increment(ref _id) - 1), UriKind.Relative);
             }
             while (package.PartExists(uri));
             return uri;
@@ -772,17 +774,20 @@ namespace CompuMaster.Epplus4
 		{
 			get
 			{
-                if (_workbook == null)
+                lock (SyncRoot)
                 {
-                    var nsm = CreateDefaultNSM();
+                    if (_workbook == null)
+                    {
+                        var nsm = CreateDefaultNSM();
 
-                    _workbook = new ExcelWorkbook(this, nsm);
+                        _workbook = new ExcelWorkbook(this, nsm);
 
-                    _workbook.GetExternalReferences();
-                    _workbook.GetDefinedNames();
+                        _workbook.GetExternalReferences();
+                        _workbook.GetDefinedNames();
 
+                    }
+                    return (_workbook);
                 }
-                return (_workbook);
 			}
 		}
         /// <summary>
@@ -884,24 +889,27 @@ namespace CompuMaster.Epplus4
 		/// </summary>
 		public void Dispose()
 		{
-            if(_package != null)
+            lock (SyncRoot)
             {
-		        if (_isExternalStream==false && _stream != null && (_stream.CanRead || _stream.CanWrite))
+                if(_package != null)
                 {
-                    CloseStream();
+                    if (_isExternalStream==false && _stream != null && (_stream.CanRead || _stream.CanWrite))
+                    {
+                        CloseStream();
+                    }
+                    _package.Close();
+                    if(_workbook != null)
+                    {
+                        _workbook.Dispose();
+                    }
+                    _package = null;
+                    _images = null;
+                    _file = null;
+                    _workbook = null;
+                    _stream = null;
+                    _workbook = null;
+                    GC.Collect();
                 }
-                _package.Close();
-                if(_workbook != null)
-                {
-                    _workbook.Dispose();
-                }
-                _package = null;
-                _images = null;
-                _file = null;
-                _workbook = null;
-                _stream = null;
-                _workbook = null;
-                GC.Collect();
             }
 		}
         #endregion
@@ -915,85 +923,88 @@ namespace CompuMaster.Epplus4
         /// </summary>
         public void Save()
         {
-            try
+            lock (SyncRoot)
             {
-                if (_stream is MemoryStream && _stream.Length > 0)
+                try
                 {
-                    //Close any open memorystream and "renew" then. This can occure if the package is saved twice. 
-                    //The stream is left open on save to enable the user to read the stream-property.
-                    //Non-memorystream streams will leave the closing to the user before saving a second time.
-                    CloseStream();
-                }
-
-                Workbook.Save();
-                if (File == null)
-                {
-                    if(Encryption.IsEncrypted)
+                    if (_stream is MemoryStream && _stream.Length > 0)
                     {
-                        var ms = new MemoryStream();
-                        _package.Save(ms);
-                        byte[] file = ms.ToArray(); 
-                        EncryptedPackageHandler eph = new EncryptedPackageHandler();
-                        var msEnc = eph.EncryptPackage(file, Encryption);
-                        CopyStream(msEnc, ref _stream);
-                    }   
-                    else
-                    {
-                        _package.Save(_stream);
-                    }
-                    _stream.Flush();
-                    _package.Close();
-                }
-                else
-                {
-                    if (System.IO.File.Exists(File.FullName))
-                    {
-                        try
-                        {
-                            System.IO.File.Delete(File.FullName);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw (new Exception(string.Format("Error overwriting file {0}", File.FullName), ex));
-                        }
+                        //Close any open memorystream and "renew" then. This can occure if the package is saved twice.
+                        //The stream is left open on save to enable the user to read the stream-property.
+                        //Non-memorystream streams will leave the closing to the user before saving a second time.
+                        CloseStream();
                     }
 
-                    _package.Save(_stream);
-                    _package.Close();
-                    if (Stream is MemoryStream)
+                    Workbook.Save();
+                    if (File == null)
                     {
-                        var fi = new FileStream(File.FullName, FileMode.Create);
-                        //EncryptPackage
-                        if (Encryption.IsEncrypted)
+                        if(Encryption.IsEncrypted)
                         {
-                            byte[] file = ((MemoryStream)Stream).ToArray();
+                            var ms = new MemoryStream();
+                            _package.Save(ms);
+                            byte[] file = ms.ToArray();
                             EncryptedPackageHandler eph = new EncryptedPackageHandler();
-                            var ms = eph.EncryptPackage(file, Encryption);
-                             
-                            fi.Write(ms.ToArray(), 0, (int)ms.Length);
+                            var msEnc = eph.EncryptPackage(file, Encryption);
+                            CopyStream(msEnc, ref _stream);
                         }
                         else
-                        {                            
-                            fi.Write(((MemoryStream)Stream).ToArray(), 0, (int)Stream.Length);
+                        {
+                            _package.Save(_stream);
                         }
-                        fi.Close();
-                        fi.Dispose();
+                        _stream.Flush();
+                        _package.Close();
                     }
                     else
                     {
-                        System.IO.File.WriteAllBytes(File.FullName, GetAsByteArray(false));
+                        if (System.IO.File.Exists(File.FullName))
+                        {
+                            try
+                            {
+                                System.IO.File.Delete(File.FullName);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw (new Exception(string.Format("Error overwriting file {0}", File.FullName), ex));
+                            }
+                        }
+
+                        _package.Save(_stream);
+                        _package.Close();
+                        if (Stream is MemoryStream)
+                        {
+                            var fi = new FileStream(File.FullName, FileMode.Create);
+                            //EncryptPackage
+                            if (Encryption.IsEncrypted)
+                            {
+                                byte[] file = ((MemoryStream)Stream).ToArray();
+                                EncryptedPackageHandler eph = new EncryptedPackageHandler();
+                                var ms = eph.EncryptPackage(file, Encryption);
+
+                                fi.Write(ms.ToArray(), 0, (int)ms.Length);
+                            }
+                            else
+                            {
+                                fi.Write(((MemoryStream)Stream).ToArray(), 0, (int)Stream.Length);
+                            }
+                            fi.Close();
+                            fi.Dispose();
+                        }
+                        else
+                        {
+                            System.IO.File.WriteAllBytes(File.FullName, GetAsByteArray(false));
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                if (File == null)
+                catch (Exception ex)
                 {
-                    throw;
-                }
-                else
-                {
-                    throw (new InvalidOperationException(string.Format("Error saving file {0}", File.FullName), ex));
+                    if (File == null)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        throw (new InvalidOperationException(string.Format("Error saving file {0}", File.FullName), ex));
+                    }
                 }
             }
         }
@@ -1006,8 +1017,11 @@ namespace CompuMaster.Epplus4
         /// <param name="password">This parameter overrides the Workbook.Encryption.Password.</param>
         public void Save(string password)
 		{
-            Encryption.Password = password;
-            Save();
+            lock (SyncRoot)
+            {
+                Encryption.Password = password;
+                Save();
+            }
         }
         /// <summary>
         /// Saves the workbook to a new file
@@ -1016,8 +1030,11 @@ namespace CompuMaster.Epplus4
         /// <param name="file">The file location</param>
         public void SaveAs(FileInfo file)
         {
-            File = file;
-            Save();
+            lock (SyncRoot)
+            {
+                File = file;
+                Save();
+            }
         }
         /// <summary>
         /// Saves the workbook to a new file
@@ -1028,9 +1045,12 @@ namespace CompuMaster.Epplus4
         /// This parameter overrides the Encryption.Password.</param>
         public void SaveAs(FileInfo file, string password)
         {
-            File = file;
-            Encryption.Password = password;
-            Save();
+            lock (SyncRoot)
+            {
+                File = file;
+                Encryption.Password = password;
+                Save();
+            }
         }
         /// <summary>
         /// Copies the Package to the Outstream
@@ -1039,12 +1059,15 @@ namespace CompuMaster.Epplus4
         /// <param name="OutputStream">The stream to copy the package to</param>
         public void SaveAs(Stream OutputStream)
         {
-            File = null;
-            Save();
-
-            if (OutputStream != _stream)
+            lock (SyncRoot)
             {
-                CopyStream(_stream, ref OutputStream);
+                File = null;
+                Save();
+
+                if (OutputStream != _stream)
+                {
+                    CopyStream(_stream, ref OutputStream);
+                }
             }
         }
         /// <summary>
@@ -1056,8 +1079,11 @@ namespace CompuMaster.Epplus4
         /// This parameter overrides the Encryption.Password.</param>
         public void SaveAs(Stream OutputStream, string password)
         {
-            Encryption.Password = password;
-            SaveAs(OutputStream);
+            lock (SyncRoot)
+            {
+                Encryption.Password = password;
+                SaveAs(OutputStream);
+            }
         }
         FileInfo _file = null;
 
@@ -1185,36 +1211,42 @@ namespace CompuMaster.Epplus4
         /// <returns></returns>
         public byte[] GetAsByteArray(string password)
         {
-            if (password != null)
+            lock (SyncRoot)
             {
-                Encryption.Password = password;
+                if (password != null)
+                {
+                    Encryption.Password = password;
+                }
+                return GetAsByteArray(true);
             }
-            return GetAsByteArray(true);
         }
         internal byte[] GetAsByteArray(bool save)
         {
-            if (save)
+            lock (SyncRoot)
             {
-                Workbook.Save();
-                _package.Close();
-                _package.Save(_stream);
-            }
-            Byte[] byRet = new byte[Stream.Length];
-            long pos = Stream.Position;            
-            Stream.Seek(0, SeekOrigin.Begin);
-            Stream.Read(byRet, 0, (int)Stream.Length);
+                if (save)
+                {
+                    Workbook.Save();
+                    _package.Close();
+                    _package.Save(_stream);
+                }
+                Byte[] byRet = new byte[Stream.Length];
+                long pos = Stream.Position;
+                Stream.Seek(0, SeekOrigin.Begin);
+                Stream.Read(byRet, 0, (int)Stream.Length);
 
-            //Encrypt Workbook?
-            if (Encryption.IsEncrypted)
-            {
-                EncryptedPackageHandler eph=new EncryptedPackageHandler();
-                var ms = eph.EncryptPackage(byRet, Encryption);
-                byRet = ms.ToArray();
-            }
+                //Encrypt Workbook?
+                if (Encryption.IsEncrypted)
+                {
+                    EncryptedPackageHandler eph=new EncryptedPackageHandler();
+                    var ms = eph.EncryptPackage(byRet, Encryption);
+                    byRet = ms.ToArray();
+                }
 
-            Stream.Seek(pos, SeekOrigin.Begin);
-            Stream.Close();
-            return byRet;
+                Stream.Seek(pos, SeekOrigin.Begin);
+                Stream.Close();
+                return byRet;
+            }
         }
         /// <summary>
         /// Loads the specified package data from a stream.
