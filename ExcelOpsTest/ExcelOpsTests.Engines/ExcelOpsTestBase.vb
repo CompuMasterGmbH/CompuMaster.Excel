@@ -2059,6 +2059,9 @@ Namespace ExcelOpsTests.Engines
                         End If
                     Next
                 End If
+                ' Identify the source in review exports without changing the checked-in workbook.
+                Dim exportHeader = workbook.LookupCellValue(Of String)("Accent reference", 1, 0) & " - XLSX-Vorlage: " & fileName
+                workbook.WriteCellValue(Of String)("Accent reference", 1, 0, exportHeader)
                 Dim sheetHtml = workbook.ExportSheetToHtml("Accent reference", New HtmlSheetExportOptions()).ToString()
                 Dim workbookHtml = workbook.ExportWorkbookToHtml(New HtmlWorkbookExportOptions()).ToString()
                 Dim outputMode = inputMode & If(useDirectRgb, ".rgb", "")
@@ -2066,8 +2069,12 @@ Namespace ExcelOpsTests.Engines
                                       If(GetType(T) Is GetType(ExcelOps.EpplusPolyformExcelDataOperations), "epplus8", GetType(T).Name))
                 System.IO.File.WriteAllText(TestEnvironment.FullPathOfDynTestFile(workbook, enginePrefix & "." & fileName & "." & outputMode & ".sheet.html"), sheetHtml)
                 System.IO.File.WriteAllText(TestEnvironment.FullPathOfDynTestFile(workbook, enginePrefix & "." & fileName & "." & outputMode & ".workbook.html"), workbookHtml)
-                AssertHtmlThemeReferences(sheetHtml, references, "sheet", workbook.EngineName)
-                AssertHtmlThemeReferences(workbookHtml, references, "workbook", workbook.EngineName)
+                AssertHtmlThemeReferences(sheetHtml, references, "sheet", workbook.EngineName, exportHeader)
+                AssertHtmlThemeReferences(workbookHtml, references, "workbook", workbook.EngineName, exportHeader)
+                Using algorithm = System.Security.Cryptography.SHA256.Create(), input = System.IO.File.OpenRead(filePath)
+                    Dim actualHash = BitConverter.ToString(algorithm.ComputeHash(input)).Replace("-", "")
+                    ClassicAssert.That(actualHash, [Is].EqualTo(references(0)("WorkbookSha256")), "The dynamic export header must not modify the XLSX template.")
+                End Using
             Catch ex As NotImplementedException
                 ClassicAssert.Ignore("HTML export is not implemented for " & ExpectedEngineName)
             Finally
@@ -2096,7 +2103,7 @@ Namespace ExcelOpsTests.Engines
             Return result
         End Function
 
-        Private Shared Sub AssertHtmlThemeReferences(html As String, references As List(Of Dictionary(Of String, String)), exportKind As String, engineName As String)
+        Private Shared Sub AssertHtmlThemeReferences(html As String, references As List(Of Dictionary(Of String, String)), exportKind As String, engineName As String, expectedSourceHeader As String)
             ' The fixture table is XML-compatible. Parse cells, never search the entire HTML for a hex string.
             Dim tableStart = html.IndexOf("<table", StringComparison.Ordinal)
             ClassicAssert.That(tableStart, [Is].GreaterThanOrEqualTo(0), "Missing exported table.")
@@ -2105,6 +2112,7 @@ Namespace ExcelOpsTests.Engines
             Dim table = System.Xml.Linq.XElement.Parse(html.Substring(tableStart, tableEnd + "</table>".Length - tableStart))
             Dim cells = table.Descendants().Where(Function(element) element.Name.LocalName = "td" OrElse element.Name.LocalName = "th").ToList()
             Using assertions = Assert.EnterMultipleScope()
+                ClassicAssert.That(cells.Where(Function(cell) cell.Value = expectedSourceHeader).Count(), [Is].EqualTo(1), engineName & " / " & exportKind & ": A2 must identify the XLSX template.")
                 For Each reference In references
                     Dim context = engineName & " / " & exportKind & " / " & reference("Workbook") & " / " & reference("Sheet") & "!" & reference("Address") & " / " & reference("CaseId")
                     Dim matches = cells.Where(Function(cell) cell.Value = reference("Text")).ToList()

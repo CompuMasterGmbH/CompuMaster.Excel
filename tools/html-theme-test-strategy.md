@@ -58,6 +58,9 @@ checked-in workbook themes and captured colors are the stable test inputs.
   cover unusual tint values and black/white endpoints.
 - Shared engine regression tests compare the exact font and fill RGB of every
   captured cell in sheet and workbook HTML, including byte-array/stream inputs.
+  Before exporting, the test appends the source XLSX filename to A2 in memory so
+  reviewers can identify the matching template. The checked-in workbooks remain
+  unchanged; tests assert the exported label and the original workbook hash.
   A separate case changes the red theme colors to equivalent direct RGB colors
   with their captured tints, to verify tint-aware color caching.
 - Unit tests cover detached theme snapshots, non-default theme part names, missing
