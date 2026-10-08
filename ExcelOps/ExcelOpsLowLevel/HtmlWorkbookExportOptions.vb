@@ -10,6 +10,11 @@ Namespace ExcelOps
     ''' <summary>
     ''' Defines options for exporting a workbook to HTML.
     ''' </summary>
+    ''' <remarks>
+    ''' Inherited worksheet options apply to each included sheet. Sheet filters select export candidates;
+    ''' they do not add chart or image rendering support to an engine. At least one supported sheet
+    ''' must remain after filtering when exporting a workbook.
+    ''' </remarks>
     Public Class HtmlWorkbookExportOptions
         Inherits HtmlSheetExportOptions
 
@@ -42,6 +47,7 @@ Namespace ExcelOps
         ''' Gets or sets where workbook sheet navigation is rendered.
         ''' </summary>
         ''' <value>The position of worksheet navigation in the generated HTML.</value>
+        ''' <remarks>The default is <see cref="SheetNavigationPositions.Top"/>.</remarks>
         Public Property SheetNavigationPosition As SheetNavigationPositions = SheetNavigationPositions.Top
 
         ''' <summary>
@@ -62,30 +68,39 @@ Namespace ExcelOps
         ''' Gets or sets how workbook sheet navigation links behave.
         ''' </summary>
         ''' <value>The interaction style used for worksheet navigation.</value>
+        ''' <remarks>
+        ''' The default is <see cref="SheetNavigationActionStyles.JumpToAnchor"/>.
+        ''' SwitchVisibleSheet uses JavaScript and initially selects the active exported sheet,
+        ''' or the first exported sheet when the active sheet is excluded. Without JavaScript, all sheets are displayed.
+        ''' </remarks>
         Public Property SheetNavigationActionStyle As SheetNavigationActionStyles = SheetNavigationActionStyles.JumpToAnchor
 
         ''' <summary>
         ''' Gets or sets whether workbook sheet navigation remains visible while scrolling.
         ''' </summary>
         ''' <value>Whether worksheet navigation remains visible while scrolling.</value>
+        ''' <remarks>The default is <see langword="False"/>. Applies to top or bottom navigation using CSS sticky positioning.</remarks>
         Public Property SheetNavigationAlwaysVisible As Boolean = False
 
         ''' <summary>
         ''' Gets or sets whether hidden workbook sheets are exported.
         ''' </summary>
         ''' <value>Whether hidden worksheets are exported.</value>
+        ''' <remarks>The default is <see langword="False"/>. Hidden sheets are excluded even when their sheet type is enabled.</remarks>
         Public Property ExportHiddenSheets As Boolean = False
 
         ''' <summary>
         ''' Gets or sets whether chart sheets are exported.
         ''' </summary>
         ''' <value>Whether chart sheets are exported.</value>
+        ''' <remarks>The default is <see langword="False"/>. Enabling this filter does not guarantee engine support for chart rendering.</remarks>
         Public Property ExportChartSheets As Boolean = False
 
         ''' <summary>
         ''' Gets or sets whether worksheets are exported.
         ''' </summary>
         ''' <value>Whether worksheets are exported.</value>
+        ''' <remarks>The default is <see langword="True"/>.</remarks>
         Public Property ExportWorkSheets As Boolean = True
 
 
@@ -137,12 +152,13 @@ Namespace ExcelOps
         ''' <value>The HTML element ID assigned to worksheet navigation.</value>
         Public Property WorksheetsNavigationTagId As String = "workbook-nav"
 
-        ''' <summary>
-        ''' Generates workbook sheet navigation HTML.
-        ''' </summary>
+        ''' <inheritdoc cref="GenerateWorkbookSubNavigation(StringBuilder, IEnumerable(Of String), IEnumerable(Of String), HtmlWorkbookExportOptions)" path="/summary"/>
         ''' <param name="sb">String builder receiving generated HTML.</param>
-        ''' <param name="items">Navigation labels, typically worksheet names.</param>
+        ''' <param name="items">Navigation labels, typically worksheet names. Null, empty, and white-space labels are omitted.</param>
         ''' <param name="options">Workbook export options controlling navigation output.</param>
+        ''' <remarks>Creates unique anchor names from the nonblank navigation labels.</remarks>
+        ''' <exception cref="ArgumentNullException"><paramref name="sb"/>, <paramref name="items"/>, or <paramref name="options"/> is null.</exception>
+        ''' <exception cref="NotImplementedException">The navigation action style is not supported.</exception>
         Public Overridable Sub GenerateWorkbookSubNavigation(sb As StringBuilder,
                                              items As IEnumerable(Of String),
                                              options As HtmlWorkbookExportOptions)
@@ -153,9 +169,13 @@ Namespace ExcelOps
         ''' Generates workbook sheet navigation HTML.
         ''' </summary>
         ''' <param name="sb">String builder receiving generated HTML.</param>
-        ''' <param name="navigationItemTitles">Navigation labels, typically worksheet names.</param>
-        ''' <param name="anchorNames">Section IDs and anchor names for the worksheets.</param>
+        ''' <param name="navigationItemTitles">Navigation labels, typically worksheet names. Null, empty, and white-space labels are omitted.</param>
+        ''' <param name="anchorNames">Section IDs and anchor names matching the nonblank labels, or <see langword="Nothing"/> to generate unique names.</param>
         ''' <param name="options">Workbook export options controlling navigation output.</param>
+        ''' <remarks>Appends navigation markup, and script for sheet switching when selected. Labels and anchor attributes are HTML-encoded.</remarks>
+        ''' <exception cref="ArgumentNullException"><paramref name="sb"/>, <paramref name="navigationItemTitles"/>, or <paramref name="options"/> is null.</exception>
+        ''' <exception cref="ArgumentException">The anchor count does not match the number of nonblank labels.</exception>
+        ''' <exception cref="NotImplementedException">The navigation action style is not supported.</exception>
         Public Overridable Sub GenerateWorkbookSubNavigation(sb As StringBuilder,
                                              navigationItemTitles As IEnumerable(Of String),
                                              anchorNames As IEnumerable(Of String),

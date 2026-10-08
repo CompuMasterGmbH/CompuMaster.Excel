@@ -2210,10 +2210,13 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
+        ''' Exports the included workbook sheets to an HTML file.
         ''' </summary>
         ''' <param name="fileName">Path of the target HTML file.</param>
-        ''' <param name="options">Options controlling the operation.</param>
+        ''' <param name="options">Non-null options controlling sheet selection, document markup, and navigation.</param>
+        ''' <remarks>Writes UTF-8 with a byte order mark and replaces an existing file. Rendering support depends on the engine; EPPlus exports cell tables, not images or charts.</remarks>
+        ''' <exception cref="InvalidOperationException">No sheets remain after applying the export filters.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Sub ExportWorkbookToHtml(fileName As String, options As HtmlWorkbookExportOptions)
             Dim Html = ExportWorkbookToHtml(options)
 #If NETFRAMEWORK Then
@@ -2228,10 +2231,15 @@ Namespace ExcelOps
 
 #If Not NETFRAMEWORK Then
         ''' <summary>
-        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
+        ''' Exports the included workbook sheets to an HTML file using asynchronous file writing.
         ''' </summary>
         ''' <param name="fileName">Path of the target HTML file.</param>
         ''' <param name="options">Options controlling the operation.</param>
+        ''' <remarks>
+        ''' Generates HTML synchronously, then writes UTF-8 with a byte order mark and replaces an existing file.
+        ''' This legacy Async Sub does not return an awaitable task. Exceptions follow Async Sub synchronization-context behavior.
+        ''' Rendering support is the same as <see cref="ExportWorkbookToHtml(String, HtmlWorkbookExportOptions)"/>.
+        ''' </remarks>
         Public Async Sub ExportWorkbookToHtmlAsync(fileName As String, options As HtmlWorkbookExportOptions)
             Dim Html = ExportWorkbookToHtml(options)
             Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
@@ -2241,10 +2249,16 @@ Namespace ExcelOps
 #End If
 
         ''' <summary>
-        ''' Saves workbook with its sheets to HTML (including images as HTML inline data).
+        ''' Generates an HTML document for the included workbook sheets.
         ''' </summary>
-        ''' <param name="options">Options controlling the operation.</param>
-        ''' <returns>The generated HTML.</returns>
+        ''' <param name="options">Non-null options controlling sheet selection, document markup, and navigation.</param>
+        ''' <returns>A new string builder containing the complete HTML document.</returns>
+        ''' <remarks>
+        ''' Exports sheets in workbook order, applying sheet-type and hidden-sheet filters.
+        ''' Rendering support depends on the engine; EPPlus exports cell tables, not images or charts.
+        ''' </remarks>
+        ''' <exception cref="InvalidOperationException">No sheets remain after applying the export filters.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Function ExportWorkbookToHtml(options As HtmlWorkbookExportOptions) As System.Text.StringBuilder
             Dim Result As New System.Text.StringBuilder(128 * 1024)
             Result.AppendLine(options.EffectiveHtmlDocumentHeaderAndBody)
@@ -2291,11 +2305,13 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Saves single worksheet to HTML (including HTML document header/footer, images as HTML inline data).
+        ''' Exports a worksheet to a complete HTML file.
         ''' </summary>
         ''' <param name="worksheetName">Name of the worksheet.</param>
         ''' <param name="fileName">Path of the target HTML file.</param>
         ''' <param name="options">Options controlling the operation.</param>
+        ''' <remarks>Writes UTF-8 with a byte order mark and replaces an existing file. Includes document markup, a worksheet section, and the configured title.</remarks>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Sub ExportSheetToHtml(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
             Dim Html As New System.Text.StringBuilder(128 * 1024)
             ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, Html, options, HtmlDocumentExportParts.FullHtmlDocument)
@@ -2311,11 +2327,16 @@ Namespace ExcelOps
 
 #If Not NETFRAMEWORK Then
         ''' <summary>
-        ''' Saves worksheet to HTML (including images as HTML inline data).
+        ''' Exports worksheet content to a file using asynchronous file writing.
         ''' </summary>
         ''' <param name="worksheetName">Name of the worksheet.</param>
         ''' <param name="fileName">Path of the target HTML file.</param>
         ''' <param name="options">Options controlling the operation.</param>
+        ''' <remarks>
+        ''' Calls the engine's content exporter directly, without document markup, a worksheet section, or title.
+        ''' Generates content synchronously, then writes UTF-8 with a byte order mark and replaces an existing file.
+        ''' This legacy Async Sub does not return an awaitable task. Exceptions follow Async Sub synchronization-context behavior.
+        ''' </remarks>
         Public Async Sub ExportSheetToHtmlAsync(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
             Dim Html As New System.Text.StringBuilder(128 * 1024)
             ExportSheetToHtmlInternal(worksheetName, Html, options)
@@ -2326,11 +2347,13 @@ Namespace ExcelOps
 #End If
 
         ''' <summary>
-        ''' Saves single worksheet to HTML (including HTML document header/footer, images as HTML inline data).
+        ''' Generates a complete HTML document for a worksheet.
         ''' </summary>
         ''' <param name="worksheetName">Name of the worksheet.</param>
         ''' <param name="options">Options controlling the operation.</param>
-        ''' <returns>The generated HTML.</returns>
+        ''' <returns>A new string builder containing document markup, a worksheet section, and the configured title.</returns>
+        ''' <remarks>Rendering support depends on the engine; EPPlus exports cell tables, not images or charts.</remarks>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Function ExportSheetToHtml(worksheetName As String, options As HtmlSheetExportOptions) As System.Text.StringBuilder
             Dim sb As New System.Text.StringBuilder
             ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, sb, options, HtmlDocumentExportParts.FullHtmlDocument)
@@ -2338,14 +2361,17 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Saves worksheet to HTML (including images as HTML inline data).
+        ''' Appends worksheet HTML to a string builder.
         ''' </summary>
         ''' <param name="worksheetName">Name of the worksheet.</param>
-        ''' <param name="sb">String builder receiving the generated HTML.</param>
-        ''' <param name="anchorName">HTML anchor name.</param>
-        ''' <param name="initiallyVisible">Whether the worksheet section is initially visible.</param>
-        ''' <param name="options">Options controlling the operation.</param>
-        ''' <param name="exportedHtmlDocumentParts">Previously exported HTML document parts to include.</param>
+        ''' <param name="sb">Non-null string builder receiving the generated HTML. Existing content is retained.</param>
+        ''' <param name="anchorName">Nonblank section ID and legacy HTML anchor name.</param>
+        ''' <param name="initiallyVisible">Whether the worksheet section is initially visible when using sheet-switching styles.</param>
+        ''' <param name="options">Non-null options controlling the generated markup.</param>
+        ''' <param name="exportedHtmlDocumentParts">Whether to include document markup around the worksheet section.</param>
+        ''' <exception cref="ArgumentOutOfRangeException"><paramref name="exportedHtmlDocumentParts"/> is not a defined export mode.</exception>
+        ''' <exception cref="ArgumentNullException"><paramref name="anchorName"/> is null, empty, or consists only of white-space characters.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Sub ExportSheetToHtml(worksheetName As String, anchorName As String, initiallyVisible As Boolean, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions, exportedHtmlDocumentParts As HtmlDocumentExportParts)
             Select Case exportedHtmlDocumentParts
                 Case HtmlDocumentExportParts.FullHtmlDocument
@@ -2370,21 +2396,23 @@ Namespace ExcelOps
         ''' </summary>
         Public Enum HtmlDocumentExportParts As Byte
             ''' <summary>
-            ''' Creates a full HTML document with header tags, style tags, etc.
+            ''' Includes the document header, styles, body markup, worksheet section, and document ending.
             ''' </summary>
             FullHtmlDocument = 1
             ''' <summary>
-            ''' Exports HTML table code only.
+            ''' Includes the worksheet section, configured title, and engine content without document header or ending.
             ''' </summary>
             ContentOnly = 2
         End Enum
 
         ''' <summary>
-        ''' Saves worksheet to HTML (including images as HTML inline data).
+        ''' Appends engine-specific worksheet content without document or section markup.
         ''' </summary>
         ''' <param name="worksheetName">Name of the worksheet.</param>
         ''' <param name="sb">String builder receiving the generated HTML.</param>
         ''' <param name="options">Options controlling the operation.</param>
+        ''' <remarks>The caller supplies document markup, section wrappers, and titles. Implementations must retain existing builder content and explicitly reject unsupported exports.</remarks>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Protected MustOverride Sub ExportSheetToHtmlInternal(worksheetName As String, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions)
 
 #Region "Colors and Theming (Helpers for e.g. ExcelColorToCssHex() in depending classes)"

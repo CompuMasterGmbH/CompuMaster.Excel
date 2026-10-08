@@ -7,6 +7,11 @@ Namespace ExcelOps
     ''' <summary>
     ''' Defines options for exporting a worksheet to HTML.
     ''' </summary>
+    ''' <remarks>
+    ''' Option support depends on the export engine. The EPPlus exporters currently export
+    ''' the used worksheet range and do not apply the row and column range options.
+    ''' Custom HTML fragments and CSS class names are emitted as supplied; use trusted values.
+    ''' </remarks>
     Public Class HtmlSheetExportOptions
 
         ''' <summary>
@@ -56,13 +61,14 @@ Namespace ExcelOps
         ''' <summary>
         ''' Gets or sets how the worksheet name is rendered before worksheet data.
         ''' </summary>
-        ''' <value>The rendering style for worksheet names.</value>
+        ''' <value>The rendering style for worksheet names. The default is <see cref="SheetTitleStyles.None"/>.</value>
         Public Property ExportSheetNameAsTitle As SheetTitleStyles
 
         ''' <summary>
         ''' Gets or sets row indexes whose cells are rendered as TH elements instead of TD elements.
         ''' </summary>
-        ''' <value>The zero-based row indexes rendered as table headers.</value>
+        ''' <value>The row numbers rendered as table headers, or <see langword="Nothing"/> for no header rows.</value>
+        ''' <remarks>The EPPlus exporters use one-based Excel row numbers: 1 identifies the first worksheet row.</remarks>
         Public Property ConsiderRowIndexesAsTableHeader As List(Of Integer)
 
         ''' <summary>
@@ -76,21 +82,25 @@ Namespace ExcelOps
         ''' Gets or sets the zero-based index of the first worksheet row to export.
         ''' </summary>
         ''' <value>The zero-based row index.</value>
+        ''' <remarks>The default is 0. The EPPlus exporters currently ignore this option.</remarks>
         Public Property FirstRowIndex As Integer = 0
         ''' <summary>
         ''' Gets or sets the zero-based index of the first worksheet column to export.
         ''' </summary>
         ''' <value>The zero-based column index.</value>
+        ''' <remarks>The default is 0. The EPPlus exporters currently ignore this option.</remarks>
         Public Property FirstColumnIndex As Integer = 0
         ''' <summary>
         ''' Gets or sets the zero-based index of the last worksheet row to export.
         ''' </summary>
-        ''' <value>The zero-based row index.</value>
+        ''' <value>The inclusive zero-based row index, or <see langword="Nothing"/> for the last used row.</value>
+        ''' <remarks>The EPPlus exporters currently ignore this option.</remarks>
         Public Property LastRowIndex As Integer?
         ''' <summary>
         ''' Gets or sets the zero-based index of the last worksheet column to export.
         ''' </summary>
-        ''' <value>The zero-based column index.</value>
+        ''' <value>The inclusive zero-based column index, or <see langword="Nothing"/> for the last used column.</value>
+        ''' <remarks>The EPPlus exporters currently ignore this option.</remarks>
         Public Property LastColumnIndex As Integer?
 #Enable Warning CA1805 ' Keine unnötige Initialisierung
 
@@ -98,24 +108,31 @@ Namespace ExcelOps
         ''' Gets or sets the HTML emitted when a worksheet has no exportable content.
         ''' </summary>
         ''' <value>The HTML emitted for an empty worksheet.</value>
+        ''' <remarks>
+        ''' The EPPlus exporters use this value directly. Set it explicitly to render a placeholder;
+        ''' they do not call <see cref="EffectiveHtmlForEmptySheet"/> for its default value.
+        ''' </remarks>
         Public Property HtmlForEmptySheet As String
 
         ''' <summary>
         ''' Gets or sets the HTML emitted before generated worksheet content, including HTML and HEAD tags.
         ''' </summary>
         ''' <value>The HTML document header.</value>
+        ''' <remarks><see langword="Nothing"/> selects the default header. An empty string suppresses the header fragment.</remarks>
         Public Property HtmlDocumentHeader As String
 
         ''' <summary>
         ''' Gets or sets the HTML emitted between the document header and exported worksheets.
         ''' </summary>
         ''' <value>The HTML separating the document header from the body.</value>
+        ''' <remarks><see langword="Nothing"/> selects the default transition. An empty string suppresses the transition fragment.</remarks>
         Public Property HtmlDocumentHeaderEndAndBeginOfBody As String
 
         ''' <summary>
         ''' Gets or sets the HTML emitted after generated worksheet content.
         ''' </summary>
         ''' <value>The HTML closing markup.</value>
+        ''' <remarks><see langword="Nothing"/> selects the default ending. An empty string suppresses the ending fragment.</remarks>
         Public Property HtmlDocumentEnd As String
 
         ''' <summary>
@@ -225,6 +242,8 @@ Namespace ExcelOps
         ''' <param name="sb">String builder receiving generated HTML.</param>
         ''' <param name="anchorName">Section ID and anchor name for the worksheet.</param>
         ''' <param name="visible"><see langword="True"/> to mark the worksheet section as initially visible; otherwise, <see langword="False"/>.</param>
+        ''' <remarks>HTML-encodes the anchor name and opens a section with a legacy named anchor. Does not emit a document header.</remarks>
+        ''' <exception cref="ArgumentNullException"><paramref name="anchorName"/> is null, empty, or consists only of white-space characters.</exception>
         Public Overridable Sub GenerateBeginSheetSection(sb As StringBuilder, anchorName As String, Optional visible As Boolean = False)
             If String.IsNullOrWhiteSpace(anchorName) Then Throw New ArgumentNullException(NameOf(anchorName))
             Dim visibleClass As String = If(visible, " cm-visible", String.Empty)
