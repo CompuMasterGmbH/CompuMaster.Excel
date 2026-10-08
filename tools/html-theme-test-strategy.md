@@ -63,12 +63,21 @@ checked-in workbook themes and captured colors are the stable test inputs.
 - Unit tests cover detached theme snapshots, non-default theme part names, missing
   themes, tint boundaries, and invalid tint inputs. No Excel installation is needed
   for these color assertions in CI.
+- HTML export XML documentation has been reviewed against the current implementation.
+  The API checker already includes both option classes and `HtmlDocumentExportParts`
+  without temporary HTML documentation exclusions. Documentation now states the
+  actual section/document output, defaults, engine limitations, and legacy async behavior.
 
 ## Remaining ticket work
 
 - Final manual visual review of the generated workbooks and HTML exports.
 - Complete and verify HTML export support for the remaining engines.
-- Complete HTML export XML documentation and remove temporary checker exclusions.
+- Revisit the HTML export API shape while adding the remaining engines. In particular,
+  review ignored row/column range options, one-based EPPlus header row numbers,
+  empty-sheet placeholder handling, and the non-awaitable legacy Async Sub methods.
+  The asynchronous worksheet export currently emits engine content without the
+  document/section wrappers used by the synchronous overloads. Preserve compatibility
+  when improving these behaviors.
 - Delete `9-add-export-feature-to-html` locally and remotely only at final cleanup,
   after confirming no valuable unmerged work remains and all required pipelines
   have passed. Keep the branch available until then.
