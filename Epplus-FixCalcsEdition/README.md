@@ -2,7 +2,20 @@
 
 ## Special CompuMaster Edition
 
-This folder contains the maintained `CompuMaster.EPPlus4` fork of EPPlus 4.5.3.3. It adds calculation-cache reset behavior and other changes described in the [package README](EPPlus/README.md), which is also included in the NuGet package.
+This folder contains the maintained `CompuMaster.EPPlus4` fork of EPPlus 4.5.3.3. See the [package README](EPPlus/README.md) for the CompuMaster feature list and notes, which are also included in the NuGet package.
+
+### Added Features
+
+* Resets internal calculation caches so Microsoft Excel recalculates dependent formulas when reopening a workbook.
+* Fixes internal races in cell storage, style updates, and calculation/lifetime coordination; general multithreaded workbook access remains unsupported.
+* Uses zero-based worksheet indexing by default on every target framework; the existing compatibility setting can switch to one-based indexing.
+
+### Security Features
+
+* Uses `System.IO.Compression.ZipArchive` for XLSX packaging, with compatibility handling for older encrypted workbooks.
+* Limits ZIP/XML expansion and encrypted-input work when loading XLSX files; callers can adjust the defaults for trusted files.
+
+These limits do not make arbitrary untrusted workbooks safe to parse. See the [security guidance](../CM.Data.EpplusFixCalcsEdition/README.md#security-and-untrusted-workbooks).
 
 ## Known Issues
 
