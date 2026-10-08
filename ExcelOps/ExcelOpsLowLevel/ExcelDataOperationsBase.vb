@@ -2417,29 +2417,91 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Excel-Tint-Regel (heller/dunkler).
+        ''' Applies Excel-compatible tint or shade to an RGB color.
         ''' </summary>
         ''' <param name="hex">RGB color encoded as a hexadecimal string.</param>
-        ''' <param name="tint">Tint value to apply.</param>
+        ''' <param name="tint">Tint from -1 (black) to 1 (white). Zero preserves the original color.</param>
         ''' <returns>The resulting color.</returns>
+        ''' <remarks>Uses Excel's integer HLS range of 0 to 240 and truncates luminance terms separately.</remarks>
+        ''' <exception cref="ArgumentOutOfRangeException">The tint is not a finite value from -1 to 1.</exception>
         Protected Shared Function ApplyTint(hex As String, tint As Double) As String
-            ' hex "#RRGGBB"
+            If Double.IsNaN(tint) OrElse tint < -1 OrElse tint > 1 Then Throw New ArgumentOutOfRangeException(NameOf(tint))
+            If tint = 0 Then Return hex
             Dim r = Convert.ToInt32(hex.Substring(1, 2), 16)
             Dim g = Convert.ToInt32(hex.Substring(3, 2), 16)
             Dim b = Convert.ToInt32(hex.Substring(5, 2), 16)
+            Dim maximum = Math.Max(r, Math.Max(g, b))
+            Dim minimum = Math.Min(r, Math.Min(g, b))
+            Dim sum = maximum + minimum
+            Dim span = maximum - minimum
+            Dim luminance = (sum * 240 + 255) \ 510
+            Dim hue As Integer = 0
+            Dim saturation As Integer = 0
+            If span <> 0 Then
+                saturation = If(luminance <= 120, (span * 240 + sum \ 2) \ sum,
+                                (span * 240 + (510 - sum) \ 2) \ (510 - sum))
+                Dim redDelta = ((maximum - r) * 40 + span \ 2) \ span
+                Dim greenDelta = ((maximum - g) * 40 + span \ 2) \ span
+                Dim blueDelta = ((maximum - b) * 40 + span \ 2) \ span
+                hue = If(maximum = r, blueDelta - greenDelta,
+                         If(maximum = g, 80 + redDelta - blueDelta, 160 + greenDelta - redDelta))
+            End If
+            If tint < 0 Then
+                luminance = CInt(Math.Floor(luminance * (1 + tint)))
+            Else
+                ' Truncating only the final sum changes several Excel colors by one RGB level.
+                luminance = CInt(Math.Floor(luminance * (1 - tint))) + 240 - CInt(Math.Floor(240 * (1 - tint)))
+            End If
+            Dim upper = If(luminance <= 120, (luminance * (240 + saturation) + 120) \ 240,
+                           luminance + saturation - (luminance * saturation + 120) \ 240)
+            Dim lower = 2 * luminance - upper
+            ' The general conversion also rounds neutral grays the same way as Excel.
+            r = (HlsHueToRgb(lower, upper, hue + 80) * 255 + 120) \ 240
+            g = (HlsHueToRgb(lower, upper, hue) * 255 + 120) \ 240
+            b = (HlsHueToRgb(lower, upper, hue - 80) * 255 + 120) \ 240
+            Return $"#{r:X2}{g:X2}{b:X2}"
+        End Function
 
-            Dim adj As Func(Of Integer, Integer) =
-                Function(ch As Integer)
-                    Dim v As Double
-                    If tint <0 Then
-                        v= ch * (1.0 + tint)                   ' dunkler
-                    Else
-                        v = ch * (1.0 - tint) + 255.0 * tint    ' heller
-                    End If
-                    Return Math.Max(0, Math.Min(255, CInt(Math.Round(v))))
-                End Function
+        Private Shared Function HlsHueToRgb(lower As Integer, upper As Integer, hue As Integer) As Integer
+            hue = ((hue Mod 240) + 240) Mod 240
+            If hue < 40 Then Return lower + ((upper - lower) * hue + 20) \ 40
+            If hue < 120 Then Return upper
+            If hue < 160 Then Return lower + ((upper - lower) * (160 - hue) + 20) \ 40
+            Return lower
+        End Function
 
-            Return $"#{adj(r):X2}{adj(g):X2}{adj(b):X2}"
+        ''' <summary>
+        ''' Reads a workbook theme's RGB palette in spreadsheet theme-index order.
+        ''' </summary>
+        ''' <param name="themeXml">Embedded theme XML, or Nothing if the workbook has no theme.</param>
+        ''' <returns>Twelve CSS RGB colors indexed as background/text pairs, accents, and hyperlinks.</returns>
+        ''' <remarks>A workbook without a theme uses the legacy Office palette. System colors use their cached lastClr RGB values.</remarks>
+        ''' <exception cref="NotSupportedException">A theme slot has no supported RGB or cached system color.</exception>
+        Protected Shared Function ReadThemeColorPalette(themeXml As System.Xml.XmlDocument) As String()
+            Dim result(11) As String
+            If themeXml Is Nothing Then
+                For index As Integer = 0 To result.Length - 1
+                    result(index) = DefaultOfficeTheme(index)
+                Next
+                Return result
+            End If
+            Dim slots = {"lt1", "dk1", "lt2", "dk2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"}
+            Dim namespaces As New System.Xml.XmlNamespaceManager(themeXml.NameTable)
+            namespaces.AddNamespace("a", "http://schemas.openxmlformats.org/drawingml/2006/main")
+            For index As Integer = 0 To slots.Length - 1
+                Dim color = TryCast(themeXml.SelectSingleNode("/a:theme/a:themeElements/a:clrScheme/a:" & slots(index) & "/*", namespaces), System.Xml.XmlElement)
+                Dim rgb As String = Nothing
+                If color IsNot Nothing Then
+                    If color.LocalName = "srgbClr" Then rgb = color.GetAttribute("val")
+                    If color.LocalName = "sysClr" Then rgb = color.GetAttribute("lastClr")
+                End If
+                Dim rgbValue As Integer
+                If rgb Is Nothing OrElse rgb.Length <> 6 OrElse Not Integer.TryParse(rgb, Globalization.NumberStyles.HexNumber, Globalization.CultureInfo.InvariantCulture, rgbValue) Then
+                    Throw New NotSupportedException("Workbook theme slot " & slots(index) & " has no supported RGB or cached system color.")
+                End If
+                result(index) = "#" & rgb.ToUpperInvariant()
+            Next
+            Return result
         End Function
 
         ''' <summary>

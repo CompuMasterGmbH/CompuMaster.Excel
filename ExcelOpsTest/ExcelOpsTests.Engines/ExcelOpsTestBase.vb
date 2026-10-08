@@ -1992,6 +1992,142 @@ Namespace ExcelOpsTests.Engines
 #End Region
 
 #Region "HTML exports"
+        ''' <summary>
+        ''' Compares each exported reference cell with colors captured from Microsoft Excel.
+        ''' </summary>
+        <TestCase("Legacy", "file", False)>
+        <TestCase("Office", "file", False)>
+        <TestCase("Office2013", "file", False)>
+        <TestCase("Ion", "file", False)>
+        <TestCase("Red", "file", False)>
+        <TestCase("Red", "bytes", False)>
+        <TestCase("Red", "stream", False)>
+        <TestCase("Red", "file", True)>
+        Public Sub HtmlExportThemeColorsMatchExcelReferences(themeVariant As String, inputMode As String, useDirectRgb As Boolean)
+            If inputMode <> "file" AndAlso GetType(T) Is GetType(ExcelOps.MsExcelDataOperations) Then
+                ClassicAssert.Ignore("Microsoft Excel does not support byte-array or stream workbook inputs.")
+            End If
+            Dim fileName = "HtmlExportThemeExcel" & themeVariant & ".xlsx"
+            Dim filePath = TestEnvironment.FullPathOfExistingTestFile("test_data", fileName)
+            Dim references = ReadHtmlThemeReferences(fileName)
+            ClassicAssert.That(references.Count, [Is].EqualTo(39), "Reference cases must not silently disappear.")
+            Using algorithm = System.Security.Cryptography.SHA256.Create(), input = System.IO.File.OpenRead(filePath)
+                Dim actualHash = BitConverter.ToString(algorithm.ComputeHash(input)).Replace("-", "")
+                For Each reference In references
+                    ClassicAssert.That(actualHash, [Is].EqualTo(reference("WorkbookSha256")), "Workbook changed after Excel reference capture: " & fileName)
+                Next
+            End Using
+
+            Dim workbook As T = Nothing
+            Dim sourceStream As System.IO.MemoryStream = Nothing
+            Try
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Select Case inputMode
+                    Case "file"
+                        workbook = CreateInstance(filePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Case "bytes"
+                        workbook = CreateInstance(System.IO.File.ReadAllBytes(filePath), options)
+                    Case "stream"
+                        sourceStream = New System.IO.MemoryStream(System.IO.File.ReadAllBytes(filePath))
+                        workbook = CreateInstance(sourceStream, options)
+                    Case Else
+                        Throw New ArgumentOutOfRangeException(NameOf(inputMode))
+                End Select
+                If useDirectRgb Then
+                    ' Equivalent theme-red and direct-red inputs must retain the same captured tints.
+                    Dim freeEngine = TryCast(workbook, ExcelOps.EpplusFreeExcelDataOperations)
+                    Dim polyformEngine = TryCast(workbook, ExcelOps.EpplusPolyformExcelDataOperations)
+                    For row As Integer = 10 To 12
+                        If freeEngine IsNot Nothing Then
+                            Dim font = freeEngine.Workbook.Worksheets("Accent reference").Cells(row, 2).Style.Font.Color
+                            Dim fill = freeEngine.Workbook.Worksheets("Accent reference").Cells(row, 3).Style.Fill.BackgroundColor
+                            Dim fontTint = font.Tint
+                            Dim fillTint = fill.Tint
+                            font.SetColor(System.Drawing.Color.Red)
+                            fill.SetColor(System.Drawing.Color.Red)
+                            font.Tint = fontTint
+                            fill.Tint = fillTint
+                        ElseIf polyformEngine IsNot Nothing Then
+                            Dim font = polyformEngine.Workbook.Worksheets("Accent reference").Cells(row, 2).Style.Font.Color
+                            Dim fill = polyformEngine.Workbook.Worksheets("Accent reference").Cells(row, 3).Style.Fill.BackgroundColor
+                            Dim fontTint = font.Tint
+                            Dim fillTint = fill.Tint
+                            font.SetColor(System.Drawing.Color.Red)
+                            fill.SetColor(System.Drawing.Color.Red)
+                            font.Tint = fontTint
+                            fill.Tint = fillTint
+                        End If
+                    Next
+                End If
+                Dim sheetHtml = workbook.ExportSheetToHtml("Accent reference", New HtmlSheetExportOptions()).ToString()
+                Dim workbookHtml = workbook.ExportWorkbookToHtml(New HtmlWorkbookExportOptions()).ToString()
+                Dim outputMode = inputMode & If(useDirectRgb, ".rgb", "")
+                Dim enginePrefix = If(GetType(T) Is GetType(ExcelOps.EpplusFreeExcelDataOperations), "epplus4",
+                                      If(GetType(T) Is GetType(ExcelOps.EpplusPolyformExcelDataOperations), "epplus8", GetType(T).Name))
+                System.IO.File.WriteAllText(TestEnvironment.FullPathOfDynTestFile(workbook, enginePrefix & "." & fileName & "." & outputMode & ".sheet.html"), sheetHtml)
+                System.IO.File.WriteAllText(TestEnvironment.FullPathOfDynTestFile(workbook, enginePrefix & "." & fileName & "." & outputMode & ".workbook.html"), workbookHtml)
+                AssertHtmlThemeReferences(sheetHtml, references, "sheet", workbook.EngineName)
+                AssertHtmlThemeReferences(workbookHtml, references, "workbook", workbook.EngineName)
+            Catch ex As NotImplementedException
+                ClassicAssert.Ignore("HTML export is not implemented for " & ExpectedEngineName)
+            Finally
+                If workbook IsNot Nothing Then workbook.Close()
+                If sourceStream IsNot Nothing Then sourceStream.Dispose()
+            End Try
+        End Sub
+
+        Private Shared Function ReadHtmlThemeReferences(fileName As String) As List(Of Dictionary(Of String, String))
+            Dim result As New List(Of Dictionary(Of String, String))()
+            Dim csvPath = TestEnvironment.FullPathOfExistingTestFile("test_data", "HtmlExportThemeExcelReferences.csv")
+            Using parser As New Microsoft.VisualBasic.FileIO.TextFieldParser(csvPath)
+                parser.SetDelimiters(",")
+                parser.HasFieldsEnclosedInQuotes = True
+                Dim headers = parser.ReadFields()
+                While Not parser.EndOfData
+                    Dim fields = parser.ReadFields()
+                    ClassicAssert.That(fields.Length, [Is].EqualTo(headers.Length), "Invalid Excel reference CSV row.")
+                    Dim row As New Dictionary(Of String, String)(StringComparer.Ordinal)
+                    For index As Integer = 0 To headers.Length - 1
+                        row.Add(headers(index), fields(index))
+                    Next
+                    If row("Workbook") = fileName Then result.Add(row)
+                End While
+            End Using
+            Return result
+        End Function
+
+        Private Shared Sub AssertHtmlThemeReferences(html As String, references As List(Of Dictionary(Of String, String)), exportKind As String, engineName As String)
+            ' The fixture table is XML-compatible. Parse cells, never search the entire HTML for a hex string.
+            Dim tableStart = html.IndexOf("<table", StringComparison.Ordinal)
+            ClassicAssert.That(tableStart, [Is].GreaterThanOrEqualTo(0), "Missing exported table.")
+            Dim tableEnd = html.IndexOf("</table>", tableStart, StringComparison.Ordinal)
+            ClassicAssert.That(tableEnd, [Is].GreaterThan(tableStart), "Incomplete exported table.")
+            Dim table = System.Xml.Linq.XElement.Parse(html.Substring(tableStart, tableEnd + "</table>".Length - tableStart))
+            Dim cells = table.Descendants().Where(Function(element) element.Name.LocalName = "td" OrElse element.Name.LocalName = "th").ToList()
+            Using assertions = Assert.EnterMultipleScope()
+                For Each reference In references
+                    Dim context = engineName & " / " & exportKind & " / " & reference("Workbook") & " / " & reference("Sheet") & "!" & reference("Address") & " / " & reference("CaseId")
+                    Dim matches = cells.Where(Function(cell) cell.Value = reference("Text")).ToList()
+                    ClassicAssert.That(matches.Count, [Is].EqualTo(1), context & ": expected exactly one matching cell.")
+                    If matches.Count <> 1 Then Continue For
+                    Dim styles As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+                    Dim styleAttribute = matches(0).Attribute("style")
+                    If styleAttribute IsNot Nothing Then
+                        For Each declaration In styleAttribute.Value.Split(";"c)
+                            Dim colon = declaration.IndexOf(":"c)
+                            If colon >= 0 Then styles(declaration.Substring(0, colon).Trim()) = declaration.Substring(colon + 1).Trim()
+                        Next
+                    End If
+                    Dim fontColor As String = ""
+                    Dim fillColor As String = ""
+                    styles.TryGetValue("color", fontColor)
+                    styles.TryGetValue("background-color", fillColor)
+                    ClassicAssert.That(If(fontColor, "").ToUpperInvariant(), [Is].EqualTo(reference("FontRgb")), context & ": font color.")
+                    ClassicAssert.That(If(fillColor, "").ToUpperInvariant(), [Is].EqualTo(reference("FillRgb")), context & ": fill color (empty means no fill).")
+                Next
+            End Using
+        End Sub
+
         <Test>
         Public Sub HtmlExportWorkbookGrunddaten01()
             Dim TestXlsxFile = TestFiles.TestFileGrund01()

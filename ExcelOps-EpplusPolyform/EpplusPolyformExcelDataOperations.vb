@@ -397,7 +397,7 @@ Namespace ExcelOps
         ''' </remarks>
         ''' <returns>Gibt "#RRGGBB" oder Nothing zurück.</returns>
         Private Shared Function ExcelColorToCssHex(color As OfficeOpenXml.Style.ExcelColor,
-                                                   cache As IDictionary(Of String, String)) As String
+                                                   cache As IDictionary(Of String, String), themeColors As String()) As String
             If color Is Nothing Then Return Nothing
 
             Dim ColorCacheKeyName As String = BuildColorCacheKey(color)
@@ -415,6 +415,7 @@ Namespace ExcelOps
                 ElseIf v.Length = 6 Then
                     hex = "#" & v
                 End If
+                If hex IsNot Nothing AndAlso color.Tint <> 0 Then hex = ApplyTint(hex, CDbl(color.Tint))
                 'Add to cache if valid and return hex
                 If Not String.IsNullOrEmpty(ColorCacheKeyName) AndAlso Not String.IsNullOrEmpty(hex) AndAlso hex.Length = 7 AndAlso hex(0) = "#"c Then
                     cache(ColorCacheKeyName) = hex
@@ -426,7 +427,7 @@ Namespace ExcelOps
             If color.Theme.HasValue Then
                 Dim ThemeMappedToIndex = MapThemeToIndex(color.Theme.Value)
                 If ThemeMappedToIndex >= 0 Then
-                    hex = DefaultOfficeTheme(ThemeMappedToIndex)
+                    hex = themeColors(ThemeMappedToIndex)
                     If Not String.IsNullOrEmpty(hex) Then
                         If Math.Abs(color.Tint) > Double.Epsilon Then
                             hex = ApplyTint(hex, color.Tint)
@@ -467,7 +468,7 @@ Namespace ExcelOps
             If color Is Nothing Then Return Nothing
 
             If Not String.IsNullOrEmpty(color.Rgb) Then
-                Return "rgb:" & color.Rgb
+                Return "rgb:" & color.Rgb & ":" & Convert.ToString(color.Tint, Globalization.CultureInfo.InvariantCulture)
             End If
 
             If color.Theme.HasValue Then
@@ -531,6 +532,7 @@ Namespace ExcelOps
 
             ' --- Cache für Farbauflösungen (pro Methodenaufruf) ---
             Dim colorCache As New Dictionary(Of String, String)(StringComparer.Ordinal)
+            Dim themeColors = ReadThemeColorPalette(ws.Workbook.ThemeManager.CurrentTheme?.ThemeXml)
 
             ' --- Merge-Map vorbereiten ---
             Dim mergeTopLeft As New Dictionary(Of String, (RowSpan As Integer, ColSpan As Integer))()
@@ -583,7 +585,7 @@ Namespace ExcelOps
                         If cell.Style.Font.Bold Then styles.Add("font-weight:bold")
                         If cell.Style.Font.Italic Then styles.Add("font-style:italic")
                         If cell.Style.Font.UnderLine Then styles.Add("text-decoration:underline")
-                        Dim fc = ExcelColorToCssHex(cell.Style.Font.Color, colorCache)
+                        Dim fc = ExcelColorToCssHex(cell.Style.Font.Color, colorCache, themeColors)
                         If Not String.IsNullOrEmpty(fc) Then styles.Add("color:" & fc)
                     End If
 
@@ -591,15 +593,15 @@ Namespace ExcelOps
                     If cell.Style.Fill IsNot Nothing AndAlso cell.Style.Fill.PatternType <> Style.ExcelFillStyle.None Then
                         Dim bg As String = Nothing
                         If cell.Style.Fill.PatternType = Style.ExcelFillStyle.Solid Then
-                            bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache)
+                            bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache, themeColors)
                             If String.IsNullOrEmpty(bg) Then
-                                bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache)
+                                bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache, themeColors)
                             End If
                         Else
                             ' bei anderen Pattern-Typen beide prüfen
-                            bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache)
+                            bg = ExcelColorToCssHex(cell.Style.Fill.BackgroundColor, colorCache, themeColors)
                             If String.IsNullOrEmpty(bg) Then
-                                bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache)
+                                bg = ExcelColorToCssHex(cell.Style.Fill.PatternColor, colorCache, themeColors)
                             End If
                         End If
                         If Not String.IsNullOrEmpty(bg) Then styles.Add("background-color:" & bg)

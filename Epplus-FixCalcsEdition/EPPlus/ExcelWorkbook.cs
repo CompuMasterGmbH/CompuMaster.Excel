@@ -525,6 +525,29 @@ namespace CompuMaster.Epplus4
 		
 		#region WorkbookXml
 		private XmlDocument _workbookXml;
+        /// <summary>
+        /// Gets a detached copy of the workbook's theme XML.
+        /// </summary>
+        /// <value>The embedded theme XML, or null if the workbook has no theme relationship.</value>
+        /// <remarks>Changes to the returned document do not modify the workbook. The theme is resolved through its package relationship, including non-default part names.</remarks>
+        /// <exception cref="InvalidDataException">The theme relationship targets an external resource.</exception>
+        public XmlDocument ThemeXml
+        {
+            get
+            {
+                lock (SyncRoot)
+                {
+                    foreach (var relationship in Part.GetRelationshipsByType(ExcelPackage.schemaRelationships + "/theme"))
+                    {
+                        if (relationship.TargetMode != Packaging.TargetMode.Internal)
+                            throw new InvalidDataException("The workbook theme must be an embedded package part.");
+                        return _package.GetXmlFromUri(UriHelper.ResolvePartUri(WorkbookUri, relationship.TargetUri));
+                    }
+                    return null;
+                }
+            }
+        }
+
 		/// <summary>
 		/// Provides access to the XML data representing the workbook in the package.
 		/// </summary>

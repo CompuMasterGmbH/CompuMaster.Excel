@@ -4,9 +4,15 @@ This package is based on upstream EPPlus 4.5.3.3; CompuMaster NuGet releases use
 
 ## Special CompuMaster Edition
 
+### Added Features
+
 * Resets internal calculation caches so Microsoft Excel recalculates dependent formulas when reopening a workbook.
+* Exposes embedded workbook theme XML so consumers can resolve design-dependent accent colors without a fixed Office palette.
 * Fixes internal races in cell storage, style updates, and calculation/lifetime coordination; general multithreaded workbook access remains unsupported.
 * Uses zero-based worksheet indexing by default on every target framework; the existing compatibility setting can switch to one-based indexing.
+
+### Security Features
+
 * Uses `System.IO.Compression.ZipArchive` for XLSX packaging, with compatibility handling for older encrypted workbooks.
 * Limits ZIP/XML expansion and encrypted-input work when loading XLSX files; callers can adjust the defaults for trusted files.
 
