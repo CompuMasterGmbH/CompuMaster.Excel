@@ -3,6 +3,7 @@ Option Strict On
 
 Imports System.IO
 Imports System.Text
+Imports System.Threading.Tasks
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
 
 Namespace ExcelOps
@@ -2240,13 +2241,36 @@ Namespace ExcelOps
         ''' This legacy Async Sub does not return an awaitable task. Exceptions follow Async Sub synchronization-context behavior.
         ''' Rendering support is the same as <see cref="ExportWorkbookToHtml(String, HtmlWorkbookExportOptions)"/>.
         ''' </remarks>
+        <Obsolete("Use ExportWorkbookToHtmlFileAsync instead; it returns an awaitable Task.", False)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Async Sub ExportWorkbookToHtmlAsync(fileName As String, options As HtmlWorkbookExportOptions)
-            Dim Html = ExportWorkbookToHtml(options)
-            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
-                Await w.WriteAsync(Html)  ' asynchron
-            End Using
+            Await ExportWorkbookToHtmlFileAsync(fileName, options)
         End Sub
 #End If
+
+        ''' <summary>
+        ''' Exports the included workbook sheets to an HTML file with awaitable asynchronous writing.
+        ''' </summary>
+        ''' <param name="fileName">Path of the target HTML file.</param>
+        ''' <param name="options">Non-null options controlling sheet selection, document markup, and navigation.</param>
+        ''' <returns>A task that completes after the UTF-8 file has been written and closed.</returns>
+        ''' <remarks>
+        ''' Generates HTML synchronously, then writes UTF-8 with a byte order mark and replaces an existing file.
+        ''' Output matches the synchronous workbook export. Rendering failures occur before opening the target file.
+        ''' </remarks>
+        ''' <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        ''' <exception cref="InvalidOperationException">No sheets remain after applying the export filters.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
+        Public Async Function ExportWorkbookToHtmlFileAsync(fileName As String, options As HtmlWorkbookExportOptions) As Task
+            Dim html = ExportWorkbookToHtml(options)
+            Await WriteHtmlFileAsync(fileName, html).ConfigureAwait(False)
+        End Function
+
+        Private Shared Async Function WriteHtmlFileAsync(fileName As String, html As StringBuilder) As Task
+            Using writer As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
+                Await writer.WriteAsync(html.ToString()).ConfigureAwait(False)
+            End Using
+        End Function
 
         ''' <summary>
         ''' Generates an HTML document for the included workbook sheets.
@@ -2260,6 +2284,7 @@ Namespace ExcelOps
         ''' <exception cref="InvalidOperationException">No sheets remain after applying the export filters.</exception>
         ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Function ExportWorkbookToHtml(options As HtmlWorkbookExportOptions) As System.Text.StringBuilder
+            If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
             Dim Result As New System.Text.StringBuilder(128 * 1024)
             Result.AppendLine(options.EffectiveHtmlDocumentHeaderAndBody)
 
@@ -2313,16 +2338,24 @@ Namespace ExcelOps
         ''' <remarks>Writes UTF-8 with a byte order mark and replaces an existing file. Includes document markup, a worksheet section, and the configured title.</remarks>
         ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Sub ExportSheetToHtml(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
-            Dim Html As New System.Text.StringBuilder(128 * 1024)
-            ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, Html, options, HtmlDocumentExportParts.FullHtmlDocument)
-#If NETFRAMEWORK Then
-            System.IO.File.WriteAllText(fileName, Html.ToString, System.Text.Encoding.UTF8)
-#Else
-            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
-                w.Write(Html)              ' synchron
-            End Using
+            ExportSheetToHtml(worksheetName, fileName, options, HtmlDocumentExportParts.FullHtmlDocument)
+        End Sub
 
-#End If
+        ''' <summary>
+        ''' Exports the selected worksheet HTML parts to a file.
+        ''' </summary>
+        ''' <param name="worksheetName">Name of the worksheet.</param>
+        ''' <param name="fileName">Path of the target HTML file.</param>
+        ''' <param name="options">Non-null options controlling the generated markup and range.</param>
+        ''' <param name="exportedHtmlDocumentParts">Document, section, or table-only output.</param>
+        ''' <remarks>Writes UTF-8 with a byte order mark. Rendering failures occur before opening the target file.</remarks>
+        ''' <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">An export mode or range bound is invalid.</exception>
+        ''' <exception cref="ArgumentException">The range partially intersects merged cells or header settings conflict.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
+        Public Sub ExportSheetToHtml(worksheetName As String, fileName As String, options As HtmlSheetExportOptions, exportedHtmlDocumentParts As HtmlDocumentExportParts)
+            Dim html = ExportSheetToHtml(worksheetName, options, exportedHtmlDocumentParts)
+            File.WriteAllText(fileName, html.ToString(), New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
         End Sub
 
 #If Not NETFRAMEWORK Then
@@ -2333,18 +2366,37 @@ Namespace ExcelOps
         ''' <param name="fileName">Path of the target HTML file.</param>
         ''' <param name="options">Options controlling the operation.</param>
         ''' <remarks>
-        ''' Calls the engine's content exporter directly, without document markup, a worksheet section, or title.
+        ''' Retains engine content without document markup, a worksheet section, or title.
         ''' Generates content synchronously, then writes UTF-8 with a byte order mark and replaces an existing file.
         ''' This legacy Async Sub does not return an awaitable task. Exceptions follow Async Sub synchronization-context behavior.
         ''' </remarks>
+        <Obsolete("Use ExportSheetToHtmlFileAsync instead; it returns an awaitable Task. Select HtmlDocumentExportParts.TableOnly to retain legacy output.", False)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Async Sub ExportSheetToHtmlAsync(worksheetName As String, fileName As String, options As HtmlSheetExportOptions)
-            Dim Html As New System.Text.StringBuilder(128 * 1024)
-            ExportSheetToHtmlInternal(worksheetName, Html, options)
-            Using w As New StreamWriter(fileName, append:=False, encoding:=New UTF8Encoding(encoderShouldEmitUTF8Identifier:=True))
-                Await w.WriteAsync(Html)  ' asynchron
-            End Using
+            Await ExportSheetToHtmlFileAsync(worksheetName, fileName, options, HtmlDocumentExportParts.TableOnly)
         End Sub
 #End If
+
+        ''' <summary>
+        ''' Exports worksheet HTML to a file with awaitable asynchronous writing.
+        ''' </summary>
+        ''' <param name="worksheetName">Name of the worksheet.</param>
+        ''' <param name="fileName">Path of the target HTML file.</param>
+        ''' <param name="options">Non-null options controlling the generated markup and range.</param>
+        ''' <param name="exportedHtmlDocumentParts">Document, section, or table-only output. The default is a complete document.</param>
+        ''' <returns>A task that completes after the UTF-8 file has been written and closed.</returns>
+        ''' <remarks>
+        ''' Generates HTML synchronously, then writes UTF-8 with a byte order mark.
+        ''' Output matches the synchronous export for the same mode. Rendering failures do not replace the target file.
+        ''' </remarks>
+        ''' <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">An export mode or range bound is invalid.</exception>
+        ''' <exception cref="ArgumentException">The range partially intersects merged cells or header settings conflict.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
+        Public Async Function ExportSheetToHtmlFileAsync(worksheetName As String, fileName As String, options As HtmlSheetExportOptions, Optional exportedHtmlDocumentParts As HtmlDocumentExportParts = HtmlDocumentExportParts.FullHtmlDocument) As Task
+            Dim html = ExportSheetToHtml(worksheetName, options, exportedHtmlDocumentParts)
+            Await WriteHtmlFileAsync(fileName, html).ConfigureAwait(False)
+        End Function
 
         ''' <summary>
         ''' Generates a complete HTML document for a worksheet.
@@ -2355,8 +2407,23 @@ Namespace ExcelOps
         ''' <remarks>Rendering support depends on the engine; EPPlus exports cell tables, not images or charts.</remarks>
         ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Function ExportSheetToHtml(worksheetName As String, options As HtmlSheetExportOptions) As System.Text.StringBuilder
+            Return ExportSheetToHtml(worksheetName, options, HtmlDocumentExportParts.FullHtmlDocument)
+        End Function
+
+        ''' <summary>
+        ''' Generates the selected worksheet HTML parts.
+        ''' </summary>
+        ''' <param name="worksheetName">Name of the worksheet.</param>
+        ''' <param name="options">Non-null options controlling the generated markup and range.</param>
+        ''' <param name="exportedHtmlDocumentParts">Document, section, or table-only output.</param>
+        ''' <returns>A new string builder containing the selected HTML parts.</returns>
+        ''' <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">An export mode or range bound is invalid.</exception>
+        ''' <exception cref="ArgumentException">The range partially intersects merged cells or header settings conflict.</exception>
+        ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
+        Public Function ExportSheetToHtml(worksheetName As String, options As HtmlSheetExportOptions, exportedHtmlDocumentParts As HtmlDocumentExportParts) As System.Text.StringBuilder
             Dim sb As New System.Text.StringBuilder
-            ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, sb, options, HtmlDocumentExportParts.FullHtmlDocument)
+            ExportSheetToHtml(worksheetName, HtmlWorkbookExportOptions.Slugify(worksheetName), True, sb, options, exportedHtmlDocumentParts)
             Return sb
         End Function
 
@@ -2365,14 +2432,17 @@ Namespace ExcelOps
         ''' </summary>
         ''' <param name="worksheetName">Name of the worksheet.</param>
         ''' <param name="sb">Non-null string builder receiving the generated HTML. Existing content is retained.</param>
-        ''' <param name="anchorName">Nonblank section ID and legacy HTML anchor name.</param>
+        ''' <param name="anchorName">Nonblank section ID and legacy HTML anchor name. Ignored for table-only output.</param>
         ''' <param name="initiallyVisible">Whether the worksheet section is initially visible when using sheet-switching styles.</param>
         ''' <param name="options">Non-null options controlling the generated markup.</param>
-        ''' <param name="exportedHtmlDocumentParts">Whether to include document markup around the worksheet section.</param>
+        ''' <param name="exportedHtmlDocumentParts">Document, section, or table-only output.</param>
         ''' <exception cref="ArgumentOutOfRangeException"><paramref name="exportedHtmlDocumentParts"/> is not a defined export mode.</exception>
-        ''' <exception cref="ArgumentNullException"><paramref name="anchorName"/> is null, empty, or consists only of white-space characters.</exception>
+        ''' <exception cref="ArgumentNullException"><paramref name="sb"/> or <paramref name="options"/> is null, or a required anchor name is blank.</exception>
+        ''' <exception cref="ArgumentException">The range partially intersects merged cells or header settings conflict.</exception>
         ''' <exception cref="NotImplementedException">The engine does not implement HTML export.</exception>
         Public Sub ExportSheetToHtml(worksheetName As String, anchorName As String, initiallyVisible As Boolean, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions, exportedHtmlDocumentParts As HtmlDocumentExportParts)
+            If sb Is Nothing Then Throw New ArgumentNullException(NameOf(sb))
+            If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
             Select Case exportedHtmlDocumentParts
                 Case HtmlDocumentExportParts.FullHtmlDocument
                     sb.AppendLine(options.EffectiveHtmlDocumentHeaderAndBody)
@@ -2386,6 +2456,8 @@ Namespace ExcelOps
                     options.GenerateSheetSectionTitle(sb, worksheetName)
                     ExportSheetToHtmlInternal(worksheetName, sb, options)
                     options.GenerateEndSheetSection(sb)
+                Case HtmlDocumentExportParts.TableOnly
+                    ExportSheetToHtmlInternal(worksheetName, sb, options)
                 Case Else
                     Throw New ArgumentOutOfRangeException(NameOf(exportedHtmlDocumentParts))
             End Select
@@ -2403,7 +2475,25 @@ Namespace ExcelOps
             ''' Includes the worksheet section, configured title, and engine content without document header or ending.
             ''' </summary>
             ContentOnly = 2
+            ''' <summary>
+            ''' Includes only engine worksheet content or its empty placeholder, without document, section, or title markup.
+            ''' </summary>
+            TableOnly = 3
         End Enum
+
+        ''' <summary>
+        ''' Validates the inclusive worksheet bounds used by an HTML exporter.
+        ''' </summary>
+        ''' <param name="options">Non-null worksheet export options with zero-based bounds.</param>
+        ''' <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">A bound is negative, exceeds XLSX limits, or ends before its start.</exception>
+        Protected Shared Sub ValidateHtmlExportRange(options As HtmlSheetExportOptions)
+            If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
+            If options.FirstRowIndex < 0 OrElse options.FirstRowIndex >= 1048576 Then Throw New ArgumentOutOfRangeException(NameOf(options.FirstRowIndex))
+            If options.FirstColumnIndex < 0 OrElse options.FirstColumnIndex >= 16384 Then Throw New ArgumentOutOfRangeException(NameOf(options.FirstColumnIndex))
+            If options.LastRowIndex.HasValue AndAlso (options.LastRowIndex.Value < options.FirstRowIndex OrElse options.LastRowIndex.Value >= 1048576) Then Throw New ArgumentOutOfRangeException(NameOf(options.LastRowIndex))
+            If options.LastColumnIndex.HasValue AndAlso (options.LastColumnIndex.Value < options.FirstColumnIndex OrElse options.LastColumnIndex.Value >= 16384) Then Throw New ArgumentOutOfRangeException(NameOf(options.LastColumnIndex))
+        End Sub
 
         ''' <summary>
         ''' Appends engine-specific worksheet content without document or section markup.

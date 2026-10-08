@@ -50,6 +50,51 @@ PLEASE NOTE:
 
 ## Examples
 
+### HTML table header migration
+
+BREAKING CHANGE: `CompuMaster.Excel.ExcelOps` marks
+`HtmlSheetExportOptions.ConsiderRowIndexesAsTableHeader` as obsolete with a compiler
+error because it used one-based Excel row numbers despite its name. Replace it with
+`TableHeaderRowIndexes` and subtract 1 from each previous value: `{1}` becomes `{0}`.
+Indexes refer to absolute worksheet rows, not positions within the exported range.
+Both `CompuMaster.Excel.EpplusFreeFixCalcsEdition` and
+`CompuMaster.Excel.EpplusPolyformEdition` use the new zero-based setting.
+Previously compiled applications retain the legacy one-based behavior. Configuring
+both old and new settings is rejected instead of silently choosing one.
+
+### HTML ranges and asynchronous exports
+
+`CompuMaster.Excel.EpplusFreeFixCalcsEdition` and
+`CompuMaster.Excel.EpplusPolyformEdition` apply `FirstRowIndex`, `LastRowIndex`,
+`FirstColumnIndex`, and `LastColumnIndex` as inclusive zero-based worksheet bounds.
+The output is their intersection with the used range, including merged extents.
+Unset end bounds use the last used row/column. Invalid bounds are rejected.
+A partially intersected merged range is rejected with its address; fully included
+merged cells retain their spans, and fully excluded merged cells are ignored.
+
+BREAKING CHANGE: These EPPlus providers previously ignored the range options.
+Existing applications that set bounds now receive the requested range or a clear
+exception, not the entire used range. Empty worksheets and selections now use
+`EffectiveHtmlForEmptySheet()`: `Nothing` selects `-/-`, an empty string suppresses
+the placeholder, and callers can supply localized HTML.
+
+`CompuMaster.Excel.ExcelOps` provides awaitable `ExportSheetToHtmlFileAsync` and
+`ExportWorkbookToHtmlFileAsync` methods on .NET Framework 4.8 and .NET 6 or later.
+HTML generation remains synchronous; file writing is asynchronous. Awaiting the
+returned task observes rendering/write failures and completes after the file is
+closed. The new task-based methods default to the same full-document output as
+the synchronous methods.
+
+Worksheet builder, synchronous file, and task-based file exports accept
+`HtmlDocumentExportParts.FullHtmlDocument`, `ContentOnly` (section and configured
+title), or `TableOnly` (engine content or empty placeholder without wrappers).
+Legacy `ExportSheetToHtmlAsync` and `ExportWorkbookToHtmlAsync` methods remain as
+obsolete, editor-hidden wrappers. The former retains table-only output; choose
+`TableOnly` explicitly when migrating it to `ExportSheetToHtmlFileAsync`.
+
+These shared API improvements do not implement HTML rendering for Microsoft
+Excel, FreeSpireXls, or SpireXls; those engine exporters remain unsupported.
+
 ### Epplus 4 (LGPL) 
 
 <details>

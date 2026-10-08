@@ -8,8 +8,9 @@ Namespace ExcelOps
     ''' Defines options for exporting a worksheet to HTML.
     ''' </summary>
     ''' <remarks>
-    ''' Option support depends on the export engine. The EPPlus exporters currently export
-    ''' the used worksheet range and do not apply the row and column range options.
+    ''' Option support depends on the export engine. The EPPlus exporters intersect the
+    ''' configured inclusive bounds with the used worksheet range, including merged cells.
+    ''' Partially intersected merged cells are rejected with their worksheet address.
     ''' Custom HTML fragments and CSS class names are emitted as supplied; use trusted values.
     ''' </remarks>
     Public Class HtmlSheetExportOptions
@@ -65,11 +66,64 @@ Namespace ExcelOps
         Public Property ExportSheetNameAsTitle As SheetTitleStyles
 
         ''' <summary>
-        ''' Gets or sets row indexes whose cells are rendered as TH elements instead of TD elements.
+        ''' Gets or sets legacy one-based row numbers rendered as table headers.
         ''' </summary>
         ''' <value>The row numbers rendered as table headers, or <see langword="Nothing"/> for no header rows.</value>
-        ''' <remarks>The EPPlus exporters use one-based Excel row numbers: 1 identifies the first worksheet row.</remarks>
+        ''' <remarks>
+        ''' This member is retained for binary compatibility. New source code must use
+        ''' <see cref="TableHeaderRowIndexes"/> and subtract 1 from each previous row number.
+        ''' Previously compiled callers retain one-based behavior.
+        ''' </remarks>
+        <Obsolete("Use TableHeaderRowIndexes instead. It uses zero-based worksheet row indexes; subtract 1 from each previous row number (for example, {1} becomes {0}).", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Property ConsiderRowIndexesAsTableHeader As List(Of Integer)
+            Get
+                Return _LegacyTableHeaderRowNumbers
+            End Get
+            Set(value As List(Of Integer))
+                _LegacyTableHeaderRowNumbers = value
+            End Set
+        End Property
+
+        Private _LegacyTableHeaderRowNumbers As List(Of Integer)
+
+        ''' <summary>
+        ''' Gets or sets worksheet row indexes rendered as table headers.
+        ''' </summary>
+        ''' <value>The zero-based worksheet row indexes, or <see langword="Nothing"/> for no configured header rows.</value>
+        ''' <remarks>
+        ''' Index 0 identifies the first worksheet row. Indexes are absolute worksheet indexes,
+        ''' not positions relative to the exported range. Do not combine this property with
+        ''' the legacy one-based header setting; conflicting settings are rejected during export.
+        ''' </remarks>
+        Public Property TableHeaderRowIndexes As List(Of Integer)
+
+        ''' <summary>
+        ''' Gets the effective worksheet row indexes rendered as table headers.
+        ''' </summary>
+        ''' <returns>A detached list of zero-based worksheet row indexes, or <see langword="Nothing"/> for no header rows.</returns>
+        ''' <remarks>Converts legacy one-based settings for previously compiled callers.</remarks>
+        ''' <exception cref="ArgumentException">Both the current and legacy header settings are configured.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">A configured zero-based row index is negative.</exception>
+        Public Function EffectiveTableHeaderRowIndexes() As List(Of Integer)
+            If TableHeaderRowIndexes IsNot Nothing Then
+                If _LegacyTableHeaderRowNumbers IsNot Nothing Then
+                    Throw New ArgumentException("TableHeaderRowIndexes cannot be combined with the legacy one-based table header setting.", NameOf(TableHeaderRowIndexes))
+                End If
+                For Each rowIndex In TableHeaderRowIndexes
+                    If rowIndex < 0 Then Throw New ArgumentOutOfRangeException(NameOf(TableHeaderRowIndexes), rowIndex, "Worksheet row indexes must be zero-based and non-negative.")
+                Next
+                Return New List(Of Integer)(TableHeaderRowIndexes)
+            End If
+            If _LegacyTableHeaderRowNumbers Is Nothing Then Return Nothing
+
+            Dim result As New List(Of Integer)(_LegacyTableHeaderRowNumbers.Count)
+            For Each rowNumber In _LegacyTableHeaderRowNumbers
+                ' Non-positive legacy values never matched an Excel row.
+                If rowNumber > 0 Then result.Add(rowNumber - 1)
+            Next
+            Return result
+        End Function
 
         ''' <summary>
         ''' Gets or sets the CSS class name used for generated worksheet tables.
@@ -82,25 +136,25 @@ Namespace ExcelOps
         ''' Gets or sets the zero-based index of the first worksheet row to export.
         ''' </summary>
         ''' <value>The zero-based row index.</value>
-        ''' <remarks>The default is 0. The EPPlus exporters currently ignore this option.</remarks>
+        ''' <remarks>The default is 0. Leading unused rows are not added to the exported range.</remarks>
         Public Property FirstRowIndex As Integer = 0
         ''' <summary>
         ''' Gets or sets the zero-based index of the first worksheet column to export.
         ''' </summary>
         ''' <value>The zero-based column index.</value>
-        ''' <remarks>The default is 0. The EPPlus exporters currently ignore this option.</remarks>
+        ''' <remarks>The default is 0. Leading unused columns are not added to the exported range.</remarks>
         Public Property FirstColumnIndex As Integer = 0
         ''' <summary>
         ''' Gets or sets the zero-based index of the last worksheet row to export.
         ''' </summary>
         ''' <value>The inclusive zero-based row index, or <see langword="Nothing"/> for the last used row.</value>
-        ''' <remarks>The EPPlus exporters currently ignore this option.</remarks>
+        ''' <remarks>Bounds beyond the used worksheet range do not add unused rows.</remarks>
         Public Property LastRowIndex As Integer?
         ''' <summary>
         ''' Gets or sets the zero-based index of the last worksheet column to export.
         ''' </summary>
         ''' <value>The inclusive zero-based column index, or <see langword="Nothing"/> for the last used column.</value>
-        ''' <remarks>The EPPlus exporters currently ignore this option.</remarks>
+        ''' <remarks>Bounds beyond the used worksheet range do not add unused columns.</remarks>
         Public Property LastColumnIndex As Integer?
 #Enable Warning CA1805 ' Keine unnötige Initialisierung
 
@@ -109,8 +163,9 @@ Namespace ExcelOps
         ''' </summary>
         ''' <value>The HTML emitted for an empty worksheet.</value>
         ''' <remarks>
-        ''' The EPPlus exporters use this value directly. Set it explicitly to render a placeholder;
-        ''' they do not call <see cref="EffectiveHtmlForEmptySheet"/> for its default value.
+        ''' The EPPlus exporters use <see cref="EffectiveHtmlForEmptySheet"/> when the worksheet
+        ''' or selected range has no exportable cells. Nothing selects the language-neutral
+        ''' default -/-. An empty string suppresses the placeholder. Localized HTML is supplied by the caller.
         ''' </remarks>
         Public Property HtmlForEmptySheet As String
 

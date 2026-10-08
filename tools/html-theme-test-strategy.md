@@ -72,16 +72,30 @@ checked-in workbook themes and captured colors are the stable test inputs.
   The API checker already includes both option classes and `HtmlDocumentExportParts`
   without temporary HTML documentation exclusions. Documentation now states the
   actual section/document output, defaults, engine limitations, and legacy async behavior.
+- EPPlus range regression tests cover inclusive zero-based bounds, nullable end
+  bounds, out-of-range selections, invalid/reversed bounds, complete/excluded
+  merges, all four partial-merge boundaries, and merged used-range extents.
+- `TableHeaderRowIndexes` uses absolute zero-based worksheet indexes. The ambiguous
+  legacy property is obsolete with a compiler error and hidden from editor lists,
+  but its getter/setter and one-based behavior remain for existing binaries.
+  Compiler probes verify the migration diagnostic in VB and C#; durable tests
+  check metadata, compatibility, mutable legacy lists, and both EPPlus renderers.
+- Empty worksheet/selection exports call the effective placeholder helper,
+  defaulting to `-/-`. Explicit empty strings, custom HTML, and overridden helpers
+  are covered without introducing localized text into the exporter.
+- Task-based file exports share the synchronous renderers and support full
+  document, section/title content, and table-only output. Tests compare exact
+  UTF-8/BOM file bytes, verify closure on task completion, observe awaited
+  failures, and ensure rendering failures do not truncate existing files.
+  Legacy Async Sub wrappers remain obsolete and editor-hidden with the previous
+  defaults; tests verify their output and completion on supported targets.
 
 ## Remaining ticket work
 
 - Complete and verify HTML export support for the remaining engines.
-- Revisit the HTML export API shape while adding the remaining engines. In particular,
-  review ignored row/column range options, one-based EPPlus header row numbers,
-  empty-sheet placeholder handling, and the non-awaitable legacy Async Sub methods.
-  The asynchronous worksheet export currently emits engine content without the
-  document/section wrappers used by the synchronous overloads. Preserve compatibility
-  when improving these behaviors.
+- Apply and test the documented range, header, placeholder, and output-mode
+  contracts when implementing the remaining engines. Shared Task APIs alone do
+  not provide their missing engine-specific HTML renderers.
 - Delete `9-add-export-feature-to-html` locally and remotely only at final cleanup,
   after confirming no valuable unmerged work remains and all required pipelines
   have passed. Keep the branch available until then.
