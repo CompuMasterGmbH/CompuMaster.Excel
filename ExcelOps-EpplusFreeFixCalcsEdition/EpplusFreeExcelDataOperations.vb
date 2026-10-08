@@ -493,8 +493,10 @@ Namespace ExcelOps
         ''' </summary>
         Friend Overloads Shared Sub ExportSheetToHtmlInternal(ws As ExcelWorksheet, sb As StringBuilder, options As HtmlSheetExportOptions)
 
+            ValidateHtmlExportRange(options)
+            Dim headerRowIndexes = options.EffectiveTableHeaderRowIndexes()
             If ws Is Nothing OrElse ws.Dimension Is Nothing Then
-                sb.AppendLine(options.HtmlForEmptySheet)
+                sb.AppendLine(options.EffectiveHtmlForEmptySheet())
                 Return
             End If
 
@@ -502,6 +504,23 @@ Namespace ExcelOps
             Dim lastRow = ws.Dimension.End.Row
             Dim firstCol = ws.Dimension.Start.Column
             Dim lastCol = ws.Dimension.End.Column
+
+            ' Merged extents are part of the used range even when only the master cell has a value.
+            For Each addr In ws.MergedCells
+                Dim range = ws.Cells(addr)
+                firstRow = Math.Min(firstRow, range.Start.Row)
+                lastRow = Math.Max(lastRow, range.End.Row)
+                firstCol = Math.Min(firstCol, range.Start.Column)
+                lastCol = Math.Max(lastCol, range.End.Column)
+            Next
+            firstRow = Math.Max(firstRow, options.FirstRowIndex + 1)
+            lastRow = Math.Min(lastRow, options.LastRowIndex.GetValueOrDefault(lastRow - 1) + 1)
+            firstCol = Math.Max(firstCol, options.FirstColumnIndex + 1)
+            lastCol = Math.Min(lastCol, options.LastColumnIndex.GetValueOrDefault(lastCol - 1) + 1)
+            If firstRow > lastRow OrElse firstCol > lastCol Then
+                sb.AppendLine(options.EffectiveHtmlForEmptySheet())
+                Return
+            End If
 
             ' --- Cache für Farbauflösungen (pro Methodenaufruf) ---
             Dim colorCache As New Dictionary(Of String, String)(StringComparer.Ordinal)
@@ -514,6 +533,10 @@ Namespace ExcelOps
                 Dim range = ws.Cells(addr)
                 Dim RowStartIndex As Integer = range.Start.Row, ColumnStartIndex = range.Start.Column
                 Dim RowEndIndex As Integer = range.End.Row, ColumnEndIndex = range.End.Column
+                If RowEndIndex < firstRow OrElse RowStartIndex > lastRow OrElse ColumnEndIndex < firstCol OrElse ColumnStartIndex > lastCol Then Continue For
+                If RowStartIndex < firstRow OrElse RowEndIndex > lastRow OrElse ColumnStartIndex < firstCol OrElse ColumnEndIndex > lastCol Then
+                    Throw New ArgumentException("The HTML export range partially intersects merged cells '" & addr & "' on worksheet '" & ws.Name & "'. Export the entire merged range or exclude it.", NameOf(options))
+                End If
                 Dim keyTL = ExportSheetToHtmlInternal_CellAddressKey(RowStartIndex, ColumnStartIndex)
                 mergeTopLeft(keyTL) = ((RowEndIndex - RowStartIndex + 1), (ColumnEndIndex - ColumnStartIndex + 1))
                 For RowIndex As Integer = RowStartIndex To RowEndIndex
@@ -528,12 +551,12 @@ Namespace ExcelOps
 
             For RowIndex = firstRow To lastRow
                 sb.Append("<tr>")
+                Dim tag As String = If(headerRowIndexes IsNot Nothing AndAlso headerRowIndexes.Contains(RowIndex - 1), "th", "td")
                 For ColumnIndex = firstCol To lastCol
                     Dim CellAddressKey = ExportSheetToHtmlInternal_CellAddressKey(RowIndex, ColumnIndex)
                     If coveredByMergedCellsMasterCell.Contains(CellAddressKey) Then Continue For
 
                     Dim cell = ws.Cells(RowIndex, ColumnIndex)
-                    Dim tag As String = If(options.ConsiderRowIndexesAsTableHeader?.Contains(RowIndex), "th", "td")
 
                     ' --- Merge-Attribute ---
                     Dim rowspan As Integer = 1, colspan As Integer = 1
