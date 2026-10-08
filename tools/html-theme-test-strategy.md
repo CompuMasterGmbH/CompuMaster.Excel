@@ -50,6 +50,8 @@ checked-in workbook themes and captured colors are the stable test inputs.
 
 ## Implemented and verified
 
+- On 2026-10-08, the maintainer confirmed that manual visual review of the five
+  EPPlus 8 HTML exports (Legacy, Office, Office2013, Ion, and Red) found no errors.
 - Both EPPlus HTML exporters resolve the embedded workbook palette for each export.
 - EPPlus 4 exposes a detached `ThemeXml` snapshot resolved through the workbook's
   package relationship. EPPlus 8 uses its existing `ThemeManager` API.
@@ -73,7 +75,6 @@ checked-in workbook themes and captured colors are the stable test inputs.
 
 ## Remaining ticket work
 
-- Final manual visual review of the generated workbooks and HTML exports.
 - Complete and verify HTML export support for the remaining engines.
 - Revisit the HTML export API shape while adding the remaining engines. In particular,
   review ignored row/column range options, one-based EPPlus header row numbers,
