@@ -41,6 +41,8 @@
 - Test methods should preferably include short comments or XML summaries explaining why the test exists and what workbook behavior it verifies, but this is guidance and not a mandatory API documentation requirement.
 - Static test workbooks belong in the appropriate `test_data` directories.
 - When repository copy/clone scripts generate or synchronize shared source or test files, include the resulting copied files in the same change.
+- When investigating or changing Microsoft Excel Interop behavior, run the relevant tests locally on a Windows development computer with Microsoft Excel installed. GitHub-hosted Windows runners do not provide Microsoft Excel, so skipped Interop tests there do not validate Excel compatibility. Complete these local tests before reporting the behavior as verified, and record the results without publishing the development computer's host name.
+- Mark tests that submit physical print jobs as explicit manual tests. Run them only when the user has authorized the print jobs, and distinguish successful job submission from confirmation of the physical output.
 
 ## Package README
 

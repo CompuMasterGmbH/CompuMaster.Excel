@@ -10,6 +10,7 @@ This package is based on upstream EPPlus 4.5.3.3; CompuMaster NuGet releases use
 * Exposes embedded workbook theme XML so consumers can resolve design-dependent accent colors without a fixed Office palette.
 * Fixes internal races in cell storage, style updates, and calculation/lifetime coordination; general multithreaded workbook access remains unsupported.
 * Uses zero-based worksheet indexing by default on every target framework; the existing compatibility setting can switch to one-based indexing.
+* Writes Excel-compatible OPC ZIP entry names and preserves complete workbook data in file, byte-array and stream roundtrips, including standard and agile encryption on modern .NET.
 
 ### Security Features
 

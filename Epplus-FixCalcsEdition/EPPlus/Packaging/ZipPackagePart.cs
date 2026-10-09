@@ -143,7 +143,7 @@ namespace CompuMaster.Epplus4.Packaging
                 {
                     return;
                 }
-                var entry = archive.CreateEntry(Uri.OriginalString, ZipPackage.GetZipCompressionLevel(CompressionLevel));
+                var entry = archive.CreateEntry(ZipPackage.GetZipEntryName(Uri.OriginalString), ZipPackage.GetZipCompressionLevel(CompressionLevel));
                 using (var entryStream = entry.Open())
                 {
                     entryStream.Write(b, 0, b.Length);
@@ -151,7 +151,7 @@ namespace CompuMaster.Epplus4.Packaging
             }
             else
             {
-                var entry = archive.CreateEntry(Uri.OriginalString, ZipPackage.GetZipCompressionLevel(CompressionLevel));
+                var entry = archive.CreateEntry(ZipPackage.GetZipEntryName(Uri.OriginalString), ZipPackage.GetZipCompressionLevel(CompressionLevel));
                 using (var entryStream = entry.Open())
                 {
                     SaveHandler(entryStream, CompressionLevel, Uri.OriginalString);

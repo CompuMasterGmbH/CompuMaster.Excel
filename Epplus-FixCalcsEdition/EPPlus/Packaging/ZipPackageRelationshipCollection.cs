@@ -94,7 +94,7 @@ namespace CompuMaster.Epplus4.Packaging
             }
             xml.Append("</Relationships>");
 
-            var entry = archive.CreateEntry(fileName, ZipPackage.GetZipCompressionLevel(compressionLevel));
+            var entry = archive.CreateEntry(ZipPackage.GetZipEntryName(fileName), ZipPackage.GetZipCompressionLevel(compressionLevel));
             byte[] b = Encoding.UTF8.GetBytes(xml.ToString());
             using (var entryStream = entry.Open())
             {

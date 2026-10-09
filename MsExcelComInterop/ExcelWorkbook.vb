@@ -68,10 +68,10 @@ Public Class ExcelWorkbook
     ''' <param name="toPageIndex">Zero-based last page index to print.</param>
     ''' <param name="copies">Number of copies to print.</param>
     ''' <param name="preview">Whether Excel shall show print preview.</param>
-    ''' <param name="activePrinter">Printer name or <see langword="Nothing"/> for Excel's active printer.</param>
+    ''' <param name="activePrinter">Printer name, or <see langword="Nothing"/> to omit the COM argument and use Excel's active printer.</param>
     ''' <param name="printToFile">Whether output shall be printed to a file.</param>
     ''' <param name="collatePages">Whether printed pages shall be collated.</param>
-    ''' <param name="printToFileName">Target file name when printing to a file.</param>
+    ''' <param name="printToFileName">Target file name when printing to a file, or <see langword="Nothing"/> to omit the COM argument. Excel requests a file name if <paramref name="printToFile"/> is true and this argument is omitted.</param>
     ''' <param name="ignorePrintAreas">Whether configured print areas shall be ignored.</param>
     Public Sub PrintOut(Optional fromPageIndex As Integer = 0,
                         Optional toPageIndex As Integer = Int16.MaxValue - 1,
@@ -82,7 +82,9 @@ Public Class ExcelWorkbook
                         Optional collatePages As Boolean = False,
                         Optional printToFileName As String = Nothing,
                         Optional ignorePrintAreas As Boolean = False)
-        InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, activePrinter, printToFile, collatePages, printToFileName, ignorePrintAreas)
+        Dim printerArgument As Object = If(activePrinter Is Nothing, Type.Missing, CObj(activePrinter))
+        Dim fileNameArgument As Object = If(printToFileName Is Nothing, Type.Missing, CObj(printToFileName))
+        InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, printerArgument, printToFile, collatePages, fileNameArgument, ignorePrintAreas)
     End Sub
 
     ''' <inheritdoc/>

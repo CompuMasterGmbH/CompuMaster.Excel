@@ -550,7 +550,12 @@ Namespace ExcelOps
             Try
                 If stream.CanSeek Then stream.Position = 0
                 Dim buffer(count - 1) As Byte
-                Dim read As Integer = stream.Read(buffer, 0, buffer.Length)
+                Dim read As Integer = 0
+                While read < buffer.Length
+                    Dim current = stream.Read(buffer, read, buffer.Length - read)
+                    If current = 0 Then Exit While
+                    read += current
+                End While
                 If read <> buffer.Length Then Array.Resize(buffer, read)
                 Return buffer
             Finally

@@ -502,6 +502,12 @@ namespace CompuMaster.Epplus4.Packaging
             //return ms;
         }
 
+        // OPC part URIs start with '/', but ZIP entry names are relative to the package root.
+        internal static string GetZipEntryName(string partName)
+        {
+            return partName.Replace('\\', '/').TrimStart('/');
+        }
+
         internal static System.IO.Compression.CompressionLevel GetZipCompressionLevel(CompressionLevel level)
         {
             if (level == CompressionLevel.None)

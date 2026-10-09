@@ -734,7 +734,7 @@ namespace CompuMaster.Epplus4.Encryption
 
                     var decryptedData = new byte[size];
 
-                    cryptoStream.Read(decryptedData, 0, (int)size);
+                    ReadFully(cryptoStream, decryptedData);
                     doc.Write(decryptedData, 0, (int)size);
                 }
                 else
@@ -772,7 +772,7 @@ namespace CompuMaster.Epplus4.Encryption
                                                           decryptor,
                                                           CryptoStreamMode.Read);
             var decryptedVerifier = new byte[16];
-            cryptoStream.Read(decryptedVerifier, 0, 16);
+            ReadFully(cryptoStream, decryptedVerifier);
 
             dataStream = new MemoryStream(encryptionInfo.Verifier.EncryptedVerifierHash);
 
@@ -782,7 +782,7 @@ namespace CompuMaster.Epplus4.Encryption
 
             //Decrypt the verifier hash
             var decryptedVerifierHash = new byte[16];
-            cryptoStream.Read(decryptedVerifierHash, 0, (int)16);
+            ReadFully(cryptoStream, decryptedVerifierHash);
 
             //Get the hash for the decrypted verifier
 #if (Core)
@@ -848,8 +848,22 @@ namespace CompuMaster.Epplus4.Encryption
 
             var decryptedData = new byte[size];
 
-            cryptoStream.Read(decryptedData, 0, (int)size);
+            ReadFully(cryptoStream, decryptedData);
             return decryptedData;
+        }
+
+        // CryptoStream may return a partial block on modern .NET. Never leave the
+        // unread tail as zero bytes, which silently corrupts decrypted ZIP metadata.
+        private static void ReadFully(Stream stream, byte[] buffer)
+        {
+            int offset = 0;
+            while (offset < buffer.Length)
+            {
+                int read = stream.Read(buffer, offset, buffer.Length - offset);
+                if (read == 0)
+                    throw new InvalidDataException("The encrypted package is truncated.");
+                offset += read;
+            }
         }
 
 #if (Core)

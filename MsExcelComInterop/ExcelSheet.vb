@@ -89,7 +89,9 @@ Public Class ExcelSheet
                         Optional collatePages As Boolean = False,
                         Optional printToFileName As String = Nothing,
                         Optional ignorePrintAreas As Boolean = False)
-        InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, activePrinter, printToFile, collatePages, printToFileName, ignorePrintAreas)
+        Dim printerArgument As Object = If(activePrinter Is Nothing, Type.Missing, CObj(activePrinter))
+        Dim fileNameArgument As Object = If(printToFileName Is Nothing, Type.Missing, CObj(printToFileName))
+        InvokeMethod("PrintOut", fromPageIndex + 1, toPageIndex + 1, copies, preview, printerArgument, printToFile, collatePages, fileNameArgument, ignorePrintAreas)
     End Sub
 
     ''' <inheritdoc/>

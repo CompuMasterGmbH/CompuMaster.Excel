@@ -23,9 +23,22 @@ Namespace MsExcelComInteropTest
         <OneTimeTearDown>
         Public Sub TearDown()
             'CloseDisposeFinalizeExcelAppInstance
-            If ExcelApp IsNot Nothing Then ExcelApp.Dispose()
-            CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
-            AssertNoExcelProcessesAvailable()
+            Dim ownedExcelProcess As System.Diagnostics.Process = Nothing
+            Try
+                If ExcelApp IsNot Nothing AndAlso Not ExcelApp.IsClosed Then
+                    Dim hwnd = ExcelApp.InvokePropertyGet(Of Integer)("Hwnd")
+                    ownedExcelProcess = System.Diagnostics.Process.GetProcessById(CompuMaster.ComInterop.ComTools.LookupProcessID(hwnd))
+                    ExcelApp.Dispose()
+                End If
+                CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
+                ' Quit can return before Excel has finished shutting down. Wait only for this fixture's process.
+                If ownedExcelProcess IsNot Nothing Then
+                    ClassicAssert.IsTrue(ownedExcelProcess.WaitForExit(10000), "The fixture's Excel process did not exit after disposal.")
+                End If
+                AssertNoExcelProcessesAvailable()
+            Finally
+                If ownedExcelProcess IsNot Nothing Then ownedExcelProcess.Dispose()
+            End Try
         End Sub
 
         Private Sub AssertNoExcelProcessesAvailable()
