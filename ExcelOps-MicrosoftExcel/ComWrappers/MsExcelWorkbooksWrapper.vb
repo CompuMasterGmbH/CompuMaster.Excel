@@ -40,7 +40,9 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' <param name="passwordForOpening">Password required to open the workbook, or <see langword="Nothing"/> when no password is required.</param>
         ''' <returns>The workbook wrapper.</returns>
         Public Function Open(path As String, [readOnly] As Boolean, passwordForOpening As String) As MsExcelWorkbookWrapper
-            Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Open(path, False, [readOnly], Nothing, If(passwordForOpening = Nothing, Nothing, passwordForOpening)))
+            ' Excel expects omitted optional COM arguments, rather than explicit null values.
+            Dim password As Object = If(passwordForOpening = Nothing, Type.Missing, CObj(passwordForOpening))
+            Return Me.GetWorkbookWrapper(Me.ComObjectStronglyTyped.Open(path, UpdateLinks:=0, ReadOnly:=[readOnly], Password:=password))
         End Function
 
         Private _WorkbookWrappers As New Dictionary(Of MsExcel.Workbook, MsExcelWorkbookWrapper)
