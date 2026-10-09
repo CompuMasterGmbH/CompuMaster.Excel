@@ -1233,7 +1233,14 @@ namespace CompuMaster.Epplus4
                 Byte[] byRet = new byte[Stream.Length];
                 long pos = Stream.Position;
                 Stream.Seek(0, SeekOrigin.Begin);
-                Stream.Read(byRet, 0, (int)Stream.Length);
+                int bytesRead = 0;
+                while (bytesRead < byRet.Length)
+                {
+                    int read = Stream.Read(byRet, bytesRead, byRet.Length - bytesRead);
+                    if (read == 0)
+                        throw new InvalidDataException("The package stream ended before all bytes could be read.");
+                    bytesRead += read;
+                }
 
                 //Encrypt Workbook?
                 if (Encryption.IsEncrypted)
