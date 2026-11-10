@@ -173,6 +173,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Public Sub New(file As String, mode As OpenMode, msExcelApp As MsExcelApplicationWrapper, [readOnly] As Boolean, passwordForOpening As String)
             Me.New(file, mode, msExcelApp, True, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
+            Me._DiagnosticApplication = msExcelApp
         End Sub
 
         ''' <summary>
@@ -227,6 +228,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
             MyBase.New(Not disableAutoCalculation, False, [readOnly], passwordForOpening)
             Me._MsExcelAppInstance = msExcelApp
+            Me._DiagnosticApplication = msExcelApp
             Me._Workbooks = New MsExcelWorkbooksWrapper(msExcelApp, msExcelApp.ComObjectStronglyTyped.Workbooks)
             If disableAutoCalculation Then
                 Me.AutoCalculationEnabled = False
@@ -309,6 +311,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
 #Enable Warning IDE0060 ' Nicht verwendete Parameter entfernen
             MyBase.New(options)
             Me._MsExcelAppInstance = msExcelApp
+            Me._DiagnosticApplication = msExcelApp
             Me._Workbooks = New MsExcelWorkbooksWrapper(msExcelApp, msExcelApp.ComObjectStronglyTyped.Workbooks)
             Me.ExecuteOpenModeActions(file, mode, options)
             If unprotectWorksheets = True Then
@@ -323,6 +326,37 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         Private _MsExcelAppInstance As MsExcelApplicationWrapper
+        Private _DiagnosticApplication As MsExcelApplicationWrapper
+        Private _PendingPreserveDiagnostics As Boolean?
+
+        ''' <summary>
+        ''' Gets or sets whether diagnostic logs are preserved byte for byte.
+        ''' </summary>
+        ''' <value>Whether logs are preserved. The default is <see langword="False"/>.</value>
+        ''' <remarks>The setting is shared by all workbooks using the same Excel process.</remarks>
+        Public Property PreserveDiagnosticLogFiles As Boolean
+            Get
+                If _DiagnosticApplication IsNot Nothing Then Return _DiagnosticApplication.PreserveDiagnosticLogFiles
+                Return _PendingPreserveDiagnostics.GetValueOrDefault()
+            End Get
+            Set(value As Boolean)
+                _PendingPreserveDiagnostics = value
+                If _DiagnosticApplication IsNot Nothing Then _DiagnosticApplication.PreserveDiagnosticLogFiles = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Gets a snapshot of existing diagnostic logs positively associated with this Excel process.
+        ''' </summary>
+        ''' <value>A read-only collection of diagnostic log files.</value>
+        ''' <remarks>Unknown or missing files are omitted. No Excel instance or log is created. Surviving paths remain available after closing.</remarks>
+        Public ReadOnly Property DiagnosticLogFiles As System.Collections.ObjectModel.ReadOnlyCollection(Of System.IO.FileInfo)
+            Get
+                If _DiagnosticApplication Is Nothing Then Return New List(Of System.IO.FileInfo)().AsReadOnly()
+                Return _DiagnosticApplication.DiagnosticLogFiles
+            End Get
+        End Property
+
         ''' <summary>
         ''' Provides a Microsoft Excel Interop provider (ATTENTION: watch for advised Try-Finally pattern for successful application process stop!).
         ''' </summary>
@@ -341,6 +375,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
             Get
                 If _MsExcelAppInstance Is Nothing Then
                     _MsExcelAppInstance = New MsExcelApplicationWrapper()
+                    _DiagnosticApplication = _MsExcelAppInstance
+                    If _PendingPreserveDiagnostics.HasValue Then _DiagnosticApplication.PreserveDiagnosticLogFiles = _PendingPreserveDiagnostics.Value
                 End If
                 Return _MsExcelAppInstance
             End Get

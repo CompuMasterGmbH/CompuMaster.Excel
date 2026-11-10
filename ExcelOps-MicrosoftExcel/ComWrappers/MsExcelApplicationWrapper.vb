@@ -14,6 +14,8 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Implements IDisposable
 
         Private _ComApp As CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
+        Private ReadOnly _Diagnostics As ExcelDiagnosticLogs
+        Private _UntrackedPreserveDiagnostics As Boolean
 
         Friend Const ExpectedProcessName As String = "EXCEL"
 
@@ -21,7 +23,8 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' Creates a new MS Excel instance within its wrapper instance.
         ''' </summary>
         Public Sub New()
-            Me._ComApp = New CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)(CreateMsExcelApplication, Function(x) New IntPtr(x.ComObjectStronglyTyped.Hwnd), AddressOf OnClosing, ExpectedProcessName)
+            Me._ComApp = New DiagnosticExcelApplication(CreateMsExcelApplication())
+            _Diagnostics = DirectCast(_ComApp, DiagnosticExcelApplication).Diagnostics
             _ComApp.ComObjectStronglyTyped.Visible = False
             _ComApp.ComObjectStronglyTyped.Interactive = False
             _ComApp.ComObjectStronglyTyped.ScreenUpdating = False
@@ -47,9 +50,67 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         ''' </summary>
         Private Shared Sub OnClosing(comApplicationObject As CompuMaster.ComInterop.ComApplication(Of MsExcel.Application))
             If Not comApplicationObject.IsDisposedComObject Then
+                Dim diagnostics = DirectCast(comApplicationObject, DiagnosticExcelApplication).Diagnostics
+                If diagnostics IsNot Nothing Then diagnostics.BeforeQuit()
                 comApplicationObject.ComObjectStronglyTyped.Quit()
+                If diagnostics IsNot Nothing Then diagnostics.AfterQuit()
             End If
         End Sub
+
+        ' Inherits the existing termination sequence unchanged, including finalizer cleanup.
+        Private NotInheritable Class DiagnosticExcelApplication
+            Inherits CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
+
+            Friend ReadOnly Diagnostics As ExcelDiagnosticLogs
+
+            Friend Sub New(application As MsExcel.Application)
+                MyBase.New(application, Function(x) New IntPtr(x.ComObjectStronglyTyped.Hwnd), AddressOf MsExcelApplicationWrapper.OnClosing, ExpectedProcessName)
+                Try
+                    Diagnostics = ExcelDiagnosticLogs.ForProcess(Me.Process())
+                Catch
+                    ' Process inspection is optional and must not prevent automation.
+                End Try
+            End Sub
+
+            ''' <inheritdoc/>
+            Protected Overrides Sub Dispose(disposing As Boolean)
+                Dim succeeded As Boolean = False
+                Try
+                    MyBase.Dispose(disposing)
+                    succeeded = True
+                Finally
+                    If Diagnostics IsNot Nothing Then Diagnostics.Finish(succeeded)
+                End Try
+            End Sub
+        End Class
+
+        ''' <summary>
+        ''' Gets or sets whether diagnostic logs are preserved byte for byte.
+        ''' </summary>
+        ''' <value>Whether logs are preserved. The default is <see langword="False"/>.</value>
+        ''' <remarks>The setting is shared by all workbooks using this Excel process.</remarks>
+        Public Property PreserveDiagnosticLogFiles As Boolean
+            Get
+                If _Diagnostics Is Nothing Then Return _UntrackedPreserveDiagnostics
+                Return _Diagnostics.Preserve
+            End Get
+            Set(value As Boolean)
+                _UntrackedPreserveDiagnostics = value
+                If _Diagnostics IsNot Nothing Then _Diagnostics.Preserve = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Gets a snapshot of existing diagnostic logs positively associated with this Excel process.
+        ''' </summary>
+        ''' <value>A read-only collection of diagnostic log files.</value>
+        ''' <remarks>Unknown or missing files are omitted. This property never creates logs and remains available after closing.</remarks>
+        Public ReadOnly Property DiagnosticLogFiles As System.Collections.ObjectModel.ReadOnlyCollection(Of System.IO.FileInfo)
+            Get
+                If _Diagnostics Is Nothing Then Return New List(Of System.IO.FileInfo)().AsReadOnly()
+                Return _Diagnostics.Snapshot()
+            End Get
+        End Property
 
         ''' <summary>
         ''' Gets the wrapped COM application helper.
