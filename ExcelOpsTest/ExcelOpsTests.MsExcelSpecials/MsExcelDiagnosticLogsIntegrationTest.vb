@@ -43,7 +43,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
                     regular = process.ExitCode = 0
                 End Using
                 ' Some Office configurations require the existing force-termination fallback.
-                Assert.That(ownedFiles.All(Function(path) File.Exists(path) <> regular), [Is].True)
+                If regular Then
+                    AssertOriginalFilesRemoved(ownedIdentities)
+                Else
+                    Assert.That(ownedFiles.All(Function(path) File.Exists(path)), [Is].True)
+                End If
                 AssertSurvivingPaths(owned, ownedIdentities)
                 Assert.That(first.DiagnosticLogFiles.Select(Function(file) file.FullName), [Is].EquivalentTo(owned.DiagnosticLogFiles.Select(Function(file) file.FullName)))
                 Using process = foreign.ExcelProcess()
@@ -70,7 +74,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
                     regular = process.ExitCode = 0
                 End Using
                 Dim retained = preserve OrElse Not regular
-                Assert.That(paths.All(Function(path) File.Exists(path) = retained), [Is].True)
+                If retained Then
+                    Assert.That(paths.All(Function(path) File.Exists(path)), [Is].True)
+                Else
+                    AssertOriginalFilesRemoved(identities)
+                End If
                 AssertSurvivingPaths(application, identities)
                 TestContext.Out.WriteLine("Application close: {0} logs verified; preservation = {1}; regular exit = {2}.", paths.Length, preserve, regular)
             End Using
@@ -131,6 +139,14 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Next
             Dim actual = application.DiagnosticLogFiles.Select(Function(file) file.FullName).Intersect(identities.Keys)
             Assert.That(actual, [Is].EquivalentTo(expected), "Every surviving original file remains accessible; replacements are omitted.")
+        End Sub
+
+        Private Shared Sub AssertOriginalFilesRemoved(identities As Dictionary(Of String, DiagnosticLogNative.FileInformation))
+            For Each entry In identities
+                If File.Exists(entry.Key) Then
+                    Assert.That(entry.Value.SameFile(ReadIdentity(entry.Key)), [Is].False, "Regular exit removes original owned logs; replaced files must remain untouched: " & Path.GetFileName(entry.Key))
+                End If
+            Next
         End Sub
 
         Private Shared Function WaitForLogs(application As MsExcelApplicationWrapper) As String()
