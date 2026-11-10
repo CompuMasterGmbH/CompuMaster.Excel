@@ -15,6 +15,16 @@ For a full engine overview and comparison chart, please see https://github.com/C
 
 ## Examples
 
+### Excel diagnostic logs
+
+`MsExcelDataOperations.DiagnosticLogFiles` and `MsExcelApplicationWrapper.DiagnosticLogFiles` return read-only snapshots of existing, positively associated Office diagnostic logs. Reading these properties does not start Excel or create logs. Surviving paths remain available after closing the application.
+
+`PreserveDiagnosticLogFiles` defaults to `false` and is shared by workbooks using the same Excel process. After the existing shutdown sequence confirms that the exact process has exited, a successful quit with exit code zero removes its associated logs. An error or forced exit retains them and trims only trailing NUL padding, preserving Unicode terminal code units. Set `PreserveDiagnosticLogFiles = true` to leave every log byte unchanged, including padding.
+
+BOMs and recognizable Office headers identify the text encoding. Ambiguous BOM-less logs may retain up to three trailing padding bytes to protect UTF-16/UTF-32 terminal code units.
+
+Ownership requires the process ID and start time, valid log timestamps, and the Primary/Additional session GUID. A query-only Windows Restart Manager session can identify exclusively locked Primary logs. Unknown formats, uncertain ownership, inaccessible or replaced files, and reparse points are skipped. Housekeeping never changes the existing Quit/COM-release/wait/kill sequence or Office logging settings. Housekeeping makes at most three attempts, waiting 350 ms between attempts. A host crash cannot run in-process housekeeping.
+
 ### Quick-Start: Create a workbook and put some values and formulas, then output the result to console
 
 ```C#
@@ -52,4 +62,3 @@ leads to following output
 1 |123|456,123|579,123
 ```
 </details>
-
