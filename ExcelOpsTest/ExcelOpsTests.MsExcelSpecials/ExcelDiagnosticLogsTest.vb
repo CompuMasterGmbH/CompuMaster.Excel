@@ -262,7 +262,11 @@ Namespace ExcelOpsTests.MsExcelSpecials
         End Sub
 
         Private Shared Function StartShortProcess() As Process
-            Return Process.Start(New ProcessStartInfo("cmd.exe", "/c ping -n 3 127.0.0.1 > nul") With {.UseShellExecute = False, .CreateNoWindow = True})
+            Dim result = Process.Start(New ProcessStartInfo("cmd.exe", "/c ping -n 3 127.0.0.1 > nul") With {.UseShellExecute = False, .CreateNoWindow = True})
+            ' Allow a clock tick before creating files and millisecond log timestamps on Windows runners.
+            ' Otherwise a rounded record timestamp can precede the more precise process start time.
+            Threading.Thread.Sleep(50)
+            Return result
         End Function
 
         Private Shared Function WritePrimary(root As String, pid As Integer) As String
