@@ -1,4 +1,5 @@
-﻿Imports System.Diagnostics
+﻿Imports CompuMaster.ComInterop.Office
+Imports System.Diagnostics
 Imports System.Globalization
 Imports System.IO
 Imports System.Text
@@ -39,7 +40,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Using stream As New MemoryStream()
                 stream.Write(original, 0, original.Length)
                 stream.Write(New Byte(padding - 1) {}, 0, padding)
-                ExcelDiagnosticLogs.TrimPadding(stream)
+                OfficeDiagnosticLogs.TrimPadding(stream)
                 Assert.That(stream.ToArray(), [Is].EqualTo(original))
             End Using
         End Sub
@@ -51,7 +52,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             Using stream As New MemoryStream()
                 stream.Write(original, 0, original.Length)
                 stream.Write(New Byte(10000) {}, 0, 10001)
-                ExcelDiagnosticLogs.TrimPadding(stream)
+                OfficeDiagnosticLogs.TrimPadding(stream)
                 Assert.That(stream.ToArray().Take(original.Length), [Is].EqualTo(original))
                 Assert.That(stream.Length, [Is].InRange(CLng(original.Length), CLng(original.Length + 3)))
             End Using
@@ -72,7 +73,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             If Environment.OSVersion.Platform <> PlatformID.Win32NT Then Assert.Ignore("Windows file identities required.")
             WithDirectory(Sub(root)
                               Using process = System.Diagnostics.Process.GetCurrentProcess()
-                                  Dim logs As New ExcelDiagnosticLogs(process, root)
+                                  Dim logs As New OfficeDiagnosticLogs(process, root)
                                   Dim primary = WritePrimary(root, process.Id)
                                   Dim companion = WriteCompanion(root, primary, {0, 0, 0})
                                   Dim foreign = WritePrimary(root, process.Id + 1)
@@ -104,7 +105,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
                                   Dim primary = WritePrimary(root, process.Id)
                                   WriteCompanion(root, primary, {0})
                                   Using locked As New FileStream(primary, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
-                                      Dim logs As New ExcelDiagnosticLogs(process, root)
+                                      Dim logs As New OfficeDiagnosticLogs(process, root)
                                       Assert.That(logs.Snapshot().Count, [Is].EqualTo(2))
                                       Assert.That(DiagnosticLogNative.IsOnlyOwner(primary, process.Id, process.StartTime.ToUniversalTime()), [Is].True)
                                       Assert.That(DiagnosticLogNative.IsOnlyOwner(primary, process.Id, process.StartTime.ToUniversalTime().AddSeconds(-1)), [Is].False)
@@ -119,7 +120,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             If Environment.OSVersion.Platform <> PlatformID.Win32NT Then Assert.Ignore("Windows file identities required.")
             WithDirectory(Sub(root)
                               Using process = StartShortProcess()
-                                  Dim logs As New ExcelDiagnosticLogs(process, root) With {.Preserve = preserve}
+                                  Dim logs As New OfficeDiagnosticLogs(process, root) With {.Preserve = preserve}
                                   Dim primary = WritePrimary(root, process.Id)
                                   Dim body As Byte() = {65, 0, 66, 32, 32, 32, 13, 10}
                                   Dim companion = WriteCompanion(root, primary, body.Concat(New Byte(8192) {}).ToArray())
@@ -146,8 +147,8 @@ Namespace ExcelOpsTests.MsExcelSpecials
         <Test, Platform("Win")>
         Public Sub SameProcessSharesRetentionState()
             Using firstProcess = Process.GetCurrentProcess(), secondProcess = Process.GetCurrentProcess()
-                Dim first = ExcelDiagnosticLogs.ForProcess(firstProcess)
-                Dim second = ExcelDiagnosticLogs.ForProcess(secondProcess)
+                Dim first = OfficeDiagnosticLogs.ForProcess(firstProcess)
+                Dim second = OfficeDiagnosticLogs.ForProcess(secondProcess)
                 Assert.That(second, [Is].SameAs(first))
                 Try
                     first.Preserve = True
@@ -165,7 +166,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             If Environment.OSVersion.Platform <> PlatformID.Win32NT Then Assert.Ignore("Windows file identities required.")
             WithDirectory(Sub(root)
                               Dim process = System.Diagnostics.Process.GetCurrentProcess()
-                              Dim logs As New ExcelDiagnosticLogs(process, root)
+                              Dim logs As New OfficeDiagnosticLogs(process, root)
                               Dim primary = WritePrimary(root, process.Id)
                               Dim before = File.ReadAllBytes(primary)
                               Assert.That(logs.Snapshot().Count, [Is].EqualTo(1))
@@ -188,7 +189,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             If Environment.OSVersion.Platform <> PlatformID.Win32NT Then Assert.Ignore("Windows file identities required.")
             WithDirectory(Sub(root)
                               Using process = StartShortProcess()
-                                  Dim logs As New ExcelDiagnosticLogs(process, root)
+                                  Dim logs As New OfficeDiagnosticLogs(process, root)
                                   Dim primary = WritePrimary(root, process.Id)
                                   Dim companion = WriteCompanion(root, primary, {65, 0, 0, 0})
                                   Assert.That(logs.Snapshot().Count, [Is].EqualTo(2))
@@ -219,7 +220,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
                               End Using
                               Try
                                   Using process = StartShortProcess()
-                                      Dim logs As New ExcelDiagnosticLogs(process, root)
+                                      Dim logs As New OfficeDiagnosticLogs(process, root)
                                       Dim primary = WritePrimary(root, process.Id)
                                       Dim foreign = Path.Combine(target, Path.GetFileName(primary).Replace("Primary", "Additional"))
                                       File.WriteAllBytes(foreign, {65, 0, 0, 0})
@@ -241,7 +242,7 @@ Namespace ExcelOpsTests.MsExcelSpecials
             If Environment.OSVersion.Platform <> PlatformID.Win32NT Then Assert.Ignore("Windows file identities required.")
             WithDirectory(Sub(root)
                               Using process = StartShortProcess()
-                                  Dim logs As New ExcelDiagnosticLogs(process, root)
+                                  Dim logs As New OfficeDiagnosticLogs(process, root)
                                   Dim primary = WritePrimary(root, process.Id)
                                   Dim companion = WriteCompanion(root, primary, {65, 0, 0})
                                   Assert.That(logs.Snapshot().Count, [Is].EqualTo(2))

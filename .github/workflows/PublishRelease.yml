@@ -75,6 +75,9 @@ env:
 jobs:
     publish:
         runs-on: windows-latest
+        permissions:
+            contents: write
+            id-token: write
         #if: false # always skip job
 
         env:
@@ -245,8 +248,16 @@ jobs:
             - name: Pack ${{env.PROJECT_NAME_11}}
               run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT_11}} --output .  
 
-            - name: PushNuget ${{env.PROJECT_NAME_01}} + ${{env.PROJECT_NAME_02}} + ${{env.PROJECT_NAME_03}} + ${{env.PROJECT_NAME_04}} + ${{env.PROJECT_NAME_05}} + ${{env.PROJECT_NAME_06}} + ${{env.PROJECT_NAME_07}} + ${{env.PROJECT_NAME_08}} + ${{env.PROJECT_NAME_09}} + ${{env.PROJECT_NAME_10}} + ${{env.PROJECT_NAME_11}}
-              run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate 
+            - name: Sign in to NuGet with Trusted Publishing
+              id: nuget-login
+              uses: NuGet/login@v1
+              with:
+                  user: ${{ vars.NUGET_USER || secrets.NUGET_USER || 'compumaster' }}
+
+            - name: Push packages to NuGet
+              env:
+                  NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+              run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
 
             - name: Publish Package Artifacts
               uses: actions/upload-artifact@v4
