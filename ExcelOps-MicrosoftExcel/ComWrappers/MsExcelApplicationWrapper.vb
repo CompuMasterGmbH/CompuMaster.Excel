@@ -1,4 +1,5 @@
-﻿Imports Microsoft.Office.Interop.Excel
+﻿Imports CompuMaster.ComInterop.Office
+Imports Microsoft.Office.Interop.Excel
 Imports MsExcel = Microsoft.Office.Interop.Excel
 
 Namespace Global.CompuMaster.Excel.MsExcelCom
@@ -14,7 +15,7 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Implements IDisposable
 
         Private _ComApp As CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
-        Private ReadOnly _Diagnostics As ExcelDiagnosticLogs
+        Private ReadOnly _Diagnostics As OfficeDiagnosticLogs
         Private _UntrackedPreserveDiagnostics As Boolean
 
         Friend Const ExpectedProcessName As String = "EXCEL"
@@ -61,12 +62,14 @@ Namespace Global.CompuMaster.Excel.MsExcelCom
         Private NotInheritable Class DiagnosticExcelApplication
             Inherits CompuMaster.ComInterop.ComApplication(Of MsExcel.Application)
 
-            Friend ReadOnly Diagnostics As ExcelDiagnosticLogs
+            Friend ReadOnly Diagnostics As OfficeDiagnosticLogs
 
             Friend Sub New(application As MsExcel.Application)
                 MyBase.New(application, Function(x) New IntPtr(x.ComObjectStronglyTyped.Hwnd), AddressOf MsExcelApplicationWrapper.OnClosing, ExpectedProcessName)
                 Try
-                    Diagnostics = ExcelDiagnosticLogs.ForProcess(Me.Process())
+                    Using process = Me.Process()
+                        Diagnostics = OfficeDiagnosticLogs.ForProcess(process, ExpectedProcessName)
+                    End Using
                 Catch
                     ' Process inspection is optional and must not prevent automation.
                 End Try

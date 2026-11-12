@@ -6,6 +6,10 @@ Allow COM interop at clients without using Microsoft.Office.Excel.Interop assemb
 
 Limitation: supports only a very tiny, but often-used feature set, e.g. print, export to PDF, run VBA code
 
+## Diagnostic logs
+
+Use `ExcelApplication.DiagnosticLogFiles` to inspect the files associated with the wrapper's Excel process. The wrapper removes confirmed logs after a successful quit and trims trailing NUL padding after an abnormal exit. Set `PreserveDiagnosticLogFiles` to `true` to retain the files byte for byte.
+
 ## Licensing
 
   * Please see license file in project directory

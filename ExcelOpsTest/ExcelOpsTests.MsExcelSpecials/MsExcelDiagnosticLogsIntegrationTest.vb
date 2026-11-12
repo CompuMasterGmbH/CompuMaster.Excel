@@ -1,4 +1,5 @@
-﻿Imports System.Diagnostics
+﻿Imports CompuMaster.ComInterop.Office
+Imports System.Diagnostics
 Imports System.IO
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.MsExcelCom

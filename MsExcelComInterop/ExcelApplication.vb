@@ -1,16 +1,16 @@
-﻿''' <summary>
+﻿Imports CompuMaster.ComInterop.Office
+
+''' <summary>
 ''' A wrapper for an Excel application instance created with Interaction.CreateObject without requiring MS Office type libraries.
 ''' </summary>
 Public Class ExcelApplication
-    Inherits ComRootObject(Of Object)
+    Inherits OfficeApplication
 
     ''' <summary>
     ''' Creates a new Microsoft Excel application instance.
     ''' </summary>
     Public Sub New()
-#Disable Warning CA1416
-        MyBase.New(CreateObject("Excel.Application"), Sub(instance) If instance IsNot Nothing Then instance.InvokeMethod("Quit"))
-#Enable Warning CA1416
+        MyBase.New("Excel.Application", "EXCEL", True)
         Me.Workbooks = New ExcelWorkbooksCollection(Me)
     End Sub
 
@@ -144,6 +144,11 @@ Public Class ExcelApplication
     ''' <returns>The value returned by Excel.</returns>
     Public Function Run(workbookName As String, vbaMethod As String) As Object
         Return InvokeFunction(Of Object)("Run", New Object() {"'" & workbookName & "'!" & vbaMethod})
+    End Function
+
+    ''' <inheritdoc/>
+    Protected Overrides Function GetApplicationWindow() As IntPtr
+        Return New IntPtr(InvokePropertyGet(Of Integer)("Hwnd"))
     End Function
 
     Private AdditionalDisposeChildrenList As New List(Of ComObjectBase)
