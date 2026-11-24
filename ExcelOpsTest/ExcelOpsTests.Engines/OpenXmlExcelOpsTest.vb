@@ -287,7 +287,7 @@ Public Class OpenXmlExcelOpsTest
     End Function
 
     Private Shared ReadOnly ImageBytes As Byte() =
-        Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1ZkAAAAASUVORK5CYII=")
+        Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC")
 
     Private Shared Sub CreateTemplate(path As String)
         Using document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
