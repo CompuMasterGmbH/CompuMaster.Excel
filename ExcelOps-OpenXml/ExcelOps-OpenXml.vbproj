@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CompuMaster.Excel</RootNamespace>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Copyright>2005-2026 CompuMaster GmbH</Copyright>
+    <AssemblyName>CompuMaster.Excel.OpenXml</AssemblyName>
+    <PackageId>CompuMaster.Excel.OpenXml</PackageId>
+    <Authors>CompuMaster GmbH</Authors>
+    <Description>Edits XLSX templates with the Open XML SDK through the ExcelOps API.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>logo_64x64.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel/</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OptionStrict>On</OptionStrict>
+    <RepositoryUrl>https://github.com/CompuMasterGmbH/CompuMaster.Excel.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+    <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="..\logo_64x64.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

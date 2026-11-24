@@ -1,0 +1,361 @@
+﻿Imports System.IO
+Imports System.IO.Compression
+Imports System.Security.Cryptography
+Imports CompuMaster.Excel.ExcelOps
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
+Imports DocumentFormat.OpenXml
+Imports DocumentFormat.OpenXml.Packaging
+Imports DocumentFormat.OpenXml.Spreadsheet
+Imports DocumentFormat.OpenXml.Validation
+Imports NUnit.Framework
+Imports Spreadsheet = DocumentFormat.OpenXml.Spreadsheet
+Imports Drawing = DocumentFormat.OpenXml.Drawing
+Imports SpreadsheetDrawing = DocumentFormat.OpenXml.Drawing.Spreadsheet
+
+<TestFixture>
+Public Class OpenXmlExcelOpsTest
+
+    Private _directory As String
+
+    <SetUp>
+    Public Sub CreateTestDirectory()
+        _directory = Path.Combine(Path.GetTempPath(), "ExcelOps-OpenXml-" & Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory(_directory)
+    End Sub
+
+    <TearDown>
+    Public Sub RemoveTestDirectory()
+        If Directory.Exists(_directory) Then Directory.Delete(_directory, recursive:=True)
+    End Sub
+
+    ' Compare the actual package parts, including both links in the worksheet-to-image chain.
+    <Test>
+    Public Sub SaveCopyPreservesTemplatePartsAndSource()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "edited.xlsx")
+        CreateTemplate(template)
+        Dim originalHash = HashFile(template)
+        Dim text = "  =example _x0041_ " & ChrW(1) & vbCrLf & " text  "
+        Using engine As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Dim workbook As ExcelDataOperationsBase = engine
+            Assert.That(workbook.SheetNames(), [Is].EqualTo({"Inputs", "Notes", "Hidden"}))
+            Assert.That(workbook.IsProtectedSheet("Inputs"), [Is].True)
+            Assert.That(workbook.IsHiddenSheet("Hidden"), [Is].True)
+            Assert.That(workbook.LookupCellValue(Of String)("inputs", 0, 0), [Is].EqualTo("Template text"))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+            Assert.That(workbook.LookupCellIsLocked("Inputs", 0, 0), [Is].False)
+            Assert.That(workbook.LookupCellIsLocked("Inputs", 0, 2), [Is].True)
+
+            workbook.WriteCellValue("Inputs", 0, 0, text)
+            workbook.WriteCellValue("Inputs", 0, 1, 12.5D)
+            workbook.WriteCellValue(New ExcelCell("Inputs", "AA1", ExcelCell.ValueTypes.All), True)
+            workbook.WriteCellValue("Inputs", 3, 2, 7)
+            workbook.WriteCellValue(Of Object)("Inputs", 3, 2, Nothing)
+            workbook.ProtectSheet("Inputs", ProtectionLevel.StandardWithInsertDeleteRows)
+            workbook.UnhideSheet("Hidden")
+            workbook.HideSheet("Notes", stronglyHide:=True)
+            engine.RequestRecalculationOnOpen()
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+            Assert.That(workbook.FilePath, [Is].EqualTo(template))
+            Assert.That(workbook.ReadOnly, [Is].True)
+        End Using
+
+        Assert.That(HashFile(template), [Is].EqualTo(originalHash))
+        Using before As New ZipArchive(File.OpenRead(template), ZipArchiveMode.Read),
+              after As New ZipArchive(File.OpenRead(output), ZipArchiveMode.Read)
+            Assert.That(after.Entries.Select(Function(entry) entry.FullName),
+                        [Is].EquivalentTo(before.Entries.Select(Function(entry) entry.FullName)))
+            For Each entry In before.Entries
+                If entry.FullName = "xl/workbook.xml" OrElse entry.FullName = "xl/worksheets/sheet1.xml" Then Continue For
+                Assert.That(ReadBytes(after.GetEntry(entry.FullName).Open()), [Is].EqualTo(ReadBytes(entry.Open())), entry.FullName)
+            Next
+        End Using
+
+        Using before = SpreadsheetDocument.Open(template, False), after = SpreadsheetDocument.Open(output, False)
+            Dim originalWorkbook = before.WorkbookPart.Workbook
+            Dim workbook = after.WorkbookPart.Workbook
+            Assert.That(workbook.DefinedNames.OuterXml, [Is].EqualTo(originalWorkbook.DefinedNames.OuterXml))
+            Assert.That(workbook.BookViews.OuterXml, [Is].EqualTo(originalWorkbook.BookViews.OuterXml))
+            Assert.That(workbook.Sheets.Elements(Of Sheet)().Select(Function(sheet) sheet.State?.Value),
+                        [Is].EqualTo(New SheetStateValues?() {Nothing, SheetStateValues.VeryHidden, SheetStateValues.Visible}))
+            Assert.That(workbook.CalculationProperties.CalculationMode.Value, [Is].EqualTo(CalculateModeValues.Auto))
+            Assert.That(workbook.CalculationProperties.FullCalculationOnLoad.Value, [Is].True)
+            Dim part = DirectCast(after.WorkbookPart.GetPartById("rId1"), WorksheetPart)
+            Dim originalPart = DirectCast(before.WorkbookPart.GetPartById("rId1"), WorksheetPart)
+            Assert.That(part.Worksheet.SheetViews.OuterXml, [Is].EqualTo(originalPart.Worksheet.SheetViews.OuterXml))
+            Assert.That(part.Worksheet.GetFirstChild(Of PageMargins)().OuterXml,
+                        [Is].EqualTo(originalPart.Worksheet.GetFirstChild(Of PageMargins)().OuterXml))
+            Assert.That(part.Worksheet.SheetDimension.Reference.Value, [Is].EqualTo("A1:AA4"))
+            Dim protection = part.Worksheet.GetFirstChild(Of SheetProtection)()
+            Assert.That(protection.Sheet.Value, [Is].True)
+            Assert.That(protection.InsertRows.Value, [Is].False)
+            Assert.That(protection.DeleteRows.Value, [Is].False)
+            Dim cells = part.Worksheet.GetFirstChild(Of SheetData)().GetFirstChild(Of Row)().Elements(Of Cell)().ToArray()
+            Assert.That(cells.Select(Function(cell) cell.CellReference.Value), [Is].EqualTo({"A1", "B1", "C1", "AA1"}))
+            Assert.That(cells(0).StyleIndex.Value, [Is].EqualTo(1UI))
+            Assert.That(cells(2).CellFormula.Text, [Is].EqualTo("B1*2"))
+            Assert.That(cells(2).CellValue.Text, [Is].EqualTo("4"))
+            Dim drawingId = part.Worksheet.GetFirstChild(Of Spreadsheet.Drawing)().Id.Value
+            Dim drawings = DirectCast(part.GetPartById(drawingId), DrawingsPart)
+            Dim imageId = drawings.WorksheetDrawing.Descendants(Of Drawing.Blip)().Single().Embed.Value
+            Assert.That(ReadBytes(drawings.GetPartById(imageId).GetStream()), [Is].EqualTo(ImageBytes))
+            Dim errors = New OpenXmlValidator().Validate(after).Select(Function(errorItem) errorItem.Description).ToArray()
+            Assert.That(errors, [Is].Empty)
+        End Using
+
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(workbook.LookupCellValue(Of String)("Inputs", 0, 0), [Is].EqualTo(text))
+            Assert.That(workbook.TryLookupCellValue(Of Decimal)("Inputs", 0, 1), [Is].EqualTo(12.5D))
+            Assert.That(workbook.LookupCellValue(Of Boolean)("Inputs", 0, 26), [Is].True)
+            Assert.That(workbook.IsEmptyCell("Inputs", 3, 2), [Is].True)
+            Assert.That(workbook.TryLookupCellValue(Of Integer)("Inputs", 4, 3), [Is].Null)
+        End Using
+    End Sub
+
+    ' Cached results are independently configurable for each copy of the same open workbook.
+    <Test>
+    Public Sub CacheResetOnlyChangesTheSavedCopy()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim clean = Path.Combine(_directory, "clean.xlsx")
+        Dim reset = Path.Combine(_directory, "reset.xlsx")
+        Dim preserved = Path.Combine(_directory, "preserved.xlsx")
+        CreateTemplate(template)
+        Using stream = File.OpenRead(template)
+            Using workbook As New OpenXmlExcelDataOperations(stream, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+                Assert.That(workbook.AutoCalculationEnabledWorkbookSetting, [Is].False)
+                workbook.SaveCopyAs(clean, SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired)
+                Assert.That(HashFile(clean), [Is].EqualTo(HashFile(template)))
+                workbook.WriteCellValue("Inputs", 0, 1, 11)
+                workbook.SaveCopyAs(reset, SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired)
+                Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+                workbook.SaveCopyAs(preserved, SaveOptionsForDisabledCalculationEngines.NoReset)
+            End Using
+            Assert.That(stream.CanRead, [Is].True)
+        End Using
+
+        Using workbook As New OpenXmlExcelDataOperations(File.ReadAllBytes(reset), New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(workbook.LookupCellFormula("Inputs", 0, 2), [Is].EqualTo("B1*2"))
+            Assert.Throws(Of MissingCalculatedCellValueException)(Sub() workbook.LookupCellValueAsObject("Inputs", 0, 2))
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(preserved, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+        End Using
+        Using document = SpreadsheetDocument.Open(reset, False)
+            Assert.That(document.WorkbookPart.CalculationChainPart, [Is].Null)
+            Assert.That(document.WorkbookPart.Workbook.CalculationProperties.FullCalculationOnLoad.Value, [Is].True)
+        End Using
+        Using document = SpreadsheetDocument.Open(preserved, False)
+            Assert.That(document.WorkbookPart.CalculationChainPart, [Is].Not.Null)
+        End Using
+    End Sub
+
+    ' In-place Save uses the tracked file, and opening a relative alias in read-only mode protects it.
+    <Test>
+    Public Sub SaveModesFollowFileOptions()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim destination = Path.Combine(_directory, "destination.xlsx")
+        CreateTemplate(template)
+        Dim originalHash = HashFile(template)
+
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.Throws(Of FileReadOnlyException)(Sub() workbook.Save())
+            Assert.Throws(Of FileReadOnlyException)(
+                Sub() workbook.SaveCopyAs(Path.Combine(_directory, ".", "template.xlsx"), SaveOptionsForDisabledCalculationEngines.NoReset))
+            workbook.SaveAs(destination, SaveOptionsForDisabledCalculationEngines.DefaultBehaviour)
+            Assert.That(workbook.ReadOnly, [Is].False)
+            Assert.That(workbook.FilePath, [Is].EqualTo(destination))
+            workbook.WriteCellValue("Inputs", 0, 0, 42)
+            workbook.Save()
+            workbook.ReloadFromFile()
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 0), [Is].EqualTo(42))
+        End Using
+        Assert.That(HashFile(template), [Is].EqualTo(originalHash))
+    End Sub
+
+    <Test>
+    Public Sub RejectsUnsupportedOperationsBeforeEditing()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        CreateTemplate(template)
+        Assert.Throws(Of FeatureDisabledException)(Sub() OpenWithOptions(template, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}))
+        Assert.Throws(Of FeatureDisabledException)(Sub() OpenWithOptions(template, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = False}))
+        Assert.Throws(Of NotSupportedException)(Sub() OpenWithOptions(template, New ExcelDataOperationsOptions("password")))
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.Throws(Of FeatureDisabledException)(Sub() workbook.RecalculateAll())
+            Assert.Throws(Of FeatureDisabledException)(Sub() workbook.RecalculateSheet("Inputs"))
+            Assert.Throws(Of FeatureDisabledException)(Sub() workbook.RecalculateCell("Inputs", 0, 2))
+            Assert.Throws(Of FeatureDisabledException)(Sub() workbook.WriteCellFormula("Inputs", 0, 2, "3*2", True))
+            Assert.Throws(Of FeatureDisabledException)(
+                Sub() workbook.SaveCopyAs(Path.Combine(_directory, "recalculated.xlsx"), True, SaveOptionsForDisabledCalculationEngines.NoReset))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.AddRow("Inputs", 0, 1, True))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.RemoveRows("Inputs", 0, 1, False))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.ProtectSheet("Inputs", ProtectionLevel.SelectAndEditAllCellsButNoFurtherEditing))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.WriteCellValue("Inputs", 0, 2, New Object()))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.WriteCellValue("Inputs", 0, 2, Double.NaN))
+            Assert.That(workbook.LookupCellFormula("Inputs", 0, 2), [Is].EqualTo("B1*2"))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+        End Using
+        Dim ex = Assert.Throws(Of FileCorruptedOrInvalidFileFormatException)(
+            Sub()
+                Using workbook As New OpenXmlExcelDataOperations(New Byte() {1, 2, 3}, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+                End Using
+            End Sub)
+        Assert.That(ex.InnerException, [Is].Not.Null)
+    End Sub
+
+    <Test>
+    Public Sub WritesFormulaAndSwitchesActiveTabWhenHidingIt()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "edited.xlsx")
+        CreateTemplate(template)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableAutoCalculationInWorkbook = False}
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.AutoCalculationEnabledWorkbookSetting, [Is].True)
+            workbook.HideSheet("Inputs", stronglyHide:=False)
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Notes"))
+            Assert.Throws(Of InvalidOperationException)(Sub() workbook.HideSheet("Notes"))
+            workbook.UnprotectSheet("Inputs")
+            Assert.That(workbook.IsProtectedSheet("Inputs"), [Is].False)
+            workbook.WriteCellFormula("Inputs", 0, 2, "=B1*3", False)
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim part = document.WorkbookPart
+            Assert.That(part.Workbook.CalculationProperties.CalculationMode.Value, [Is].EqualTo(CalculateModeValues.Auto))
+            Assert.That(part.Workbook.BookViews.GetFirstChild(Of WorkbookView)().ActiveTab.Value, [Is].EqualTo(1UI))
+            Assert.That(part.Workbook.Sheets.GetFirstChild(Of Sheet)().State.Value, [Is].EqualTo(SheetStateValues.Hidden))
+            Assert.That(part.CalculationChainPart, [Is].Null)
+            Assert.That(DirectCast(part.GetPartById("rId1"), WorksheetPart).Worksheet.Descendants(Of CellFormula)().Single().Text,
+                        [Is].EqualTo("B1*3"))
+        End Using
+    End Sub
+
+    ' A non-anchor cell in an array formula is still part of that formula's range.
+    <Test>
+    Public Sub RejectsEditsInsideArrayFormulaRange()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "edited.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            Dim sheet = DirectCast(document.WorkbookPart.GetPartById("rId1"), WorksheetPart).Worksheet
+            Dim row = sheet.GetFirstChild(Of SheetData)().GetFirstChild(Of Row)()
+            Dim formula = row.Elements(Of Cell)().Last().CellFormula
+            formula.FormulaType = CellFormulaValues.Array
+            formula.Reference = "C1:D1"
+            row.Append(New Cell With {.CellReference = "D1", .CellValue = New CellValue("4")})
+            sheet.SheetDimension.Reference = "A1:D1"
+        End Using
+        Dim originalHash = HashFile(template)
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.WriteCellValue("Inputs", 0, 2, 12))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.WriteCellValue("Inputs", 0, 3, 12))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(originalHash))
+    End Sub
+
+    <Test>
+    Public Sub CreatesWorkbookThroughExcelOps()
+        Dim path = IO.Path.Combine(_directory, "new.xlsx")
+        Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)
+        Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.CreateFile, options)
+            Assert.That(workbook.SheetNames(), [Is].EqualTo({"Sheet1"}))
+            workbook.WriteCellValue("Sheet1", 0, 0, "new")
+            workbook.Save()
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options:=New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 0), [Is].EqualTo("new"))
+        End Using
+    End Sub
+
+    Private Shared Sub OpenWithOptions(path As String, options As ExcelDataOperationsOptions)
+        Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
+        End Using
+    End Sub
+
+    Private Shared Function ReadBytes(stream As Stream) As Byte()
+        Using input = stream, result As New MemoryStream()
+            input.CopyTo(result)
+            Return result.ToArray()
+        End Using
+    End Function
+
+    Private Shared Function HashFile(path As String) As Byte()
+        Using sha = SHA256.Create(), stream = File.OpenRead(path)
+            Return sha.ComputeHash(stream)
+        End Using
+    End Function
+
+    Private Shared ReadOnly ImageBytes As Byte() =
+        Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC")
+
+    Private Shared Sub CreateTemplate(path As String)
+        Using document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
+            Dim part = document.AddWorkbookPart()
+            Dim inputs = part.AddNewPart(Of WorksheetPart)("rId1")
+            Dim notes = part.AddNewPart(Of WorksheetPart)("rId2")
+            Dim hidden = part.AddNewPart(Of WorksheetPart)("rId3")
+            part.Workbook = New Workbook(
+                New BookViews(New WorkbookView With {.ActiveTab = 0UI}),
+                New Sheets(
+                    New Sheet With {.Id = "rId1", .Name = "Inputs", .SheetId = 1UI},
+                    New Sheet With {.Id = "rId2", .Name = "Notes", .SheetId = 2UI},
+                    New Sheet With {.Id = "rId3", .Name = "Hidden", .SheetId = 3UI, .State = SheetStateValues.Hidden}),
+                New DefinedNames(New DefinedName("'Inputs'!$A$1") With {.Name = "InputLabel"}),
+                New CalculationProperties With {.CalculationMode = CalculateModeValues.Manual, .CalculationId = 191029UI})
+
+            Dim style = part.AddNewPart(Of WorkbookStylesPart)()
+            style.Stylesheet = New Stylesheet(
+                New Fonts(New Font()),
+                New Fills(New Fill(New PatternFill With {.PatternType = PatternValues.None}),
+                          New Fill(New PatternFill With {.PatternType = PatternValues.Gray125})),
+                New Borders(New Border()),
+                New CellStyleFormats(New CellFormat()),
+                New CellFormats(
+                    New CellFormat With {.FormatId = 0UI},
+                    New CellFormat(New Protection With {.Locked = False}) With {.FormatId = 0UI, .ApplyProtection = True}),
+                New CellStyles(New CellStyle With {.Name = "Normal", .FormatId = 0UI, .BuiltinId = 0UI}))
+            Dim strings = part.AddNewPart(Of SharedStringTablePart)()
+            strings.SharedStringTable = New SharedStringTable(New SharedStringItem(New Spreadsheet.Text("Template text")))
+            Dim chain = part.AddNewPart(Of CalculationChainPart)()
+            chain.CalculationChain = New CalculationChain(New CalculationCell With {.CellReference = "C1", .SheetId = 1})
+
+            inputs.Worksheet = New Worksheet(
+                New SheetDimension With {.Reference = "A1:C1"},
+                New SheetViews(New SheetView With {.WorkbookViewId = 0UI, .TabSelected = True, .ShowGridLines = False}),
+                New SheetData(New Row(
+                    New Cell With {.CellReference = "A1", .StyleIndex = 1UI, .DataType = CellValues.SharedString, .CellValue = New CellValue("0")},
+                    New Cell With {.CellReference = "B1", .CellValue = New CellValue("2")},
+                    New Cell With {.CellReference = "C1", .CellFormula = New CellFormula("B1*2"), .CellValue = New CellValue("4")}
+                ) With {.RowIndex = 1UI}),
+                New SheetProtection With {.Sheet = True},
+                New PageMargins With {.Left = 0.7, .Right = 0.7, .Top = 0.75, .Bottom = 0.75, .Header = 0.3, .Footer = 0.3})
+            notes.Worksheet = New Worksheet(New SheetViews(New SheetView With {.WorkbookViewId = 0UI}), New SheetData())
+            hidden.Worksheet = New Worksheet(New SheetData(), New SheetProtection With {.Sheet = True})
+            AddImage(inputs)
+        End Using
+    End Sub
+
+    Private Shared Sub AddImage(part As WorksheetPart)
+        Dim drawings = part.AddNewPart(Of DrawingsPart)("rIdDrawing")
+        Dim image = drawings.AddImagePart(ImagePartType.Png, "rIdImage")
+        Using input As New MemoryStream(ImageBytes, writable:=False)
+            image.FeedData(input)
+        End Using
+        Dim picture As New SpreadsheetDrawing.Picture(
+            New SpreadsheetDrawing.NonVisualPictureProperties(
+                New SpreadsheetDrawing.NonVisualDrawingProperties With {.Id = 1UI, .Name = "Synthetic image"},
+                New SpreadsheetDrawing.NonVisualPictureDrawingProperties()),
+            New SpreadsheetDrawing.BlipFill(New Drawing.Blip With {.Embed = "rIdImage"}, New Drawing.Stretch(New Drawing.FillRectangle())),
+            New SpreadsheetDrawing.ShapeProperties(
+                New Drawing.Transform2D(New Drawing.Offset With {.X = 0L, .Y = 0L}, New Drawing.Extents With {.Cx = 9525L, .Cy = 9525L}),
+                New Drawing.PresetGeometry(New Drawing.AdjustValueList()) With {.Preset = Drawing.ShapeTypeValues.Rectangle}))
+        drawings.WorksheetDrawing = New SpreadsheetDrawing.WorksheetDrawing(
+            New SpreadsheetDrawing.AbsoluteAnchor(
+                New SpreadsheetDrawing.Position With {.X = 0L, .Y = 0L},
+                New SpreadsheetDrawing.Extent With {.Cx = 9525L, .Cy = 9525L},
+                picture, New SpreadsheetDrawing.ClientData()))
+        part.Worksheet.Append(New Spreadsheet.Drawing With {.Id = "rIdDrawing"})
+    End Sub
+
+End Class

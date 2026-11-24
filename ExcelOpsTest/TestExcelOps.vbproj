@@ -53,6 +53,7 @@
     <ProjectReference Include="..\ExcelOps-MicrosoftExcel\ExcelOps-MicrosoftExcel.vbproj" />
     <ProjectReference Include="..\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition\ExcelOps-Tools-MsAndEpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+    <ProjectReference Include="..\ExcelOps-OpenXml\ExcelOps-OpenXml.vbproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">

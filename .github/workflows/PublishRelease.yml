@@ -34,6 +34,7 @@ env:
   BUILD_PROJECT_09: CM.Data.EpplusFixCalcsEdition/CM.Data.EpplusFreeFixCalcsEdition.vbproj
   BUILD_PROJECT_10: CM.Data.EpplusPolyformEdition/CM.Data.EpplusPolyformEdition.vbproj
   BUILD_PROJECT_11: ExcelOps-SpireXls/ExcelOps-SpireXls.vbproj
+  BUILD_PROJECT_12: ExcelOps-OpenXml/ExcelOps-OpenXml.vbproj
   # Name of directory (e.g. "bin") containing the subdirectory (e.g. "CI_CD") with all output files (*.dll)
   BUILD_OUTPUT_BASEDIR_01: MsExcelComInterop/bin
   BUILD_OUTPUT_BASEDIR_02: Epplus-FixCalcsEdition/Epplus/bin
@@ -58,6 +59,7 @@ env:
   PROJECT_NAME_09: CM.Data.EpplusFixCalcsEdition
   PROJECT_NAME_10: CM.Data.EpplusPolyformEdition
   PROJECT_NAME_11: ExcelOps-SpireXls
+  PROJECT_NAME_12: ExcelOps-OpenXml
   # BinariesZipName of project artifacts
   ARTIFACTS_BIN_ZIP_01: bin-CM.MsExcelComInterop.zip
   ARTIFACTS_BIN_ZIP_02: bin-CM.Epplus4.zip
@@ -247,6 +249,9 @@ jobs:
 
             - name: Pack ${{env.PROJECT_NAME_11}}
               run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT_11}} --output .  
+
+            - name: Pack ${{env.PROJECT_NAME_12}}
+              run: dotnet pack --no-build --configuration=${{env.PACK_CONFIGURATION}} ${{env.BUILD_PROJECT_12}} --output .
 
             - name: Sign in to NuGet with Trusted Publishing
               id: nuget-login
