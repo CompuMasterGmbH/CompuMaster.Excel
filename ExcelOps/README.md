@@ -22,6 +22,9 @@ A common API for several libraries to access and edit Excel files
   * **CompuMaster.Excel.FreeSpireXls**
     * Use FreeSpire.Xls for solutions targetting .NET Framework 4.8 or .NET 6 or higher
 
+  * **CompuMaster.Excel.OpenXml**
+    * Use the Open XML SDK to edit and save copies of XLSX templates on Windows and Linux. See the [engine guide](https://github.com/CompuMasterGmbH/CompuMaster.Excel/tree/main/ExcelOps-OpenXml) for supported operations and a sample.
+
 ### Quick & dirty engine comparison / why you shouldn't use MS Excel for all situations
 
 In following a simplified comparison without any warranties. Subjects might change over time, too. Please contact the responsible manufacturerer especially for licensing issues.
@@ -33,6 +36,7 @@ In following a simplified comparison without any warranties. Subjects might chan
 | Epplus 4 | + Speed | - no export of chart images<br/>- some (seldom-used) calculation functions not implemented<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup>, but workaround AVAILABLE (in this project's fork)<br/>- limited VBA/macro support | * LGPL<br/>* "free license"<br/>* no manufacturer support (end of life) | www.github.com/JanKallman/EPPlus |
 | Spire.Xls | + Speed<br/>+ Charts export (windows platform only) | - calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * commercial licensing available | www.e-iceblue.com |
 | FreeSpire.Xls | + Speed<br/>+ Charts export (windows platform only) | - Limitations by manufacturer due to free edition<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * "free license"<br/>* no official support by manufacturer | www.e-iceblue.com |
+| Open XML SDK | + Headless XLSX editing on Windows and Linux<br/>+ Preserves embedded images and untouched package parts | - No formula evaluation or structural edits<br/>- Unencrypted XLSX only | MIT license | [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) |
 
 PLEASE NOTE:
 

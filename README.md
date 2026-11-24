@@ -22,6 +22,9 @@ A bunch of libraries to access and edit Excel files with common interface for se
   * **CompuMaster.Excel.FreeSpireXls**
     * Use FreeSpire.Xls for solutions targetting .NET Framework 4.8 or .NET 6 or higher
 
+  * **CompuMaster.Excel.OpenXml**
+    * Use the Open XML SDK to edit and save copies of XLSX templates on Windows and Linux. See the [engine guide](ExcelOps-OpenXml/README.md) for supported operations and a sample.
+
 ### Quick & dirty engine comparison / why you shouldn't use MS Excel for all situations
 
 In following a simplified comparison without any warranties. Subjects might change over time, too. Please contact the responsible manufacturerer especially for licensing issues.
@@ -34,6 +37,7 @@ In following a simplified comparison without any warranties. Subjects might chan
 | CompuMaster.EPPlus4 / Free FixCalcs | + Speed<br/>+ calculation-cache workaround <sup>2)</sup> | - inherits many EPPlus 4 feature and platform limitations | * LGPL; maintained fork of an end-of-life codebase<br/>* Configurable ZIP, XML, and encrypted-input limits mitigate resource-exhaustion but do not make arbitrary hostile XLSX files safe to parse. Prefer a supported reader or isolate processing of externally supplied files; see the [FixCalcs security guidance](CM.Data.EpplusFixCalcsEdition/README.md#security-and-untrusted-workbooks). | www.github.com/CompuMasterGmbH/CompuMaster.Excel |
 | Spire.Xls | + Speed<br/>+ Charts export (windows platform only) | - calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * commercial licensing available | www.e-iceblue.com |
 | FreeSpire.Xls | + Speed<br/>+ Charts export (windows platform only) | - Limitations by manufacturer due to free edition<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * "free license"<br/>* no official support by manufacturer | www.e-iceblue.com |
+| Open XML SDK | + Headless XLSX editing on Windows and Linux<br/>+ Preserves embedded images and untouched package parts | - No formula evaluation or structural edits<br/>- Unencrypted XLSX only | MIT license | [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) |
 
 PLEASE NOTE:
 
@@ -276,3 +280,4 @@ The following table summarizes the expected behavior when opening static test wo
 | EPPlus Polyform | Supported | `FilePasswordProtectedMismatchException` | Supported | `BinaryXlsFileNotSupportedException` | `BinaryXlsFileNotSupportedException` | `BinaryXlsFileNotSupportedException` | `BinaryXlsbFileNotSupportedException` | `FilePasswordProtectedMismatchException` | `BinaryXlsbFileNotSupportedException` |
 | Spire.Xls | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported |
 | FreeSpire.Xls | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported | Supported | `FilePasswordProtectedMismatchException` | Supported |
+| Open XML SDK | Supported | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported |

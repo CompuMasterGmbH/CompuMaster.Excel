@@ -8,6 +8,7 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
 $sourceRoots = @(
     "ExcelOps",
+    "ExcelOps-OpenXml",
     "ExcelOps-EpplusFreeFixCalcsEdition",
     "ExcelOps-EpplusPolyform",
     "ExcelOps-FreeSpireXls",
