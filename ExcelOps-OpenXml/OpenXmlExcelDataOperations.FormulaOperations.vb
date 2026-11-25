@@ -103,6 +103,10 @@ Namespace ExcelOps
                         Return EvaluateTextTransform(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
                         Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "MEDIAN", "SMALL", "LARGE", "RANK", "RANK.EQ", "_XLFN.RANK.EQ", "RANK.AVG", "_XLFN.RANK.AVG",
+                         "PERCENTILE", "PERCENTILE.INC", "_XLFN.PERCENTILE.INC", "PERCENTILE.EXC", "_XLFN.PERCENTILE.EXC",
+                         "QUARTILE", "QUARTILE.INC", "_XLFN.QUARTILE.INC", "QUARTILE.EXC", "_XLFN.QUARTILE.EXC"
+                        Return EvaluateOrderStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ISERR", "ISNONTEXT", "ISEVEN", "ISODD", "N", "T", "TYPE", "ERROR.TYPE"
                         Return EvaluateInformationFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "IFS", "_XLFN.IFS", "SWITCH", "_XLFN.SWITCH"

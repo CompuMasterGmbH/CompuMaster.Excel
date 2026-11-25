@@ -35,6 +35,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceLogical1900.xlsx", "Logical arrays", 13)>
     <TestCase("FormulaReferenceInformation1900.xlsx", "Information functions", 241)>
     <TestCase("FormulaReferenceInformation1900.xlsx", "Information arrays", 40)>
+    <TestCase("FormulaReferenceStatistics1900.xlsx", "Order statistics", 388)>
+    <TestCase("FormulaReferenceStatistics1900.xlsx", "Statistical arrays", 27)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -110,6 +112,17 @@ Public Class FormulaConformanceFixtureTest
             "G62", "E74", "D75", "E75", "E92", "F92", "G92", "E104", "D105", "E105", "E122",
             "F122", "G122", "E134", "D135", "E135", "E152", "F152", "G152", "E164", "D165", "E165",
             "E212", "F212", "G212", "D219", "D220", "D221", "E224", "D225", "E225", "D237")
+    End Sub
+
+    <Test>
+    Public Sub RecalculatesTheSpilledExcelOrderStatistics()
+        AssertSpilledFormulaResults("FormulaReferenceStatistics1900.xlsx", "Statistical arrays",
+            "E2", "F2", "D8", "D9", "D13", "D14", "E17", "F17", "D23", "D24",
+            "D28", "D29", "E32", "E37", "F37", "D43", "D44", "D48", "D49", "E52",
+            "E57", "F57", "D63", "D64", "D68", "D69", "E72", "E77", "F77", "D83",
+            "D84", "D88", "D89", "E92", "F92", "G92", "H92", "E97", "F97", "G97",
+            "H97", "E102", "F102", "G102", "H102", "E107", "F107", "G107", "H107", "E112",
+            "F112", "G112", "H112", "E117", "F117", "G117", "H117")
     End Sub
 
     Private Shared Sub AssertSpilledFormulaResults(fileName As String, sheetName As String, ParamArray addresses As String())

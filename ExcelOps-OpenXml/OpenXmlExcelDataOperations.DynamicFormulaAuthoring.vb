@@ -10,7 +10,7 @@ Namespace ExcelOps
 
         Private Shared ReadOnly DynamicArrayFormulaTokens As New Regex(
             """(?:[^""]|"""")*""|(?<![\p{L}\p{M}\p{Nd}_.$!\]])(?<anchor>(?:(?:'(?:[^']|'')+'|(?:\[[1-9][0-9]*\])?[\p{L}\p{M}\p{Nd}_.]+)!)?\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6})#(?![\p{L}\p{M}\p{Nd}_.?])|" &
-            "'(?:[^']|'')*'|(?<![\p{L}\p{M}\p{Nd}_.])(?<name>SEQUENCE|FILTER|SORT|SORTBY|UNIQUE|TAKE|DROP|CHOOSECOLS|CHOOSEROWS|HSTACK|VSTACK|XLOOKUP|XMATCH|CONCAT|TEXTJOIN|LET|MINIFS|MAXIFS|IFNA|REGEXTEST|REGEXEXTRACT|REGEXREPLACE|DAYS|ISOWEEKNUM|IFS|SWITCH|XOR)(?=\s*\()",
+            "'(?:[^']|'')*'|(?<![\p{L}\p{M}\p{Nd}_.])(?<name>SEQUENCE|FILTER|SORT|SORTBY|UNIQUE|TAKE|DROP|CHOOSECOLS|CHOOSEROWS|HSTACK|VSTACK|XLOOKUP|XMATCH|CONCAT|TEXTJOIN|LET|MINIFS|MAXIFS|IFNA|REGEXTEST|REGEXEXTRACT|REGEXREPLACE|DAYS|ISOWEEKNUM|IFS|SWITCH|XOR|RANK\.EQ|RANK\.AVG|PERCENTILE\.INC|PERCENTILE\.EXC|QUARTILE\.INC|QUARTILE\.EXC)(?=\s*\()",
             RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
         ''' <summary>Writes a formula that can return a dynamic array to the worksheet.</summary>
