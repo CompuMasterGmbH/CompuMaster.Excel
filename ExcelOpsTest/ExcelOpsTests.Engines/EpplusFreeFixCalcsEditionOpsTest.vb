@@ -22,6 +22,25 @@ Namespace ExcelOpsTests.Engines
             ClassicAssert.Throws(Of NotSupportedException)(Sub() MyBase.CopySheetContent())
         End Sub
 
+        ' The older engine can write malformed worksheets after editing a prefixed workbook.
+        <Test>
+        Public Sub StructuralChanges_DefaultGuardsPrefixedSpreadsheetML()
+            Dim source = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+            Try
+                DatabaseReferenceCoverage.CreateFixture(source, includeCachedResults:=True)
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Try
+                    Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() workbook.AddRow("Records", 4, 1, True))
+                    Assert.That(failure.Message, Does.Contain("prefixed SpreadsheetML namespace"))
+                Finally
+                    workbook.Close()
+                End Try
+            Finally
+                IO.File.Delete(source)
+            End Try
+        End Sub
+
         Protected Overrides Function _CreateInstance(data() As Byte, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.EpplusFreeExcelDataOperations
             'disableCalculationEngine not required since always disabled calc-module by engine
             Return New ExcelOps.EpplusFreeExcelDataOperations(data, options)

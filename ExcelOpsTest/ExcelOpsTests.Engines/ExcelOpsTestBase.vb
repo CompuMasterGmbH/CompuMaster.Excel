@@ -1059,10 +1059,180 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        ' Records each engine's behavior with local and external references in the same formulas.
+        <Test>
+        Public Sub WorkbookReferences_EditTargetMatchesExcel()
+            Dim directory = IO.Path.Combine(IO.Path.GetTempPath(), "ExcelOps-WorkbookLinks-" & Guid.NewGuid().ToString("N"))
+            IO.Directory.CreateDirectory(directory)
+            Try
+                WorkbookReferenceCoverage.CopyPair(directory)
+                Dim source = IO.Path.Combine(directory, WorkbookReferenceCoverage.TargetName)
+                CompareStructuralWorkbookWithExcel(source, "Edit the destination of workbook links",
+                    Function(workbook, output)
+                        ' Save in the same directory so the relative link keeps the same meaning.
+                        Dim destination = IO.Path.Combine(directory, IO.Path.GetFileName(output))
+                        Try
+                            WorkbookReferenceCoverage.EditTarget(workbook)
+                            workbook.SaveCopyAs(destination, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                            workbook.Close()
+                            Return WorkbookReferenceCoverage.CompareEditedTargetWithExcel(destination)
+                        Catch ex As NotSupportedException
+                            Return New List(Of String) From {ex.Message}
+                        End Try
+                    End Function)
+            Finally
+                IO.Directory.Delete(directory, True)
+            End Try
+        End Sub
+
+        ' Both Spire adapters rewrite external addresses as if they were on the edited sheet.
+        <Test>
+        Public Sub WorkbookReferences_DefaultProtectsExternalAddresses()
+            Dim directory = IO.Path.Combine(IO.Path.GetTempPath(), "ExcelOps-WorkbookLinks-" & Guid.NewGuid().ToString("N"))
+            IO.Directory.CreateDirectory(directory)
+            Try
+                WorkbookReferenceCoverage.CopyPair(directory)
+                Dim source = IO.Path.Combine(directory, WorkbookReferenceCoverage.TargetName)
+                Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile,
+                                                 New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+                Try
+                    If workbook.EngineName.EndsWith("Spire.Xls", StringComparison.Ordinal) Then
+                        Dim before = workbook.LookupCellFormula(WorkbookReferenceCoverage.ChecksSheet, 0, 0)
+                        Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() WorkbookReferenceCoverage.EditTarget(workbook))
+                        Assert.That(failure.Message, Does.Contain("external workbook"))
+                        Assert.That(failure.Message, Does.Contain(NameOf(ExcelDataOperationsOptions.AllowKnownStructuralReferenceDifferences)))
+                        Assert.That(workbook.LookupCellFormula(WorkbookReferenceCoverage.ChecksSheet, 0, 0), [Is].EqualTo(before))
+                    Else
+                        Assert.DoesNotThrow(Sub() WorkbookReferenceCoverage.EditTarget(workbook))
+                    End If
+                Finally
+                    workbook.Close()
+                End Try
+            Finally
+                IO.Directory.Delete(directory, True)
+            End Try
+        End Sub
+
+        ' Exercises the guards independently of the comparison suite's explicit opt-in.
+        <TestCase("Data", 1)>
+        <TestCase("Data", 2)>
+        <TestCase("Data", 3)>
+        <TestCase("Data", 4)>
+        <TestCase("Data", 6)>
+        <TestCase("Data", 7)>
+        <TestCase("PlainTable", 3)>
+        <TestCase("PlainTable", 4)>
+        <TestCase("PlainTable", 6)>
+        <TestCase("O'Brien Merge", 3)>
+        <TestCase("O'Brien Merge", 5)>
+        Public Sub StructuralChanges_DefaultGuardsKnownRowInsertionDifferences(sheetName As String, row As Integer)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+            Try
+                Dim mustReject As Boolean
+                Select Case workbook.EngineName
+                    Case "Epplus 4 (LGPL)"
+                        mustReject = True
+                    Case "Epplus (Polyform license edition)"
+                        mustReject = (sheetName = "Data" AndAlso row <= 6) OrElse row = 3
+                    Case "Spire.Xls", "FreeSpire.Xls"
+                        mustReject = (sheetName = "Data" AndAlso row <= 6) OrElse sheetName = "PlainTable"
+                End Select
+                If mustReject Then
+                    Dim before = workbook.LookupCellFormula("Checks", 1, 0)
+                    Dim valueBefore = workbook.LookupCellValueAsObject(sheetName, row, 2, FormulaCalculationMode.EngineDefault)
+                    options.AllowKnownStructuralReferenceDifferences = True
+                    Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() workbook.AddRow(sheetName, row, 1, True))
+                    Assert.That(failure.Message, Does.Contain(NameOf(options.AllowKnownStructuralReferenceDifferences)))
+                    If sheetName = "Data" AndAlso row = 4 AndAlso workbook.EngineName <> "Epplus 4 (LGPL)" Then
+                        Assert.That(failure.Message, Does.Contain("name"))
+                    End If
+                    Assert.That(workbook.LookupCellFormula("Checks", 1, 0), [Is].EqualTo(before))
+                    Assert.That(workbook.LookupCellValueAsObject(sheetName, row, 2, FormulaCalculationMode.EngineDefault), [Is].EqualTo(valueBefore))
+                Else
+                    Assert.DoesNotThrow(Sub() workbook.AddRow(sheetName, row, 1, True))
+                End If
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        <TestCase(0)>
+        <TestCase(2)>
+        <TestCase(4)>
+        Public Sub StructuralChanges_DefaultGuardsKnownMergedRangeColumnDifferences(column As Integer)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+            Try
+                Dim insert As TestDelegate = Sub() workbook.AddColumn("O'Brien Merge", column, 1, True)
+                If workbook.EngineName = "Epplus 4 (LGPL)" OrElse (column < 4 AndAlso Not TypeOf workbook Is MsExcelDataOperations) Then
+                    Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(insert)
+                    Assert.That(failure.Message, Does.Contain("apostrophe").Or.Contain("merged range"))
+                Else
+                    Assert.DoesNotThrow(insert)
+                End If
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        ' A caller can explicitly allow the edit while keeping the engine's formula-update mode.
+        <Test>
+        Public Sub StructuralChanges_OptInRunsKnownIncompatibleEdit()
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+                .AllowKnownStructuralReferenceDifferences = True
+            }
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+            Try
+                Dim before = workbook.LookupCellValue(Of Integer)("Data", 4, 2, FormulaCalculationMode.EngineDefault)
+                Assert.That(before, [Is].Not.Zero)
+                workbook.AddRow("Data", 4, 1, True)
+                Assert.That(workbook.LookupCellValue(Of Integer)("Data", 5, 2, FormulaCalculationMode.EngineDefault), [Is].EqualTo(before))
+                If workbook.EngineName.StartsWith("Epplus", StringComparison.Ordinal) Then
+                    Assert.Throws(Of NotSupportedException)(
+                        Sub() workbook.AddCells("Data", 4, 1, 1, 3, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True))
+                    Assert.Throws(Of NotSupportedException)(
+                        Sub() workbook.RemoveCells("Data", 4, 1, 1, 3, ExcelDataOperationsBase.CellRemoveShiftDirection.ShiftCellsUp, True))
+                End If
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
+        ' A partial shift that cuts through a merge has different behavior in Spire and in Excel.
+        <Test>
+        Public Sub StructuralChanges_DefaultGuardsKnownPartialShiftDifferences()
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+            Try
+                Const sheet As String = "O'Brien Merge"
+                Dim insert As TestDelegate = Sub() workbook.AddCells(sheet, 3, 1, 1, 2, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
+                If workbook.EngineName.EndsWith("Spire.Xls", StringComparison.Ordinal) Then
+                    Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(insert)
+                    Assert.That(failure.Message, Does.Contain("divides a merged range"))
+                    Dim removal = Assert.Throws(Of StructuralReferenceCompatibilityException)(
+                        Sub() workbook.RemoveCells(sheet, 3, 1, 1, 2, ExcelDataOperationsBase.CellRemoveShiftDirection.ShiftCellsUp, True))
+                    Assert.That(removal.Message, Does.Contain("divides a merged range"))
+                ElseIf workbook.EngineName.StartsWith("Epplus", StringComparison.Ordinal) Then
+                    Assert.Throws(Of NotSupportedException)(insert)
+                Else
+                    Assert.DoesNotThrow(insert)
+                End If
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
         Private Sub CompareStructuralWorkbookWithExcel(source As String, scenario As String,
                                                        compare As Func(Of ExcelDataOperationsBase, String, List(Of String)))
             Dim output = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
-            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+                .AllowKnownStructuralReferenceDifferences = True
+            }
             Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
             Try
                 Dim differences = compare(workbook, output)
@@ -1086,9 +1256,12 @@ Namespace ExcelOpsTests.Engines
         ''' Verifies the API contract that engines must reject a requested formula/reference update mode they cannot provide instead of silently doing the opposite.
         ''' Current engines automatically update references for structural changes, so updateFormulasAndReferences=False must throw.
         ''' </summary>
-        <Test> Public Sub StructuralChanges_UnsupportedFormulaReferenceUpdateModeThrows()
+        <Test> Public Sub StructuralChanges_UnsupportedFormulaReferenceUpdateModeThrows(<Values(False, True)> allowDifferences As Boolean)
             Dim TestFile As String = TestEnvironment.FullPathOfExistingTestFile("test_data", "StructuralChangesFormulaReferences.xlsx")
-            Dim workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+                .AllowKnownStructuralReferenceDifferences = allowDifferences
+            }
+            Dim workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
             Try
                 ClassicAssert.Throws(Of NotSupportedException)(Sub() workbook.AddColumn("Data", 1, 1, False))
                 ClassicAssert.Throws(Of NotSupportedException)(Sub() workbook.AddRow("Data", 1, 1, False))

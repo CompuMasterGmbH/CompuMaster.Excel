@@ -5,7 +5,7 @@ Namespace ExcelOps
 
     Partial Public Class OpenXmlExcelDataOperations
 
-        Private Shared Function ExpandSharedFormulas(source As SheetData, sheetName As String, tableNames As HashSet(Of String)) As SheetData
+        Private Function ExpandSharedFormulas(source As SheetData, sheetName As String, tableNames As HashSet(Of String)) As SheetData
             If Not source.Descendants(Of CellFormula)().Any(Function(formula) If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Shared) Then Return source
             Dim data = DirectCast(source.CloneNode(True), SheetData)
             Dim groups As New Dictionary(Of UInteger, (First As ReferenceEndpoint, Last As ReferenceEndpoint, Formula As String))

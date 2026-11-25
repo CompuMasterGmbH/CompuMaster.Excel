@@ -1,4 +1,6 @@
-﻿Imports System.Globalization
+﻿Imports DocumentFormat.OpenXml.Packaging
+Imports DocumentFormat.OpenXml.Spreadsheet
+Imports System.Globalization
 Imports System.Text
 Imports System.Text.RegularExpressions
 
@@ -10,7 +12,7 @@ Namespace ExcelOps
         Private Const ColumnCount As Integer = 16384
 
         Private Shared ReadOnly FormulaString As New Regex("\G""(?:[^""]|"""")*""", RegexOptions.CultureInvariant)
-        Private Shared ReadOnly FormulaSheet As New Regex("\G(?<name>'(?:[^']|'')+'|[\p{L}\p{M}\p{Nd}_.]+)!", RegexOptions.CultureInvariant)
+        Private Shared ReadOnly FormulaSheet As New Regex("\G(?<name>'(?:[^']|'')+'|(?:\[[1-9][0-9]*\])?[\p{L}\p{M}\p{Nd}_.]+)!", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaName As New Regex("\G[\p{L}_\\][\p{L}\p{M}\p{Nd}_.\\?]*", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaNumber As New Regex("\G(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaError As New Regex("\G#(?:NULL!|DIV/0!|VALUE!|REF!|NAME\?|NUM!|N/A|GETTING_DATA|SPILL!|CALC!|FIELD!|BLOCKED!|UNKNOWN!|CONNECT!|BUSY!|PYTHON!)", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
@@ -110,10 +112,28 @@ Namespace ExcelOps
                 StartsRangeExpression(value, operandStart)
         End Function
 
-        Private Shared Function SheetNameFromToken(token As Match) As String
+        Private Shared Function SheetNameFromToken(book As WorkbookPart, token As Match, ByRef externalBook As Boolean) As String
             Dim name = token.Groups("name").Value
             If name(0) = "'"c Then name = name.Substring(1, name.Length - 2).Replace("''", "'")
-            If name.IndexOfAny(UnsupportedSheetQualifierCharacters) >= 0 Then Throw UnsupportedReferenceSyntax()
+            externalBook = name.StartsWith("[", StringComparison.Ordinal)
+            If externalBook Then
+                Dim bracket = name.IndexOf("]"c)
+                Dim index As Integer
+                Dim references = book.Workbook.ExternalReferences
+                If bracket < 2 OrElse bracket = name.Length - 1 OrElse
+                   Not Integer.TryParse(name.Substring(1, bracket - 1), NumberStyles.None, CultureInfo.InvariantCulture, index) OrElse
+                   index < 1 OrElse references Is Nothing OrElse index > references.ChildElements.Count Then
+                    Throw UnsupportedReferenceSyntax()
+                End If
+                Dim reference = TryCast(references.ChildElements(index - 1), ExternalReference)
+                Dim part As OpenXmlPart = Nothing
+                If reference?.Id Is Nothing OrElse Not book.TryGetPartById(reference.Id.Value, part) OrElse
+                   Not TypeOf part Is ExternalWorkbookPart OrElse name.IndexOfAny(UnsupportedSheetQualifierCharacters, bracket + 1) >= 0 Then
+                    Throw UnsupportedReferenceSyntax()
+                End If
+            ElseIf name.IndexOfAny(UnsupportedSheetQualifierCharacters) >= 0 Then
+                Throw UnsupportedReferenceSyntax()
+            End If
             Return name
         End Function
 
@@ -128,7 +148,7 @@ Namespace ExcelOps
         End Function
 
         Private Shared Function UnsupportedReferenceSyntax() As NotSupportedException
-            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. External references, 3-D references, spill references, references to unknown tables, and some compound ranges cannot be rewritten.")
+            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. Unsupported external references, 3-D references, spill references, references to unknown tables, and some compound ranges cannot be rewritten.")
         End Function
 
         Private Shared Function ReadTableSelector(value As String, start As Integer) As Integer
@@ -163,10 +183,12 @@ Namespace ExcelOps
         End Function
 
         ' Identify reference operands without interpreting functions or touching string literals.
-        Private Shared Function RewriteFormula(value As String, scopeSheet As String, editedSheet As String,
+        Private Function RewriteFormula(value As String, scopeSheet As String, editedSheet As String,
                                                shift As StructuralShift, renamedSheet As String, isDefinedName As Boolean,
                                                Optional tableNames As HashSet(Of String) = Nothing, Optional copyRowOffset As Integer = 0,
-                                               Optional copyColumnOffset As Integer = 0) As String
+                                               Optional copyColumnOffset As Integer = 0,
+                                        Optional rewriteSheetQualifier As Func(Of String, String, String) = Nothing,
+                                               Optional formulaWorkbook As WorkbookPart = Nothing) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
             Dim lastReferenceEnd = -1
@@ -178,7 +200,7 @@ Namespace ExcelOps
                     Continue While
                 End If
 
-                If value(index) = "["c Then
+                If value(index) = "["c AndAlso Not FormulaSheet.Match(value, index).Success Then
                     If tableNames Is Nothing OrElse tableNames.Count = 0 Then Throw UnsupportedReferenceSyntax()
                     Dim selectorEnd = ReadTableSelector(value, index)
                     If selectorEnd < value.Length AndAlso (value(selectorEnd) = "!"c OrElse FormulaSheet.Match(value, selectorEnd).Success) Then
@@ -199,11 +221,16 @@ Namespace ExcelOps
                 Dim tokenStart = index
                 Dim sheetToken = FormulaSheet.Match(value, index)
                 Dim explicitSheet As String = Nothing
+                Dim externalBook As Boolean
                 Dim qualifier As String = Nothing
                 If sheetToken.Success Then
-                    explicitSheet = SheetNameFromToken(sheetToken)
-                    qualifier = If(renamedSheet IsNot Nothing AndAlso String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase),
-                                   FormatSheetName(renamedSheet), sheetToken.Value)
+                    explicitSheet = SheetNameFromToken(If(formulaWorkbook, WorkbookPart), sheetToken, externalBook)
+                    If rewriteSheetQualifier IsNot Nothing Then
+                        qualifier = rewriteSheetQualifier(explicitSheet, sheetToken.Value)
+                    Else
+                        qualifier = If(Not externalBook AndAlso renamedSheet IsNot Nothing AndAlso String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase),
+                                       FormatSheetName(renamedSheet), sheetToken.Value)
+                    End If
                     index += sheetToken.Length
                 End If
 
@@ -218,7 +245,9 @@ Namespace ExcelOps
                         If Not first.IsCell OrElse Not StartsRangeExpression(value, secondStart) Then
                             Dim secondQualifier = FormulaSheet.Match(value, secondStart)
                             If secondQualifier.Success Then
-                                If Not String.Equals(explicitSheet, SheetNameFromToken(secondQualifier), StringComparison.OrdinalIgnoreCase) Then
+                                Dim secondExternalBook As Boolean
+                                Dim secondSheet = SheetNameFromToken(If(formulaWorkbook, WorkbookPart), secondQualifier, secondExternalBook)
+                                If externalBook <> secondExternalBook OrElse Not String.Equals(explicitSheet, secondSheet, StringComparison.OrdinalIgnoreCase) Then
                                     Throw UnsupportedReferenceSyntax()
                                 End If
                                 secondStart += secondQualifier.Length
@@ -228,8 +257,11 @@ Namespace ExcelOps
                             If second Is Nothing OrElse (first.Row < 0) <> (second.Row < 0) OrElse
                                (first.Column < 0) <> (second.Column < 0) Then Throw UnsupportedReferenceSyntax()
                             separator = value.Substring(referenceEnd, secondStart - referenceEnd)
-                            If secondQualifier.Success AndAlso renamedSheet IsNot Nothing AndAlso
-                               String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                            If secondQualifier.Success AndAlso rewriteSheetQualifier IsNot Nothing Then
+                                separator = value.Substring(referenceEnd, secondQualifier.Index - referenceEnd) &
+                                    rewriteSheetQualifier(explicitSheet, secondQualifier.Value)
+                            ElseIf secondQualifier.Success AndAlso Not externalBook AndAlso renamedSheet IsNot Nothing AndAlso
+                                   String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
                                 separator = value.Substring(referenceEnd, secondQualifier.Index - referenceEnd) & qualifier
                             End If
                             referenceEnd = secondEnd
@@ -243,7 +275,7 @@ Namespace ExcelOps
                 If first IsNot Nothing AndAlso (first.IsCell OrElse second IsNot Nothing) Then
                     result.Append(qualifier)
                     Dim unchanged = value.Substring(index, referenceEnd - index)
-                    If shift IsNot Nothing AndAlso isDefinedName AndAlso
+                    If shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook AndAlso
                        (explicitSheet Is Nothing AndAlso scopeSheet Is Nothing OrElse Not first.IsAbsolute OrElse
                         (second IsNot Nothing AndAlso Not second.IsAbsolute)) Then
                         Throw New NotSupportedException("Structural shifts require every A1 reference in a defined name to be absolute and to have an explicit or worksheet-local scope.")
@@ -257,9 +289,9 @@ Namespace ExcelOps
                             result.Append(firstAddress)
                             If second IsNot Nothing Then result.Append(separator).Append(secondAddress)
                         End If
-                    ElseIf shift IsNot Nothing AndAlso String.Equals(If(explicitSheet, scopeSheet), editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                    ElseIf shift IsNot Nothing AndAlso Not externalBook AndAlso String.Equals(If(explicitSheet, scopeSheet), editedSheet, StringComparison.OrdinalIgnoreCase) Then
                         result.Append(shift.RewriteReference(first, second, separator))
-                    ElseIf second IsNot Nothing AndAlso renamedSheet IsNot Nothing Then
+                    ElseIf second IsNot Nothing AndAlso (renamedSheet IsNot Nothing OrElse rewriteSheetQualifier IsNot Nothing) Then
                         result.Append(first.ColumnText).Append(first.RowText).Append(separator).Append(second.ColumnText).Append(second.RowText)
                     Else
                         result.Append(unchanged)

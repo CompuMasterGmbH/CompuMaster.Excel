@@ -231,7 +231,7 @@ Namespace ExcelOps
         Private Shared ReadOnly InvalidWorksheetNameCharacters As Char() = {":"c, "\"c, "/"c, "?"c, "*"c, "["c, "]"c}
 
         Private Shared ReadOnly StandardWorkbookElements As New HashSet(Of String)(StringComparer.Ordinal) From {
-            "fileVersion", "workbookPr", "workbookProtection", "bookViews", "sheets", "definedNames", "calcPr"
+            "fileVersion", "workbookPr", "workbookProtection", "bookViews", "sheets", "definedNames", "calcPr", "fileRecoveryPr"
         }
 
         Private Shared ReadOnly StandardWorksheetElements As New HashSet(Of String)(StringComparer.Ordinal) From {
@@ -279,8 +279,9 @@ Namespace ExcelOps
             End Select
         End Function
 
-        Private Sub ValidateWorkbookStructure()
+        Private Sub ValidateWorkbookStructure(Optional allowChartSheets As Boolean = False)
             For Each child In WorkbookPart.Workbook.ChildElements
+                If TypeOf child Is ExternalReferences Then Continue For
                 If Not IsReferenceFreeWorkbookMetadata(child) AndAlso
                    (TypeOf child Is OpenXmlUnknownElement OrElse Not StandardWorkbookElements.Contains(child.LocalName)) Then
                     Throw UnsupportedOperation("Updating references in a workbook with " & child.LocalName)
@@ -288,6 +289,12 @@ Namespace ExcelOps
             Next
             For Each relationship In WorkbookPart.Parts
                 Dim part = relationship.OpenXmlPart
+                If allowChartSheets AndAlso TypeOf part Is ChartsheetPart Then Continue For
+                Dim externalPart = TryCast(part, ExternalWorkbookPart)
+                Dim externalBookId = externalPart?.ExternalLink?.GetFirstChild(Of ExternalBook)()?.Id?.Value
+                If externalBookId IsNot Nothing AndAlso
+                   externalPart.ExternalRelationships.Any(Function(link) link.Id = externalBookId AndAlso
+                                                         link.RelationshipType.EndsWith("/externalLinkPath", StringComparison.Ordinal)) Then Continue For
                 If Not (TypeOf part Is WorksheetPart OrElse TypeOf part Is WorkbookStylesPart OrElse
                         TypeOf part Is SharedStringTablePart OrElse TypeOf part Is ThemePart OrElse TypeOf part Is CalculationChainPart) Then
                     Throw UnsupportedOperation("Updating references in a workbook with " & part.GetType().Name)

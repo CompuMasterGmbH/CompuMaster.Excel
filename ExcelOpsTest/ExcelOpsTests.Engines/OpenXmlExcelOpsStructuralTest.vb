@@ -3,6 +3,7 @@ Imports System.IO.Compression
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
+Imports CompuMaster.Excel.Test.ExcelOpsTests.Engines
 Imports DocumentFormat.OpenXml
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
@@ -167,9 +168,47 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub WorkbookReferences_UpdatesLocalReferencesAndPreservesTheExternalLink()
+        WorkbookReferenceCoverage.CopyPair(_directory)
+        Dim source = Path.Combine(_directory, WorkbookReferenceCoverage.TargetName)
+        Dim output = Path.Combine(_directory, "edited.xlsx")
+        Dim linkedFile = Path.Combine(_directory, WorkbookReferenceCoverage.SourceName)
+        Dim sourceHash = HashFile(linkedFile)
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            WorkbookReferenceCoverage.EditTarget(workbook)
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+
+        Dim differences = WorkbookReferenceCoverage.CompareEditedTargetWithExcel(output)
+        Assert.That(differences, [Is].Empty, String.Join(Environment.NewLine, differences))
+        Assert.That(HashFile(linkedFile), [Is].EqualTo(sourceHash))
+        Using before = ZipFile.OpenRead(source), after = ZipFile.OpenRead(output)
+            For Each entry In before.Entries.Where(Function(item) item.FullName.StartsWith("xl/externalLinks/", StringComparison.Ordinal))
+                Assert.That(ReadBytes(after.GetEntry(entry.FullName).Open()), [Is].EqualTo(ReadBytes(entry.Open())), entry.FullName)
+            Next
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub WorkbookReferences_RenamesAndDeletesLocallyWithTheExternalFileMissing()
+        Dim target = TestEnvironment.FullPathOfExistingTestFile("test_data", WorkbookReferenceCoverage.TargetName)
+        Dim localCopy = Path.Combine(_directory, WorkbookReferenceCoverage.TargetName)
+        File.Copy(target, localCopy)
+        Using workbook As New OpenXmlExcelDataOperations(localCopy, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            workbook.RenameWorksheet(WorkbookReferenceCoverage.LocalSheet, WorkbookReferenceCoverage.RemoteSheet, True)
+            workbook.RemoveRows(WorkbookReferenceCoverage.RemoteSheet, 0, 1, True)
+            workbook.RemoveColumns(WorkbookReferenceCoverage.RemoteSheet, 0, 1, True)
+            Assert.That(workbook.LookupCellFormula(WorkbookReferenceCoverage.ChecksSheet, 1, 0),
+                [Is].EqualTo("SUM('Remote Data'!$A1:A$2,'[1]Remote Data'!$B$2:$B$3)"))
+        End Using
+    End Sub
+
     <TestCase("SUM('O''Brien Data:Check'!B2)")>
     <TestCase("SUM(Check:Unrelated!B2)")>
     <TestCase("'C:\Temp\[External.xlsx]Data'!B2")>
+    <TestCase("[1]Remote!B2")>
+    <TestCase("'[1]Remote Data'!B2")>
     <TestCase("SUM(Table1[Amount])")>
     <TestCase(DataQualifier & "B2#")>
     <TestCase("_xlfn.ANCHORARRAY(" & DataQualifier & "B2)")>

@@ -1406,6 +1406,30 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <inheritdoc/>
+        Protected Overrides Function TransferSheetsCore(sheetNames As IReadOnlyList(Of String), targetWorkbook As ExcelDataOperationsBase,
+                                                        targetSheetIndex As Integer, move As Boolean,
+                                                        formulaMode As CopyWorksheetFormulaMode) As IReadOnlyList(Of String)
+            If formulaMode <> CopyWorksheetFormulaMode.ExcelCompatible Then
+                Throw New NotSupportedException("Microsoft Excel only supports its native formula handling when copying whole sheets.")
+            End If
+            Dim destination = TryCast(targetWorkbook, MsExcelDataOperations)
+            If destination Is Nothing OrElse Me.MsExcelAppInstance.ComObjectStronglyTyped IsNot destination.MsExcelAppInstance.ComObjectStronglyTyped Then
+                Throw New NotSupportedException("Sheet transfers require both workbooks to be open in the same Microsoft Excel application.")
+            End If
+            Dim group = DirectCast(Workbook.Sheets.Item(sheetNames.Cast(Of Object)().ToArray()), MsExcel.Sheets)
+            Dim existingNames As New HashSet(Of String)(destination.SheetNames(), StringComparer.OrdinalIgnoreCase)
+            Dim sheets = destination.Workbook.Sheets
+            Dim append = targetSheetIndex = sheets.Count
+            Dim anchor = sheets.Item(If(append, sheets.Count, targetSheetIndex + 1))
+            If move Then
+                If append Then group.Move(After:=anchor) Else group.Move(Before:=anchor)
+            Else
+                If append Then group.Copy(After:=anchor) Else group.Copy(Before:=anchor)
+            End If
+            Return destination.SheetNames().Where(Function(name) Not existingNames.Contains(name)).ToArray()
+        End Function
+
+        ''' <inheritdoc/>
         Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook.GetType IsNot GetType(MsExcelDataOperations) Then Throw New NotSupportedException("Excel engines must be the same for source and target workbook for copying worksheets")

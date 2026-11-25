@@ -102,6 +102,18 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub StructuralChanges_OptInDoesNotBypassOpenXmlTableValidation()
+        Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+        Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+            .AllowKnownStructuralReferenceDifferences = True
+        }
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Assert.Throws(Of NotSupportedException)(
+                Sub() workbook.AddCells("Data", 4, 2, 1, 2, CellInsertShiftDirection.ShiftCellsDown, True))
+        End Using
+    End Sub
+
     ' A second edit in the same session uses the table bounds and names already changed by the first.
     <Test>
     Public Sub RepeatedTableInsertionsUseTheStagedTableBounds()
