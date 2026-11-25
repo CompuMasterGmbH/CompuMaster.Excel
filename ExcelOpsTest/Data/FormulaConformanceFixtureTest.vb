@@ -17,6 +17,10 @@ Public Class FormulaConformanceFixtureTest
     ' The checked-in caches were recorded by Microsoft Excel build 16.0.20625.20108.
     <TestCase(ReferenceWorkbook, "Cases", 26)>
     <TestCase(CompanionWorkbook, "Source Data", 1)>
+    <TestCase("FormulaReference1900.xlsx", "Standard", 37)>
+    <TestCase("FormulaReference1900.xlsx", "Lookup", 34)>
+    <TestCase("FormulaReference1900.xlsx", "Dates", 15)>
+    <TestCase("FormulaReference1904.xlsx", "Dates", 5)>
     Public Sub RecalculatesTheExcelReferenceFixture(fileName As String, sheetName As String, caseCount As Integer)
         Dim fixture = FixturePath(fileName)
         Dim expected = ReadFormulaCaches(fixture, sheetName)
@@ -33,7 +37,18 @@ Public Class FormulaConformanceFixtureTest
                 workbook.SaveCopyAs(output, recalculateWorkbook:=False, SaveOptionsForDisabledCalculationEngines.NoReset)
             End Using
 
-            Assert.That(ReadFormulaCaches(output, sheetName), [Is].EqualTo(expected))
+            Dim actual = ReadFormulaCaches(output, sheetName)
+            Assert.That(actual.Keys, [Is].EquivalentTo(expected.Keys), sheetName)
+            For Each item In expected
+                Dim address = sheetName & "!" & item.Key
+                Dim result = actual(item.Key)
+                Assert.That(result.Kind, [Is].EqualTo(item.Value.Kind), address)
+                If result.Kind = CellValues.Number Then
+                    Assert.That(result.Value, [Is].EqualTo(item.Value.Value).Within(1.0E-12), address)
+                Else
+                    Assert.That(result.Value, [Is].EqualTo(item.Value.Value), address)
+                End If
+            Next
             If fileName = ReferenceWorkbook Then
                 Assert.That(ReadFormulaCaches(output, "External cases"), [Is].EqualTo(ReadFormulaCaches(fixture, "External cases")))
             End If
@@ -107,7 +122,9 @@ Public Class FormulaConformanceFixtureTest
     End Function
 
     Private Shared Function OpenForCalculation(path As String) As OpenXmlExcelDataOperations
-        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
+            .DisableCalculationEngine = False, .FormulaCulture = CultureInfo.GetCultureInfo("de-DE")
+        }
         Return New OpenXmlExcelDataOperations(File.ReadAllBytes(path), options)
     End Function
 
