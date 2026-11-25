@@ -89,7 +89,7 @@ Namespace ExcelOps
                         Return EvaluateLogicalFunction(If(name.Equals("_xlfn.IFNA", StringComparison.OrdinalIgnoreCase), "IFNA", name.ToUpperInvariant()), arguments, formulaCell)
                     Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS"
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP"
+                    Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SEQUENCE", "_XLFN.SEQUENCE", "TRANSPOSE", "FILTER", "_XLFN.FILTER", "_XLFN._XLWS.FILTER"
                         Return EvaluateArrayFunction(name.ToUpperInvariant(), arguments, formulaCell)

@@ -21,6 +21,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReference1900.xlsx", "Lookup", 34)>
     <TestCase("FormulaReference1900.xlsx", "Dates", 15)>
     <TestCase("FormulaReference1904.xlsx", "Dates", 5)>
+    <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceModern.xlsx", "Arrays", 25)>
     <TestCase("FormulaReferenceModern.xlsx", "Local names", 16)>
     Public Sub RecalculatesTheExcelReferenceFixture(fileName As String, sheetName As String, caseCount As Integer)
@@ -66,6 +67,20 @@ Public Class FormulaConformanceFixtureTest
         Finally
             If File.Exists(output) Then File.Delete(output)
         End Try
+    End Sub
+
+    <Test>
+    Public Sub RetainsTheExcelRegexLookupResultUntilRecalculationIsRequested()
+        Dim fixture = FixturePath("FormulaReferenceLookupVariants.xlsx")
+        Dim expected = ReadFormulaCaches(fixture, "Regex")
+        Assert.That(expected("S2").Value, [Is].EqualTo(1.0))
+        Using workbook = OpenForCalculation(fixture)
+            Dim cell As New ExcelCell("Regex", "S2", ExcelCell.ValueTypes.All)
+            Assert.That(workbook.LookupCellValue(Of Double)(cell, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(1.0))
+            workbook.ResetCellValueFromFormulaCell(cell)
+            Dim failure = Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateCell(cell))
+            Assert.That(failure.Message, Does.Contain("Regular expression matching"))
+        End Using
     End Sub
 
     ' External results retain their Excel caches, and the companion link is relative to the fixture.
