@@ -63,6 +63,13 @@ Namespace ExcelOps
                     column >= _emptiedTable.First.Column AndAlso column <= _emptiedTable.Last.Column
             End Function
 
+            Friend Function ClearsTableRange(first As ReferenceEndpoint, last As ReferenceEndpoint) As Boolean
+                If _emptiedTable Is Nothing Then Return False
+                Dim finalCell = If(last, first)
+                Return first.Row <= _emptiedTable.FirstDataRow AndAlso finalCell.Row >= _emptiedTable.FirstDataRow AndAlso
+                    first.Column <= _emptiedTable.Last.Column AndAlso finalCell.Column >= _emptiedTable.First.Column
+            End Function
+
             Friend ReadOnly Property RetainsClearedCellStyles As Boolean
                 Get
                     Return _emptiedTable.TotalsCount = 0
