@@ -15,7 +15,10 @@
             End Property
 
             Private Function ToExcelDateSerial(value As DateTime) As Double
-                If Uses1904Dates Then Return (value - Date1904Origin).TotalDays
+                Return If(Uses1904Dates, (value - Date1904Origin).TotalDays, To1900DateSerial(value))
+            End Function
+
+            Private Shared Function To1900DateSerial(value As DateTime) As Double
                 Dim serial = (value - Date1900Origin).TotalDays
                 If value >= FirstRealDateAfterExcelLeapDay Then serial += 1
                 Return serial
