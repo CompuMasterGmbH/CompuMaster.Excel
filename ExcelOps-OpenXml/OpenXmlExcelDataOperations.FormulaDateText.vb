@@ -105,8 +105,11 @@ Namespace ExcelOps
                     Dim initial = ReadTimePart(numeric, "first")
                     Dim month = If(monthFirst, initial, second)
                     Dim day = If(monthFirst, second, initial)
-                    Dim year = If(third.Success, ReadTextYear(third.Value), CurrentTextDateYear())
-                    Return DateSerialFromParts(year, month, day)
+                    If third.Success Then Return DateSerialFromParts(ReadTextYear(third.Value), month, day)
+                    If initial >= 1 AndAlso initial <= 12 AndAlso second > 12 Then
+                        Return DateSerialFromParts(ReadTextYear(numeric.Groups("second").Value), initial, 1)
+                    End If
+                    Return DateSerialFromParts(CurrentTextDateYear(), month, day)
                 End If
 
                 If Not DateTextNamed.IsMatch(text) Then Return Nothing
