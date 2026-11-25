@@ -432,9 +432,6 @@ Namespace ExcelOps
                 If If(worksheet.GetFirstChild(Of SheetProtection)()?.Sheet?.Value, False) Then
                     Throw UnsupportedOperation("Shifting cells in a protected worksheet")
                 End If
-                If Not shift.Vertical AndAlso shift.WholeAxis AndAlso worksheet.GetFirstChild(Of Columns)() IsNot Nothing Then
-                    Throw UnsupportedOperation("Shifting whole columns with explicit column formatting")
-                End If
             End If
 
             For Each relationship In part.Parts
@@ -490,6 +487,18 @@ Namespace ExcelOps
             ValidateWorkbookStructure(allowChartSheets:=True, allowSpillMetadata:=allowSpills)
             Dim tables = GetStructuralTables(sheets)
             If shift IsNot Nothing Then shift = shift.RetainEmptyTableRow(editedPart, tables)
+            Dim originalColumns As Columns = Nothing
+            Dim shiftedColumns As Columns = Nothing
+            If shift IsNot Nothing AndAlso Not shift.Vertical AndAlso shift.WholeAxis Then
+                Dim layouts = editedPart.Worksheet.Elements(Of Columns)().ToArray()
+                If layouts.Length > 1 Then Throw UnsupportedOperation("Shifting whole columns with several column layout groups")
+                originalColumns = layouts.SingleOrDefault()
+                If originalColumns IsNot Nothing Then
+                    Dim hasFilter = tables.Any(Function(table) table.Worksheet Is editedPart AndAlso
+                        If(table.Source.GetFirstChild(Of AutoFilter)()?.Elements(Of FilterColumn)().Any(Function(field) field.HasChildren), False))
+                    shiftedColumns = ShiftColumnLayout(originalColumns, shift, hasFilter)
+                End If
+            End If
             Dim tableNames = GetStructuralTableNames(tables)
             Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String, Header As String))
             Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills,
@@ -553,6 +562,13 @@ Namespace ExcelOps
                 _changedSheets.Add(revision.Key)
             Next
             If shiftedData IsNot Nothing Then
+                If originalColumns IsNot Nothing Then
+                    If shiftedColumns.HasChildren Then
+                        editedPart.Worksheet.ReplaceChild(shiftedColumns, originalColumns)
+                    Else
+                        originalColumns.Remove()
+                    End If
+                End If
                 If originalMerges IsNot Nothing Then
                     If shiftedMerges Is Nothing Then
                         originalMerges.Remove()
@@ -586,6 +602,71 @@ Namespace ExcelOps
 
             InvalidateWorkbookFormulaResults()
         End Sub
+
+        Private Function ShiftColumnLayout(source As Columns, shift As StructuralShift, hasFilter As Boolean) As Columns
+            Dim widths(ColumnCount - 1) As Column
+            Dim supportedAttributes = {"min", "max", "width", "customWidth", "hidden"}
+            Dim lastColumn As UInteger = 0
+            For Each item In source.ChildElements
+                Dim column = TryCast(item, Column)
+                If column Is Nothing OrElse column.GetAttributes().Any(Function(attribute) attribute.NamespaceUri <> "" OrElse
+                    Not supportedAttributes.Contains(attribute.LocalName)) Then
+                    Throw UnsupportedOperation("Shifting whole columns with unsupported width, style or outline information")
+                End If
+                Dim first = column.Min?.Value
+                Dim last = column.Max?.Value
+                If Not first.HasValue OrElse Not last.HasValue OrElse first.Value <= lastColumn OrElse
+                   last.Value < first.Value OrElse last.Value > ColumnCount Then
+                    Throw New IO.InvalidDataException("The worksheet contains invalid or overlapping column layout ranges.")
+                End If
+                For index As Integer = CInt(first.Value) - 1 To CInt(last.Value) - 1
+                    widths(index) = column
+                Next
+                lastColumn = last.Value
+            Next
+
+            If Not shift.Inserting AndAlso hasFilter AndAlso Not LoadOptions.AllowKnownStructuralReferenceDifferences AndAlso
+               widths.Skip(shift.Start).Take(shift.Count).All(Function(column) If(column?.Hidden?.Value, False)) Then
+                Throw New StructuralReferenceCompatibilityException(EngineName,
+                    "Excel refuses to remove columns when every selected column is hidden and a table filter is active on the worksheet")
+            End If
+
+            Dim inserted = If(shift.Inserting AndAlso shift.Start > 0, widths(shift.Start - 1), Nothing)
+            If If(inserted?.Width?.Value, 0.0) > 0.0 Then
+                ' Excel inherits the width from the left while the new columns remain visible.
+                inserted = DirectCast(inserted.CloneNode(False), Column)
+                inserted.Hidden = Nothing
+            Else
+                inserted = Nothing
+            End If
+
+            Dim result = DirectCast(source.CloneNode(False), Columns)
+            Dim previous As Column = Nothing
+            Dim offset = If(shift.Inserting, -shift.Count, shift.Count)
+            For index = 0 To ColumnCount - 1
+                Dim layout As Column = Nothing
+                If index < shift.Start Then
+                    layout = widths(index)
+                ElseIf shift.Inserting AndAlso index < shift.Start + shift.Count Then
+                    layout = inserted
+                ElseIf index + offset < ColumnCount Then
+                    layout = widths(index + offset)
+                End If
+                If layout Is Nothing Then
+                    previous = Nothing
+                ElseIf previous IsNot Nothing AndAlso Nullable.Equals(previous.Width?.Value, layout.Width?.Value) AndAlso
+                    Nullable.Equals(previous.CustomWidth?.Value, layout.CustomWidth?.Value) AndAlso
+                    Nullable.Equals(previous.Hidden?.Value, layout.Hidden?.Value) Then
+                    previous.Max = CUInt(index + 1)
+                Else
+                    previous = DirectCast(layout.CloneNode(False), Column)
+                    previous.Min = CUInt(index + 1)
+                    previous.Max = previous.Min.Value
+                    result.Append(previous)
+                End If
+            Next
+            Return result
+        End Function
 
         Private Shared Function ReadStructuralRange(reference As String) As (First As ReferenceEndpoint, Last As ReferenceEndpoint)
             If String.IsNullOrEmpty(reference) OrElse reference.IndexOf("$"c) >= 0 Then

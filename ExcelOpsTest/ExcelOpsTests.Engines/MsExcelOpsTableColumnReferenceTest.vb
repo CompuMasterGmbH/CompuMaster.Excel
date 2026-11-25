@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Runtime.InteropServices
 Imports CompuMaster.Excel.ExcelOps
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
@@ -19,6 +20,17 @@ Namespace ExcelOpsTests.Engines
         <TestCase("DeleteFilterKeepAnd")>
         <TestCase("DeleteFilterKeepOr")>
         <TestCase("DeleteFilterWithFormula")>
+        <TestCase("InsertAtFirstColumn")>
+        <TestCase("InsertBeforeTable")>
+        <TestCase("InsertAfterHiddenColumn")>
+        <TestCase("InsertAfterDefaultHiddenColumn")>
+        <TestCase("InsertAfterTable")>
+        <TestCase("InsertAtFarEdge")>
+        <TestCase("DeleteOnlyCustomWidth")>
+        <TestCase("DeleteHiddenColumnWithFilter")>
+        <TestCase("DeleteHiddenColumnWithAllRowsVisible")>
+        <TestCase("DeleteHiddenOutsideTableWithFilter")>
+        <TestCase("DeleteMixedVisibilityWithFilter")>
         Public Sub StructuralReference_OpenXmlMatchesTableColumnsWithFiltersOrHiddenHeaders(operation As String)
             Dim directoryPath = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "ExcelOps-TableColumns-" & Guid.NewGuid().ToString("N"))).FullName
             Dim input = Path.Combine(directoryPath, "before.xlsx")
@@ -44,11 +56,26 @@ Namespace ExcelOpsTests.Engines
                 Dim table = sheet.ListObjects.Add(NativeExcel.XlListObjectSourceType.xlSrcRange, sheet.Range("B2:D6"),
                                                   Type.Missing, NativeExcel.XlYesNoGuess.xlYes)
                 table.Name = "SalesTable"
+                sheet.Range("A1").EntireColumn.ColumnWidth = 10
+                If operation <> "DeleteOnlyCustomWidth" Then
+                    If operation <> "InsertAfterDefaultHiddenColumn" Then sheet.Range("C1:D1").EntireColumn.ColumnWidth = 14
+                    Select Case operation
+                        Case "DeleteLastFilter", "DeleteOneOfTwoFilters", "DeleteFilterKeepAnd", "DeleteFilterKeepOr", "DeleteFilterWithFormula"
+                            ' Keep the selection visible to exercise Excel's filter changes after a successful deletion.
+                        Case "DeleteMixedVisibilityWithFilter"
+                            sheet.Range("C1").EntireColumn.Hidden = True
+                        Case Else
+                            sheet.Range("C1:D1").EntireColumn.Hidden = True
+                    End Select
+                    sheet.Range("F1:G1").EntireColumn.ColumnWidth = 18
+                End If
+                If operation = "DeleteHiddenOutsideTableWithFilter" Then sheet.Range("F1").EntireColumn.Hidden = True
+                If operation = "InsertAtFarEdge" Then sheet.Range("XFC1:XFD1").EntireColumn.ColumnWidth = 20
                 Dim headerless = operation.EndsWith("Headerless", StringComparison.Ordinal)
                 If headerless Then
                     table.ShowHeaders = False
                 Else
-                    table.Range.AutoFilter(2, "West")
+                    table.Range.AutoFilter(2, If(operation = "DeleteHiddenColumnWithAllRowsVisible", "*", "West"))
                 End If
                 If operation = "DeleteLastFilter" Then
                     ' Excel also unhides manually hidden data rows and leaves surrounding rows hidden.
@@ -68,15 +95,50 @@ Namespace ExcelOpsTests.Engines
                 workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
                 Dim inserting = operation.StartsWith("Insert", StringComparison.Ordinal)
-                Dim columnIndex = If(operation = "DeleteBeforeFilter", 1, 2)
+                Dim columnIndex = 2
+                Select Case operation
+                    Case "InsertAtFirstColumn", "DeleteOnlyCustomWidth"
+                        columnIndex = 0
+                    Case "InsertBeforeTable", "DeleteBeforeFilter"
+                        columnIndex = 1
+                    Case "InsertAfterHiddenColumn", "InsertAfterDefaultHiddenColumn"
+                        columnIndex = 3
+                    Case "InsertAfterTable"
+                        columnIndex = 4
+                    Case "InsertAtFarEdge"
+                        columnIndex = 16382
+                    Case "DeleteHiddenOutsideTableWithFilter"
+                        columnIndex = 5
+                End Select
+                Dim columns = If(operation = "InsertAfterTable" OrElse operation = "DeleteMixedVisibilityWithFilter", 2, 1)
                 Dim edit As Action(Of ExcelDataOperationsBase) =
                     Sub(engine)
                         If inserting Then
-                            engine.AddColumn("Data", columnIndex, 1, True)
+                            engine.AddColumn("Data", columnIndex, columns, True)
                         Else
-                            engine.RemoveColumns("Data", columnIndex, 1, True)
+                            engine.RemoveColumns("Data", columnIndex, columns, True)
                         End If
                     End Sub
+                If operation.StartsWith("DeleteHidden", StringComparison.Ordinal) Then
+                    Assert.Throws(Of COMException)(Sub() edit(workbook))
+                    workbook.Close()
+                    Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                        Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() edit(editor))
+                        editor.SaveCopyAs(openXmlOutput, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                    End Using
+                    Assert.That(File.ReadAllBytes(openXmlOutput), [Is].EqualTo(File.ReadAllBytes(input)))
+                    Dim optIn As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+                        .AllowKnownStructuralReferenceDifferences = True
+                    }
+                    Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, optIn)
+                        edit(editor)
+                        editor.SaveCopyAs(openXmlOutput, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                    End Using
+                    Dim afterOptIn = ReadTableColumnState(openXmlOutput)
+                    Assert.That(afterOptIn.Columns.Length, [Is].EqualTo(If(columnIndex = 2, 2, 3)))
+                    Assert.That(afterOptIn.Formula, Does.Contain(If(columnIndex = 2, "#REF!", "SalesTable[Region]")))
+                    Return
+                End If
                 edit(workbook)
                 workbook.SaveAs(nativeOutput, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 workbook.Close()
@@ -110,6 +172,7 @@ Namespace ExcelOpsTests.Engines
                 Assert.That(actual.Filters, [Is].EqualTo(expected.Filters))
                 Assert.That(actual.HiddenRows, [Is].EqualTo(expected.HiddenRows))
                 Assert.That(actual.Formula, [Is].EqualTo(expected.Formula))
+                Assert.That(actual.Layout, [Is].EqualTo(expected.Layout))
                 workbook = Me.CreateInstance(openXmlOutput, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
                 Dim reopened = DirectCast(workbook.Workbook.Worksheets.Item("Data"), NativeExcel.Worksheet).ListObjects.Item(1)
                 Assert.That(reopened.ShowHeaders, [Is].EqualTo(Not headerless))
@@ -121,7 +184,9 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         Private Shared Function ReadTableColumnState(path As String) As (TableRange As String, Columns As String(), FilterRange As String,
-                                                                         Filters As String(), HiddenRows As UInteger(), Formula As String)
+                                                                         Filters As String(), HiddenRows As UInteger(), Formula As String,
+                                                                         Layout As (First As UInteger, Last As UInteger, Width As Double?,
+                                                                                    Custom As Boolean?, Hidden As Boolean?)())
             Using document = SpreadsheetDocument.Open(path, False)
                 Dim data = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Data")
                 Dim table = data.TableDefinitionParts.Single().Table
@@ -135,7 +200,9 @@ Namespace ExcelOpsTests.Engines
                     Where(Function(row) If(row.Hidden?.Value, False)).Select(Function(row) row.RowIndex.Value).ToArray()
                 Dim checks = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Checks")
                 Dim formula = checks.Worksheet.Descendants(Of Cell)().Single().CellFormula.Text
-                Return (table.Reference.Value, columns, filter?.Reference?.Value, criteria, hidden, formula)
+                Dim layout = data.Worksheet.Elements(Of Columns)().SelectMany(Function(group) group.Elements(Of Column)()).
+                    Select(Function(column) (column.Min.Value, column.Max.Value, column.Width?.Value, column.CustomWidth?.Value, column.Hidden?.Value)).ToArray()
+                Return (table.Reference.Value, columns, filter?.Reference?.Value, criteria, hidden, formula, layout)
             End Using
         End Function
 
