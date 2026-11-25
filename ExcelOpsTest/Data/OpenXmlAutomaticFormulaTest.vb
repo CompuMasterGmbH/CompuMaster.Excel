@@ -121,6 +121,31 @@ Public Class OpenXmlAutomaticFormulaTest
     End Sub
 
     <Test>
+    Public Sub SerializesConcurrentEditsWithinTheSameFormulaSession()
+        Dim session As New ExcelFormulaSession()
+        Dim targetPath = TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", "FormulaReference.xlsx")
+        Dim sourcePath = TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", "FormulaReferenceSource.xlsx")
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, MakeOptions(session)),
+              target As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, MakeOptions(session))
+            target.WriteCellFormula("External cases", 0, 7, "Cases!A50+C2", False)
+            System.Threading.Tasks.Parallel.Invoke(
+                Sub()
+                    For value = 41 To 50
+                        source.WriteCellValue("Source Data", 1, 0, value)
+                    Next
+                End Sub,
+                Sub()
+                    For value = 1 To 10
+                        target.WriteCellValue("Cases", 49, 0, value)
+                    Next
+                End Sub)
+
+            Assert.That(ExternalValues(target), [Is].EqualTo({50.0, 116.0, 54.0}))
+            Assert.That(target.LookupCellValue(Of Double)("External cases", 0, 7, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(60.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub KeepsPreviousFormulaCachesWhenAnAutomaticPassFails()
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, MakeOptions())
             workbook.WriteCellFormula("Sheet1", 0, 1, "IF(A1>0,B1,A1)", False)

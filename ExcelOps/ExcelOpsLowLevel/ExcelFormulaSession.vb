@@ -2,7 +2,7 @@
 
     ''' <summary>Stores application-registered custom functions and the workbooks in a calculation session.</summary>
     Public NotInheritable Class ExcelFormulaSession
-        Private ReadOnly _gate As New Object()
+        Friend ReadOnly WorkbookSyncRoot As New Object()
         Private ReadOnly _functions As New Dictionary(Of String, ExcelFormulaRegistration)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly _workbooks As New Dictionary(Of String, ExcelDataOperationsBase)(StringComparer.OrdinalIgnoreCase)
         Private _revision As Long
@@ -26,7 +26,7 @@
             If Not Text.RegularExpressions.Regex.IsMatch(name, "^[A-Za-z_][A-Za-z0-9_.]*$") Then
                 Throw New ArgumentException("The function name must use Excel formula identifier syntax.", NameOf(name))
             End If
-            SyncLock _gate
+            SyncLock WorkbookSyncRoot
                 _functions(name) = New ExcelFormulaRegistration(implementation, isVolatile)
                 _revision += 1
             End SyncLock
@@ -36,7 +36,7 @@
         ''' <param name="name">The registered function name.</param>
         ''' <returns>True if a registration was removed.</returns>
         Public Function RemoveFunction(name As String) As Boolean
-            SyncLock _gate
+            SyncLock WorkbookSyncRoot
                 If Not _functions.Remove(name) Then Return False
                 _revision += 1
                 Return True
@@ -47,7 +47,7 @@
         ''' <param name="workbookName">The registered name of the workbook containing the selection.</param>
         ''' <param name="cell">The selected cell, or Nothing to clear the selection.</param>
         Public Sub SetActiveCell(workbookName As String, cell As ExcelCell)
-            SyncLock _gate
+            SyncLock WorkbookSyncRoot
                 If cell Is Nothing Then
                     _activeWorkbook = Nothing
                     _activeCell = Nothing
@@ -65,7 +65,7 @@
         End Sub
 
         Friend Sub AttachWorkbook(name As String, workbook As ExcelDataOperationsBase)
-            SyncLock _gate
+            SyncLock WorkbookSyncRoot
                 If _workbooks.ContainsKey(name) Then Throw New ArgumentException("A workbook named " & name & " is already open in this session.", NameOf(name))
                 _workbooks.Add(name, workbook)
                 _revision += 1
@@ -73,7 +73,7 @@
         End Sub
 
         Friend Sub DetachWorkbook(name As String, workbook As ExcelDataOperationsBase)
-            SyncLock _gate
+            SyncLock WorkbookSyncRoot
                 Dim attached As ExcelDataOperationsBase = Nothing
                 If Not _workbooks.TryGetValue(name, attached) OrElse attached IsNot workbook Then Return
                 _workbooks.Remove(name)
@@ -86,7 +86,7 @@
         End Sub
 
         Friend Function Snapshot() As ExcelFormulaSessionSnapshot
-            SyncLock _gate
+            SyncLock WorkbookSyncRoot
                 Return New ExcelFormulaSessionSnapshot(
                     New Dictionary(Of String, ExcelDataOperationsBase)(_workbooks, StringComparer.OrdinalIgnoreCase),
                     New Dictionary(Of String, ExcelFormulaRegistration)(_functions, StringComparer.OrdinalIgnoreCase),

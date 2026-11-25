@@ -16,23 +16,27 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateSheet(sheetName As String)
-            EnsureCalculationEnabled()
-            GetWorksheetPart(sheetName)
-            Dim calculation As New FormulaCalculation(Me)
-            calculation.RecalculateSheet(sheetName)
-            calculation.Commit()
+            SyncLock WorkbookSaveLock
+                    EnsureCalculationEnabled()
+                    GetWorksheetPart(sheetName)
+                    Dim calculation As New FormulaCalculation(Me)
+                    calculation.RecalculateSheet(sheetName)
+                    calculation.Commit()
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
-            EnsureCalculationEnabled()
-            ValidateCoordinates(rowIndex, columnIndex)
-            Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
-            If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
-            Dim calculation As New FormulaCalculation(Me)
-            Dim result = calculation.ReadCell(sheetName, rowIndex, columnIndex)
-            calculation.Commit()
-            If throwExceptionOnCalculationError Then ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+            SyncLock WorkbookSaveLock
+                    EnsureCalculationEnabled()
+                    ValidateCoordinates(rowIndex, columnIndex)
+                    Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
+                    If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
+                    Dim calculation As New FormulaCalculation(Me)
+                    Dim result = calculation.ReadCell(sheetName, rowIndex, columnIndex)
+                    calculation.Commit()
+                    If throwExceptionOnCalculationError Then ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
@@ -86,6 +90,10 @@ Namespace ExcelOps
 
             Friend Sub New(owner As OpenXmlExcelDataOperations)
                 Me.New(owner, New CalculationRun(owner, owner._formulaSession?.Snapshot()))
+            End Sub
+
+            Friend Sub New(owner As OpenXmlExcelDataOperations, session As ExcelFormulaSessionSnapshot, sourcePath As String)
+                Me.New(owner, New CalculationRun(owner, session, owner, sourcePath))
             End Sub
 
             Private Sub New(owner As OpenXmlExcelDataOperations, run As CalculationRun)
@@ -179,6 +187,7 @@ Namespace ExcelOps
 
             Friend Sub Commit()
                 For Each evaluatedWorkbook In _run.Workbooks.Values
+                    If _run.CopyWorkbook IsNot Nothing AndAlso evaluatedWorkbook._owner IsNot _run.CopyWorkbook Then Continue For
                     For Each item In evaluatedWorkbook._results
                         WriteCachedResult(item.Key, item.Value.Result)
                         evaluatedWorkbook._owner._changedSheets.Add(item.Value.Part)
@@ -252,6 +261,8 @@ Namespace ExcelOps
                 Friend ReadOnly Workbooks As New Dictionary(Of OpenXmlExcelDataOperations, FormulaCalculation)
                 Friend ReadOnly Active As New HashSet(Of Cell)
                 Friend ReadOnly Session As ExcelFormulaSessionSnapshot
+                Friend ReadOnly CopyWorkbook As OpenXmlExcelDataOperations
+                Friend ReadOnly CopySourcePath As String
                 Friend ExpressionDepth As Integer
                 Friend ReadOnly LocalTime As Lazy(Of DateTime)
 
@@ -260,12 +271,15 @@ Namespace ExcelOps
                 Friend ReadOnly Dependencies As New Dictionary(Of FormulaLocation, FormulaDependencies)
                 Friend ReadOnly FullyCalculated As New HashSet(Of OpenXmlExcelDataOperations)
 
-                Friend Sub New(owner As OpenXmlExcelDataOperations, session As ExcelFormulaSessionSnapshot)
+                Friend Sub New(owner As OpenXmlExcelDataOperations, session As ExcelFormulaSessionSnapshot,
+                               Optional copyWorkbook As OpenXmlExcelDataOperations = Nothing, Optional copySourcePath As String = Nothing)
                     Me.Session = session
+                    Me.CopyWorkbook = copyWorkbook
+                    Me.CopySourcePath = copySourcePath
                     LocalTime = New Lazy(Of DateTime)(If(owner.LoadOptions.FormulaLocalClock, Function() DateTime.Now))
-                    TrackDependencies = owner.LoadOptions.CalculateOnCellEdit OrElse
+                    TrackDependencies = copyWorkbook Is Nothing AndAlso (owner.LoadOptions.CalculateOnCellEdit OrElse
                         (session IsNot Nothing AndAlso session.Workbooks.Values.OfType(Of OpenXmlExcelDataOperations)().
-                            Any(Function(workbook) workbook.LoadOptions.CalculateOnCellEdit))
+                            Any(Function(workbook) workbook.LoadOptions.CalculateOnCellEdit)))
                 End Sub
             End Class
 

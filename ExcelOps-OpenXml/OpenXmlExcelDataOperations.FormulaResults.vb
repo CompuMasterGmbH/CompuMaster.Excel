@@ -8,15 +8,19 @@ Namespace ExcelOps
         ''' <summary>Removes stored formula results from every worksheet in the open workbook.</summary>
         ''' <remarks>Formulas are preserved. The workbook requests recalculation when opened in Excel.</remarks>
         Public Sub ResetCellValueFromFormulaCellInWholeWorkbook()
-            For Each part In WorkbookPart.WorksheetParts
-                ClearWorksheetFormulaResults(part)
-            Next
+            SyncLock WorkbookSaveLock
+                    For Each part In WorkbookPart.WorksheetParts
+                        ClearWorksheetFormulaResults(part)
+                    Next
+            End SyncLock
         End Sub
 
         ''' <summary>Removes stored formula results from one worksheet in the open workbook.</summary>
         ''' <param name="sheetName">The worksheet name.</param>
         Public Sub ResetCellValueFromFormulaCell(sheetName As String)
-            ClearWorksheetFormulaResults(GetWorksheetPart(sheetName))
+            SyncLock WorkbookSaveLock
+                    ClearWorksheetFormulaResults(GetWorksheetPart(sheetName))
+            End SyncLock
         End Sub
 
         ''' <summary>Removes the stored result of one formula cell in the open workbook.</summary>
@@ -33,13 +37,15 @@ Namespace ExcelOps
         ''' <param name="columnIndex">The zero-based column index.</param>
         ''' <exception cref="ArgumentException">The cell does not contain a formula.</exception>
         Public Sub ResetCellValueFromFormulaCell(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            ValidateCoordinates(rowIndex, columnIndex)
-            Dim part = GetWorksheetPart(sheetName)
-            Dim cell = FindCell(FindRow(GetSheetData(part), rowIndex, False), rowIndex, columnIndex, False)
-            If cell?.CellFormula Is Nothing Then
-                Throw New ArgumentException("Cell " & New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All).Address(True) & " doesn't contain a formula.")
-            End If
-            If ClearFormulaResult(cell) Then MarkFormulaResultsCleared(part)
+            SyncLock WorkbookSaveLock
+                    ValidateCoordinates(rowIndex, columnIndex)
+                    Dim part = GetWorksheetPart(sheetName)
+                    Dim cell = FindCell(FindRow(GetSheetData(part), rowIndex, False), rowIndex, columnIndex, False)
+                    If cell?.CellFormula Is Nothing Then
+                        Throw New ArgumentException("Cell " & New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All).Address(True) & " doesn't contain a formula.")
+                    End If
+                    If ClearFormulaResult(cell) Then MarkFormulaResultsCleared(part)
+            End SyncLock
         End Sub
 
         Private Sub ClearWorksheetFormulaResults(part As WorksheetPart)

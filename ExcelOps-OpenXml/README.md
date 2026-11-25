@@ -1,6 +1,6 @@
 ﻿# CompuMaster.Excel.OpenXml
 
-Edit XLSX templates with the [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) through the ExcelOps API. The engine runs on .NET Framework 4.8 on Windows and modern .NET on Windows and Linux. It copies the input package and edits the affected worksheet and workbook XML. Embedded images and drawing relationships are preserved without using Excel or a graphics library.
+Edit Open XML workbooks and templates with the [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) through the ExcelOps API. The engine runs on .NET Framework 4.8 on Windows and modern .NET on Windows and Linux. It copies the input package and edits the affected worksheet and workbook XML. Embedded images and drawing relationships are preserved without using Excel or a graphics library.
 
 ```csharp
 using CompuMaster.Excel.ExcelOps;
@@ -15,10 +15,13 @@ workbook.RequestRecalculationOnOpen();
 workbook.SaveCopyAs("filled.xlsx", SaveOptionsForDisabledCalculationEngines.NoReset);
 ```
 
-- Open an unencrypted XLSX from a path, byte array or stream, or create a workbook with one worksheet. The engine snapshots the input. The caller owns any supplied stream.
+- Open an unencrypted XLSX, XLSM, XLTX or XLTM file from a path, byte array or stream, or create a file with one worksheet. The engine snapshots the input. The caller owns any supplied stream.
 - Read and write strings, booleans, finite numbers and blanks with zero-based cell coordinates. Numeric reads return the stored number and do not interpret number formats as dates or currency. Writing a value replaces the cell's formula or old value and retains its formatting. Ordinary formulas can also be stored for later calculation.
 - Inspect sheet visibility, hide and very-hide sheets, unhide sheets, and inspect or configure worksheet protection. Protection levels that preserve the existing cell-lock styles are supported. Removing password-protected sheet protection requires a different engine.
-- Use `SaveCopyAs` with a different destination to retain the source path, write protection and original file bytes. `SaveAs` switches the current path to the new file. `Save` requires a writable file path.
+- The destination extension determines the saved format. XLSX and XLTX output omits the VBA project. XLSM and XLTM output preserves the project unless you call `RemoveVbaProject()`. Excel 4.0 macro sheets prevent export to a macro-free format.
+- Use `SaveCopyAs` with a different destination to retain the source path, write protection and in-memory workbook state, including VBA and cached formula values. `SaveAs` switches the current path to the new file and discards the current VBA project when saving to a macro-free format. `Save` requires a writable file path.
+- `Clone()` returns an independent, writable copy without a file path. It includes unsaved edits, VBA and cached formula results without recalculating. `ICloneable.Clone()` returns the same kind of copy.
+- Cloning, saving and workbook mutations are serialized per workbook or across all workbooks in the same formula session. Use separate clones for independent work on different threads.
 - By default the evaluator is disabled and saving preserves workbook calculation mode and cached formula values. Caches can be stale after input edits. `RequestRecalculationOnOpen()` requests automatic full recalculation in Excel. The existing save cache options can clear cached formula results in the output. Reading a formula cell without a cached value raises `MissingCalculatedCellValueException`.
 - Inspect cached formula results without calculating by calling `HasMissingCachedFormulaResult`. The `ResetCellValueFromFormulaCell` and `ResetCellValueFromFormulaCellInWholeWorkbook` methods clear stored results in the open workbook while retaining formula text.
 - Export worksheets and workbooks as HTML tables with merged cells, common number formats, and font, fill, alignment and wrap styles. The export follows the EPPlus 4 CM table conventions. The default uses cached formula results and throws `MissingCalculatedCellValueException` if an exported formula result is missing. Set `MissingFormulaResultText` to explicitly render replacement text, including an empty string.
@@ -50,7 +53,7 @@ The first automatic pass builds dependencies by evaluating the workbook. Later v
 
 ### Application-defined functions
 
-Create an `ExcelFormulaSession`, explicitly register each .NET function, and set the session on the workbook's `ExcelDataOperationsOptions.FormulaSession`. Path-backed workbooks default to the file name as their session name. Set `FormulaWorkbookName` for a workbook opened from bytes or a stream, or to give a path-backed workbook an alias. Closing the workbook removes it from the session.
+Create an `ExcelFormulaSession`, explicitly register each .NET function, and set the session on the workbook's `ExcelDataOperationsOptions.FormulaSession`. Path-backed workbooks default to the file name as their session name. Set `FormulaWorkbookName` for a workbook opened from bytes or a stream, or to give a path-backed workbook an alias. Closing the workbook removes it from the session. A recalculating `SaveCopyAs` uses the session's registered functions and open workbook inputs. The new caches are written to the copy.
 
 A registered function receives typed scalar arguments and an `ExcelFormulaContext`. The context identifies the workbook, worksheet and formula cell. The caller can independently supply a selection with `SetActiveCell`. Headless Open XML has no native Excel application object. Use the context's read-only workbook views during the synchronous invocation to read other cells, including cells in other open workbooks in the same session. Those reads resolve formula precedents before returning. A circular dependency can span workbooks. A failed evaluation preserves existing caches across the session.
 

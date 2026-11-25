@@ -118,6 +118,40 @@ Public Class FormulaConformanceFixtureTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub RecalculatingASaveCopyUsesSessionSourcesAndKeepsTheirCaches()
+        Dim fixture = FixturePath(ReferenceWorkbook)
+        Dim sourcePath = FixturePath(CompanionWorkbook)
+        Dim outputPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+        Dim session As New ExcelFormulaSession()
+        session.RegisterFunction("APP.READ",
+            Function(context, arguments)
+                Assert.That(context.Workbook.Name, [Is].EqualTo(ReferenceWorkbook))
+                Dim sourceCell As New ExcelCell("Source Data", "D1", ExcelCell.ValueTypes.All)
+                Return context.WorkbookSession.FindWorkbook(CompanionWorkbook).ReadCell(sourceCell)
+            End Function)
+
+        Try
+            Using target = OpenInSession(fixture, session, usePath:=True), source = OpenInSession(sourcePath, session, usePath:=True)
+                source.WriteCellValue("Source Data", 1, 0, 45.0)
+                source.WriteCellFormula("Source Data", 0, 3, "A2+3", False)
+                target.WriteCellFormula("External cases", 0, 7, "APP.READ()", False)
+
+                target.SaveCopyAs(outputPath, recalculateWorkbook:=True, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.That(ExternalValues(target), [Is].EqualTo({42.0, 100.0, 46.0}))
+                Assert.That(source.HasMissingCachedFormulaResult("Source Data", 0, 3), [Is].True)
+                Assert.That(target.HasMissingCachedFormulaResult("External cases", 0, 7), [Is].True)
+
+                Using output = OpenForCalculation(outputPath)
+                    Assert.That(ExternalValues(output), [Is].EqualTo({45.0, 106.0, 49.0}))
+                    Assert.That(output.LookupCellValue(Of Double)("External cases", 0, 7, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(48.0))
+                End Using
+            End Using
+        Finally
+            If File.Exists(outputPath) Then File.Delete(outputPath)
+        End Try
+    End Sub
+
     Private Shared Function ExternalValues(workbook As OpenXmlExcelDataOperations) As Double()
         Return Enumerable.Range(1, 3).Select(
             Function(row) workbook.LookupCellValue(Of Double)("External cases", row, 2, FormulaCalculationMode.UseCachedValueOnly)).ToArray()

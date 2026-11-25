@@ -46,23 +46,30 @@ Namespace ExcelOps
                 Else
                     relativePath = Uri.UnescapeDataString(uri.OriginalString).Replace("/"c, Path.DirectorySeparatorChar).Replace("\"c, Path.DirectorySeparatorChar)
                     If Path.IsPathRooted(relativePath) OrElse relativePath.IndexOf(":"c) >= 0 Then Return Nothing
-                    If Not String.IsNullOrEmpty(_owner.FilePath) Then
-                        linkedPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(_owner.FilePath), relativePath))
+                    Dim ownerPath = ReferencePath(_owner)
+                    If Not String.IsNullOrEmpty(ownerPath) Then
+                        linkedPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ownerPath), relativePath))
                     End If
                 End If
 
                 If linkedPath IsNot Nothing Then
                     Dim comparison = If(Path.DirectorySeparatorChar = "\"c, StringComparison.OrdinalIgnoreCase, StringComparison.Ordinal)
                     Dim pathMatch = _run.Session.Workbooks.Values.OfType(Of OpenXmlExcelDataOperations)().FirstOrDefault(
-                        Function(workbook) Not workbook.IsClosed AndAlso String.Equals(workbook.FilePath, linkedPath, comparison))
+                        Function(workbook) Not workbook.IsClosed AndAlso String.Equals(ReferencePath(workbook), linkedPath, comparison))
                     If pathMatch IsNot Nothing Then Return pathMatch
                 End If
 
                 If relativePath Is Nothing OrElse Path.GetFileName(relativePath) <> relativePath Then Return Nothing
                 Dim workbookEntry As ExcelDataOperationsBase = Nothing
                 If Not _run.Session.Workbooks.TryGetValue(relativePath, workbookEntry) OrElse
-                   workbookEntry.IsClosed OrElse Not String.IsNullOrEmpty(workbookEntry.FilePath) Then Return Nothing
-                Return TryCast(workbookEntry, OpenXmlExcelDataOperations)
+                   workbookEntry.IsClosed Then Return Nothing
+                Dim source = TryCast(workbookEntry, OpenXmlExcelDataOperations)
+                If source Is Nothing OrElse Not String.IsNullOrEmpty(ReferencePath(source)) Then Return Nothing
+                Return source
+            End Function
+
+            Private Function ReferencePath(workbook As OpenXmlExcelDataOperations) As String
+                Return If(workbook Is _run.CopyWorkbook, _run.CopySourcePath, workbook.FilePath)
             End Function
         End Class
 

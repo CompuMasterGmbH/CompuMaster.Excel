@@ -51,23 +51,27 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Sub UnhideSheet(sheetName As String)
-            Dim sheet = FindSheet(sheetName)
-            If IsVisible(sheet) Then Return
-            sheet.State = SheetStateValues.Visible
-            _workbookChanged = True
+            SyncLock WorkbookSaveLock
+                    Dim sheet = FindSheet(sheetName)
+                    If IsVisible(sheet) Then Return
+                    sheet.State = SheetStateValues.Visible
+                    _workbookChanged = True
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub HideSheet(sheetName As String, stronglyHide As Boolean)
-            Dim sheet = FindSheet(sheetName)
-            Dim state = If(stronglyHide, SheetStateValues.VeryHidden, SheetStateValues.Hidden)
-            If sheet.State?.Value = state Then Return
-            Dim sheets = WorkbookSheets()
-            Dim replacementIndex = sheets.FindIndex(Function(item) item IsNot sheet AndAlso IsVisible(item))
-            If replacementIndex < 0 Then Throw New InvalidOperationException("At least one sheet must remain visible.")
-            If IsVisible(sheet) Then SwitchFromHiddenSheet(sheets, sheets.IndexOf(sheet), replacementIndex)
-            sheet.State = state
-            _workbookChanged = True
+            SyncLock WorkbookSaveLock
+                    Dim sheet = FindSheet(sheetName)
+                    Dim state = If(stronglyHide, SheetStateValues.VeryHidden, SheetStateValues.Hidden)
+                    If sheet.State?.Value = state Then Return
+                    Dim sheets = WorkbookSheets()
+                    Dim replacementIndex = sheets.FindIndex(Function(item) item IsNot sheet AndAlso IsVisible(item))
+                    If replacementIndex < 0 Then Throw New InvalidOperationException("At least one sheet must remain visible.")
+                    If IsVisible(sheet) Then SwitchFromHiddenSheet(sheets, sheets.IndexOf(sheet), replacementIndex)
+                    sheet.State = state
+                    _workbookChanged = True
+            End SyncLock
         End Sub
 
         Private Sub SwitchFromHiddenSheet(sheets As List(Of Sheet), oldIndex As Integer, newIndex As Integer)
@@ -113,51 +117,55 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Sub UnprotectSheet(sheetName As String)
-            Dim part = GetWorksheetPart(sheetName)
-            Dim protection = part.Worksheet.GetFirstChild(Of SheetProtection)()
-            If protection Is Nothing Then Return
-            If protection.Password IsNot Nothing OrElse protection.HashValue IsNot Nothing Then
-                Throw UnsupportedOperation("Removing password-protected worksheet protection")
-            End If
-            protection.Remove()
-            _changedSheets.Add(part)
+            SyncLock WorkbookSaveLock
+                    Dim part = GetWorksheetPart(sheetName)
+                    Dim protection = part.Worksheet.GetFirstChild(Of SheetProtection)()
+                    If protection Is Nothing Then Return
+                    If protection.Password IsNot Nothing OrElse protection.HashValue IsNot Nothing Then
+                        Throw UnsupportedOperation("Removing password-protected worksheet protection")
+                    End If
+                    protection.Remove()
+                    _changedSheets.Add(part)
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         ''' <remarks>The engine supports the protection levels that leave existing cell-lock styles in place.</remarks>
         Public Overrides Sub ProtectSheet(sheetName As String, level As ProtectionLevel)
-            Select Case level
-                Case ProtectionLevel.Standard, ProtectionLevel.StandardWithInsertDeleteRows,
-                     ProtectionLevel.SelectAndEditUnlockedCellsOnly, ProtectionLevel.SelectNoCellsAndNoEditing
-                Case ProtectionLevel.SelectAndEditAllCellsButNoFurtherEditing
-                    Throw UnsupportedOperation("Protecting a worksheet while allowing edits to locked cells")
-                Case Else
-                    Throw New ArgumentOutOfRangeException(NameOf(level))
-            End Select
-            Dim part = GetWorksheetPart(sheetName)
-            Dim protection = part.Worksheet.GetFirstChild(Of SheetProtection)()
-            If protection Is Nothing Then
-                protection = New SheetProtection()
-                part.Worksheet.AddChild(protection)
-            End If
-            Dim preventRowChanges = level <> ProtectionLevel.StandardWithInsertDeleteRows
-            protection.Sheet = True
-            protection.SelectLockedCells = level = ProtectionLevel.SelectAndEditUnlockedCellsOnly OrElse level = ProtectionLevel.SelectNoCellsAndNoEditing
-            protection.SelectUnlockedCells = level = ProtectionLevel.SelectNoCellsAndNoEditing
-            protection.InsertRows = preventRowChanges
-            protection.DeleteRows = preventRowChanges
-            protection.Objects = True
-            protection.Scenarios = True
-            protection.InsertColumns = True
-            protection.DeleteColumns = True
-            protection.FormatCells = True
-            protection.FormatColumns = True
-            protection.FormatRows = True
-            protection.InsertHyperlinks = True
-            protection.Sort = True
-            protection.AutoFilter = True
-            protection.PivotTables = True
-            _changedSheets.Add(part)
+            SyncLock WorkbookSaveLock
+                    Select Case level
+                        Case ProtectionLevel.Standard, ProtectionLevel.StandardWithInsertDeleteRows,
+                             ProtectionLevel.SelectAndEditUnlockedCellsOnly, ProtectionLevel.SelectNoCellsAndNoEditing
+                        Case ProtectionLevel.SelectAndEditAllCellsButNoFurtherEditing
+                            Throw UnsupportedOperation("Protecting a worksheet while allowing edits to locked cells")
+                        Case Else
+                            Throw New ArgumentOutOfRangeException(NameOf(level))
+                    End Select
+                    Dim part = GetWorksheetPart(sheetName)
+                    Dim protection = part.Worksheet.GetFirstChild(Of SheetProtection)()
+                    If protection Is Nothing Then
+                        protection = New SheetProtection()
+                        part.Worksheet.AddChild(protection)
+                    End If
+                    Dim preventRowChanges = level <> ProtectionLevel.StandardWithInsertDeleteRows
+                    protection.Sheet = True
+                    protection.SelectLockedCells = level = ProtectionLevel.SelectAndEditUnlockedCellsOnly OrElse level = ProtectionLevel.SelectNoCellsAndNoEditing
+                    protection.SelectUnlockedCells = level = ProtectionLevel.SelectNoCellsAndNoEditing
+                    protection.InsertRows = preventRowChanges
+                    protection.DeleteRows = preventRowChanges
+                    protection.Objects = True
+                    protection.Scenarios = True
+                    protection.InsertColumns = True
+                    protection.DeleteColumns = True
+                    protection.FormatCells = True
+                    protection.FormatColumns = True
+                    protection.FormatRows = True
+                    protection.InsertHyperlinks = True
+                    protection.Sort = True
+                    protection.AutoFilter = True
+                    protection.PivotTables = True
+                    _changedSheets.Add(part)
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>

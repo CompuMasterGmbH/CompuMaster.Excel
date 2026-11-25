@@ -26,7 +26,9 @@
                             Return ToFormulaValue(ForWorkbook(workbook).ReadCell(address.SheetName, address.RowIndex, address.ColumnIndex))
                         End Function))
                 Next
-                Dim context As New ExcelFormulaContext(views(_owner._formulaWorkbookName), New ExcelFormulaWorkbookSession(views),
+                Dim workbookName = If(_owner._formulaWorkbookName,
+                    session.Workbooks.First(Function(item) item.Value Is _owner).Key)
+                Dim context As New ExcelFormulaContext(views(workbookName), New ExcelFormulaWorkbookSession(views),
                                                        formulaCell, session.ActiveWorkbook, session.ActiveCell, nativeExcelApplication:=Nothing)
                 Try
                     Dim result = registration.Implementation(context, Array.AsReadOnly(values))

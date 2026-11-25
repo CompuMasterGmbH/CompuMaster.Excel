@@ -259,54 +259,58 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         ''' <remarks>Supports strings, booleans, finite numbers and blank values. Existing cell formatting is retained.</remarks>
         Public Overrides Sub WriteCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer, value As T)
-            Dim boxed As Object = value
-            Dim payload As New Cell()
-            If TypeOf boxed Is String Then
-                payload.DataType = CellValues.InlineString
-                Dim encoded = EncodeText(DirectCast(boxed, String))
-                payload.InlineString = New InlineString(New Text(encoded) With {.Space = SpaceProcessingModeValues.Preserve})
-            ElseIf TypeOf boxed Is Boolean Then
-                payload.DataType = CellValues.Boolean
-                payload.CellValue = New CellValue(If(CBool(boxed), "1", "0"))
-            ElseIf boxed IsNot Nothing Then
-                Select Case Convert.GetTypeCode(boxed)
-                    Case TypeCode.Single, TypeCode.Double
-                        Dim number = Convert.ToDouble(boxed, CultureInfo.InvariantCulture)
-                        If Double.IsNaN(number) OrElse Double.IsInfinity(number) Then Throw New ArgumentOutOfRangeException(NameOf(value), "An XLSX number must be finite.")
-                        payload.CellValue = New CellValue(number.ToString("R", CultureInfo.InvariantCulture))
-                    Case TypeCode.SByte, TypeCode.Byte, TypeCode.Int16, TypeCode.UInt16, TypeCode.Int32, TypeCode.UInt32, TypeCode.Int64, TypeCode.UInt64, TypeCode.Decimal
-                        payload.CellValue = New CellValue(Convert.ToString(boxed, CultureInfo.InvariantCulture))
-                    Case Else
-                        Throw UnsupportedOperation("Writing values of type " & boxed.GetType().Name)
-                End Select
-                If boxed.GetType().IsEnum Then Throw UnsupportedOperation("Writing enum values")
-                payload.DataType = CellValues.Number
-            End If
-            EditCell(sheetName, rowIndex, columnIndex, payload)
+            SyncLock WorkbookSaveLock
+                    Dim boxed As Object = value
+                    Dim payload As New Cell()
+                    If TypeOf boxed Is String Then
+                        payload.DataType = CellValues.InlineString
+                        Dim encoded = EncodeText(DirectCast(boxed, String))
+                        payload.InlineString = New InlineString(New Text(encoded) With {.Space = SpaceProcessingModeValues.Preserve})
+                    ElseIf TypeOf boxed Is Boolean Then
+                        payload.DataType = CellValues.Boolean
+                        payload.CellValue = New CellValue(If(CBool(boxed), "1", "0"))
+                    ElseIf boxed IsNot Nothing Then
+                        Select Case Convert.GetTypeCode(boxed)
+                            Case TypeCode.Single, TypeCode.Double
+                                Dim number = Convert.ToDouble(boxed, CultureInfo.InvariantCulture)
+                                If Double.IsNaN(number) OrElse Double.IsInfinity(number) Then Throw New ArgumentOutOfRangeException(NameOf(value), "An XLSX number must be finite.")
+                                payload.CellValue = New CellValue(number.ToString("R", CultureInfo.InvariantCulture))
+                            Case TypeCode.SByte, TypeCode.Byte, TypeCode.Int16, TypeCode.UInt16, TypeCode.Int32, TypeCode.UInt32, TypeCode.Int64, TypeCode.UInt64, TypeCode.Decimal
+                                payload.CellValue = New CellValue(Convert.ToString(boxed, CultureInfo.InvariantCulture))
+                            Case Else
+                                Throw UnsupportedOperation("Writing values of type " & boxed.GetType().Name)
+                        End Select
+                        If boxed.GetType().IsEnum Then Throw UnsupportedOperation("Writing enum values")
+                        payload.DataType = CellValues.Number
+                    End If
+                    EditCell(sheetName, rowIndex, columnIndex, payload)
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         ''' <remarks>Evaluates the formula before editing the cell when immediate calculation is requested.</remarks>
         Public Overrides Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
-            If immediatelyCalculateCellValue Then EnsureCalculationEnabled()
-            If String.IsNullOrWhiteSpace(formula) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
-            Dim expression = If(formula(0) = "="c, formula.Substring(1), formula)
-            If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
-            Dim replacement As New Cell With {.CellFormula = New CellFormula(expression)}
-            If Not immediatelyCalculateCellValue Then
-                EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
-                Return
-            End If
+            SyncLock WorkbookSaveLock
+                If immediatelyCalculateCellValue Then EnsureCalculationEnabled()
+                If String.IsNullOrWhiteSpace(formula) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
+                Dim expression = If(formula(0) = "="c, formula.Substring(1), formula)
+                If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
+                Dim replacement As New Cell With {.CellFormula = New CellFormula(expression)}
+                If Not immediatelyCalculateCellValue Then
+                    EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
+                    Return
+                End If
 
-            Dim existing = GetCell(sheetName, rowIndex, columnIndex)
-            If IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
-                Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
-            End If
-            Dim calculation As New FormulaCalculation(Me)
-            Dim result = calculation.EvaluateReplacement(sheetName, rowIndex, columnIndex, replacement)
-            EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
-            calculation.Commit()
-            ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+                Dim existing = GetCell(sheetName, rowIndex, columnIndex)
+                If IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
+                    Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
+                End If
+                Dim calculation As New FormulaCalculation(Me)
+                Dim result = calculation.EvaluateReplacement(sheetName, rowIndex, columnIndex, replacement)
+                EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
+                calculation.Commit()
+                ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
