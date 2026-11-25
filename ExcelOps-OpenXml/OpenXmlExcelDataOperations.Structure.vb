@@ -528,7 +528,6 @@ Namespace ExcelOps
             Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String, Header As String))
             Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills,
                                                  allowSpillReferences:=allowSpills)
-            Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName)
             Dim filledCells As New HashSet(Of Cell)
             Dim formulaChanges As New List(Of (Part As WorksheetPart, Cell As Cell, Text As String))
             Dim revisedSheetData As New Dictionary(Of WorksheetPart, SheetData)
@@ -580,6 +579,8 @@ Namespace ExcelOps
                 Next
             End If
 
+            Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName,
+                                                 editedData:=shiftedData, editedColumns:=shiftedColumns)
             stageDependents(originalName, shift)
             For Each revision In revisedSheetData
                 revision.Key.Worksheet.ReplaceChild(revision.Value, GetSheetData(revision.Key))
@@ -828,6 +829,19 @@ Namespace ExcelOps
             For Each index In cells.Keys
                 If Not rows.ContainsKey(index) Then rows.Add(index, New Row())
             Next
+            Dim precedingRow As Row = Nothing
+            If shift.Vertical AndAlso shift.WholeAxis AndAlso shift.Inserting AndAlso
+               rows.TryGetValue(shift.Start - 1, precedingRow) AndAlso If(precedingRow.Height?.Value, 0.0) > 0 Then
+                For index = shift.Start To shift.Start + shift.Count - 1
+                    Dim inserted As Row = Nothing
+                    If Not rows.TryGetValue(index, inserted) Then
+                        inserted = New Row()
+                        rows.Add(index, inserted)
+                    End If
+                    inserted.Height = precedingRow.Height.Value
+                    inserted.CustomHeight = True
+                Next
+            End If
             Dim result = DirectCast(source.CloneNode(False), SheetData)
             For Each entry In rows
                 Dim row = entry.Value

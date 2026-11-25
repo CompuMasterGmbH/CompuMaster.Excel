@@ -12,13 +12,15 @@ Namespace ExcelOps
     Partial Public Class OpenXmlExcelDataOperations
 
         Private Const ExtendedChartNamespace As String = "http://schemas.microsoft.com/office/drawing/2014/chartex"
+        Private Const DrawingRelationshipNamespace As String = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
         Private ReadOnly _changedCharts As New Dictionary(Of ChartPart, ChartXml.ChartSpace)
         Private ReadOnly _changedExtendedCharts As New Dictionary(Of ExtendedChartPart, ExtendedChartXml.ChartSpace)
         Private ReadOnly _changedDrawings As New Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing)
 
         Private Function StageChartChanges(sheets As IEnumerable(Of Sheet), editedPart As WorksheetPart, editedSheet As String,
                                            shift As StructuralShift, newSheetName As String,
-                                           Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing) As (
+                                           Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing,
+                                           Optional editedData As SheetData = Nothing, Optional editedColumns As Columns = Nothing) As (
                                            Charts As Dictionary(Of ChartPart, ChartXml.ChartSpace),
                                            Drawings As Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing),
                                            ExtendedCharts As Dictionary(Of ExtendedChartPart, ExtendedChartXml.ChartSpace))
@@ -44,15 +46,26 @@ Namespace ExcelOps
                         Not (allowExtendedCharts AndAlso TypeOf part.OpenXmlPart Is ExtendedChartPart)) Then
                     Throw UnsupportedOperation("Updating references in unsupported drawing parts")
                 End If
-                If allowExtendedCharts Then StageExtendedChartChanges(extendedCharts, book, editedSheet, shift, links, revisedExtendedCharts)
                 Dim placement As DrawingXml.WorksheetDrawing = Nothing
                 If Not _changedDrawings.TryGetValue(drawing, placement) Then placement = drawing.WorksheetDrawing
-                Dim changedPlacement = StageChartAnchors(placement, If(worksheet IsNot Nothing AndAlso worksheet Is editedPart, shift, Nothing),
-                                                         allowExtendedCharts)
+                Dim placementShift = If(worksheet IsNot Nothing AndAlso worksheet Is editedPart, shift, Nothing)
+                Dim changedPlacement = StageChartAnchors(placement, placementShift, allowExtendedCharts,
+                    If(placementShift Is Nothing, Nothing, New Lazy(Of ChartAnchorGeometry)(
+                        Function() CreateChartAnchorGeometry(worksheet, placementShift, editedData, editedColumns))),
+                    If(placementShift Is Nothing, Nothing, New Lazy(Of Integer)(
+                        Function() LastUsedChartGridIndex(GetSheetData(worksheet), Not placementShift.Vertical))))
                 If changedPlacement IsNot Nothing Then drawings.Add(drawing, changedPlacement)
+                Dim livePlacement = If(changedPlacement, placement)
+                Dim chartIds = ReadDrawingRelationshipIds(livePlacement)
+                If allowExtendedCharts Then
+                    StageExtendedChartChanges(extendedCharts.Where(Function(chart) chartIds.Contains(drawing.GetIdOfPart(chart))).ToArray(),
+                                              book, editedSheet, shift, links, revisedExtendedCharts)
+                End If
 
                 For Each chart In drawing.ChartParts
-                    If allowExtendedCharts AndAlso IsExtendedChartFallback(placement, drawing.GetIdOfPart(chart)) Then
+                    Dim chartId = drawing.GetIdOfPart(chart)
+                    If Not chartIds.Contains(chartId) Then Continue For
+                    If allowExtendedCharts AndAlso IsExtendedChartFallback(livePlacement, chartId) Then
                         ValidateExtendedChartFallback(chart)
                         Continue For
                     End If
@@ -356,10 +369,12 @@ Namespace ExcelOps
         End Sub
 
         Private Function StageChartAnchors(source As DrawingXml.WorksheetDrawing, shift As StructuralShift,
-                                           Optional allowExtendedCharts As Boolean = False) As DrawingXml.WorksheetDrawing
+                                           Optional allowExtendedCharts As Boolean = False,
+                                           Optional geometry As Lazy(Of ChartAnchorGeometry) = Nothing,
+                                           Optional perpendicularUsedEnd As Lazy(Of Integer) = Nothing) As DrawingXml.WorksheetDrawing
             Dim revised = DirectCast(source.CloneNode(True), DrawingXml.WorksheetDrawing)
             Dim changed = False
-            For Each anchor In revised.ChildElements
+            For Each anchor In revised.ChildElements.ToArray()
                 Dim extendedFrame = allowExtendedCharts AndAlso anchor.Descendants().Any(
                     Function(element) element.LocalName = "chart" AndAlso element.NamespaceUri = ExtendedChartNamespace)
                 Dim picture = anchor.GetFirstChild(Of DrawingXml.Picture)()
@@ -373,28 +388,86 @@ Namespace ExcelOps
                 Dim two = TryCast(anchor, DrawingXml.TwoCellAnchor)
                 Dim one = TryCast(anchor, DrawingXml.OneCellAnchor)
                 If two Is Nothing AndAlso one Is Nothing Then Throw UnsupportedOperation("Updating an unsupported drawing anchor")
-                If two?.EditAs?.Value = DrawingXml.EditAsValues.Absolute Then Continue For
                 Dim first = If(two?.FromMarker, one?.FromMarker)
                 Dim startIndex = ReadChartMarker(first, shift.Vertical)
+                Dim editAsValue = If(two?.EditAs?.Value, DrawingXml.EditAsValues.TwoCell)
                 If Not shift.WholeAxis Then
+                    If editAsValue = DrawingXml.EditAsValues.Absolute Then Continue For
                     If shift.Includes(ReadChartMarker(first, Not shift.Vertical)) AndAlso startIndex >= shift.Start Then
                         Throw UnsupportedOperation("Shifting a partial cell range through a drawing anchor")
                     End If
                     Continue For
                 End If
-                Dim movedStart = ShiftChartMarker(startIndex, shift)
-                changed = SetChartMarker(first, shift.Vertical, movedStart, Not shift.Inserting AndAlso startIndex >= shift.Start AndAlso
-                                         startIndex < shift.Start + shift.Count) OrElse changed
-                If two Is Nothing Then Continue For
+                Dim movedStart = If(editAsValue = DrawingXml.EditAsValues.Absolute, startIndex, ShiftChartMarker(startIndex, shift))
+                Dim startOffset = ReadChartMarkerOffset(first, shift.Vertical)
+                Dim newStartOffset = If(IsDeletedChartMarker(startIndex, shift), 0L, startOffset)
+                If two Is Nothing Then
+                    changed = SetChartMarker(first, shift.Vertical, movedStart, newStartOffset) OrElse changed
+                    Continue For
+                End If
+
                 Dim lastIndex = ReadChartMarker(two.ToMarker, shift.Vertical)
-                Dim movesWithoutResizing = If(two.EditAs?.Value, DrawingXml.EditAsValues.TwoCell) = DrawingXml.EditAsValues.OneCell
-                Dim movedEnd = If(movesWithoutResizing,
-                                  lastIndex + movedStart - startIndex, ShiftChartMarker(lastIndex, shift))
-                changed = SetChartMarker(two.ToMarker, shift.Vertical, movedEnd, Not shift.Inserting AndAlso
-                                         Not movesWithoutResizing AndAlso
-                                         lastIndex >= shift.Start AndAlso lastIndex < shift.Start + shift.Count) OrElse changed
+                Dim lastOffset = ReadChartMarkerOffset(two.ToMarker, shift.Vertical)
+                If shift.Start > lastIndex OrElse (shift.Start = lastIndex AndAlso lastOffset = 0) Then Continue For
+                Dim movedEnd = If(editAsValue = DrawingXml.EditAsValues.Absolute, lastIndex, ShiftChartMarker(lastIndex, shift))
+                Dim newEndOffset = If(IsDeletedChartMarker(lastIndex, shift), 0L, lastOffset)
+                If editAsValue = DrawingXml.EditAsValues.TwoCell Then
+                    ' Excel retains a zero-sized chart when the original used range extends beyond its
+                    ' leading anchor on the other axis. ChartEx does not retain zero-width charts.
+                    If IsDeletedChartMarker(startIndex, shift) AndAlso movedStart = movedEnd AndAlso newStartOffset >= newEndOffset AndAlso
+                       ((extendedFrame AndAlso Not shift.Vertical) OrElse
+                        perpendicularUsedEnd.Value <= ReadChartMarker(first, Not shift.Vertical)) Then
+                        anchor.Remove()
+                        changed = True
+                        Continue For
+                    End If
+                ElseIf editAsValue = DrawingXml.EditAsValues.Absolute OrElse
+                       IsDeletedChartMarker(startIndex, shift) OrElse shift.Start > startIndex Then
+                    Dim axis = geometry.Value
+                    Dim oldStart = axis.Original(startIndex) + startOffset
+                    Dim oldEnd = axis.Original(lastIndex) + lastOffset
+                    If editAsValue = DrawingXml.EditAsValues.Absolute Then
+                        Dim firstPosition = axis.MarkerAt(oldStart)
+                        movedStart = firstPosition.Index
+                        newStartOffset = firstPosition.Offset
+                        Dim finalPosition = axis.MarkerAt(oldEnd)
+                        movedEnd = finalPosition.Index
+                        newEndOffset = finalPosition.Offset
+                    Else
+                        Dim newStart = axis.Edited(movedStart) + newStartOffset
+                        Dim finalPosition = axis.MarkerAt(newStart + oldEnd - oldStart)
+                        movedEnd = finalPosition.Index
+                        newEndOffset = finalPosition.Offset
+                    End If
+                End If
+                changed = SetChartMarker(first, shift.Vertical, movedStart, newStartOffset) OrElse changed
+                changed = SetChartMarker(two.ToMarker, shift.Vertical, movedEnd, newEndOffset) OrElse changed
             Next
             Return If(changed, revised, Nothing)
+        End Function
+
+        Private Shared Function IsDeletedChartMarker(index As Integer, shift As StructuralShift) As Boolean
+            Return Not shift.Inserting AndAlso index >= shift.Start AndAlso index < shift.Start + shift.Count
+        End Function
+
+        Private Shared Function LastUsedChartGridIndex(data As SheetData, vertical As Boolean) As Integer
+            Dim lastIndex = 0
+            Dim rowIndex = -1
+            For Each row In data.Elements(Of Row)()
+                rowIndex = CInt(If(row.RowIndex?.Value, CUInt(rowIndex + 2))) - 1
+                If vertical Then
+                    If row.HasChildren Then lastIndex = rowIndex
+                Else
+                    ' Sheet data was validated before chart placement is staged.
+                    Dim column = -1
+                    For Each cell In row.Elements(Of Cell)()
+                        Dim endIndex As Integer
+                        column = If(cell.CellReference Is Nothing, column + 1, ReadEndpoint(cell.CellReference.Value, 0, endIndex).Column)
+                        lastIndex = System.Math.Max(lastIndex, column)
+                    Next
+                End If
+            Next
+            Return lastIndex
         End Function
 
         Private Shared Function ShiftChartMarker(index As Integer, shift As StructuralShift) As Integer
@@ -410,35 +483,68 @@ Namespace ExcelOps
             Return result
         End Function
 
-        Private Shared Function SetChartMarker(marker As DrawingXml.MarkerType, vertical As Boolean, index As Integer, resetOffset As Boolean) As Boolean
+        Private Shared Function ChartMarkerOffset(marker As DrawingXml.MarkerType, vertical As Boolean) As OpenXmlLeafTextElement
+            Return If(vertical, DirectCast(marker.GetFirstChild(Of DrawingXml.RowOffset)(), OpenXmlLeafTextElement),
+                      marker.GetFirstChild(Of DrawingXml.ColumnOffset)())
+        End Function
+
+        Private Shared Function ReadChartMarkerOffset(marker As DrawingXml.MarkerType, vertical As Boolean) As Long
+            Dim value As Long
+            If Not Long.TryParse(ChartMarkerOffset(marker, vertical)?.Text, NumberStyles.None, CultureInfo.InvariantCulture, value) Then
+                Throw New InvalidDataException("Invalid drawing marker offset.")
+            End If
+            Return value
+        End Function
+
+        Private Shared Function SetChartMarker(marker As DrawingXml.MarkerType, vertical As Boolean, index As Integer, newOffset As Long) As Boolean
             If index < 0 OrElse index >= If(vertical, RowCount, ColumnCount) Then Throw UnsupportedReferenceSyntax()
             Dim coordinate As OpenXmlLeafTextElement = If(vertical, DirectCast(marker.GetFirstChild(Of DrawingXml.RowId)(), OpenXmlLeafTextElement),
                                                          marker.GetFirstChild(Of DrawingXml.ColumnId)())
             Dim value = index.ToString(CultureInfo.InvariantCulture)
-            If Not resetOffset AndAlso coordinate.Text = value Then Return False
+            Dim offset = ChartMarkerOffset(marker, vertical)
+            Dim offsetText = newOffset.ToString(CultureInfo.InvariantCulture)
+            If coordinate.Text = value AndAlso offset.Text = offsetText Then Return False
             coordinate.Text = value
-            If resetOffset Then
-                Dim offset As OpenXmlLeafTextElement = If(vertical, DirectCast(marker.GetFirstChild(Of DrawingXml.RowOffset)(), OpenXmlLeafTextElement),
-                                                         marker.GetFirstChild(Of DrawingXml.ColumnOffset)())
-                offset.Text = "0"
-            End If
+            offset.Text = offsetText
             Return True
         End Function
 
+        Private Shared Function ReadDrawingRelationshipIds(drawing As DrawingXml.WorksheetDrawing) As HashSet(Of String)
+            Return New HashSet(Of String)(drawing.Descendants().SelectMany(Function(element) element.GetAttributes()).
+                Where(Function(attribute) attribute.NamespaceUri = DrawingRelationshipNamespace).
+                Select(Function(attribute) attribute.Value), StringComparer.Ordinal)
+        End Function
+
         Private Sub SaveChangedCharts(source As WorkbookPart, target As WorkbookPart)
-            For Each change In _changedDrawings
-                Dim owner = change.Key.GetParentParts().Single()
-                Dim targetOwner = target.GetPartById(source.GetIdOfPart(owner))
-                Dim targetDrawing = targetOwner.GetPartById(owner.GetIdOfPart(change.Key))
-                Using stream = targetDrawing.GetStream(FileMode.Create, FileAccess.Write)
-                    change.Value.Save(stream)
-                End Using
-            Next
             For Each change In _changedCharts
                 SaveChangedChartPart(source, target, change.Key, change.Value)
             Next
             For Each change In _changedExtendedCharts
                 SaveChangedChartPart(source, target, change.Key, change.Value)
+            Next
+            For Each change In _changedDrawings
+                Dim owner = change.Key.GetParentParts().Single()
+                Dim targetOwner = target.GetPartById(source.GetIdOfPart(owner))
+                Dim targetDrawing = DirectCast(targetOwner.GetPartById(owner.GetIdOfPart(change.Key)), DrawingsPart)
+                Dim worksheet = TryCast(targetOwner, WorksheetPart)
+                If Not change.Value.HasChildren AndAlso worksheet IsNot Nothing Then
+                    worksheet.Worksheet.GetFirstChild(Of Drawing)().Remove()
+                    worksheet.Worksheet.Save()
+                    worksheet.DeletePart(targetDrawing)
+                    Continue For
+                End If
+                Using stream = targetDrawing.GetStream(FileMode.Create, FileAccess.Write)
+                    change.Value.Save(stream)
+                End Using
+                RemoveDetachedChartParts(targetDrawing, change.Value)
+            Next
+        End Sub
+
+        Private Shared Sub RemoveDetachedChartParts(drawing As DrawingsPart, placement As DrawingXml.WorksheetDrawing)
+            Dim chartIds = ReadDrawingRelationshipIds(placement)
+            For Each relationship In drawing.Parts.ToArray()
+                If (TypeOf relationship.OpenXmlPart Is ChartPart OrElse TypeOf relationship.OpenXmlPart Is ExtendedChartPart) AndAlso
+                   Not chartIds.Contains(relationship.RelationshipId) Then drawing.DeletePart(relationship.RelationshipId)
             Next
         End Sub
 

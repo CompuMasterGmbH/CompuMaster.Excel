@@ -15,6 +15,71 @@ Partial Public Class OpenXmlExcelOpsTest
     Private Const DataSheet As String = "O'Brien Data"
     Private Const DataQualifier As String = "'O''Brien Data'!"
 
+    <Test>
+    Public Sub EmbeddedChartPlacementReferenceMatchesExcel(<Values(True, False)> vertical As Boolean,
+        <Values("DeleteBefore", "DeleteAfter", "DeleteInside", "DeleteAll", "InsertBefore", "InsertInside", "InsertAfter")> operation As String)
+        Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName)
+        Dim output = Path.Combine(_directory, "chart-placement.xlsx")
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(EmbeddedChartReferenceCoverage.CompareWithExcel(workbook, output, vertical, operation), [Is].Empty)
+        End Using
+        If operation = "DeleteAll" Then
+            Using document = SpreadsheetDocument.Open(output, False)
+                Dim placement = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart
+                Assert.That(placement.ChartParts.Count(), [Is].EqualTo(3), "Excel retains the collapsed chart on this worksheet.")
+            End Using
+        End If
+    End Sub
+
+    <Test>
+    Public Sub CopyingAWorksheetAfterAnUnsavedChartDeletionTransfersOnlyItsSurvivingCharts()
+        Dim source = Path.Combine(_directory, "blank-chart-placement.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            Dim worksheet = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").Worksheet
+            worksheet.GetFirstChild(Of SheetData)().RemoveAllChildren(Of Row)()
+            worksheet.SheetDimension.Reference = "A1"
+        End Using
+        Dim output = Path.Combine(_directory, "copied-chart-placement.xlsx")
+        Using original As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)),
+              destination As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, New ExcelDataOperationsOptions(WriteProtectionMode.DefaultBehaviourOnCreateFile))
+            original.RemoveRows("Dashboard", 2, 6, True)
+            original.CopySheet("Dashboard", destination, CopyWorksheetFormulaMode.PreserveFormulas)
+            destination.SaveAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim drawing = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart
+            Assert.That(drawing.WorksheetDrawing.ChildElements.Count, [Is].EqualTo(2))
+            Assert.That(drawing.ChartParts.Count(), [Is].EqualTo(2))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub EmbeddedChartPlacementRequiresOptInForAnUnverifiedColumnWidth()
+        Dim source = Path.Combine(_directory, "unverified-chart-font.xlsx")
+        Dim output = Path.Combine(_directory, "unverified-chart-font-edited.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            document.WorkbookPart.WorkbookStylesPart.Stylesheet.Fonts.Elements(Of Font)().First().FontName.Val = "Arial"
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() workbook.AddColumn("Dashboard", 3, 1, True))
+            Assert.That(failure.Message, Does.Contain("Normal font"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+        options.AllowKnownStructuralReferenceDifferences = True
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Assert.DoesNotThrow(Sub() workbook.AddColumn("Dashboard", 3, 1, True))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Assert.That(StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart.ChartParts.Count(),
+                        [Is].EqualTo(3))
+        End Using
+    End Sub
+
     ' The reference strings cover whole-row and whole-column insertions and deletions as Excel stores them.
     <Test>
     Public Sub ShiftsRowsAndColumnsAndUpdatesReferencesAcrossSheets()

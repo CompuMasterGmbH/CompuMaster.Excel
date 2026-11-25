@@ -1041,6 +1041,36 @@ Namespace ExcelOpsTests.Engines
                 Function(workbook, output) StructuralReferenceCoverage.CompareWithExcel(workbook, scenario, output))
         End Sub
 
+        <Test>
+        Public Sub EmbeddedChartPlacementCoverageAgainstExcel(<Values(True, False)> vertical As Boolean,
+            <Values("DeleteBefore", "DeleteAfter", "DeleteInside", "DeleteAll", "InsertBefore", "InsertInside", "InsertAfter")> operation As String)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName)
+            CompareStructuralWorkbookWithExcel(source, operation & If(vertical, " rows", " columns"),
+                Function(workbook, output) EmbeddedChartReferenceCoverage.CompareWithExcel(workbook, output, vertical, operation))
+        End Sub
+
+        <Test>
+        Public Sub EmbeddedChartPlacement_DefaultProtectsKnownDifferences(<Values(True, False)> vertical As Boolean,
+            <Values("DeleteAll", "InsertInside")> operation As String)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName)
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile,
+                New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                If TypeOf workbook Is MsExcelDataOperations Then
+                    Assert.DoesNotThrow(Sub() EmbeddedChartReferenceCoverage.ApplyEdit(workbook, vertical, operation))
+                Else
+                    Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(
+                        Sub() EmbeddedChartReferenceCoverage.ApplyEdit(workbook, vertical, operation))
+                    Assert.That(failure.Message, Does.Contain("embedded chart placement"))
+                    Assert.That(failure.Message, Does.Contain(NameOf(ExcelDataOperationsOptions.AllowKnownStructuralReferenceDifferences)))
+                    Assert.That(workbook.LookupCellValue(Of String)("Dashboard", 19, 9, FormulaCalculationMode.EngineDefault),
+                                [Is].EqualTo("Worksheet marker"))
+                End If
+            Finally
+                workbook.Close()
+            End Try
+        End Sub
+
         ' Uses the same database, criteria, and field arguments for each installed engine.
         <TestCase(False, False)>
         <TestCase(True, False)>
