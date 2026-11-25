@@ -13,7 +13,7 @@ Namespace ExcelOpsTests.Engines
         Private Const MergeSheet As String = "O'Brien Merge"
         Private Const MergeQualifier As String = "'O''Brien Merge'!"
         Private Shared ReadOnly LiteralOrSimpleSheet As New Regex(
-            """(?:[^""]|"""")*""|'(?:[^']|'')+'!|(?<![\p{L}\p{M}\p{Nd}_.])(?:Data|PlainTable)!",
+            """(?:[^""]|"""")*""|'(?:[^']|'')+'!|(?<![\p{L}\p{M}\p{Nd}_.])(?:Data|PlainTable|Records)!",
             RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
         Public Shared ReadOnly Cases As String() = {
@@ -173,17 +173,17 @@ Namespace ExcelOpsTests.Engines
             Return differences
         End Function
 
-        Private Shared Sub Compare(differences As List(Of String), label As String, actual As String, expected As String)
+        Friend Shared Sub Compare(differences As List(Of String), label As String, actual As String, expected As String)
             If String.Equals(NormalizeSimpleSheetQualifiers(actual), NormalizeSimpleSheetQualifiers(expected), StringComparison.Ordinal) Then Return
             differences.Add(label & " expected [" & If(expected, "none") & "], got [" & If(actual, "none") & "].")
         End Sub
 
-        Private Shared Function WorksheetFor(part As WorkbookPart, name As String) As WorksheetPart
+        Friend Shared Function WorksheetFor(part As WorkbookPart, name As String) As WorksheetPart
             Dim sheet = part.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = name)
             Return DirectCast(part.GetPartById(sheet.Id.Value), WorksheetPart)
         End Function
 
-        Private Shared Function NameText(names As DefinedName(), name As String) As String
+        Friend Shared Function NameText(names As DefinedName(), name As String) As String
             Return names?.SingleOrDefault(Function(item) item.Name.Value = name)?.Text
         End Function
 
@@ -196,11 +196,12 @@ Namespace ExcelOpsTests.Engines
                     Dim name = token.Value.TrimEnd("!"c).Trim("'"c)
                     If String.Equals(name, "Data", StringComparison.OrdinalIgnoreCase) Then Return "Data!"
                     If String.Equals(name, "PlainTable", StringComparison.OrdinalIgnoreCase) Then Return "PlainTable!"
+                    If String.Equals(name, "Records", StringComparison.OrdinalIgnoreCase) Then Return "Records!"
                     Return token.Value
                 End Function)
         End Function
 
-        Private Shared Function FormulaAt(sheet As WorksheetPart, address As String) As String
+        Friend Shared Function FormulaAt(sheet As WorksheetPart, address As String) As String
             Dim data = sheet.Worksheet.GetFirstChild(Of SheetData)()
             Dim formula = data.Descendants(Of Cell)().FirstOrDefault(Function(cell) cell.CellReference?.Value = address)?.CellFormula
             If formula?.SharedIndex IsNot Nothing AndAlso String.IsNullOrEmpty(formula.Text) Then

@@ -1037,11 +1037,35 @@ Namespace ExcelOpsTests.Engines
         <TestCaseSource(GetType(StructuralReferenceCoverage), NameOf(StructuralReferenceCoverage.Cases))>
         Public Sub StructuralReferenceCoverageAgainstExcel(scenario As String)
             Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+            CompareStructuralWorkbookWithExcel(source, scenario,
+                Function(workbook, output) StructuralReferenceCoverage.CompareWithExcel(workbook, scenario, output))
+        End Sub
+
+        ' Uses the same database, criteria, and field arguments for each installed engine.
+        <TestCase(False, False)>
+        <TestCase(True, False)>
+        <TestCase(False, True)>
+        <TestCase(True, True)>
+        Public Sub DatabaseReferenceCoverageAgainstExcel(insertColumn As Boolean, includeCachedResults As Boolean)
+            Dim source = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+            Try
+                DatabaseReferenceCoverage.CreateFixture(source, includeCachedResults)
+                Dim scenario = If(insertColumn, "Database and criteria after row and column insertion", "Database and criteria after row insertion")
+                scenario &= If(includeCachedResults, " with saved results", " without saved results")
+                CompareStructuralWorkbookWithExcel(source, scenario,
+                    Function(workbook, output) DatabaseReferenceCoverage.CompareWithExcel(workbook, output, insertColumn))
+            Finally
+                IO.File.Delete(source)
+            End Try
+        End Sub
+
+        Private Sub CompareStructuralWorkbookWithExcel(source As String, scenario As String,
+                                                       compare As Func(Of ExcelDataOperationsBase, String, List(Of String)))
             Dim output = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
             Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
             Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
             Try
-                Dim differences = StructuralReferenceCoverage.CompareWithExcel(workbook, scenario, output)
+                Dim differences = compare(workbook, output)
                 If differences.Count = 0 Then
                     TestContext.Out.WriteLine(scenario & " matches Excel.")
                 Else

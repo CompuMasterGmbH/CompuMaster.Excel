@@ -80,6 +80,36 @@ Namespace ExcelOps
             Return start
         End Function
 
+        Private Shared Function StartsRangeExpression(value As String, start As Integer) As Boolean
+            If start >= value.Length Then Return False
+            If value(start) = "("c Then Return True
+            Dim name = FormulaName.Match(value, start)
+            If Not name.Success Then Return False
+            Dim nameEnd = start + name.Length
+            Dim afterName = SkipWhitespace(value, nameEnd)
+            If afterName >= value.Length OrElse value(afterName) <> "("c Then Return False
+            ' A cell reference followed by a space and a group uses the intersection operator.
+            If afterName > nameEnd AndAlso Not String.Equals(name.Value, "LOG10", StringComparison.OrdinalIgnoreCase) Then
+                Dim endpointEnd As Integer
+                Dim endpoint = ReadEndpoint(value, start, endpointEnd)
+                If endpoint IsNot Nothing AndAlso endpoint.IsCell Then Return False
+            End If
+            Return True
+        End Function
+
+        Private Shared Function IsExpressionRangeOperator(value As String, index As Integer, lastReferenceEnd As Integer) As Boolean
+            Dim operandStart = SkipWhitespace(value, index + 1)
+            If operandStart >= value.Length Then Return False
+            Dim previous = index - 1
+            While previous >= 0 AndAlso Char.IsWhiteSpace(value(previous))
+                previous -= 1
+            End While
+            ' A closing parenthesis ends a grouped reference or a reference-returning call.
+            If previous >= 0 AndAlso value(previous) = ")"c Then Return True
+            Return lastReferenceEnd >= 0 AndAlso SkipWhitespace(value, lastReferenceEnd) = index AndAlso
+                StartsRangeExpression(value, operandStart)
+        End Function
+
         Private Shared Function SheetNameFromToken(token As Match) As String
             Dim name = token.Groups("name").Value
             If name(0) = "'"c Then name = name.Substring(1, name.Length - 2).Replace("''", "'")
@@ -98,7 +128,7 @@ Namespace ExcelOps
         End Function
 
         Private Shared Function UnsupportedReferenceSyntax() As NotSupportedException
-            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. External, 3-D, spill, unknown table and compound range references are unsupported.")
+            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. External references, 3-D references, spill references, references to unknown tables, and some compound ranges cannot be rewritten.")
         End Function
 
         Private Shared Function ReadTableSelector(value As String, start As Integer) As Integer
@@ -139,6 +169,7 @@ Namespace ExcelOps
                                                Optional copyColumnOffset As Integer = 0) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
+            Dim lastReferenceEnd = -1
             While index < value.Length
                 Dim literal = FormulaString.Match(value, index)
                 If literal.Success Then
@@ -155,6 +186,13 @@ Namespace ExcelOps
                     End If
                     result.Append(value, index, selectorEnd - index)
                     index = selectorEnd
+                    Continue While
+                End If
+
+                If value(index) = ":"c Then
+                    If Not IsExpressionRangeOperator(value, index, lastReferenceEnd) Then Throw UnsupportedReferenceSyntax()
+                    result.Append(":"c)
+                    index += 1
                     Continue While
                 End If
 
@@ -177,23 +215,25 @@ Namespace ExcelOps
                     Dim colon = SkipWhitespace(value, referenceEnd)
                     If colon < value.Length AndAlso value(colon) = ":"c Then
                         Dim secondStart = SkipWhitespace(value, colon + 1)
-                        Dim secondQualifier = FormulaSheet.Match(value, secondStart)
-                        If secondQualifier.Success Then
-                            If Not String.Equals(explicitSheet, SheetNameFromToken(secondQualifier), StringComparison.OrdinalIgnoreCase) Then
-                                Throw UnsupportedReferenceSyntax()
+                        If Not first.IsCell OrElse Not StartsRangeExpression(value, secondStart) Then
+                            Dim secondQualifier = FormulaSheet.Match(value, secondStart)
+                            If secondQualifier.Success Then
+                                If Not String.Equals(explicitSheet, SheetNameFromToken(secondQualifier), StringComparison.OrdinalIgnoreCase) Then
+                                    Throw UnsupportedReferenceSyntax()
+                                End If
+                                secondStart += secondQualifier.Length
                             End If
-                            secondStart += secondQualifier.Length
+                            Dim secondEnd As Integer
+                            second = ReadEndpoint(value, secondStart, secondEnd)
+                            If second Is Nothing OrElse (first.Row < 0) <> (second.Row < 0) OrElse
+                               (first.Column < 0) <> (second.Column < 0) Then Throw UnsupportedReferenceSyntax()
+                            separator = value.Substring(referenceEnd, secondStart - referenceEnd)
+                            If secondQualifier.Success AndAlso renamedSheet IsNot Nothing AndAlso
+                               String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                                separator = value.Substring(referenceEnd, secondQualifier.Index - referenceEnd) & qualifier
+                            End If
+                            referenceEnd = secondEnd
                         End If
-                        Dim secondEnd As Integer
-                        second = ReadEndpoint(value, secondStart, secondEnd)
-                        If second Is Nothing OrElse (first.Row < 0) <> (second.Row < 0) OrElse
-                           (first.Column < 0) <> (second.Column < 0) Then Throw UnsupportedReferenceSyntax()
-                        separator = value.Substring(referenceEnd, secondStart - referenceEnd)
-                        If secondQualifier.Success AndAlso renamedSheet IsNot Nothing AndAlso
-                           String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
-                            separator = value.Substring(referenceEnd, secondQualifier.Index - referenceEnd) & qualifier
-                        End If
-                        referenceEnd = secondEnd
                     ElseIf explicitSheet Is Nothing AndAlso colon < value.Length AndAlso value(colon) = "("c AndAlso
                            (colon = referenceEnd OrElse String.Equals(value.Substring(index, referenceEnd - index), "LOG10", StringComparison.OrdinalIgnoreCase)) Then
                         first = Nothing
@@ -225,6 +265,7 @@ Namespace ExcelOps
                         result.Append(unchanged)
                     End If
                     index = referenceEnd
+                    lastReferenceEnd = index
                     Continue While
                 End If
 
@@ -235,6 +276,7 @@ Namespace ExcelOps
                     If String.Equals(token.Value, "_xlfn.ANCHORARRAY", StringComparison.OrdinalIgnoreCase) Then Throw UnsupportedReferenceSyntax()
                     result.Append(qualifier).Append(token.Value)
                     index += token.Length
+                    If String.Equals(token.Value, "#REF!", StringComparison.OrdinalIgnoreCase) Then lastReferenceEnd = index
                     If index < value.Length AndAlso value(index) = "["c Then
                         If explicitSheet IsNot Nothing OrElse tableNames Is Nothing OrElse Not tableNames.Contains(token.Value) Then
                             Throw UnsupportedReferenceSyntax()
