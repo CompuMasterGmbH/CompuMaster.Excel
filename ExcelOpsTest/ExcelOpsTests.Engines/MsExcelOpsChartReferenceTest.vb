@@ -116,6 +116,31 @@ Namespace ExcelOpsTests.Engines
         <TestCase(140, "InsideRows")>
         <TestCase(117, "DeleteRow")>
         <TestCase(118, "InsertColumn")>
+        <TestCase(117, "DeleteCategories")>
+        <TestCase(119, "DeleteCategories")>
+        <TestCase(120, "DeleteCategories")>
+        <TestCase(121, "DeleteCategories")>
+        <TestCase(123, "DeleteCategories")>
+        <TestCase(140, "DeleteCategories")>
+        <TestCase(117, "DeleteTitleRow")>
+        <TestCase(118, "DeleteTitleRow")>
+        <TestCase(117, "DeleteValues")>
+        <TestCase(118, "DeleteValues")>
+        <TestCase(119, "DeleteValues")>
+        <TestCase(120, "DeleteValues")>
+        <TestCase(121, "DeleteValues")>
+        <TestCase(122, "DeleteValues")>
+        <TestCase(123, "DeleteValues")>
+        <TestCase(140, "DeleteValues")>
+        <TestCase(117, "DeleteDataRows")>
+        <TestCase(118, "DeleteDataRows")>
+        <TestCase(117, "DeleteSeriesRow")>
+        <TestCase(119, "DeleteSeriesRow")>
+        <TestCase(120, "DeleteSeriesRow")>
+        <TestCase(121, "DeleteSeriesRow")>
+        <TestCase(123, "DeleteSeriesRow")>
+        <TestCase(117, "DeleteSeriesFirstRow")>
+        <TestCase(119, "DeleteSeriesThenLast")>
         Public Sub ChartReferences_OpenXmlMatchesExcelChartExSourcesAndDrawingAnchors(chartType As Integer, operation As String)
             Dim caseDirectory = CreateChartTestDirectory()
             Dim input = Path.Combine(caseDirectory, "chartex.xlsx")
@@ -134,7 +159,16 @@ Namespace ExcelOpsTests.Engines
                         data.Range("B" & point).Value2 = categories(point - 3)
                     Next
                 End If
-                data.Range(If(numericOnly, "C2:C5", "B2:C5")).Select()
+                Dim multipleSeries = operation.StartsWith("DeleteSeries", StringComparison.Ordinal)
+                If multipleSeries Then
+                    data.Range("D2").Value2 = "Profit"
+                    data.Range("E2").Value2 = "Visits"
+                    For point = 3 To 5
+                        data.Range("D" & point).Value2 = point * 9
+                        data.Range("E" & point).Value2 = point * 8
+                    Next
+                End If
+                data.Range(If(numericOnly, "C2:C5", If(multipleSeries, "B2:E5", "B2:C5"))).Select()
                 data.Shapes.AddChart2(-1, CType(chartType, NativeExcel.XlChartType), 240, 120, 220, 150)
                 DirectCast(data.ChartObjects(1), NativeExcel.ChartObject).Placement = NativeExcel.XlPlacement.xlMoveAndSize
                 workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
@@ -144,28 +178,42 @@ Namespace ExcelOpsTests.Engines
 
                 Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
                 Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                    Assert.Throws(Of NotSupportedException)(Sub() editor.RemoveColumns(ChartDataSheet, 2, 1, True))
                     ApplyChartDataEdit(editor, operation)
                     editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 End Using
                 Dim native = ChartExReferences(expected, resultSheet)
                 Dim edited = ChartExReferences(output, resultSheet)
-                Assert.That(native.References, [Is].Not.Empty)
-                Assert.That(native.References, Has.All.StartsWith(ChartSheetQualifier(resultSheet)))
+                Dim emptyChart = operation = "DeleteValues" OrElse operation = "DeleteDataRows" OrElse operation = "DeleteSeriesThenLast"
+                Assert.That(native.HasChartData, [Is].EqualTo(Not emptyChart))
+                If multipleSeries AndAlso Not emptyChart Then Assert.That(native.SeriesLayouts.Length, [Is].EqualTo(2))
                 Assert.That(edited.References, [Is].EqualTo(native.References))
                 Assert.That(edited.Anchors, [Is].EqualTo(native.Anchors))
+                Assert.That(edited.HasChartData, [Is].EqualTo(native.HasChartData))
+                Assert.That(edited.SeriesLayouts, [Is].EqualTo(native.SeriesLayouts))
+                Assert.That(edited.AxisCount, [Is].EqualTo(native.AxisCount))
 
+                workbook = Me.CreateInstance(expected, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim nativeChart = GetFirstEmbeddedChart(workbook, resultSheet)
+                Dim nativeType = CInt(nativeChart.ChartType)
+                Dim nativeSeries = DirectCast(nativeChart.SeriesCollection(), NativeExcel.SeriesCollection).Count
+                workbook.Close()
                 workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                Dim renamed = DirectCast(workbook.Workbook.Worksheets.Item(resultSheet), NativeExcel.Worksheet)
-                Dim chart = DirectCast(renamed.ChartObjects(1), NativeExcel.ChartObject).Chart
-                Assert.That(CInt(chart.ChartType), [Is].EqualTo(chartType))
+                Dim chart = GetFirstEmbeddedChart(workbook, resultSheet)
+                Assert.That(CInt(chart.ChartType), [Is].EqualTo(nativeType))
+                Assert.That(DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(nativeSeries))
             Finally
                 If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
                 Directory.Delete(caseDirectory, True)
             End Try
         End Sub
 
-        Private Shared Function ChartExReferences(path As String, sheet As String) As (References As String(), Anchors As String())
+        Private Shared Function GetFirstEmbeddedChart(workbook As MsExcelDataOperations, sheet As String) As NativeExcel.Chart
+            Dim worksheet = DirectCast(workbook.Workbook.Worksheets.Item(sheet), NativeExcel.Worksheet)
+            Return DirectCast(worksheet.ChartObjects(1), NativeExcel.ChartObject).Chart
+        End Function
+
+        Private Shared Function ChartExReferences(path As String, sheet As String) As (References As String(), Anchors As String(),
+                                                                                      HasChartData As Boolean, SeriesLayouts As String(), AxisCount As Integer)
             Using document = SpreadsheetDocument.Open(path, False)
                 Dim book = document.WorkbookPart
                 Dim drawing = DirectCast(FindChartSourcePart(book, sheet), WorksheetPart).DrawingsPart
@@ -174,7 +222,11 @@ Namespace ExcelOpsTests.Engines
                 Dim namesUsed = chart.ChartSpace.Descendants(Of ExtendedChartXml.Formula)().Select(Function(formula) names(formula.Text)).ToArray()
                 Dim anchors = drawing.WorksheetDrawing.Descendants(Of DrawingXml.MarkerType)().
                     Select(Function(marker) String.Join(",", marker.ChildElements.Select(Function(element) element.InnerText))).ToArray()
-                Return (namesUsed, anchors)
+                Dim chartSpace = chart.ChartSpace
+                Dim series = chartSpace.Descendants(Of ExtendedChartXml.Series)().Select(
+                    Function(item) item.LayoutId?.Value.ToString() & ":" & item.GetFirstChild(Of ExtendedChartXml.DataId)()?.Val?.Value.ToString()
+                ).ToArray()
+                Return (namesUsed, anchors, chartSpace.ChartData IsNot Nothing, series, chartSpace.Descendants(Of ExtendedChartXml.Axis)().Count())
             End Using
         End Function
 
@@ -318,6 +370,15 @@ Namespace ExcelOpsTests.Engines
                     workbook.RemoveRows(ChartDataSheet, 3, 1, True)
                 Case "DeleteDataRows"
                     workbook.RemoveRows(ChartDataSheet, 2, 3, True)
+                Case "DeleteTitleRow"
+                    workbook.RemoveRows(ChartDataSheet, 1, 1, True)
+                Case "DeleteSeriesRow"
+                    workbook.RemoveRows(ChartDataSheet, 3, 1, True)
+                Case "DeleteSeriesFirstRow"
+                    workbook.RemoveRows(ChartDataSheet, 2, 1, True)
+                Case "DeleteSeriesThenLast"
+                    workbook.RemoveRows(ChartDataSheet, 3, 1, True)
+                    workbook.RemoveRows(ChartDataSheet, 2, 2, True)
                 Case "InsertColumn"
                     workbook.AddColumn(ChartDataSheet, 1, 1, True)
                 Case "DeleteCategories"

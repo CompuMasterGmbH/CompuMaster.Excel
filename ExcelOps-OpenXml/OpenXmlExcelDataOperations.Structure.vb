@@ -576,6 +576,9 @@ Namespace ExcelOps
             For Each change In chartChanges.Charts
                 _changedCharts(change.Key) = change.Value
             Next
+            For Each change In chartChanges.ExtendedCharts
+                _changedExtendedCharts(change.Key) = change.Value
+            Next
             For Each change In chartChanges.Drawings
                 _changedDrawings(change.Key) = change.Value
             Next
