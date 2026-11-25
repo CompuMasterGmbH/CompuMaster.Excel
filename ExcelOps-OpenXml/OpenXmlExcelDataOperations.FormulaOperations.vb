@@ -51,37 +51,65 @@ Namespace ExcelOps
                 End Select
             End Function
 
-            Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), worksheet As String) As Object
+            Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
                 Select Case name.ToUpperInvariant()
                     Case "IF"
                         If arguments.Count < 2 OrElse arguments.Count > 3 Then Return New FormulaError("#VALUE!")
-                        Dim condition = Scalar(EvaluateExpression(arguments(0), worksheet))
+                        Dim condition = Scalar(EvaluateExpression(arguments(0), formulaCell))
                         If TypeOf condition Is String Then Return New FormulaError("#VALUE!")
                         Dim truth = NumberValue(condition)
                         If TypeOf truth Is FormulaError Then Return truth
-                        If DirectCast(truth, Double) <> 0.0 Then Return Scalar(EvaluateExpression(arguments(1), worksheet))
-                        If arguments.Count = 3 Then Return Scalar(EvaluateExpression(arguments(2), worksheet))
+                        If DirectCast(truth, Double) <> 0.0 Then Return EvaluateExpression(arguments(1), formulaCell)
+                        If arguments.Count = 3 Then Return EvaluateExpression(arguments(2), formulaCell)
                         Return False
                     Case "ABS"
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
-                        Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), worksheet)))
+                        Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), formulaCell)))
                         If TypeOf operand Is FormulaError Then Return operand
                         Return Math.Abs(DirectCast(operand, Double))
+                    Case "ROW", "COLUMN", "ROWS", "COLUMNS"
+                        Return EvaluateReferenceFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT"
-                        Return Aggregate(name.ToUpperInvariant(), arguments, worksheet)
+                        Return Aggregate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case Else
                         Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
                 End Select
             End Function
 
-            Private Function Aggregate(name As String, arguments As IReadOnlyList(Of FormulaExpression), worksheet As String) As Object
+            Private Function EvaluateReferenceFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+                If arguments.Count = 0 Then
+                    If name = "ROW" Then Return CDbl(formulaCell.RowIndex + 1)
+                    If name = "COLUMN" Then Return CDbl(formulaCell.ColumnIndex + 1)
+                End If
+                If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
+
+                ' Keep the reference as an area so address queries do not read cell values.
+                Dim argument = EvaluateExpression(arguments(0), formulaCell)
+                If TypeOf argument Is FormulaError Then Return argument
+                Dim area = TryCast(argument, FormulaArea)
+                If area Is Nothing Then
+                    If name = "ROWS" OrElse name = "COLUMNS" Then Return 1.0
+                    Return New FormulaError("#VALUE!")
+                End If
+                If Not _worksheets.ContainsKey(area.Sheet) Then Return New FormulaError("#REF!")
+
+                Select Case name
+                    Case "ROW" : Return CDbl(area.FirstRow + 1)
+                    Case "COLUMN" : Return CDbl(area.FirstColumn + 1)
+                    Case "ROWS" : Return CDbl(area.LastRow - area.FirstRow + 1)
+                    Case Else : Return CDbl(area.LastColumn - area.FirstColumn + 1)
+                End Select
+            End Function
+
+            Private Function Aggregate(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
                 If arguments.Count = 0 Then Return New FormulaError("#VALUE!")
                 Dim sum As Double
                 Dim minimum As Double = Double.PositiveInfinity
                 Dim maximum As Double = Double.NegativeInfinity
                 Dim count As Integer
+                Dim firstError As FormulaError = Nothing
                 For Each argument In arguments
-                    Dim value = EvaluateExpression(argument, worksheet)
+                    Dim value = EvaluateExpression(argument, formulaCell)
                     Dim area = TryCast(value, FormulaArea)
                     Dim values = If(area Is Nothing, CType(New Object() {value}, IEnumerable(Of Object)), RangeValues(area))
                     For Each item In values
@@ -89,8 +117,8 @@ Namespace ExcelOps
                         If item Is Nothing Then Continue For
                         Dim number = NumberValue(item)
                         If TypeOf number Is FormulaError Then
-                            If name = "COUNT" Then Continue For
-                            Return number
+                            If name <> "COUNT" AndAlso firstError Is Nothing Then firstError = DirectCast(number, FormulaError)
+                            Continue For
                         End If
                         Dim numeric = DirectCast(number, Double)
                         count += 1
@@ -100,6 +128,7 @@ Namespace ExcelOps
                     Next
                 Next
 
+                If firstError IsNot Nothing Then Return firstError
                 Select Case name
                     Case "SUM" : Return FiniteNumber(sum)
                     Case "AVERAGE"

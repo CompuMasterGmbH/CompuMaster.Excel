@@ -26,6 +26,8 @@ Public Class OpenXmlFormulaCalculationTest
     <TestCase("=ABS(-4)", 4.0)>
     <TestCase("=SUM(""2"",TRUE,3)", 6.0)>
     <TestCase("=COUNT(#DIV/0!,2)", 1.0)>
+    <TestCase("=SUM(IF(TRUE,'Input''s data'!A3,1))", 0.0)>
+    <TestCase("=COUNT(IF(TRUE,'Input''s data'!A3,1))", 0.0)>
     <TestCase("=IF(TRUE,,3)", 0.0)>
     <TestCase("=IF(,1,2)", 2.0)>
     <TestCase("=IF(FALSE,A1,7)", 7.0)>
@@ -80,15 +82,82 @@ Public Class OpenXmlFormulaCalculationTest
             Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 1), [Is].True)
             Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 2), [Is].True)
 
-            Dim circular = Assert.Throws(Of FormulaComplexityNotSupportedException)(
+            Dim circular = Assert.Throws(Of CircularReferenceException)(
                 Sub() workbook.WriteCellFormula(SheetName, 0, 0, "B1", immediatelyCalculateCellValue:=True))
-            Assert.That(circular.Message, Does.Contain("circular dependency"))
+            Assert.That(circular.Cell.Address, [Is].EqualTo("A1"))
+            Assert.That(circular.Formula, [Is].EqualTo("B1"))
             Assert.That(ReadResult(workbook, "A1"), [Is].EqualTo(3.0))
             Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 1), [Is].True)
 
             workbook.WriteCellFormula(SheetName, 0, 2, "'[external.xlsx]Data'!A1", immediatelyCalculateCellValue:=False)
             Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() ReadResult(workbook, "C1", FormulaCalculationMode.CalculateIfMissing))
             Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 2), [Is].True)
+        End Using
+    End Sub
+
+    ' Excel can answer these questions from the reference without calculating its cells.
+    <TestCase("ROW(B3)", 3.0)>
+    <TestCase("COLUMN($B$3)", 2.0)>
+    <TestCase("ROW()", 3.0)>
+    <TestCase("COLUMN()", 2.0)>
+    <TestCase("ROW(B5:B2)", 2.0)>
+    <TestCase("COLUMN(A3:C3)", 1.0)>
+    <TestCase("ROWS(B2:B5)", 4.0)>
+    <TestCase("COLUMNS(A3:C3)", 3.0)>
+    <TestCase("ROW(IF(TRUE,B3,A1))", 3.0)>
+    <TestCase("ROW('Input''s data'!A2)", 2.0)>
+    <TestCase("COLUMNS(""text"")", 1.0)>
+    <TestCase("ROWS(#REF!)", "#REF!")>
+    Public Sub AddressFunctionsUseTheReferenceWithoutReadingItsValue(formula As String, expected As Object)
+        Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options())
+            workbook.WriteCellFormula(SheetName, 2, 1, formula, immediatelyCalculateCellValue:=False)
+            Assert.That(ReadResult(workbook, "B3", FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(expected))
+            Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 0), [Is].True)
+            Assert.That(workbook.HasMissingCachedFormulaResult("Input's data", 1, 0), [Is].True)
+        End Using
+    End Sub
+
+    ' Nested formulas evaluate ROW and COLUMN using their own addresses.
+    <Test>
+    Public Sub AddressFunctionsUseThePrecedentsLocation()
+        Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options())
+            workbook.WriteCellFormula("Input's data", 1, 2, "ROW()+COLUMN()", immediatelyCalculateCellValue:=False)
+            workbook.WriteCellFormula(SheetName, 0, 0, "'Input''s data'!C2", immediatelyCalculateCellValue:=True)
+            Assert.That(ReadResult(workbook, "A1"), [Is].EqualTo(5.0))
+        End Using
+    End Sub
+
+    <TestCase("B3+1")>
+    <TestCase("SUM(B2:B5)")>
+    <TestCase("SUM(#DIV/0!,B3)")>
+    <TestCase("IF(TRUE,B3,7)")>
+    <TestCase("ROWS(B3+1)")>
+    Public Sub ValueCyclesAlwaysRaiseTheCircularReferenceException(formula As String)
+        Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options())
+            workbook.WriteCellFormula(SheetName, 2, 1, formula, immediatelyCalculateCellValue:=False)
+            Dim cycle = Assert.Throws(Of CircularReferenceException)(
+                Sub() workbook.RecalculateCell(SheetName, 2, 1, throwExceptionOnCalculationError:=False))
+            Assert.That(cycle.Cell.SheetName, [Is].EqualTo(SheetName))
+            Assert.That(cycle.Cell.Address, [Is].EqualTo("B3"))
+            Assert.That(cycle.Formula, [Is].EqualTo(formula))
+            Assert.Throws(Of CircularReferenceException)(Sub() ReadResult(workbook, "B3", FormulaCalculationMode.CalculateIfMissing))
+            Dim htmlOptions As New HtmlSheetExportOptions With {
+                .FormulaCalculationMode = FormulaCalculationMode.CalculateIfMissing, .MissingFormulaResultText = ""
+            }
+            Assert.Throws(Of CircularReferenceException)(Sub() workbook.ExportSheetToHtml(SheetName, htmlOptions))
+            Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 2, 1), [Is].True)
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub CrossWorksheetCycleLeavesStagedCachesUnchanged()
+        Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options())
+            workbook.WriteCellFormula(SheetName, 0, 1, "'Input''s data'!A2", immediatelyCalculateCellValue:=False)
+            workbook.WriteCellFormula("Input's data", 1, 0, "Grid!B1+1", immediatelyCalculateCellValue:=False)
+            Assert.Throws(Of CircularReferenceException)(Sub() workbook.RecalculateAll())
+            Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 0), [Is].True)
+            Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 1), [Is].True)
+            Assert.That(workbook.HasMissingCachedFormulaResult("Input's data", 1, 0), [Is].True)
         End Using
     End Sub
 

@@ -5,7 +5,7 @@ Namespace ExcelOps
 
     Partial Public Class OpenXmlExcelDataOperations
 
-        Private Delegate Function FormulaExpression(calculation As FormulaCalculation, worksheet As String) As Object
+        Private Delegate Function FormulaExpression(calculation As FormulaCalculation, formulaCell As ExcelCell) As Object
 
         Private NotInheritable Class FormulaParser
             Private Shared ReadOnly TokenPattern As New Regex(
@@ -87,14 +87,14 @@ Namespace ExcelOps
                 End If
                 If token(0) = """"c Then
                     Dim contents = token.Substring(1, token.Length - 2).Replace("""""", """")
-                    Return Function(calculation, worksheet) contents
+                    Return Function(calculation, formulaCell) contents
                 End If
                 If token(0) = "#"c Then
                     Dim code = token.ToUpperInvariant()
                     Select Case code
                         Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"
                             Dim excelError = New FormulaError(code)
-                            Return Function(calculation, worksheet) excelError
+                            Return Function(calculation, formulaCell) excelError
                         Case Else
                             Throw New NotSupportedException("Unsupported Excel error literal " & token & ".")
                     End Select
@@ -113,17 +113,17 @@ Namespace ExcelOps
                     Dim number As Double
                     Dim value = If(Double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, number),
                         FormulaCalculation.FiniteNumber(number), New FormulaError("#NUM!"))
-                    Return Function(calculation, worksheet) value
+                    Return Function(calculation, formulaCell) value
                 End If
-                If String.Equals(token, "TRUE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, worksheet) True
-                If String.Equals(token, "FALSE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, worksheet) False
+                If String.Equals(token, "TRUE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) True
+                If String.Equals(token, "FALSE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) False
                 Return ParseReference(Nothing, token)
             End Function
 
             Private Function ParseReference(sheetName As String, first As String) As FormulaExpression
                 Dim start = ParseAddress(first)
                 Dim finish = If(Match(":"), ParseAddress(Consume()), start)
-                Return Function(calculation, worksheet) New FormulaArea(If(sheetName, worksheet), start, finish)
+                Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish)
             End Function
 
             Private Shared Function ParseAddress(token As String) As ExcelCell
@@ -138,22 +138,22 @@ Namespace ExcelOps
                 If Not Match(")") Then
                     Do
                         If Current = "," OrElse Current = ")" Then
-                            arguments.Add(Function(calculation, worksheet) Nothing)
+                            arguments.Add(Function(calculation, formulaCell) Nothing)
                         Else
                             arguments.Add(ParseExpression(1))
                         End If
                     Loop While Match(",")
                     Expect(")")
                 End If
-                Return Function(calculation, worksheet) calculation.EvaluateFunction(name, arguments, worksheet)
+                Return Function(calculation, formulaCell) calculation.EvaluateFunction(name, arguments, formulaCell)
             End Function
 
             Private Shared Function UnaryExpression(operation As String, argument As FormulaExpression) As FormulaExpression
-                Return Function(calculation, worksheet) calculation.EvaluateUnary(operation, calculation.EvaluateExpression(argument, worksheet))
+                Return Function(calculation, formulaCell) calculation.EvaluateUnary(operation, calculation.EvaluateExpression(argument, formulaCell))
             End Function
 
             Private Shared Function BinaryExpression(operation As String, left As FormulaExpression, right As FormulaExpression) As FormulaExpression
-                Return Function(calculation, worksheet) calculation.EvaluateBinary(operation, calculation.EvaluateExpression(left, worksheet), calculation.EvaluateExpression(right, worksheet))
+                Return Function(calculation, formulaCell) calculation.EvaluateBinary(operation, calculation.EvaluateExpression(left, formulaCell), calculation.EvaluateExpression(right, formulaCell))
             End Function
 
             Private Shared Function OperatorPrecedence(operation As String) As Integer

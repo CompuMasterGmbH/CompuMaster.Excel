@@ -128,15 +128,15 @@ Namespace ExcelOps
                 Dim cached As (Part As WorksheetPart, Result As Object) = Nothing
                 If _results.TryGetValue(cell, cached) Then Return cached.Result
                 Dim formula = cell.CellFormula.Text
+                Dim address As New ExcelCell(worksheet.Name, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
+                If _active.Contains(cell) Then Throw New CircularReferenceException(address, formula)
                 If _active.Count >= 256 Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
-                If Not _active.Add(cell) Then
-                    Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula has a circular dependency.")
-                End If
+                _active.Add(cell)
                 Try
                     Dim expression = FormulaParser.Parse(formula)
-                    Dim result = If(Scalar(EvaluateExpression(expression, worksheet.Name)), 0.0)
+                    Dim result = If(Scalar(EvaluateExpression(expression, address)), 0.0)
                     _results.Add(cell, (worksheet.Part, result))
                     Return result
                 Catch ex As NotSupportedException When Not TypeOf ex Is FormulaComplexityNotSupportedException
@@ -148,11 +148,11 @@ Namespace ExcelOps
                 End Try
             End Function
 
-            Friend Function EvaluateExpression(expression As FormulaExpression, worksheet As String) As Object
+            Friend Function EvaluateExpression(expression As FormulaExpression, formulaCell As ExcelCell) As Object
                 If _expressionDepth >= 512 Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
                 _expressionDepth += 1
                 Try
-                    Return expression(Me, worksheet)
+                    Return expression(Me, formulaCell)
                 Finally
                     _expressionDepth -= 1
                 End Try
@@ -193,7 +193,7 @@ Namespace ExcelOps
                 Dim area = TryCast(value, FormulaArea)
                 If area Is Nothing Then Return value
                 If area.FirstRow <> area.LastRow OrElse area.FirstColumn <> area.LastColumn Then
-                    Throw New NotSupportedException("A multi-cell reference requires a supported aggregate function.")
+                    Throw New NotSupportedException("A multi-cell reference requires a function that supports ranges.")
                 End If
                 Return ReadCell(area.Sheet, area.FirstRow, area.FirstColumn)
             End Function
