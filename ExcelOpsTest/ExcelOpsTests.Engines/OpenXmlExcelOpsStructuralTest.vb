@@ -245,6 +245,39 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    ' The second edit sees the moved filter in the current unsaved table definition.
+    <Test>
+    Public Sub StructuralReference_UpdatesTableFiltersAcrossSuccessiveColumnEdits()
+        Dim source = Path.Combine(_directory, "filtered-table.xlsx")
+        Dim output = Path.Combine(_directory, "filtered-table-edited.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            Dim data = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Data")
+            Dim table = data.TableDefinitionParts.Single().Table
+            table.GetFirstChild(Of AutoFilter)().Append(New FilterColumn(New Filters(New Filter With {.Val = "2"})) With {.ColumnId = 1UI})
+            For Each row In data.Worksheet.GetFirstChild(Of SheetData)().Elements(Of Row)().Where(
+                Function(item) item.RowIndex.Value = 4UI OrElse item.RowIndex.Value = 7UI)
+                row.Hidden = True
+            Next
+        End Using
+        Using editor As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            editor.AddColumn("Data", 2, 1, True)
+            editor.RemoveColumns("Data", 3, 1, True)
+            Assert.That(editor.LookupCellFormula("Checks", 13, 0), [Is].EqualTo("SUM(#REF!)"))
+            editor.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim data = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Data")
+            Dim table = data.TableDefinitionParts.Single().Table
+            Dim filter = table.GetFirstChild(Of AutoFilter)()
+            Assert.That(filter.Reference.Value, [Is].EqualTo("B3:D6"))
+            Assert.That(filter.Elements(Of FilterColumn)(), [Is].Empty)
+            Dim hidden = data.Worksheet.GetFirstChild(Of SheetData)().Elements(Of Row)().
+                Where(Function(row) If(row.Hidden?.Value, False)).Select(Function(row) row.RowIndex.Value)
+            Assert.That(hidden, [Is].EqualTo({7UI}))
+        End Using
+    End Sub
+
     <Test>
     Public Sub WorkbookSession_UpdatesAnExternalReferenceInACalculatedTableColumn()
         Dim sourcePath = Path.Combine(_directory, WorkbookReferenceCoverage.SourceName)

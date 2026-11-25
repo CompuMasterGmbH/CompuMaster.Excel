@@ -28,6 +28,7 @@ Namespace ExcelOps
             Friend RemovesFirstDataRow As Boolean
             Friend RemovesTotalsRow As Boolean
             Friend ClearsDataBody As Boolean
+            Friend ClearsFilterCriteria As Boolean
             Friend ColumnEditOffset As Integer = -1
             Friend ReadOnly DeletedColumnNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
 
@@ -137,6 +138,7 @@ Namespace ExcelOps
                     Throw New InvalidDataException("The table's columns do not match its range.")
                 End If
                 If table.ColumnEditOffset >= 0 Then
+                    EditTableColumnFilters(replacement.GetFirstChild(Of AutoFilter)(), table, shift)
                     EditTableColumns(replacement.GetFirstChild(Of TableColumns)(), columns, table, shift, fills)
                     columns = replacement.GetFirstChild(Of TableColumns)().Elements(Of TableColumn)().ToArray()
                 End If
@@ -205,7 +207,7 @@ Namespace ExcelOps
                     Loop Until names.Add(name)
                     id += 1UI
                     definition.InsertBefore(New TableColumn With {.Id = id, .Name = name}, anchor)
-                    fills.Add((table.First.Row, shift.Start + index, Nothing, name))
+                    If table.HeaderCount > 0 Then fills.Add((table.First.Row, shift.Start + index, Nothing, name))
                 Next
             Else
                 For Each removed In columns.Skip(table.ColumnEditOffset).Take(shift.Count)
@@ -213,6 +215,47 @@ Namespace ExcelOps
                 Next
             End If
             definition.Count = CUInt(definition.ChildElements.Count)
+        End Sub
+
+        Private Sub EditTableColumnFilters(filter As AutoFilter, table As StructuralTable, shift As StructuralShift)
+            If filter Is Nothing Then Return
+            If filter.ChildElements.Any(Function(child) Not TypeOf child Is FilterColumn) Then
+                Throw UnsupportedOperation("Shifting Excel table columns with extended filter settings")
+            End If
+            Dim columns = filter.Elements(Of FilterColumn)().ToArray()
+            Dim deletedCriteria = False
+            For Each column In columns
+                If column.ColumnId Is Nothing OrElse column.ColumnId.Value > CUInt(table.Last.Column - table.First.Column) Then
+                    Throw New InvalidDataException("A table filter references an invalid column.")
+                End If
+                If column.ChildElements.Any(Function(child) TypeOf child Is ExtensionList OrElse TypeOf child Is OpenXmlUnknownElement) Then
+                    Throw UnsupportedOperation("Shifting Excel table columns with extended filter criteria")
+                End If
+                Dim offset = CInt(column.ColumnId.Value)
+                If offset < table.ColumnEditOffset Then Continue For
+                If shift.Inserting Then
+                    column.ColumnId = CUInt(offset + shift.Count)
+                ElseIf offset >= table.ColumnEditOffset + shift.Count Then
+                    column.ColumnId = CUInt(offset - shift.Count)
+                Else
+                    deletedCriteria = deletedCriteria OrElse column.HasChildren
+                    column.Remove()
+                End If
+            Next
+            If deletedCriteria AndAlso filter.Elements(Of FilterColumn)().Any(Function(column) column.HasChildren) Then
+                Throw UnsupportedOperation("Deleting a table filter while other criteria in the same table must be reapplied")
+            End If
+            table.ClearsFilterCriteria = deletedCriteria
+        End Sub
+
+        Private Shared Sub RestoreTableRowVisibility(data As SheetData, tables As IEnumerable(Of StructuralTable))
+            For Each table In tables.Where(Function(item) item.ClearsFilterCriteria)
+                For Each row In data.Elements(Of Row)()
+                    If Not If(row.Hidden?.Value, False) Then Continue For
+                    Dim index = CInt(row.RowIndex.Value) - 1
+                    If index >= table.FirstDataRow AndAlso index <= table.LastDataRow Then row.Hidden = Nothing
+                Next
+            Next
         End Sub
 
         Private Sub SaveChangedTables(source As WorkbookPart, target As WorkbookPart)

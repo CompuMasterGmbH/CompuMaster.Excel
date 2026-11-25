@@ -157,9 +157,8 @@ Namespace ExcelOps
                         table.TargetLastColumn = MoveIndex(high)
                         Return
                     End If
-                    If table.HeaderCount <> 1 OrElse If(table.Source.GetFirstChild(Of AutoFilter)()?.Elements(Of FilterColumn)().Any(), False) OrElse
-                       (Not Inserting AndAlso (Start < low OrElse Start + Count > high + 1 OrElse Count >= high - low + 1)) Then
-                        Throw New NotSupportedException("Changing the columns of a headerless, filtered or fully removed Excel table is unsupported.")
+                    If Not Inserting AndAlso (Start < low OrElse Start + Count > high + 1 OrElse Count >= high - low + 1) Then
+                        Throw New NotSupportedException("Removing Excel table columns together with adjoining columns or removing an entire table is unsupported.")
                     End If
                     table.ColumnEditOffset = Start - low
                     If Inserting Then
@@ -515,6 +514,7 @@ Namespace ExcelOps
                     originalMerges = part.Worksheet.GetFirstChild(Of MergeCells)()
                     shiftedMerges = ShiftMergedCells(originalMerges, sheetShift)
                     shiftedData = ShiftSheetData(data, sheetShift, shiftedMerges, tableFills, filledCells, dimension)
+                    RestoreTableRowVisibility(shiftedData, tables)
                     data = shiftedData
                 End If
                 If data IsNot originalData Then revisedSheetData.Add(part, data)
