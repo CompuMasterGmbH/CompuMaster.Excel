@@ -363,6 +363,63 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <TestCase("Beginning", False, "Beginning:Ending!")>
+        <TestCase("Middle", False, "Beginning:Ending!")>
+        <TestCase("Ending", False, "Beginning:Ending!")>
+        <TestCase("Beginning", True, "'O''Brien Data:Ending'!")>
+        <TestCase("Middle", True, "Beginning:Ending!")>
+        <TestCase("Ending", True, "'Beginning:O''Brien Data'!")>
+        Public Sub StructuralChanges_ThreeDimensionalReferencesMatchExcel(editedSheet As String, rename As Boolean, expectedQualifier As String)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim baseline = Path.Combine(caseDirectory, "spans.xlsx")
+            Dim nativeResult = Path.Combine(caseDirectory, "excel-spans.xlsx")
+            Dim result = Path.Combine(caseDirectory, "openxml-spans.xlsx")
+            Dim workbook As MsExcelDataOperations = Nothing
+            Try
+                workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile,
+                    New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile))
+                workbook.RenameWorksheet("Sheet1", "Summary", True)
+                For Each sheet In {"Beginning", "Middle", "Ending"}
+                    workbook.AddSheet(sheet)
+                Next
+                Dim summary = TransferSheet(workbook.Workbook, "Summary")
+                summary.Range("A1").Formula = "=SUM(Beginning:Ending!$B$3:$B$5)"
+                summary.Range("A2").Formula = "=SUM(Beginning:Ending!$B$3)"
+                summary.Range("A3").Formula = "=SUM(Beginning:Ending!$B:$D)"
+                workbook.SaveAs(baseline, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                EditSheetInSpan(workbook, editedSheet, rename)
+                workbook.SaveAs(nativeResult, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Using editor As New OpenXmlExcelDataOperations(baseline, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    EditSheetInSpan(editor, editedSheet, rename)
+                    editor.SaveCopyAs(result, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                For Each path In {nativeResult, result}
+                    Using document = SpreadsheetDocument.Open(path, False)
+                        Dim sheet = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Summary")
+                        Assert.That(StructuralReferenceCoverage.FormulaAt(sheet, "A1"), [Is].EqualTo("SUM(" & expectedQualifier & "$B$3:$B$5)"))
+                        Assert.That(StructuralReferenceCoverage.FormulaAt(sheet, "A2"), [Is].EqualTo("SUM(" & expectedQualifier & "$B$3)"))
+                        Assert.That(StructuralReferenceCoverage.FormulaAt(sheet, "A3"), [Is].EqualTo("SUM(" & expectedQualifier & "$B:$D)"))
+                    End Using
+                Next
+            Finally
+                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Sub EditSheetInSpan(workbook As ExcelDataOperationsBase, editedSheet As String, rename As Boolean)
+            If rename Then
+                workbook.RenameWorksheet(editedSheet, "O'Brien Data", True)
+            Else
+                workbook.AddRow(editedSheet, 2, 1, True)
+                workbook.AddCells(editedSheet, 3, 1, 1, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
+                workbook.RemoveColumns(editedSheet, 1, 1, True)
+            End If
+        End Sub
+
         <Test>
         Public Sub ChartReferences_TrackEditsInTheLinkedWorkbook()
             Dim caseDirectory = CreateTransferTestDirectory()

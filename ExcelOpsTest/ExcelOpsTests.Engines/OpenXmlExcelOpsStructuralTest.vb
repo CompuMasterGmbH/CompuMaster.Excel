@@ -304,8 +304,27 @@ Partial Public Class OpenXmlExcelOpsTest
         Assert.That(HashFile(output), [Is].EqualTo(HashFile(sourcePath)))
     End Sub
 
-    <TestCase("SUM('O''Brien Data:Check'!B2)")>
-    <TestCase("SUM(Check:Unrelated!B2)")>
+    <Test>
+    Public Sub ThreeDimensionalReferencesKeepTheirCoordinatesAndFollowEndpointRenames()
+        Dim source = Path.Combine(_directory, "sheet-spans.xlsx")
+        CreateStructuralWorkbook(source, {ValueCell("B2", 5)},
+            {FormulaCell("A1", "SUM('O''Brien Data:Unrelated'!$B$2:$C$4)"),
+             FormulaCell("A2", "SUM(Check:Unrelated!B2)"),
+             FormulaCell("A3", "SUM('O''Brien Data:Unrelated'!$B:$C)+B2")})
+        Using workbook = OpenStructuralWorkbook(source)
+            workbook.AddRow(DataSheet, 0, 1, True)
+            workbook.AddColumn("Check", 1, 1, True)
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM('O''Brien Data:Unrelated'!$B$2:$C$4)"))
+            Assert.That(workbook.LookupCellFormula("Check", 2, 0), [Is].EqualTo("SUM('O''Brien Data:Unrelated'!$B:$C)+C2"))
+            workbook.RenameWorksheet(DataSheet, "Beginning", True)
+            workbook.RenameWorksheet("Unrelated", "O'Brien end", True)
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM('Beginning:O''Brien end'!$B$2:$C$4)"))
+            Assert.That(workbook.LookupCellFormula("Check", 1, 0), [Is].EqualTo("SUM('Check:O''Brien end'!B2)"))
+        End Using
+    End Sub
+
+    <TestCase("SUM('O''Brien Data:Missing'!B2)")>
+    <TestCase("SUM(Check:Check!B2)")>
     <TestCase("'C:\Temp\[External.xlsx]Data'!B2")>
     <TestCase("[1]Remote!B2")>
     <TestCase("'[1]Remote Data'!B2")>

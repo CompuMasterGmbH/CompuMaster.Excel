@@ -13,6 +13,9 @@ Namespace ExcelOps
 
         Private Shared ReadOnly FormulaString As New Regex("\G""(?:[^""]|"""")*""", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaSheet As New Regex("\G(?<name>'(?:[^']|'')+'|(?:\[[1-9][0-9]*\])?[\p{L}\p{M}\p{Nd}_.]+)!", RegexOptions.CultureInvariant)
+        Private Shared ReadOnly FormulaSheetSpan As New Regex(
+            "\G(?:'(?<first>(?:[^':\[\]]|'')+):(?<last>(?:[^':\[\]]|'')+)'|(?<first>[\p{L}\p{M}\p{Nd}_.]+):(?<last>[\p{L}\p{M}\p{Nd}_.]+))!",
+            RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaName As New Regex("\G[\p{L}_\\][\p{L}\p{M}\p{Nd}_.\\?]*", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaNumber As New Regex("\G(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaErrorToken As New Regex("\G#(?:NULL!|DIV/0!|VALUE!|REF!|NAME\?|NUM!|N/A|GETTING_DATA|SPILL!|CALC!|FIELD!|BLOCKED!|UNKNOWN!|CONNECT!|BUSY!|PYTHON!)", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
@@ -159,8 +162,31 @@ Namespace ExcelOps
             Return "'" & prefix & name.Replace("'", "''") & "'!"
         End Function
 
+        Private Shared Function RewriteSheetSpan(span As Match, book As WorkbookPart, editedSheet As String, newSheetName As String) As String
+            Dim first = span.Groups("first").Value.Replace("''", "'")
+            Dim last = span.Groups("last").Value.Replace("''", "'")
+            Dim names = book.Workbook.Sheets.Elements(Of Sheet)().Select(Function(sheet) sheet.Name.Value)
+            If String.Equals(first, last, StringComparison.OrdinalIgnoreCase) OrElse
+               Not names.Contains(first, StringComparer.OrdinalIgnoreCase) OrElse
+               Not names.Contains(last, StringComparer.OrdinalIgnoreCase) Then Throw UnsupportedReferenceSyntax()
+            If newSheetName Is Nothing Then Return span.Value
+
+            If String.Equals(first, editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                first = newSheetName
+            ElseIf String.Equals(last, editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                last = newSheetName
+            Else
+                Return span.Value
+            End If
+            If FormatSheetName(first).StartsWith("'", StringComparison.Ordinal) OrElse
+               FormatSheetName(last).StartsWith("'", StringComparison.Ordinal) Then
+                Return "'" & first.Replace("'", "''") & ":" & last.Replace("'", "''") & "'!"
+            End If
+            Return first & ":" & last & "!"
+        End Function
+
         Private Shared Function UnsupportedReferenceSyntax() As NotSupportedException
-            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. Unsupported external references, 3-D references, spill references, references to unknown tables, and some compound ranges cannot be rewritten.")
+            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. Some external, 3-D, spill, structured and compound references cannot be rewritten.")
         End Function
 
         Private Shared Function ReadTableSelector(value As String, start As Integer) As Integer
@@ -232,13 +258,19 @@ Namespace ExcelOps
                 End If
 
                 Dim tokenStart = index
+                Dim sheetSpan = FormulaSheetSpan.Match(value, index)
                 Dim sheetToken = FormulaSheet.Match(value, index)
                 Dim explicitSheet As String = Nothing
                 Dim externalBook As Boolean
                 Dim linkedSheet As String = Nothing
                 Dim linkedPrefix As String = Nothing
                 Dim qualifier As String = Nothing
-                If sheetToken.Success Then
+                If sheetSpan.Success Then
+                    If rewriteSheetQualifier IsNot Nothing Then Throw UnsupportedReferenceSyntax()
+                    qualifier = RewriteSheetSpan(sheetSpan, If(formulaWorkbook, WorkbookPart), editedSheet,
+                                                 If(structuralExternalLinks Is Nothing, renamedSheet, Nothing))
+                    index += sheetSpan.Length
+                ElseIf sheetToken.Success Then
                     explicitSheet = SheetNameFromToken(If(formulaWorkbook, WorkbookPart), sheetToken, externalBook)
                     If externalBook AndAlso structuralExternalLinks IsNot Nothing Then
                         linkedSheet = LinkedStructuralSheet(explicitSheet, structuralExternalLinks, linkedPrefix)
@@ -264,9 +296,11 @@ Namespace ExcelOps
                     Dim colon = SkipWhitespace(value, referenceEnd)
                     If colon < value.Length AndAlso value(colon) = ":"c Then
                         Dim secondStart = SkipWhitespace(value, colon + 1)
+                        If sheetSpan.Success AndAlso StartsRangeExpression(value, secondStart) Then Throw UnsupportedReferenceSyntax()
                         If Not first.IsCell OrElse Not StartsRangeExpression(value, secondStart) Then
                             Dim secondQualifier = FormulaSheet.Match(value, secondStart)
                             If secondQualifier.Success Then
+                                If sheetSpan.Success Then Throw UnsupportedReferenceSyntax()
                                 Dim secondExternalBook As Boolean
                                 Dim secondSheet = SheetNameFromToken(If(formulaWorkbook, WorkbookPart), secondQualifier, secondExternalBook)
                                 If externalBook <> secondExternalBook OrElse Not String.Equals(explicitSheet, secondSheet, StringComparison.OrdinalIgnoreCase) Then
@@ -287,7 +321,7 @@ Namespace ExcelOps
                             End If
                             referenceEnd = secondEnd
                         End If
-                    ElseIf explicitSheet Is Nothing AndAlso colon < value.Length AndAlso value(colon) = "("c AndAlso
+                    ElseIf Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso colon < value.Length AndAlso value(colon) = "("c AndAlso
                            (colon = referenceEnd OrElse String.Equals(value.Substring(index, referenceEnd - index), "LOG10", StringComparison.OrdinalIgnoreCase)) Then
                         first = Nothing
                     End If
@@ -297,7 +331,7 @@ Namespace ExcelOps
                     result.Append(qualifier)
                     Dim unchanged = value.Substring(index, referenceEnd - index)
                     If shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook AndAlso
-                       (explicitSheet Is Nothing AndAlso scopeSheet Is Nothing OrElse Not first.IsAbsolute OrElse
+                       (Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing OrElse Not first.IsAbsolute OrElse
                         (second IsNot Nothing AndAlso Not second.IsAbsolute)) Then
                         Throw New NotSupportedException("Structural shifts require every A1 reference in a defined name to be absolute and to have an explicit or worksheet-local scope.")
                     End If
@@ -310,7 +344,7 @@ Namespace ExcelOps
                             result.Append(firstAddress)
                             If second IsNot Nothing Then result.Append(separator).Append(secondAddress)
                         End If
-                    ElseIf shift IsNot Nothing AndAlso
+                    ElseIf shift IsNot Nothing AndAlso Not sheetSpan.Success AndAlso
                            String.Equals(If(externalBook OrElse structuralExternalLinks IsNot Nothing, linkedSheet, If(explicitSheet, scopeSheet)),
                                          editedSheet, StringComparison.OrdinalIgnoreCase) Then
                         result.Append(shift.RewriteReference(first, second, separator))
@@ -324,6 +358,7 @@ Namespace ExcelOps
                     Continue While
                 End If
 
+                If sheetSpan.Success Then Throw UnsupportedReferenceSyntax()
                 Dim token = FormulaErrorToken.Match(value, index)
                 If Not token.Success Then token = FormulaName.Match(value, index)
                 If Not token.Success AndAlso explicitSheet Is Nothing Then token = FormulaNumber.Match(value, index)
