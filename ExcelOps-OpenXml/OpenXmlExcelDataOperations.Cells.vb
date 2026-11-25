@@ -9,7 +9,8 @@ Namespace ExcelOps
     Partial Public Class OpenXmlExcelDataOperations
 
         Private Shared ReadOnly EscapedText As New Regex("_x([0-9a-f]{4})_", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
-        Private Shared ReadOnly TextToEscape As New Regex("_(?=[xX][0-9A-Fa-f]{4}_)|[\u0000-\u0008\u000B-\u001F\uFFFE\uFFFF]")
+        Private Shared ReadOnly TextToEscape As New Regex(
+            "_(?=[xX][0-9A-Fa-f]{4}_)|[\u0000-\u0008\u000B-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]")
         Private ReadOnly _formulaRanges As New Dictionary(Of WorksheetPart, List(Of ExcelRange))
 
         Private Shared Sub ValidateCoordinates(rowIndex As Integer, columnIndex As Integer)

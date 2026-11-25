@@ -95,7 +95,7 @@ Namespace ExcelOps
                     Case "TRIM" : Return DuplicateSpaces.Replace(contents.Trim(" "c), " ")
                     Case "UPPER" : Return contents.ToUpperInvariant()
                     Case "LOWER" : Return contents.ToLowerInvariant()
-                    Case "LEN" : Return CDbl(contents.Length)
+                    Case "LEN" : Return CDbl(TextCharacterCount(contents, _unicodeTextPositions))
                 End Select
 
                 Dim position As Double = 0.0
@@ -112,9 +112,11 @@ Namespace ExcelOps
                     length = Math.Truncate(DirectCast(amount, Double))
                     If length < 0.0 Then Return New FormulaError("#VALUE!")
                 End If
-                If name = "RIGHT" Then position = Math.Max(0.0, contents.Length - length)
-                If position >= contents.Length Then Return String.Empty
-                Return contents.Substring(CInt(position), CInt(Math.Min(length, contents.Length - position)))
+                Dim unicodePositions = name <> "MID" OrElse _unicodeTextPositions
+                If name = "RIGHT" Then position = Math.Max(0.0, TextCharacterCount(contents, unicodePositions) - length)
+                Dim first = Utf16CharacterOffset(contents, position, unicodePositions)
+                Dim last = Utf16CharacterOffset(contents, position + length, unicodePositions)
+                Return contents.Substring(first, last - first)
             End Function
 
             Private Function EvaluateLogicalFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),

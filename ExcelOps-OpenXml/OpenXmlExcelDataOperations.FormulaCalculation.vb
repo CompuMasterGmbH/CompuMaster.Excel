@@ -1,6 +1,7 @@
 ﻿Imports System.Globalization
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
+Imports WorkbookTextVersion = DocumentFormat.OpenXml.Office.SpreadSheetML.Y2024.WorkbookCompatibilityVersion.Version
 
 Namespace ExcelOps
 
@@ -86,6 +87,7 @@ Namespace ExcelOps
 
         Private NotInheritable Partial Class FormulaCalculation
             Private ReadOnly _owner As OpenXmlExcelDataOperations
+            Private ReadOnly _unicodeTextPositions As Boolean
             Private ReadOnly _worksheets As New Dictionary(Of String, WorksheetSnapshot)(StringComparer.OrdinalIgnoreCase)
             Private ReadOnly _results As New Dictionary(Of Cell, (Part As WorksheetPart, Location As FormulaLocation, Result As Object))
             Private ReadOnly _run As CalculationRun
@@ -101,6 +103,8 @@ Namespace ExcelOps
             Private Sub New(owner As OpenXmlExcelDataOperations, run As CalculationRun)
                 _owner = owner
                 _run = run
+                Dim compatibility = owner.WorkbookPart.Workbook.Descendants(Of WorkbookTextVersion)().FirstOrDefault()
+                _unicodeTextPositions = If(compatibility?.SetVersion?.Value, 1UI) >= 2UI
                 run.Workbooks.Add(owner, Me)
                 For Each sheet In owner.WorkbookSheets()
                     Dim part = TryCast(owner.WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)

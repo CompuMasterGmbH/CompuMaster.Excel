@@ -110,6 +110,8 @@ Namespace ExcelOps
                         Return EvaluateIntegerMath(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "FIND", "SEARCH"
+                        Return EvaluateTextSearch(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "VALUE", "NUMBERVALUE", "_XLFN.NUMBERVALUE", "CHAR", "CODE", "UNICHAR", "_XLFN.UNICHAR",
                          "UNICODE", "_XLFN.UNICODE", "CLEAN", "PROPER"
                         Return EvaluateTextConversion(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)

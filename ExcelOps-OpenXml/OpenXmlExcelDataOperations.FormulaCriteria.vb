@@ -199,12 +199,13 @@ Namespace ExcelOps
                        End Function
             End Function
 
-            Private Shared Function BuildWildcard(text As String) As Regex
-                Dim pattern As New StringBuilder("\A")
+            Private Shared Function BuildWildcard(text As String, Optional searchWithinText As Boolean = False) As Regex
+                Dim pattern As New StringBuilder(If(searchWithinText, "", "\A"))
                 Dim index = 0
                 While index < text.Length
                     Dim character = text(index)
-                    If character = "~"c AndAlso index + 1 < text.Length AndAlso "*?~".IndexOf(text(index + 1)) >= 0 Then
+                    If character = "~"c AndAlso index + 1 < text.Length AndAlso
+                        (searchWithinText OrElse "*?~".IndexOf(text(index + 1)) >= 0) Then
                         index += 1
                         pattern.Append(Regex.Escape(text(index).ToString()))
                     ElseIf character = "*"c Then
@@ -214,13 +215,15 @@ Namespace ExcelOps
                         End While
                     ElseIf character = "?"c Then
                         pattern.Append("."c)
-                    Else
+                    ElseIf Not (searchWithinText AndAlso character = "~"c) Then
                         pattern.Append(Regex.Escape(character.ToString()))
                     End If
                     index += 1
                 End While
-                pattern.Append("\z")
-                Return New Regex(pattern.ToString(), RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant Or RegexOptions.Singleline, TimeSpan.FromMilliseconds(200))
+                If Not searchWithinText Then pattern.Append("\z")
+                Dim options = RegexOptions.CultureInvariant Or RegexOptions.Singleline
+                If Not searchWithinText Then options = options Or RegexOptions.IgnoreCase
+                Return New Regex(pattern.ToString(), options, TimeSpan.FromMilliseconds(200))
             End Function
 
             Private Shared Function MatchesWildcard(pattern As Regex, text As String) As Boolean

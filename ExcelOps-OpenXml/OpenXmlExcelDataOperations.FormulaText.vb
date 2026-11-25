@@ -69,7 +69,7 @@ Namespace ExcelOps
                     Case "REPT"
                         Return RepeatText(contents, NumberValue(values(1)))
                     Case "REPLACE"
-                        Return ReplaceTextAt(contents, NumberValue(values(1)), NumberValue(values(2)), TextValue(values(3)))
+                        Return ReplaceTextAt(contents, NumberValue(values(1)), NumberValue(values(2)), TextValue(values(3)), _unicodeTextPositions)
                     Case Else
                         Dim occurrence = If(values.Length = 4, NumberValue(values(3)), Nothing)
                         Return SubstituteText(contents, TextValue(values(1)), TextValue(values(2)), occurrence)
@@ -92,7 +92,7 @@ Namespace ExcelOps
             End Function
 
             Private Shared Function ReplaceTextAt(contents As String, position As Object, length As Object,
-                                                  replacement As String) As Object
+                                                  replacement As String, Optional unicodePositions As Boolean = False) As Object
                 If TypeOf position Is FormulaError Then Return position
                 If TypeOf length Is FormulaError Then Return length
                 Dim start = Math.Truncate(DirectCast(position, Double))
@@ -101,8 +101,9 @@ Namespace ExcelOps
                 If start < 1 OrElse start > MaximumTextLength OrElse rawLength < 0 OrElse count > MaximumTextLength Then
                     Return New FormulaError("#VALUE!")
                 End If
-                Dim offset = CInt(Math.Min(contents.Length, start - 1))
-                Dim removed = Math.Min(contents.Length - offset, CInt(count))
+                Dim offset = Utf16CharacterOffset(contents, start - 1, unicodePositions)
+                Dim finish = Utf16CharacterOffset(contents, start - 1 + count, unicodePositions)
+                Dim removed = finish - offset
                 If contents.Length - removed + replacement.Length > MaximumTextLength Then Return New FormulaError("#VALUE!")
                 Return contents.Substring(0, offset) & replacement & contents.Substring(offset + removed)
             End Function
