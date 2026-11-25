@@ -4,6 +4,7 @@ Imports DocumentFormat.OpenXml
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 Imports ChartXml = DocumentFormat.OpenXml.Drawing.Charts
+Imports ExtendedChartXml = DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing
 
 Namespace ExcelOps
 
@@ -49,6 +50,7 @@ Namespace ExcelOps
             Dim sameSession = WorkbookSession IsNot Nothing AndAlso WorkbookSession Is destination.WorkbookSession
             Dim targetLinks As New SheetTransferLinks(destination)
             Dim sourceLinks As New SheetTransferLinks(Me)
+            Dim chartNames As New TransferredChartNames(destination.WorkbookPart.Workbook, assigned, sheetNames)
 
             Dim retainedTargetLinks As New HashSet(Of Integer)
             Dim oldSourceLinks As Integer() = Nothing
@@ -82,7 +84,7 @@ Namespace ExcelOps
 
             Dim copiedSheets As New List(Of (Name As String, State As SheetStateValues?, Worksheet As Worksheet,
                                              ChartSheet As ChartsheetPart, Drawing As DrawingsPart,
-                                             Charts As Dictionary(Of String, ChartXml.ChartSpace)))
+                                             Charts As Dictionary(Of String, OpenXmlPartRootElement)))
             For Each name In sheetNames
                 Dim source = FindSheet(name)
                 Dim part = WorkbookPart.GetPartById(source.Id.Value)
@@ -92,16 +94,20 @@ Namespace ExcelOps
                     Dim prepared = PrepareWorksheetCopy(worksheet, name, formulaMode, resolveQualifier, move,
                                                         Sub(identifier, qualifier) names.Observe(name, identifier, qualifier))
                     Dim drawing = worksheet.DrawingsPart
-                    Dim charts = If(drawing Is Nothing, Nothing, PrepareDrawingChartCopy(drawing, name, formulaMode, resolveQualifier, move))
+                    Dim charts = If(drawing Is Nothing, Nothing, PrepareDrawingChartCopy(drawing, name, formulaMode, resolveQualifier, move, chartNames:=chartNames))
                     copiedSheets.Add((assigned(name), source.State?.Value, prepared, Nothing, drawing, charts))
                 ElseIf chartSheet IsNot Nothing Then
-                    Dim charts = PrepareChartSheetCopy(chartSheet, name, formulaMode, resolveQualifier, move)
+                    Dim charts = PrepareChartSheetCopy(chartSheet, name, formulaMode, resolveQualifier, move, chartNames:=chartNames)
                     copiedSheets.Add((assigned(name), source.State?.Value, Nothing, chartSheet, chartSheet.DrawingsPart, charts))
                 Else
                     Throw UnsupportedOperation("Copying this sheet type")
                 End If
             Next
             Dim copiedNames = PrepareTransferredNames(names, sheetNames, targetSheetIndex, resolveQualifier, formulaMode, move)
+            If copiedNames.Any(Function(item) chartNames.Imported.Any(
+                Function(chartName) String.Equals(item.Name.Value, chartName.Name.Value, StringComparison.OrdinalIgnoreCase))) Then
+                Throw UnsupportedOperation("Transferring a worksheet formula that uses an internal ChartEx source name")
+            End If
 
             Using changes As New StagedWorkbookChanges()
                 changes.Add(destination,
@@ -165,6 +171,7 @@ Namespace ExcelOps
                             End If
                         Next
                         InstallTransferredNames(bookPart.Workbook, copiedNames, formulaMode)
+                        InstallTransferredNames(bookPart.Workbook, chartNames.Imported, formulaMode)
                         If move Then
                             Dim obsolete = oldSourceLinks.Where(Function(index) Not retainedTargetLinks.Contains(index) AndAlso Not targetLinks.UsesIndex(index)).ToArray()
                             destination.RemoveUnusedMoveLinks(bookPart, obsolete)
@@ -173,6 +180,7 @@ Namespace ExcelOps
                 If move Then
                     changes.Add(Me,
                         Sub(bookPart)
+                            Dim removedChartNames = RemoveMovedChartSourceNames(bookPart, assigned, chartNames.SourceNames)
                             RewriteMoveDependents(bookPart, assigned,
                                 Function(referencedName, originalQualifier)
                                     Dim assignedName As String = Nothing
@@ -180,7 +188,12 @@ Namespace ExcelOps
                                         Return sourceLinks.ReferenceTo(destination.TransferWorkbookPath(sameSession), targetLinkNames, assignedName)
                                     End If
                                     Return originalQualifier
-                                End Function, observeName:=AddressOf names.ValidateRetainedReference)
+                                End Function, observeName:=Sub(identifier, qualifier)
+                                    If removedChartNames.Contains(identifier) Then
+                                        Throw UnsupportedOperation("Moving a chart whose source name is also used in a retained formula")
+                                    End If
+                                    names.ValidateRetainedReference(identifier, qualifier)
+                                End Sub)
                             sourceLinks.ApplyTo(bookPart)
                             RemoveTransferredSheets(bookPart, assigned)
                         End Sub)
@@ -228,32 +241,43 @@ Namespace ExcelOps
 
         Private Function PrepareChartSheetCopy(part As ChartsheetPart, name As String, formulaMode As CopyWorksheetFormulaMode,
                                                resolveQualifier As Func(Of String, String, String), move As Boolean,
-                                               Optional retained As Boolean = False, Optional formulaWorkbook As WorkbookPart = Nothing) As Dictionary(Of String, ChartXml.ChartSpace)
+                                               Optional retained As Boolean = False, Optional formulaWorkbook As WorkbookPart = Nothing,
+                                               Optional chartNames As TransferredChartNames = Nothing) As Dictionary(Of String, OpenXmlPartRootElement)
             Dim drawings = part.DrawingsPart
-            If drawings?.WorksheetDrawing Is Nothing OrElse Not drawings.ChartParts.Any() OrElse
-               part.Parts.Any(Function(item) item.OpenXmlPart IsNot drawings AndAlso Not TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart) OrElse
-               drawings.Parts.Any(Function(item) Not TypeOf item.OpenXmlPart Is ChartPart AndAlso Not TypeOf item.OpenXmlPart Is ImagePart) Then
+            If drawings?.WorksheetDrawing Is Nothing OrElse
+               Not drawings.Parts.Any(Function(item) TypeOf item.OpenXmlPart Is ChartPart OrElse TypeOf item.OpenXmlPart Is ExtendedChartPart) OrElse
+               part.Parts.Any(Function(item) item.OpenXmlPart IsNot drawings AndAlso Not TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart) Then
                 Throw UnsupportedOperation("Copying chart sheets with unsupported drawings or chart types")
             End If
             ValidateChartCopyRelationships(part)
-            Return PrepareDrawingChartCopy(drawings, name, formulaMode, resolveQualifier, move, retained, formulaWorkbook)
+            Return PrepareDrawingChartCopy(drawings, name, formulaMode, resolveQualifier, move, retained, formulaWorkbook, chartNames)
         End Function
 
         Private Function PrepareDrawingChartCopy(drawings As DrawingsPart, name As String, formulaMode As CopyWorksheetFormulaMode,
                                                   resolveQualifier As Func(Of String, String, String), move As Boolean,
                                                   Optional retained As Boolean = False,
-                                                  Optional formulaWorkbook As WorkbookPart = Nothing) As Dictionary(Of String, ChartXml.ChartSpace)
+                                                  Optional formulaWorkbook As WorkbookPart = Nothing,
+                                                  Optional chartNames As TransferredChartNames = Nothing) As Dictionary(Of String, OpenXmlPartRootElement)
             If drawings.WorksheetDrawing Is Nothing OrElse drawings.Parts.Any(
-                Function(item) Not TypeOf item.OpenXmlPart Is ChartPart AndAlso Not TypeOf item.OpenXmlPart Is ImagePart) Then
+                Function(item) Not TypeOf item.OpenXmlPart Is ChartPart AndAlso
+                    Not TypeOf item.OpenXmlPart Is ExtendedChartPart AndAlso Not TypeOf item.OpenXmlPart Is ImagePart) Then
                 Throw UnsupportedOperation("Transferring a worksheet with unsupported drawings or chart types")
             End If
             ValidateChartCopyRelationships(drawings)
             Dim placement As DocumentFormat.OpenXml.Drawing.Spreadsheet.WorksheetDrawing = Nothing
             If Not _changedDrawings.TryGetValue(drawings, placement) Then placement = drawings.WorksheetDrawing
-            StageChartAnchors(placement, Nothing)
+            Dim extended = drawings.Parts.Select(Function(item) item.OpenXmlPart).OfType(Of ExtendedChartPart)().ToArray()
+            StageChartAnchors(placement, Nothing, allowExtendedCharts:=extended.Length > 0)
 
-            Dim result As New Dictionary(Of String, ChartXml.ChartSpace)(StringComparer.Ordinal)
+            Dim result As New Dictionary(Of String, OpenXmlPartRootElement)(StringComparer.Ordinal)
+            If extended.Length > 0 Then
+                StageTransferredExtendedCharts(drawings, extended, name, formulaMode, resolveQualifier, move, retained, formulaWorkbook, chartNames, result)
+            End If
             For Each chart In drawings.ChartParts
+                If extended.Length > 0 AndAlso IsExtendedChartFallback(placement, drawings.GetIdOfPart(chart)) Then
+                    ValidateExtendedChartFallback(chart)
+                    Continue For
+                End If
                 If chart.ChartSpace Is Nothing OrElse chart.ChartSpace.Descendants(Of ChartXml.ExternalData)().Any() OrElse
                    chart.Parts.Any(Function(item) Not TypeOf item.OpenXmlPart Is ChartStylePart AndAlso
                                                  Not TypeOf item.OpenXmlPart Is ChartColorStylePart AndAlso
@@ -289,11 +313,15 @@ Namespace ExcelOps
             Return result
         End Function
 
-        Private Shared Sub SaveTransferredCharts(drawing As DrawingsPart, charts As Dictionary(Of String, ChartXml.ChartSpace))
+        Private Shared Sub SaveTransferredCharts(drawing As DrawingsPart, charts As Dictionary(Of String, OpenXmlPartRootElement))
             For Each chart In charts
-                Dim target = DirectCast(drawing.GetPartById(chart.Key), ChartPart)
-                target.ChartSpace = chart.Value
-                target.ChartSpace.Save()
+                Dim target = drawing.GetPartById(chart.Key)
+                If TypeOf target Is ChartPart Then
+                    DirectCast(target, ChartPart).ChartSpace = DirectCast(chart.Value, ChartXml.ChartSpace)
+                Else
+                    DirectCast(target, ExtendedChartPart).ChartSpace = DirectCast(chart.Value, ExtendedChartXml.ChartSpace)
+                End If
+                chart.Value.Save()
             Next
         End Sub
 

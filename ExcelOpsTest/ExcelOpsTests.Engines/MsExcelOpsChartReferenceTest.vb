@@ -298,9 +298,11 @@ Namespace ExcelOpsTests.Engines
 
         Private Shared Function ChartExReferences(path As String, sheet As String) As (References As String(), Anchors As String(),
                                                                                       HasChartData As Boolean, SeriesLayouts As String(), AxisCount As Integer)
-            Using document = SpreadsheetDocument.Open(path, False)
+            Using stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite),
+                  document = SpreadsheetDocument.Open(stream, False)
                 Dim book = document.WorkbookPart
-                Dim drawing = DirectCast(FindChartSourcePart(book, sheet), WorksheetPart).DrawingsPart
+                Dim owner = FindChartSourcePart(book, sheet)
+                Dim drawing = owner.Parts.Select(Function(item) item.OpenXmlPart).OfType(Of DrawingsPart)().Single()
                 Dim chart = drawing.Parts.Select(Function(part) part.OpenXmlPart).OfType(Of ExtendedChartPart)().Single()
                 Dim names = book.Workbook.DefinedNames.Elements(Of DefinedName)().ToDictionary(Function(item) item.Name.Value, Function(item) item.Text)
                 Dim namesUsed = chart.ChartSpace.Descendants(Of ExtendedChartXml.Formula)().Select(Function(formula) names(formula.Text)).ToArray()
@@ -312,6 +314,185 @@ Namespace ExcelOpsTests.Engines
                 ).ToArray()
                 Return (namesUsed, anchors, chartSpace.ChartData IsNot Nothing, series, chartSpace.Descendants(Of ExtendedChartXml.Axis)().Count())
             End Using
+        End Function
+
+        <TestCase("OnData", False)>
+        <TestCase("OnData", True)>
+        <TestCase("Dashboard", False)>
+        <TestCase("Dashboard", True)>
+        <TestCase("ChartSheet", False)>
+        <TestCase("ChartSheet", True)>
+        <TestCase("Group", False)>
+        <TestCase("Group", True)>
+        <TestCase("UniqueGroup", True)>
+        <TestCase("AfterGroup", True)>
+        <TestCase("UniqueAfterGroup", True)>
+        <TestCase("DashboardGroup", True)>
+        <TestCase("UniqueDashboardGroup", True)>
+        <TestCase("AfterDashboardGroup", True)>
+        Public Sub WorksheetTransfer_OpenXmlMatchesExcelChartExSourcesAndExistingCharts(placement As String, move As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim expected = Path.Combine(caseDirectory, "excel-charts.xlsx")
+            Dim target As MsExcelDataOperations = Nothing
+            Dim source As MsExcelDataOperations = Nothing
+            Const dataName As String = "Data Set"
+            Dim group = placement.EndsWith("Group", StringComparison.Ordinal)
+            Dim collision = Not placement.StartsWith("Unique", StringComparison.Ordinal)
+            Dim chartBeforeData = Not placement.Contains("After")
+            Dim existingChartSheet = If(collision, dataName, "Existing Data")
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(collision)
+                If Not collision Then target.AddSheet(existingChartSheet, Nothing)
+                AddTransferTreemap(target.Workbook, existingChartSheet)
+                Dim chart = AddTransferTreemap(source.Workbook, dataName)
+                Dim host = dataName
+                If placement.Contains("Dashboard") Then
+                    host = "Remain"
+                    chart.Location(NativeExcel.XlChartLocation.xlLocationAsObject, host)
+                ElseIf placement = "ChartSheet" OrElse group Then
+                    host = ChartViewSheet
+                    chart.Location(NativeExcel.XlChartLocation.xlLocationAsNewSheet, host)
+                End If
+                If group Then
+                    Dim data = TransferSheet(source.Workbook, dataName)
+                    If host = ChartViewSheet Then
+                        Dim tab = DirectCast(source.Workbook.Charts.Item(host), NativeExcel.Chart)
+                        If chartBeforeData Then tab.Move(Before:=data) Else tab.Move(After:=data)
+                    Else
+                        Dim tab = TransferSheet(source.Workbook, host)
+                        If chartBeforeData Then tab.Move(Before:=data) Else tab.Move(After:=data)
+                    End If
+                End If
+                Dim selected = If(group, {dataName, host}, {host})
+                Dim knownMoveDifference = move AndAlso group AndAlso chartBeforeData AndAlso (host = ChartViewSheet OrElse collision)
+
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                Dim native = If(move, source.MoveSheets(selected, target, 0), source.CopySheets(selected, target, 0))
+                Dim nativeHost = If(group, host, native.Single().TargetSheetName)
+                Dim transferredDataName As String = Nothing
+                If group Then
+                    transferredDataName = native.Single(Function(item) item.TargetSheetName <> host).TargetSheetName
+                    target.AddRow(transferredDataName, 3, 1, True)
+                End If
+                target.SaveCopyAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.Close()
+                source.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                If knownMoveDifference Then
+                    Assert.That(ChartExReferences(expected, nativeHost).References, [Is].Empty)
+                    Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                          destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                        Dim sourceSheets = origin.SheetNames()
+                        Dim targetSheets = destination.SheetNames()
+                        Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() origin.MoveSheets(selected, destination, 0))
+                        Assert.That(origin.SheetNames(), [Is].EqualTo(sourceSheets))
+                        Assert.That(destination.SheetNames(), [Is].EqualTo(targetSheets))
+                    End Using
+                    options.AllowKnownStructuralReferenceDifferences = True
+                End If
+                Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Dim actual = If(move, origin.MoveSheets(selected, destination, 0), origin.CopySheets(selected, destination, 0))
+                    Assert.That(actual.Select(Function(item) item.TargetSheetName), [Is].EqualTo(native.Select(Function(item) item.TargetSheetName)))
+                    If transferredDataName IsNot Nothing Then destination.AddRow(transferredDataName, 3, 1, True)
+                    If move Then origin.Save()
+                    destination.Save()
+                End Using
+                Dim references = ChartExReferences(targetPath, nativeHost).References
+                If knownMoveDifference Then
+                    Dim qualifier = ChartSheetQualifier(transferredDataName)
+                    Assert.That(references, [Is].EqualTo({qualifier & "$B$3:$B$6", qualifier & "$C$3:$C$6", qualifier & "$C$2"}))
+                Else
+                    Assert.That(references, [Is].EqualTo(ChartExReferences(expected, nativeHost).References))
+                End If
+                Assert.That(ChartExReferences(targetPath, existingChartSheet).References, [Is].EqualTo(ChartExReferences(expected, existingChartSheet).References))
+                If move Then
+                    Using document = SpreadsheetDocument.Open(sourcePath, False)
+                        Dim names = document.WorkbookPart.Workbook.DefinedNames
+                        Assert.That(names?.Elements(Of DefinedName)().Any(Function(item) item.Name.Value.StartsWith("_xlchart", StringComparison.OrdinalIgnoreCase)),
+                                    [Is].Not.True)
+                    End Using
+                End If
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim reopened = If(host = ChartViewSheet, DirectCast(target.Workbook.Charts.Item(nativeHost), NativeExcel.Chart),
+                                  GetFirstEmbeddedChart(target, nativeHost))
+                Assert.That(CInt(reopened.ChartType), [Is].EqualTo(117))
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        <TestCase(False)>
+        <TestCase(True)>
+        Public Sub WorksheetTransfer_OpenXmlPreservesChartExSourceFormulasWhenRequested(conflict As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim output = Path.Combine(caseDirectory, "preserved-chart.xlsx")
+            Dim target As MsExcelDataOperations = Nothing
+            Dim source As MsExcelDataOperations = Nothing
+            Const dataName As String = "Data Set"
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(True)
+                AddTransferTreemap(source.Workbook, dataName)
+                AddTransferTreemap(target.Workbook, dataName)
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.Close()
+                source.Close()
+                If conflict Then
+                    Using document = SpreadsheetDocument.Open(targetPath, True)
+                        Dim changed = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().
+                            First(Function(item) item.Name.Value.StartsWith("_xlchart", StringComparison.OrdinalIgnoreCase) AndAlso item.Text.EndsWith("$5", StringComparison.Ordinal))
+                        changed.Text = changed.Text.Substring(0, changed.Text.Length - 1) & "6"
+                    End Using
+                End If
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Dim mode = ExcelDataOperationsBase.CopyWorksheetFormulaMode.PreserveFormulas
+                    If conflict Then
+                        Assert.Throws(Of NotSupportedException)(Sub() origin.CopySheet(dataName, destination, 0, mode))
+                    Else
+                        Assert.That(origin.CopySheet(dataName, destination, 0, mode).TargetSheetName, [Is].EqualTo("Data Set (2)"))
+                    End If
+                    destination.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                If conflict Then
+                    Assert.That(File.ReadAllBytes(output), [Is].EqualTo(File.ReadAllBytes(targetPath)))
+                Else
+                    Assert.That(ChartExReferences(output, "Data Set (2)").References, [Is].EqualTo(ChartExReferences(sourcePath, dataName).References))
+                    target = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Assert.That(CInt(GetFirstEmbeddedChart(target, "Data Set (2)").ChartType), [Is].EqualTo(117))
+                End If
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Function AddTransferTreemap(workbook As NativeExcel.Workbook, sheetName As String) As NativeExcel.Chart
+            workbook.Activate()
+            Dim sheet = TransferSheet(workbook, sheetName)
+            sheet.Activate()
+            sheet.Range("B2").Value2 = "Category"
+            sheet.Range("C2").Value2 = "Revenue"
+            For row = 3 To 5
+                sheet.Range("B" & row).Value2 = "Item " & row
+                sheet.Range("C" & row).Value2 = row * 10
+            Next
+            sheet.Range("B2:C5").Select()
+            Return sheet.Shapes.AddChart2(-1, CType(117, NativeExcel.XlChartType), 240, 120, 220, 150).Chart
         End Function
 
         ' Unsupported chart references must fail before even unrelated cell or anchor edits are applied.

@@ -52,6 +52,10 @@ Namespace ExcelOps
                 If changedPlacement IsNot Nothing Then drawings.Add(drawing, changedPlacement)
 
                 For Each chart In drawing.ChartParts
+                    If allowExtendedCharts AndAlso IsExtendedChartFallback(placement, drawing.GetIdOfPart(chart)) Then
+                        ValidateExtendedChartFallback(chart)
+                        Continue For
+                    End If
                     Dim chartSpace As ChartXml.ChartSpace = Nothing
                     If Not _changedCharts.TryGetValue(chart, chartSpace) Then chartSpace = chart.ChartSpace
                     Dim changedChart = StageChartReferences(chart, chartSpace, editedSheet, shift, newSheetName, book, links)
