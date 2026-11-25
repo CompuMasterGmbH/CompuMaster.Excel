@@ -13,15 +13,18 @@ Namespace ExcelOps
 
         Private Const ExtendedChartNamespace As String = "http://schemas.microsoft.com/office/drawing/2014/chartex"
         Private ReadOnly _changedCharts As New Dictionary(Of ChartPart, ChartXml.ChartSpace)
+        Private ReadOnly _changedExtendedCharts As New Dictionary(Of ExtendedChartPart, ExtendedChartXml.ChartSpace)
         Private ReadOnly _changedDrawings As New Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing)
 
         Private Function StageChartChanges(sheets As IEnumerable(Of Sheet), editedPart As WorksheetPart, editedSheet As String,
                                            shift As StructuralShift, newSheetName As String,
                                            Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing) As (
                                            Charts As Dictionary(Of ChartPart, ChartXml.ChartSpace),
-                                           Drawings As Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing))
+                                           Drawings As Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing),
+                                           ExtendedCharts As Dictionary(Of ExtendedChartPart, ExtendedChartXml.ChartSpace))
             Dim charts As New Dictionary(Of ChartPart, ChartXml.ChartSpace)
             Dim drawings As New Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing)
+            Dim revisedExtendedCharts As New Dictionary(Of ExtendedChartPart, ExtendedChartXml.ChartSpace)
             book = If(book, WorkbookPart)
             For Each sheet In sheets
                 Dim owner = book.GetPartById(sheet.Id.Value)
@@ -41,7 +44,7 @@ Namespace ExcelOps
                         Not (allowExtendedCharts AndAlso TypeOf part.OpenXmlPart Is ExtendedChartPart)) Then
                     Throw UnsupportedOperation("Updating references in unsupported drawing parts")
                 End If
-                If allowExtendedCharts Then ValidateExtendedChartNames(extendedCharts, book, editedSheet, shift, links)
+                If allowExtendedCharts Then StageExtendedChartChanges(extendedCharts, book, editedSheet, shift, links, revisedExtendedCharts)
                 Dim placement As DrawingXml.WorksheetDrawing = Nothing
                 If Not _changedDrawings.TryGetValue(drawing, placement) Then placement = drawing.WorksheetDrawing
                 Dim changedPlacement = StageChartAnchors(placement, If(worksheet IsNot Nothing AndAlso worksheet Is editedPart, shift, Nothing),
@@ -55,11 +58,12 @@ Namespace ExcelOps
                     If changedChart IsNot Nothing Then charts.Add(chart, changedChart)
                 Next
             Next
-            Return (charts, drawings)
+            Return (charts, drawings, revisedExtendedCharts)
         End Function
 
-        Private Sub ValidateExtendedChartNames(charts As ExtendedChartPart(), book As WorkbookPart, editedSheet As String,
-                                               shift As StructuralShift, links As HashSet(Of Integer))
+        Private Sub StageExtendedChartChanges(charts As ExtendedChartPart(), book As WorkbookPart, editedSheet As String,
+                                              shift As StructuralShift, links As HashSet(Of Integer),
+                                              changes As Dictionary(Of ExtendedChartPart, ExtendedChartXml.ChartSpace))
             Dim names As New Dictionary(Of String, DefinedName)(StringComparer.OrdinalIgnoreCase)
             If book.Workbook.DefinedNames IsNot Nothing Then
                 For Each definition In book.Workbook.DefinedNames.Elements(Of DefinedName)()
@@ -69,8 +73,9 @@ Namespace ExcelOps
                 Next
             End If
             For Each chart In charts
-                Dim source = chart.ChartSpace
-                If source Is Nothing OrElse chart.EmbeddedPackagePart IsNot Nothing OrElse chart.ExternalRelationships.Any() OrElse
+                Dim source As ExtendedChartXml.ChartSpace = Nothing
+                If Not _changedExtendedCharts.TryGetValue(chart, source) Then source = chart.ChartSpace
+                If source Is Nothing OrElse chart.GetParentParts().Count() <> 1 OrElse chart.EmbeddedPackagePart IsNot Nothing OrElse chart.ExternalRelationships.Any() OrElse
                    source.Descendants().Any(Function(element) element.LocalName = "externalData" OrElse
                        (element.LocalName = "f" AndAlso Not TypeOf element Is ExtendedChartXml.Formula)) OrElse
                    source.Descendants(Of ExtendedChartXml.Formula)().Any(Function(formula) Not names.ContainsKey(formula.Text)) Then
@@ -78,24 +83,86 @@ Namespace ExcelOps
                 End If
                 If shift Is Nothing Then Continue For
                 If links IsNot Nothing Then Throw UnsupportedOperation("Shifting incoming workbook links in ChartEx data")
-                ' Excel stores the uncached data references in the workbook's hidden names.
-                For Each formula In source.Descendants(Of ExtendedChartXml.Formula)()
-                    Dim definition = names(formula.Text)
-                    If Not IsDirectAbsoluteName(definition) Then Throw UnsupportedOperation("Shifting a ChartEx source that is not a direct absolute range")
-                    Dim qualifier = FormulaSheet.Match(definition.Text, 0)
-                    Dim external As Boolean
-                    Dim sheet = SheetNameFromToken(book, qualifier, external)
-                    If external OrElse Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
-                    If shift.ClearsTableDataBody Then Throw UnsupportedOperation("Clearing a table's data body on a ChartEx source worksheet")
-                    Dim rewritten = RewriteFormula(definition.Text, Nothing, editedSheet, shift, Nothing, True, formulaWorkbook:=book)
-                    If rewritten = definition.Text Then Continue For
-                    If rewritten.EndsWith("#REF!", StringComparison.Ordinal) OrElse
-                       formula.Parent.ChildElements.Any(Function(item) item.LocalName = "lvl" OrElse item.LocalName = "numLvl" OrElse item.LocalName = "strLvl") Then
-                        Throw UnsupportedOperation("Deleting an entire ChartEx source or shifting cached ChartEx data")
-                    End If
-                Next
+                Dim revision = StageExtendedChartDeletion(source, names, book, editedSheet, shift)
+                If revision IsNot Nothing Then changes.Add(chart, revision)
             Next
         End Sub
+
+        Private Function StageExtendedChartDeletion(source As ExtendedChartXml.ChartSpace, names As Dictionary(Of String, DefinedName),
+                                                    book As WorkbookPart, editedSheet As String,
+                                                    shift As StructuralShift) As ExtendedChartXml.ChartSpace
+            Dim removedData As New HashSet(Of UInteger)
+            For Each formula In source.Descendants(Of ExtendedChartXml.Formula)()
+                ' The structural edit updates the hidden workbook names even when a chart formula still uses an invalid name.
+                Dim definition = names(formula.Text)
+                Dim qualifier = FormulaSheet.Match(definition.Text, 0)
+                If qualifier.Success AndAlso definition.Text.Substring(qualifier.Length) = "#REF!" Then Continue For
+                If Not IsDirectAbsoluteName(definition) Then Throw UnsupportedOperation("Shifting a ChartEx source that is not a direct absolute range")
+                Dim external As Boolean
+                Dim sheet = SheetNameFromToken(book, qualifier, external)
+                If external OrElse Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
+                If shift.ClearsTableDataBody Then Throw UnsupportedOperation("Clearing a table's data body on a ChartEx source worksheet")
+                Dim rewritten = RewriteFormula(definition.Text, Nothing, editedSheet, shift, Nothing, True, formulaWorkbook:=book)
+                If rewritten = definition.Text Then Continue For
+                If formula.Parent.ChildElements.Any(Function(item) item.LocalName = "lvl" OrElse item.LocalName = "numLvl" OrElse item.LocalName = "strLvl") Then
+                    Throw UnsupportedOperation("Shifting cached ChartEx data")
+                End If
+                If Not rewritten.EndsWith("#REF!", StringComparison.Ordinal) Then Continue For
+                Dim values = TryCast(formula.Parent, ExtendedChartXml.NumericDimension)
+                Dim categories = TryCast(formula.Parent, ExtendedChartXml.StringDimension)
+                If values IsNot Nothing Then
+                    Dim data = TryCast(values.Parent, ExtendedChartXml.Data)
+                    Dim kind = values.Type?.Value
+                    If data?.Id Is Nothing OrElse Not kind.HasValue OrElse
+                       (kind.Value <> ExtendedChartXml.NumericDimensionType.Val AndAlso kind.Value <> ExtendedChartXml.NumericDimensionType.Size AndAlso
+                        kind.Value <> ExtendedChartXml.NumericDimensionType.ColorVal) OrElse
+                       data.Elements(Of ExtendedChartXml.NumericDimension)().Count() <> 1 Then
+                        Throw UnsupportedOperation("Deleting a ChartEx source with multiple or unsupported numeric dimensions")
+                    End If
+                    removedData.Add(data.Id.Value)
+                ElseIf Not ((categories?.Type IsNot Nothing AndAlso categories.Type.Value = ExtendedChartXml.StringDimensionType.Cat) OrElse
+                            TypeOf formula.Parent.Parent?.Parent Is ExtendedChartXml.Series) Then
+                    Throw UnsupportedOperation("Deleting an entire ChartEx source with an unsupported role")
+                End If
+            Next
+            If removedData.Count = 0 Then Return Nothing
+
+            Dim revision = DirectCast(source.CloneNode(True), ExtendedChartXml.ChartSpace)
+            Dim plot = revision.Chart?.GetFirstChild(Of ExtendedChartXml.PlotArea)()
+            Dim region = plot?.GetFirstChild(Of ExtendedChartXml.PlotAreaRegion)()
+            If region Is Nothing OrElse revision.ChartData Is Nothing OrElse
+               revision.ChartData.ChildElements.Any(Function(item) Not TypeOf item Is ExtendedChartXml.Data) Then
+                Throw UnsupportedOperation("Deleting values from an unsupported ChartEx plot area")
+            End If
+            If removedData.Count = revision.ChartData.ChildElements.Count Then
+                ' Excel retains the chart object and its anchor when the final series is lost.
+                revision.ChartData = Nothing
+                region.RemoveAllChildren(Of ExtendedChartXml.Series)()
+                plot.RemoveAllChildren(Of ExtendedChartXml.Axis)()
+            Else
+                Dim dataIds As New Dictionary(Of UInteger, UInteger)
+                For Each dataSet In revision.ChartData.Elements(Of ExtendedChartXml.Data)().ToArray()
+                    If dataSet.Id Is Nothing Then Throw New InvalidDataException("A ChartEx data set has no identifier.")
+                    If removedData.Contains(dataSet.Id.Value) Then
+                        dataSet.Remove()
+                    Else
+                        Dim newId = CUInt(dataIds.Count)
+                        dataIds.Add(dataSet.Id.Value, newId)
+                        dataSet.Id = newId
+                    End If
+                Next
+                For Each series In region.Elements(Of ExtendedChartXml.Series)().ToArray()
+                    Dim id = series.GetFirstChild(Of ExtendedChartXml.DataId)()
+                    If id?.Val Is Nothing Then Throw UnsupportedOperation("Deleting a ChartEx series with implicit data")
+                    If removedData.Contains(id.Val.Value) Then
+                        series.Remove()
+                    Else
+                        id.Val = dataIds(id.Val.Value)
+                    End If
+                Next
+            End If
+            Return revision
+        End Function
 
         Private Function StageChartReferences(chart As ChartPart, source As ChartXml.ChartSpace, editedSheet As String,
                                               shift As StructuralShift, newSheetName As String, book As WorkbookPart,
@@ -317,15 +384,22 @@ Namespace ExcelOps
                 End Using
             Next
             For Each change In _changedCharts
-                Dim drawing = change.Key.GetParentParts().OfType(Of DrawingsPart)().Single()
-                Dim owner = drawing.GetParentParts().Single()
-                Dim targetOwner = target.GetPartById(source.GetIdOfPart(owner))
-                Dim targetDrawing = targetOwner.GetPartById(owner.GetIdOfPart(drawing))
-                Dim targetChart = targetDrawing.GetPartById(drawing.GetIdOfPart(change.Key))
-                Using stream = targetChart.GetStream(FileMode.Create, FileAccess.Write)
-                    change.Value.Save(stream)
-                End Using
+                SaveChangedChartPart(source, target, change.Key, change.Value)
             Next
+            For Each change In _changedExtendedCharts
+                SaveChangedChartPart(source, target, change.Key, change.Value)
+            Next
+        End Sub
+
+        Private Shared Sub SaveChangedChartPart(source As WorkbookPart, target As WorkbookPart, part As OpenXmlPart, contents As OpenXmlPartRootElement)
+            Dim drawing = part.GetParentParts().OfType(Of DrawingsPart)().Single()
+            Dim owner = drawing.GetParentParts().Single()
+            Dim targetOwner = target.GetPartById(source.GetIdOfPart(owner))
+            Dim targetDrawing = targetOwner.GetPartById(owner.GetIdOfPart(drawing))
+            Dim targetChart = targetDrawing.GetPartById(drawing.GetIdOfPart(part))
+            Using stream = targetChart.GetStream(FileMode.Create, FileAccess.Write)
+                contents.Save(stream)
+            End Using
         End Sub
 
     End Class
