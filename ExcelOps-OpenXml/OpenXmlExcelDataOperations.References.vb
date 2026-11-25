@@ -47,9 +47,14 @@ Namespace ExcelOps
 
             Friend ReadOnly Property IsAbsolute As Boolean
                 Get
-                    Return (Column < 0 OrElse ColumnText(0) = "$"c) AndAlso (Row < 0 OrElse RowText(0) = "$"c)
+                    Return IsAbsoluteOnAxis(False) AndAlso IsAbsoluteOnAxis(True)
                 End Get
             End Property
+
+            Friend Function IsAbsoluteOnAxis(vertical As Boolean) As Boolean
+                Dim coordinate = If(vertical, RowText, ColumnText)
+                Return coordinate.Length = 0 OrElse coordinate(0) = "$"c
+            End Function
 
             Friend Function Format(vertical As Boolean, index As Integer) As String
                 Return Format(If(vertical, index, Row), If(vertical, Column, index))
@@ -364,13 +369,16 @@ Namespace ExcelOps
                 If first IsNot Nothing AndAlso (first.IsCell OrElse second IsNot Nothing) Then
                     result.Append(qualifier)
                     Dim unchanged = value.Substring(index, referenceEnd - index)
-                    If validateTransferredNameOperands OrElse (shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook) Then
+                    Dim referenceLacksSheet = Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing
+                    If validateTransferredNameOperands Then
                         Dim relative = Not first.IsAbsolute OrElse (second IsNot Nothing AndAlso Not second.IsAbsolute)
-                        Dim ownSheet = validateTransferredNameOperands AndAlso Not externalBook AndAlso
+                        Dim ownSheet = Not externalBook AndAlso
                             String.Equals(If(explicitSheet, scopeSheet), If(scopeSheet, editedSheet), StringComparison.OrdinalIgnoreCase)
-                        If (Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing) OrElse (relative AndAlso Not ownSheet) Then
+                        If referenceLacksSheet OrElse (relative AndAlso Not ownSheet) Then
                             Throw New NotSupportedException("A defined name contains a reference without a sheet or an unsupported relative reference.")
                         End If
+                    ElseIf shift IsNot Nothing AndAlso isDefinedName AndAlso structuralExternalLinks Is Nothing AndAlso referenceLacksSheet Then
+                        Throw New NotSupportedException("A workbook-scoped defined name contains a reference without a sheet.")
                     End If
                     If copyRowOffset <> 0 OrElse copyColumnOffset <> 0 Then
                         Dim firstAddress = FormatCopiedEndpoint(first, copyRowOffset, copyColumnOffset)
@@ -384,7 +392,8 @@ Namespace ExcelOps
                     ElseIf shift IsNot Nothing AndAlso Not sheetSpan.Success AndAlso
                            String.Equals(If(externalBook OrElse structuralExternalLinks IsNot Nothing, linkedSheet, If(explicitSheet, scopeSheet)),
                                          editedSheet, StringComparison.OrdinalIgnoreCase) Then
-                        result.Append(shift.RewriteReference(first, second, separator))
+                        result.Append(If(isDefinedName, shift.RewriteDefinedNameReference(first, second, separator, unchanged),
+                                         shift.RewriteReference(first, second, separator)))
                     ElseIf second IsNot Nothing AndAlso (renamedSheet IsNot Nothing OrElse rewriteSheetQualifier IsNot Nothing) Then
                         result.Append(first.ColumnText).Append(first.RowText).Append(separator).Append(second.ColumnText).Append(second.RowText)
                     Else
