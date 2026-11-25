@@ -179,9 +179,15 @@ Namespace ExcelOps
                 End If
                 Dim formula = cell.CellFormula.Text
                 Dim address As New ExcelCell(worksheet.Name, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
-                If _run.InOrderedIterationPass AndAlso _run.CircularCells.Contains(cell) AndAlso Not calculateIterationMember Then
-                    MarkIterationDependents()
-                    Return IterationSeed(cell, address, formula)
+                If _run.InOrderedIterationPass AndAlso Not calculateIterationMember Then
+                    If _run.CircularCells.Contains(cell) Then
+                        MarkIterationDependents()
+                        Return IterationSeed(cell, address, formula)
+                    End If
+                    If _run.PendingIterationWorkbooks.Contains(_owner) AndAlso _run.IterationCells.Contains(cell) Then
+                        MarkIterationDependents()
+                        Return PreviousIterationValue(cell, address)
+                    End If
                 End If
                 If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
                 If _run.Active.Count >= 256 Then
@@ -306,6 +312,7 @@ Namespace ExcelOps
                 Friend ReadOnly CircularCells As New HashSet(Of Cell)
                 Friend HasMultipleCellCycle As Boolean
                 Friend InOrderedIterationPass As Boolean
+                Friend ReadOnly PendingIterationWorkbooks As New HashSet(Of OpenXmlExcelDataOperations)
                 Friend ReadOnly IterationSeeds As New Dictionary(Of Cell, Object)
                 Friend IterationWorkbook As OpenXmlExcelDataOperations
                 Friend IterationsApplied As Boolean
