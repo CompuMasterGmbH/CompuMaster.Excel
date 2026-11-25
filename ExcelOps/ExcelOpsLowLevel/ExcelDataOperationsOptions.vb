@@ -1,6 +1,7 @@
 ﻿Option Explicit On
 Option Strict On
 
+Imports System.Globalization
 Imports System.IO
 Imports System.Text
 
@@ -110,6 +111,11 @@ Namespace ExcelOps
         ''' <remarks>Supported by the Open XML engine. Formula writes use their explicit calculation argument.</remarks>
         Public Property CalculateOnCellEdit As Boolean
 
+        ''' <summary>Gets or sets the culture used when formulas convert between numbers and text.</summary>
+        ''' <value>The conversion culture, or Nothing to use invariant conversions.</value>
+        ''' <remarks>Open XML formula syntax and XLSX serialization are always invariant.</remarks>
+        Public Property FormulaCulture As CultureInfo
+
         ''' <summary>Gets or sets the clock used for date and time formulas.</summary>
         ''' <value>A provider of local wall-clock time, or Nothing to use the system clock.</value>
         ''' <remarks>The Open XML engine samples the initiating workbook's clock once per calculation pass that uses it.</remarks>
@@ -139,6 +145,7 @@ Namespace ExcelOps
             Return New ExcelDataOperationsOptions(PasswordForOpening, DisableInitialCalculation, DisableAutoCalculationInWorkbook, DisableCalculationEngine) With {
                 .FileWriteProtection = Me.FileWriteProtection,
                 .CalculateOnCellEdit = Me.CalculateOnCellEdit,
+                .FormulaCulture = Me.FormulaCulture,
                 .FormulaLocalClock = Me.FormulaLocalClock,
                 .FormulaSession = Me.FormulaSession,
                 .FormulaWorkbookName = Me.FormulaWorkbookName

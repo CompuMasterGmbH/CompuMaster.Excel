@@ -106,6 +106,17 @@ Public Class OpenXmlStandardFormulaTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub UsesExplicitGermanCultureForConversionsButKeepsFormulaSyntaxInvariant()
+        Dim settings = Options()
+        settings.FormulaCulture = Globalization.CultureInfo.GetCultureInfo("de-DE")
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            AssertResult(workbook, "CONCATENATE(""a"",TRUE,1.5)", "aWAHR1,5")
+            AssertResult(workbook, """a""&FALSE", "aFALSCH")
+            AssertResult(workbook, """1,5""+0.5", 2.0)
+        End Using
+    End Sub
+
     Private Shared Sub AssertResult(workbook As OpenXmlExcelDataOperations, formula As String, expected As Object)
         workbook.WriteCellFormula("Sheet1", 0, 0, formula, False)
         Dim result = workbook.LookupCellValueAsObject("Sheet1", 0, 0, FormulaCalculationMode.CalculateIfMissing)

@@ -16,8 +16,10 @@ Namespace ExcelOps
             Private Shared ReadOnly UnsupportedSheetCharacters As Char() = {"["c, "]"c, ":"c}
             Private ReadOnly _tokens As New List(Of String)
             Private _position As Integer
+            Private ReadOnly _requireAbsoluteReferences As Boolean
 
-            Private Sub New(formula As String)
+            Private Sub New(formula As String, requireAbsoluteReferences As Boolean)
+                _requireAbsoluteReferences = requireAbsoluteReferences
                 formula = formula.Trim()
                 If formula.Length > 0 AndAlso formula(0) = "="c Then formula = formula.Substring(1).Trim()
                 Dim offset = 0
@@ -30,8 +32,8 @@ Namespace ExcelOps
                 End While
             End Sub
 
-            Friend Shared Function Parse(formula As String) As FormulaExpression
-                Dim parser As New FormulaParser(formula)
+            Friend Shared Function Parse(formula As String, Optional requireAbsoluteReferences As Boolean = False) As FormulaExpression
+                Dim parser As New FormulaParser(formula, requireAbsoluteReferences)
                 Dim expression = parser.ParseExpression(1)
                 If parser.Current IsNot Nothing Then Throw New NotSupportedException("Unexpected formula token " & parser.Current & ".")
                 Return expression
@@ -117,7 +119,7 @@ Namespace ExcelOps
                     If sheetName.Length = 0 OrElse sheetName.IndexOfAny(UnsupportedSheetCharacters) >= 0 Then
                         Throw New NotSupportedException("Unsupported worksheet name or 3-D reference.")
                     End If
-                    Return ParseReference(sheetName, Consume(), workbookIndex)
+                    Return ParseReferenceOrName(sheetName, Consume(), workbookIndex)
                 End If
                 If Match("(") Then Return ParseFunction(token)
 
@@ -129,17 +131,26 @@ Namespace ExcelOps
                 End If
                 If String.Equals(token, "TRUE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) True
                 If String.Equals(token, "FALSE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) False
-                Return ParseReference(Nothing, token)
+                Return ParseReferenceOrName(Nothing, token, Nothing)
             End Function
 
-            Private Function ParseReference(sheetName As String, first As String, Optional workbookIndex As Integer? = Nothing) As FormulaExpression
+            Private Function ParseReferenceOrName(sheetName As String, token As String, workbookIndex As Integer?) As FormulaExpression
+                If CellAddressPattern.IsMatch(token) Then Return ParseReference(sheetName, token, workbookIndex)
+                If workbookIndex.HasValue Then Throw New NotSupportedException("External defined names are outside the supported calculation scope.")
+                Return Function(calculation, formulaCell) calculation.EvaluateDefinedName(token, sheetName, formulaCell)
+            End Function
+
+            Private Function ParseReference(sheetName As String, first As String, workbookIndex As Integer?) As FormulaExpression
                 Dim start = ParseAddress(first)
                 Dim finish = If(Match(":"), ParseAddress(Consume()), start)
                 Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish, workbookIndex)
             End Function
 
-            Private Shared Function ParseAddress(token As String) As ExcelCell
+            Private Function ParseAddress(token As String) As ExcelCell
                 If Not CellAddressPattern.IsMatch(token) Then Throw New NotSupportedException("Unsupported worksheet reference or name " & token & ".")
+                If _requireAbsoluteReferences AndAlso token.Count(Function(character) character = "$"c) <> 2 Then
+                    Throw New NotSupportedException("Relative references inside a defined name are outside the supported calculation scope.")
+                End If
                 Dim cell = New ExcelCell(Nothing, token.Replace("$", ""), ExcelCell.ValueTypes.All)
                 ValidateCoordinates(cell.RowIndex, cell.ColumnIndex)
                 Return cell

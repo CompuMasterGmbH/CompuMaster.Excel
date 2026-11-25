@@ -75,8 +75,12 @@ Namespace ExcelOps
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
                         Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "IFERROR", "IFNA", "NOT", "AND", "OR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
-                        Return EvaluateLogicalFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "IFERROR", "IFNA", "_XLFN.IFNA", "NOT", "AND", "OR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
+                        Return EvaluateLogicalFunction(If(name.Equals("_xlfn.IFNA", StringComparison.OrdinalIgnoreCase), "IFNA", name.ToUpperInvariant()), arguments, formulaCell)
+                    Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS"
+                        Return EvaluateCriteriaFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP"
+                        Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "COUNTA", "COUNTBLANK"
                         Return CountValues(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"
@@ -158,22 +162,32 @@ Namespace ExcelOps
                 Return number
             End Function
 
-            Private Shared Function NumberValue(value As Object) As Object
+            Private ReadOnly Property ConversionCulture As CultureInfo
+                Get
+                    Return If(_owner.LoadOptions.FormulaCulture, CultureInfo.InvariantCulture)
+                End Get
+            End Property
+
+            Private Function NumberValue(value As Object) As Object
                 If value Is Nothing Then Return 0.0
                 If TypeOf value Is FormulaError OrElse TypeOf value Is Double Then Return value
                 If TypeOf value Is Boolean Then Return If(DirectCast(value, Boolean), 1.0, 0.0)
                 If TypeOf value Is String Then
                     Dim parsed As Double
-                    If Double.TryParse(DirectCast(value, String), NumberStyles.Float, CultureInfo.InvariantCulture, parsed) Then Return FiniteNumber(parsed)
+                    If Double.TryParse(DirectCast(value, String), NumberStyles.Float, ConversionCulture, parsed) Then Return FiniteNumber(parsed)
                     Return New FormulaError("#VALUE!")
                 End If
                 Throw New NotSupportedException("The referenced value type is outside the supported calculation scope.")
             End Function
 
-            Private Shared Function TextValue(value As Object) As String
+            Private Function TextValue(value As Object) As String
                 If value Is Nothing Then Return String.Empty
-                If TypeOf value Is Boolean Then Return If(DirectCast(value, Boolean), "TRUE", "FALSE")
-                Return Convert.ToString(value, CultureInfo.InvariantCulture)
+                If TypeOf value Is Boolean Then
+                    If ConversionCulture.TwoLetterISOLanguageName = "de" Then Return If(DirectCast(value, Boolean), "WAHR", "FALSCH")
+                    Return If(DirectCast(value, Boolean), "TRUE", "FALSE")
+                End If
+                If TypeOf value Is Double Then Return DirectCast(value, Double).ToString("G15", ConversionCulture)
+                Return Convert.ToString(value, ConversionCulture)
             End Function
 
             Private Shared Function EvaluateComparison(operation As String, first As Object, second As Object) As Boolean

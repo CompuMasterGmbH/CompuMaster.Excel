@@ -1,0 +1,187 @@
+﻿Imports System.Globalization
+Imports System.Text
+Imports System.Text.RegularExpressions
+
+Namespace ExcelOps
+
+    Partial Public Class OpenXmlExcelDataOperations
+
+        Private NotInheritable Partial Class FormulaCalculation
+            Private Const MaxMaterializedReferenceCells As Integer = 100000
+
+            Private Function EvaluateCriteriaFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
+                                                      formulaCell As ExcelCell) As Object
+                Dim countOnly = name = "COUNTIF" OrElse name = "COUNTIFS"
+                Dim multiple = name = "COUNTIFS" OrElse name = "SUMIFS"
+                Dim firstCriterion = If(name = "SUMIFS", 1, 0)
+                Dim criterionCount = If(multiple, (arguments.Count - firstCriterion) \ 2, 1)
+                If multiple Then
+                    If criterionCount < 1 OrElse (arguments.Count - firstCriterion) Mod 2 <> 0 Then Return New FormulaError("#VALUE!")
+                ElseIf arguments.Count < 2 OrElse arguments.Count > If(countOnly, 2, 3) Then
+                    Return New FormulaError("#VALUE!")
+                End If
+
+                Dim ranges As New List(Of (Values As Object(), Matches As Predicate(Of Object)))
+                Dim firstArea As FormulaArea = Nothing
+                For index = 0 To criterionCount - 1
+                    Dim argumentIndex = firstCriterion + index * 2
+                    Dim input = EvaluateExpression(arguments(argumentIndex), formulaCell)
+                    If TypeOf input Is FormulaError Then Return input
+                    Dim area = TryCast(input, FormulaArea)
+                    If area Is Nothing Then Return New FormulaError("#VALUE!")
+                    If firstArea Is Nothing Then firstArea = area
+                    If Not SameSize(firstArea, area) Then Return New FormulaError("#VALUE!")
+                    Dim value = Scalar(EvaluateExpression(arguments(argumentIndex + 1), formulaCell))
+                    If TypeOf value Is FormulaError Then Return value
+                    ranges.Add((MaterializeRange(area), MakeCriterion(value)))
+                Next
+
+                Dim amounts As Object() = Nothing
+                If Not countOnly Then
+                    If name = "SUMIF" AndAlso arguments.Count = 2 Then
+                        amounts = ranges(0).Values
+                    Else
+                        Dim input = EvaluateExpression(arguments(If(name = "SUMIFS", 0, 2)), formulaCell)
+                        If TypeOf input Is FormulaError Then Return input
+                        Dim area = TryCast(input, FormulaArea)
+                        If area Is Nothing Then Return New FormulaError("#VALUE!")
+                        If name = "SUMIF" Then
+                            Dim lastRow = area.FirstRow + firstArea.LastRow - firstArea.FirstRow
+                            Dim lastColumn = area.FirstColumn + firstArea.LastColumn - firstArea.FirstColumn
+                            ValidateCoordinates(lastRow, lastColumn)
+                            area = SliceArea(area, 0, 0, lastRow - area.FirstRow, lastColumn - area.FirstColumn)
+                        ElseIf Not SameSize(firstArea, area) Then
+                            Return New FormulaError("#VALUE!")
+                        End If
+                        amounts = MaterializeRange(area)
+                    End If
+                End If
+
+                Dim result As Double
+                For index = 0 To ranges(0).Values.Length - 1
+                    Dim itemIndex = index
+                    If Not ranges.All(Function(input) input.Matches(input.Values(itemIndex))) Then Continue For
+                    If countOnly Then
+                        result += 1.0
+                    Else
+                        Dim value = amounts(index)
+                        If TypeOf value Is FormulaError Then Return value
+                        If TypeOf value Is Double Then result += DirectCast(value, Double)
+                    End If
+                Next
+                Return FiniteNumber(result)
+            End Function
+
+            Private Function MaterializeRange(area As FormulaArea) As Object()
+                Dim rows = area.LastRow - area.FirstRow + 1
+                Dim columns = area.LastColumn - area.FirstColumn + 1
+                If CLng(rows) * columns > MaxMaterializedReferenceCells Then
+                    Throw New NotSupportedException("The range contains more cells than this function can materialize.")
+                End If
+                Dim source = ResolveReference(area)
+                If Not source._worksheets.ContainsKey(area.Sheet) Then Throw New NotSupportedException("The referenced worksheet is unavailable.")
+                RecordPrecedent(New FormulaPrecedent(New FormulaLocation(source._owner, area.Sheet, area.FirstRow, area.FirstColumn), area.LastRow, area.LastColumn))
+                Dim values(rows * columns - 1) As Object
+                Dim index = 0
+                For row = area.FirstRow To area.LastRow
+                    For column = area.FirstColumn To area.LastColumn
+                        values(index) = source.ReadCell(area.Sheet, row, column, trackRead:=False)
+                        index += 1
+                    Next
+                Next
+                Return values
+            End Function
+
+            Private Shared Function SameSize(first As FormulaArea, second As FormulaArea) As Boolean
+                Return first.LastRow - first.FirstRow = second.LastRow - second.FirstRow AndAlso
+                    first.LastColumn - first.FirstColumn = second.LastColumn - second.FirstColumn
+            End Function
+
+            Private Shared Function SliceArea(area As FormulaArea, firstRow As Integer, firstColumn As Integer,
+                                              lastRow As Integer, lastColumn As Integer) As FormulaArea
+                Return New FormulaArea(area.Sheet,
+                    New ExcelCell(Nothing, area.FirstRow + firstRow, area.FirstColumn + firstColumn, ExcelCell.ValueTypes.All),
+                    New ExcelCell(Nothing, area.FirstRow + lastRow, area.FirstColumn + lastColumn, ExcelCell.ValueTypes.All), area.WorkbookIndex)
+            End Function
+
+            Private Function MakeCriterion(value As Object) As Predicate(Of Object)
+                If value Is Nothing Then Return NumericCriterion("=", 0.0)
+                If TypeOf value Is Double Then Return NumericCriterion("=", DirectCast(value, Double))
+                If TypeOf value Is Boolean Then
+                    Dim expected = DirectCast(value, Boolean)
+                    Return Function(actual) TypeOf actual Is Boolean AndAlso DirectCast(actual, Boolean) = expected
+                End If
+
+                Dim text = DirectCast(value, String)
+                Dim operation = "="
+                If text.StartsWith("<=", StringComparison.Ordinal) OrElse text.StartsWith(">=", StringComparison.Ordinal) OrElse text.StartsWith("<>", StringComparison.Ordinal) Then
+                    operation = text.Substring(0, 2)
+                    text = text.Substring(2)
+                ElseIf text.Length > 0 AndAlso "=<>".IndexOf(text(0)) >= 0 Then
+                    operation = text.Substring(0, 1)
+                    text = text.Substring(1)
+                End If
+                Dim number As Double
+                If Double.TryParse(text, NumberStyles.Float, ConversionCulture, number) AndAlso Not Double.IsInfinity(number) AndAlso Not Double.IsNaN(number) Then
+                    Return NumericCriterion(operation, number)
+                End If
+                If text.Length = 0 Then
+                    If operation = "=" Then Return Function(actual) actual Is Nothing OrElse (TypeOf actual Is String AndAlso DirectCast(actual, String).Length = 0)
+                    If operation = "<>" Then Return Function(actual) actual IsNot Nothing
+                End If
+                Dim pattern = BuildWildcard(text)
+                If operation = "=" OrElse operation = "<>" Then
+                    Return Function(actual)
+                               Dim equal = TypeOf actual Is String AndAlso MatchesWildcard(pattern, DirectCast(actual, String))
+                               Return If(operation = "=", equal, Not equal)
+                           End Function
+                End If
+                Return Function(actual) TypeOf actual Is String AndAlso EvaluateComparison(operation, actual, text)
+            End Function
+
+            Private Function NumericCriterion(operation As String, number As Double) As Predicate(Of Object)
+                Return Function(actual)
+                           If TypeOf actual Is Double Then Return EvaluateComparison(operation, actual, number)
+                           If operation = "<>" Then Return True
+                           If operation <> "=" OrElse Not TypeOf actual Is String Then Return False
+                           Dim parsed As Double
+                           Return Double.TryParse(DirectCast(actual, String), NumberStyles.Float, ConversionCulture, parsed) AndAlso parsed = number
+                       End Function
+            End Function
+
+            Private Shared Function BuildWildcard(text As String) As Regex
+                Dim pattern As New StringBuilder("\A")
+                Dim index = 0
+                While index < text.Length
+                    Dim character = text(index)
+                    If character = "~"c AndAlso index + 1 < text.Length AndAlso "*?~".IndexOf(text(index + 1)) >= 0 Then
+                        index += 1
+                        pattern.Append(Regex.Escape(text(index).ToString()))
+                    ElseIf character = "*"c Then
+                        pattern.Append(".*")
+                        While index + 1 < text.Length AndAlso text(index + 1) = "*"c
+                            index += 1
+                        End While
+                    ElseIf character = "?"c Then
+                        pattern.Append("."c)
+                    Else
+                        pattern.Append(Regex.Escape(character.ToString()))
+                    End If
+                    index += 1
+                End While
+                pattern.Append("\z")
+                Return New Regex(pattern.ToString(), RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant Or RegexOptions.Singleline, TimeSpan.FromMilliseconds(200))
+            End Function
+
+            Private Shared Function MatchesWildcard(pattern As Regex, text As String) As Boolean
+                Try
+                    Return pattern.IsMatch(text)
+                Catch ex As RegexMatchTimeoutException
+                    Throw New NotSupportedException("The wildcard comparison exceeds the supported complexity.", ex)
+                End Try
+            End Function
+        End Class
+
+    End Class
+
+End Namespace
