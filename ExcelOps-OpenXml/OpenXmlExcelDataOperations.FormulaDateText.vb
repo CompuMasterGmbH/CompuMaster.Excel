@@ -25,27 +25,32 @@ Namespace ExcelOps
                 Dim value = Scalar(EvaluateExpression(arguments(0), formulaCell))
                 If TypeOf value Is FormulaError Then Return value
                 Dim text = TryCast(value, String)?.Trim()
-                If String.IsNullOrEmpty(text) Then Return New FormulaError("#VALUE!")
+                Dim serial = ReadDateTimeText(text)
+                If Not serial.HasValue Then Return New FormulaError("#VALUE!")
+                Dim day = Math.Floor(serial.Value)
+                Return If(name = "DATEVALUE", day, serial.Value - day)
+            End Function
 
+            Private Function ReadDateTimeText(text As String) As Double?
+                If String.IsNullOrEmpty(text) Then Return Nothing
                 Dim time = DateTextTime.Match(text)
                 Dim serial As Double
                 If time.Success Then
                     Dim duration = ReadTextTime(time)
-                    If Not duration.HasValue Then Return New FormulaError("#VALUE!")
+                    If Not duration.HasValue Then Return Nothing
                     If time.Groups("date").Success Then
                         Dim start = ReadTextDate(time.Groups("date").Value.TrimEnd())
-                        If Not start.HasValue Then Return New FormulaError("#VALUE!")
+                        If Not start.HasValue Then Return Nothing
                         serial = start.Value
                     End If
                     serial += duration.Value
                 Else
                     Dim start = ReadTextDate(text)
-                    If Not start.HasValue Then Return New FormulaError("#VALUE!")
+                    If Not start.HasValue Then Return Nothing
                     serial = start.Value
                 End If
 
-                Dim day = Math.Floor(serial)
-                Return If(name = "DATEVALUE", day, serial - day)
+                Return serial
             End Function
 
             Private Function ReadTextTime(time As Match) As Double?

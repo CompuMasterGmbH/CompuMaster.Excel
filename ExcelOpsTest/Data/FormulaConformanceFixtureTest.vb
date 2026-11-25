@@ -33,6 +33,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceYearFraction1904.xlsx", "Year fractions", 323)>
     <TestCase("FormulaReferenceLogical1900.xlsx", "Logical functions", 91)>
     <TestCase("FormulaReferenceLogical1900.xlsx", "Logical arrays", 13)>
+    <TestCase("FormulaReferenceInformation1900.xlsx", "Information functions", 241)>
+    <TestCase("FormulaReferenceInformation1900.xlsx", "Information arrays", 40)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -90,28 +92,33 @@ Public Class FormulaConformanceFixtureTest
 
     <Test>
     Public Sub RecalculatesTheSpilledExcelRegexResultsAndTheirTypes()
-        Const name As String = "Array results"
-        Dim path = FixturePath("FormulaReferenceRegexFunctions.xlsx")
-        Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
-            calculated.ResetCellValueFromFormulaCell(name)
-            calculated.RecalculateSheet(name)
-            For Each address In {"B2", "C2", "D2", "B3", "C3", "D3", "B4", "C4"}
-                Dim cell As New ExcelCell(name, address, ExcelCell.ValueTypes.All)
-                Assert.That(calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly),
-                    [Is].EqualTo(expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)), address)
-            Next
-        End Using
+        AssertSpilledFormulaResults("FormulaReferenceRegexFunctions.xlsx", "Array results", "B2", "C2", "D2", "B3", "C3", "D3", "B4", "C4")
     End Sub
 
     <Test>
     Public Sub RecalculatesTheSpilledExcelConditionalResults()
-        Const name As String = "Logical arrays"
-        Dim path = FixturePath("FormulaReferenceLogical1900.xlsx")
+        AssertSpilledFormulaResults("FormulaReferenceLogical1900.xlsx", "Logical arrays",
+            "E2", "E6", "D7", "E7", "E10", "E18", "D19", "E19", "E22", "E26", "E30",
+            "D31", "E31", "E34", "D43", "E46", "F46", "D47", "E47", "F47")
+    End Sub
+
+    <Test>
+    Public Sub RecalculatesTheSpilledExcelInformationResults()
+        AssertSpilledFormulaResults("FormulaReferenceInformation1900.xlsx", "Information arrays",
+            "E2", "F2", "G2", "D9", "D10", "D11", "E14", "D15", "E15", "D27", "E32",
+            "F32", "G32", "D39", "D40", "D41", "E44", "D45", "E45", "D57", "E62", "F62",
+            "G62", "E74", "D75", "E75", "E92", "F92", "G92", "E104", "D105", "E105", "E122",
+            "F122", "G122", "E134", "D135", "E135", "E152", "F152", "G152", "E164", "D165", "E165",
+            "E212", "F212", "G212", "D219", "D220", "D221", "E224", "D225", "E225", "D237")
+    End Sub
+
+    Private Shared Sub AssertSpilledFormulaResults(fileName As String, sheetName As String, ParamArray addresses As String())
+        Dim path = FixturePath(fileName)
         Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
-            calculated.ResetCellValueFromFormulaCell(name)
-            calculated.RecalculateSheet(name)
-            For Each address In {"E2", "E6", "D7", "E7", "E10", "E18", "D19", "E19", "E22", "E26", "E30", "D31", "E31", "E34", "D43", "E46", "F46", "D47", "E47", "F47"}
-                Dim cell As New ExcelCell(name, address, ExcelCell.ValueTypes.All)
+            calculated.ResetCellValueFromFormulaCell(sheetName)
+            calculated.RecalculateSheet(sheetName)
+            For Each address In addresses
+                Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
                 Assert.That(calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly),
                     [Is].EqualTo(expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)), address)
             Next

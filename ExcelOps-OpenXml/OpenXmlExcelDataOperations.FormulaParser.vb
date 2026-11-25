@@ -185,7 +185,7 @@ Namespace ExcelOps
             Private Shared Function ReadErrorLiteral(token As String) As FormulaError
                 Dim code = token.ToUpperInvariant()
                 Select Case code
-                    Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"
+                    Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A", "#GETTING_DATA"
                         Return New FormulaError(code)
                     Case Else
                         Throw New NotSupportedException("Unsupported Excel error literal " & token & ".")

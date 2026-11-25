@@ -103,6 +103,8 @@ Namespace ExcelOps
                         Return EvaluateTextTransform(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
                         Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "ISERR", "ISNONTEXT", "ISEVEN", "ISODD", "N", "T", "TYPE", "ERROR.TYPE"
+                        Return EvaluateInformationFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "IFS", "_XLFN.IFS", "SWITCH", "_XLFN.SWITCH"
                         Return EvaluateConditionalChoice(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "TRUE", "FALSE", "IFERROR", "IFNA", "_XLFN.IFNA", "NOT", "AND", "OR", "XOR", "_XLFN.XOR",
