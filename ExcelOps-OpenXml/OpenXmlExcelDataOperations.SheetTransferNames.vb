@@ -166,7 +166,7 @@ Namespace ExcelOps
                 Dim definition = pending.Dequeue()
                 Dim scope = If(definition.LocalSheetId IsNot Nothing, sheet, Nothing)
                 Dim text = RewriteFormula(definition.Text, scope, sheet, Nothing, Nothing, True, rewriteSheetQualifier:=resolveQualifier,
-                    requireAbsoluteNameOperands:=True,
+                    validateTransferredNameOperands:=True,
                     validateInvokedName:=Sub(name, qualifier) plan.ValidateInvokedName(sheet, name, qualifier),
                     rewriteNameOperand:=Function(name, qualifier)
                                             Dim dependency = plan.ObserveDefinitionDependency(sheet, name, qualifier)

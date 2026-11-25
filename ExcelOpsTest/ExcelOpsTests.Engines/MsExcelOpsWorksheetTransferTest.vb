@@ -497,12 +497,23 @@ Namespace ExcelOpsTests.Engines
                 source.Workbook.Names.Add("ChainedInput", RefersTo:="=FixedInput+1")
                 sheet.Names.Add("Transfer!LocalInput", RefersTo:="=Transfer!$A$1")
                 sheet.Names.Add("Transfer!LocalCalculation", RefersTo:="=Transfer!$A$1+3")
+                source.Workbook.Activate()
+                sheet.Activate()
+                sheet.Range("K9").Select()
+                sheet.Names.Add("Transfer!RelativeInput", RefersTo:="=Transfer!B1")
+                sheet.Names.Add("Transfer!MixedInput", RefersTo:="=Transfer!$A1")
                 sheet.Range("B1").Formula = "=SharedInput"
                 sheet.Range("B2").Formula = "=LocalInput"
                 sheet.Range("B3").Formula = "=MovedInput"
                 sheet.Range("B4").Formula = "=ComputedInput"
                 sheet.Range("B5").Formula = "=ChainedInput"
                 sheet.Range("B6").Formula = "=LocalCalculation"
+                sheet.Range("C7").Value2 = 31
+                sheet.Range("B7").Formula = "=RelativeInput"
+                sheet.Range("F9").Value2 = 34
+                sheet.Range("E9").Formula = "=SUM(RelativeInput)"
+                sheet.Range("A9").Value2 = 14
+                sheet.Range("G9").Formula = "=MixedInput"
                 TransferSheet(source.Workbook, "Remain").Range("B1").Formula = "=MovedInput"
                 If collision Then
                     targetCheck.Range("B1").Value2 = 900
@@ -533,9 +544,11 @@ Namespace ExcelOpsTests.Engines
 
                 Using document = SpreadsheetDocument.Open(targetPath, False), native = SpreadsheetDocument.Open(nativePath, False)
                     Dim names = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().ToArray()
-                    Dim nativeChain = native.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().
-                        Single(Function(name) name.Name.Value = "ChainedInput")
-                    Assert.That(names.Single(Function(name) name.Name.Value = "ChainedInput").Text, [Is].EqualTo(nativeChain.Text))
+                    For Each checkedName As String In {"ChainedInput", "RelativeInput", "MixedInput"}
+                        Dim expectedName = native.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().
+                            Single(Function(name) name.Name.Value = checkedName)
+                        Assert.That(names.Single(Function(name) name.Name.Value = checkedName).Text, [Is].EqualTo(expectedName.Text))
+                    Next
                     Dim local = names.Single(Function(name) name.Name.Value = "LocalInput")
                     Assert.That(local.LocalSheetId.Value, [Is].Zero)
                     Assert.That(names.Single(Function(name) name.Name.Value = "LocalCalculation").LocalSheetId.Value, [Is].Zero)
@@ -575,6 +588,9 @@ Namespace ExcelOpsTests.Engines
             AssertTransferFormula(sheet, "B4", "=ComputedInput", 30)
             AssertTransferFormula(sheet, "B5", "=ChainedInput", 42)
             AssertTransferFormula(sheet, "B6", "=LocalCalculation", 13)
+            AssertTransferFormula(sheet, "B7", "=RelativeInput", 31)
+            AssertTransferFormula(sheet, "E9", "=SUM(RelativeInput)", 34)
+            AssertTransferFormula(sheet, "G9", "=MixedInput", 14)
             If collision Then
                 Dim targetCheck = TransferSheet(workbook, "Target Check")
                 AssertTransferFormula(targetCheck, "B2", "=SharedInput", 900)
