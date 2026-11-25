@@ -14,6 +14,6 @@
 - `CompuMaster.Excel.OpenXml` adds workbook sessions for incoming reference rewrites, move updates in additional open workbooks, and links between workbooks saved after the transfer.
 - `CompuMaster.Excel.OpenXml` supports deleting selected rows in an Excel table's data body, including the first data row, deleting the totals row, and moving a table through whole-column edits before it.
 - `CompuMaster.Excel.OpenXml` supports clearing an entire supported table data body with Excel's retained insertion row. Whole-column edits update table columns, structured references and supported table filters, including tables with hidden headers.
-- `CompuMaster.Excel.OpenXml` transfers supported absolute workbook and worksheet-local names and preserves their intended bindings during name collisions.
+- `CompuMaster.Excel.OpenXml` transfers supported workbook and worksheet-local defined names, including constants, absolute ranges and calculated names. It preserves their bindings during name collisions, including dependencies between names.
 - `CompuMaster.Excel.OpenXml` rewrites supported dynamic spill references and uncached ChartEx source ranges and drawing anchors during structural edits. Deleting an entire supported ChartEx value source removes the affected series and retains the chart.
 - `CompuMaster.Excel.OpenXml` preserves direct 3-D coordinates during single-sheet shifts and updates the endpoint names when a worksheet is renamed.

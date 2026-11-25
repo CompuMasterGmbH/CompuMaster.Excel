@@ -254,7 +254,10 @@ Namespace ExcelOps
                                         Optional structuralExternalLinks As HashSet(Of Integer) = Nothing,
                                         Optional contextualTable As StructuralTable = Nothing,
                                         Optional observeName As Action(Of String, String) = Nothing,
-                                        Optional allowSpillReferences As Boolean = False) As String
+                                        Optional allowSpillReferences As Boolean = False,
+                                        Optional requireAbsoluteNameOperands As Boolean = False,
+                                        Optional validateInvokedName As Action(Of String, String) = Nothing,
+                                        Optional rewriteNameOperand As Func(Of String, String, String) = Nothing) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
             Dim lastReferenceEnd = -1
@@ -361,10 +364,10 @@ Namespace ExcelOps
                 If first IsNot Nothing AndAlso (first.IsCell OrElse second IsNot Nothing) Then
                     result.Append(qualifier)
                     Dim unchanged = value.Substring(index, referenceEnd - index)
-                    If shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook AndAlso
+                    If (requireAbsoluteNameOperands OrElse (shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook)) AndAlso
                        (Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing OrElse Not first.IsAbsolute OrElse
                         (second IsNot Nothing AndAlso Not second.IsAbsolute)) Then
-                        Throw New NotSupportedException("Structural shifts require every A1 reference in a defined name to be absolute and to have an explicit or worksheet-local scope.")
+                        Throw New NotSupportedException("This edit requires every A1 reference in a defined name to be absolute and to have an explicit or worksheet-local scope.")
                     End If
                     If copyRowOffset <> 0 OrElse copyColumnOffset <> 0 Then
                         Dim firstAddress = FormatCopiedEndpoint(first, copyRowOffset, copyColumnOffset)
@@ -413,11 +416,17 @@ Namespace ExcelOps
                         End If
                         index = selectorEnd
                     Else
-                        If observeName IsNot Nothing AndAlso isName Then
+                        Dim nameOperand = token.Value
+                        If isName AndAlso (observeName IsNot Nothing OrElse validateInvokedName IsNot Nothing OrElse rewriteNameOperand IsNot Nothing) Then
                             Dim afterName = SkipWhitespace(value, index)
-                            If afterName = value.Length OrElse value(afterName) <> "("c Then observeName(token.Value, explicitSheet)
+                            If afterName < value.Length AndAlso value(afterName) = "("c Then
+                                validateInvokedName?.Invoke(token.Value, explicitSheet)
+                            Else
+                                observeName?.Invoke(token.Value, explicitSheet)
+                                If rewriteNameOperand IsNot Nothing Then nameOperand = rewriteNameOperand(token.Value, explicitSheet)
+                            End If
                         End If
-                        result.Append(qualifier).Append(token.Value)
+                        result.Append(qualifier).Append(nameOperand)
                     End If
                 ElseIf explicitSheet Is Nothing AndAlso
                        ("+-*/^&=<>%(),;{}@".IndexOf(value(tokenStart)) >= 0 OrElse Char.IsWhiteSpace(value(tokenStart))) Then
