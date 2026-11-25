@@ -83,6 +83,10 @@ Namespace ExcelOps
                         Return EvaluateDateFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "CONCAT", "_XLFN.CONCAT", "TEXTJOIN", "_XLFN.TEXTJOIN"
+                        Return EvaluateTextJoin(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "EXACT", "REPT", "REPLACE", "SUBSTITUTE"
+                        Return EvaluateTextTransform(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
                         Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "IFERROR", "IFNA", "_XLFN.IFNA", "NOT", "AND", "OR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
