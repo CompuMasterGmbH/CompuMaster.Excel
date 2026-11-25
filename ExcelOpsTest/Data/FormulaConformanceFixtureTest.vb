@@ -24,6 +24,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
+    <TestCase("FormulaReferenceRegexFunctions.xlsx", "Regex functions", 91)>
     <TestCase("FormulaReferenceCriteria.xlsx", "Criteria", 89)>
     <TestCase("FormulaReferenceArrayVariants.xlsx", "Array variants", 65)>
     <TestCase("FormulaReferenceTextVariants.xlsx", "Text variants", 97)>
@@ -73,6 +74,21 @@ Public Class FormulaConformanceFixtureTest
         Finally
             If File.Exists(output) Then File.Delete(output)
         End Try
+    End Sub
+
+    <Test>
+    Public Sub RecalculatesTheSpilledExcelRegexResultsAndTheirTypes()
+        Const name As String = "Array results"
+        Dim path = FixturePath("FormulaReferenceRegexFunctions.xlsx")
+        Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
+            calculated.ResetCellValueFromFormulaCell(name)
+            calculated.RecalculateSheet(name)
+            For Each address In {"B2", "C2", "D2", "B3", "C3", "D3", "B4", "C4"}
+                Dim cell As New ExcelCell(name, address, ExcelCell.ValueTypes.All)
+                Assert.That(calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly),
+                    [Is].EqualTo(expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)), address)
+            Next
+        End Using
     End Sub
 
     <Test, Explicit("Reports Excel formula coverage for Open XML.")>

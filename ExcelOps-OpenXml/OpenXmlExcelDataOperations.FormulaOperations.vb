@@ -87,6 +87,8 @@ Namespace ExcelOps
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "CONCAT", "_XLFN.CONCAT", "TEXTJOIN", "_XLFN.TEXTJOIN"
                         Return EvaluateTextJoin(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "REGEXTEST", "_XLFN.REGEXTEST", "REGEXEXTRACT", "_XLFN.REGEXEXTRACT", "REGEXREPLACE", "_XLFN.REGEXREPLACE"
+                        Return EvaluateRegexFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "EXACT", "REPT", "REPLACE", "SUBSTITUTE"
                         Return EvaluateTextTransform(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
