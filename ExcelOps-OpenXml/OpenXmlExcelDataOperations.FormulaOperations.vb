@@ -93,6 +93,12 @@ Namespace ExcelOps
                         Return EvaluateDateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "DATE", "TIME", "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND", "TODAY", "NOW"
                         Return EvaluateDateFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "EXP", "LN", "LOG", "LOG10", "PI", "DEGREES", "RADIANS", "SIN", "COS", "TAN",
+                         "COT", "_XLFN.COT", "SEC", "_XLFN.SEC", "CSC", "_XLFN.CSC",
+                         "SINH", "COSH", "TANH", "COTH", "_XLFN.COTH", "SECH", "_XLFN.SECH", "CSCH", "_XLFN.CSCH",
+                         "ASIN", "ACOS", "ATAN", "ATAN2", "ACOT", "_XLFN.ACOT",
+                         "ASINH", "ACOSH", "ATANH", "ACOTH", "_XLFN.ACOTH"
+                        Return EvaluateTranscendental(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "CONCAT", "_XLFN.CONCAT", "TEXTJOIN", "_XLFN.TEXTJOIN"

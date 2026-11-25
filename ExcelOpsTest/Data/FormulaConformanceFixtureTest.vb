@@ -39,6 +39,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceStatistics1900.xlsx", "Statistical arrays", 27)>
     <TestCase("FormulaReferenceDispersion1900.xlsx", "Summary statistics", 648)>
     <TestCase("FormulaReferenceDispersion1900.xlsx", "Mode arrays", 10)>
+    <TestCase("FormulaReferenceMath1900.xlsx", "Math functions", 546)>
+    <TestCase("FormulaReferenceMath1900.xlsx", "Math arrays", 55)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -133,6 +135,25 @@ Public Class FormulaConformanceFixtureTest
             "D3", "D8", "D13", "D18", "D19", "D23", "D24", "D28", "D33", "D34", "D38", "D39", "D43")
     End Sub
 
+    <Test>
+    Public Sub RecalculatesTheSpilledExcelTranscendentalResults()
+        Const fileName As String = "FormulaReferenceMath1900.xlsx"
+        Const sheetName As String = "Math arrays"
+        Dim addresses As New List(Of String)
+        Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
+            Dim workbook = package.WorkbookPart
+            Dim sheet = workbook.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = sheetName)
+            Dim worksheet = DirectCast(workbook.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
+            For Each cell In worksheet.Descendants(Of Cell)()
+                If cell.CellFormula IsNot Nothing OrElse cell.CellValue Is Nothing Then Continue For
+                Dim address As New ExcelCell(sheetName, cell.CellReference.Value, ExcelCell.ValueTypes.All)
+                If address.RowIndex > 0 AndAlso address.ColumnIndex >= 3 Then addresses.Add(cell.CellReference.Value)
+            Next
+        End Using
+        Assert.That(addresses, Has.Count.EqualTo(144))
+        AssertSpilledFormulaResults(fileName, sheetName, addresses.ToArray())
+    End Sub
+
     Private Shared Sub AssertSpilledFormulaResults(fileName As String, sheetName As String, ParamArray addresses As String())
         Dim path = FixturePath(fileName)
         Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
@@ -140,8 +161,13 @@ Public Class FormulaConformanceFixtureTest
             calculated.RecalculateSheet(sheetName)
             For Each address In addresses
                 Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
-                Assert.That(calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly),
-                    [Is].EqualTo(expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)), address)
+                Dim actual = calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
+                Dim reference = expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
+                If TypeOf actual Is Double AndAlso TypeOf reference Is Double Then
+                    Assert.That(actual, [Is].EqualTo(reference).Within(1.0E-12), address)
+                Else
+                    Assert.That(actual, [Is].EqualTo(reference), address)
+                End If
             Next
         End Using
     End Sub
