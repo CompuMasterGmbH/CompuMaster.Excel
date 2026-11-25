@@ -41,6 +41,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceDispersion1900.xlsx", "Mode arrays", 10)>
     <TestCase("FormulaReferenceMath1900.xlsx", "Math functions", 546)>
     <TestCase("FormulaReferenceMath1900.xlsx", "Math arrays", 55)>
+    <TestCase("FormulaReferenceInteger1900.xlsx", "Integer functions", 801)>
+    <TestCase("FormulaReferenceInteger1900.xlsx", "Integer arrays", 49)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -135,10 +137,9 @@ Public Class FormulaConformanceFixtureTest
             "D3", "D8", "D13", "D18", "D19", "D23", "D24", "D28", "D33", "D34", "D38", "D39", "D43")
     End Sub
 
-    <Test>
-    Public Sub RecalculatesTheSpilledExcelTranscendentalResults()
-        Const fileName As String = "FormulaReferenceMath1900.xlsx"
-        Const sheetName As String = "Math arrays"
+    <TestCase("FormulaReferenceMath1900.xlsx", "Math arrays", 144)>
+    <TestCase("FormulaReferenceInteger1900.xlsx", "Integer arrays", 121)>
+    Public Sub RecalculatesTheSpilledExcelMathResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
             Dim workbook = package.WorkbookPart
@@ -150,7 +151,7 @@ Public Class FormulaConformanceFixtureTest
                 If address.RowIndex > 0 AndAlso address.ColumnIndex >= 3 Then addresses.Add(cell.CellReference.Value)
             Next
         End Using
-        Assert.That(addresses, Has.Count.EqualTo(144))
+        Assert.That(addresses, Has.Count.EqualTo(expectedChildren))
         AssertSpilledFormulaResults(fileName, sheetName, addresses.ToArray())
     End Sub
 
