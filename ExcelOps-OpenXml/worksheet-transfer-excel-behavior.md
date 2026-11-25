@@ -39,6 +39,6 @@ Excel stores ChartEx sources as workbook-scoped chart names. A copied or moved c
 
 Excel cleared the series when a ChartEx chart sheet preceded its separate data sheet in the source tab order and both were moved together. The same occurred when an embedded ChartEx chart's host preceded its separate data sheet and a destination collision renamed the data sheet. In the reverse tab order, Excel retained the tested sources. Open XML detects the divergent cases before changing either workbook. With `AllowKnownStructuralReferenceDifferences` enabled on the source engine, Open XML moves the sheets and preserves the chart series.
 
-Excel-compatible transfer of 3-D formulas and table transfers remain outside the supported scope. Incoming structural updates cover direct links from cells, supported tables and classic charts. The session writes resolved external link paths as absolute file URIs.
+Excel-compatible transfer of 3-D formulas and table transfers remain outside the supported scope. Incoming structural updates cover direct links from cells, supported tables, classic charts and uncached ChartEx sources. The session writes resolved external link paths as absolute file URIs.
 
 The native reference tests are in [MsExcelOpsWorksheetTransferTest.vb](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsWorksheetTransferTest.vb). Microsoft describes the distinction between workbook-link display and storage in its [workbook link documentation](https://support.microsoft.com/en-us/excel/description-of-workbook-link-management-and-storage-in-excel).

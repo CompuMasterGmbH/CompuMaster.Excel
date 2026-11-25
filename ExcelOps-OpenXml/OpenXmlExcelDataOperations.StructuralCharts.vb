@@ -86,15 +86,14 @@ Namespace ExcelOps
                     Throw UnsupportedOperation("Updating a ChartEx chart with unsupported sources")
                 End If
                 If shift Is Nothing Then Continue For
-                If links IsNot Nothing Then Throw UnsupportedOperation("Shifting incoming workbook links in ChartEx data")
-                Dim revision = StageExtendedChartDeletion(source, names, book, editedSheet, shift)
+                Dim revision = StageExtendedChartDeletion(source, names, book, editedSheet, shift, links)
                 If revision IsNot Nothing Then changes.Add(chart, revision)
             Next
         End Sub
 
         Private Function StageExtendedChartDeletion(source As ExtendedChartXml.ChartSpace, names As Dictionary(Of String, DefinedName),
                                                     book As WorkbookPart, editedSheet As String,
-                                                    shift As StructuralShift) As ExtendedChartXml.ChartSpace
+                                                    shift As StructuralShift, links As HashSet(Of Integer)) As ExtendedChartXml.ChartSpace
             Dim removedData As New HashSet(Of UInteger)
             For Each formula In source.Descendants(Of ExtendedChartXml.Formula)()
                 ' The structural edit updates the hidden workbook names even when a chart formula still uses an invalid name.
@@ -104,9 +103,15 @@ Namespace ExcelOps
                 If Not IsDirectAbsoluteName(definition) Then Throw UnsupportedOperation("Shifting a ChartEx source that is not a direct absolute range")
                 Dim external As Boolean
                 Dim sheet = SheetNameFromToken(book, qualifier, external)
-                If external OrElse Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
+                If external <> (links IsNot Nothing) Then Continue For
+                If external Then
+                    Dim externalPrefix As String = Nothing
+                    sheet = LinkedStructuralSheet(sheet, links, externalPrefix)
+                End If
+                If Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
                 If shift.ClearsTableDataBody Then Throw UnsupportedOperation("Clearing a table's data body on a ChartEx source worksheet")
-                Dim rewritten = RewriteFormula(definition.Text, Nothing, editedSheet, shift, Nothing, True, formulaWorkbook:=book)
+                Dim rewritten = RewriteFormula(definition.Text, Nothing, editedSheet, shift, Nothing, True, formulaWorkbook:=book,
+                                               structuralExternalLinks:=links)
                 If rewritten = definition.Text Then Continue For
                 If formula.Parent.ChildElements.Any(Function(item) item.LocalName = "lvl" OrElse item.LocalName = "numLvl" OrElse item.LocalName = "strLvl") Then
                     Throw UnsupportedOperation("Shifting cached ChartEx data")

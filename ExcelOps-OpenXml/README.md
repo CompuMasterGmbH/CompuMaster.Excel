@@ -71,7 +71,7 @@ An unsupported formula raises `FormulaComplexityNotSupportedException`. A direct
 
 ## Working with several open workbooks
 
-Create an `OpenXmlWorkbookSession` and call `Attach` for each participating workbook. Structural edits also update supported direct links and their cached source coordinates in attached dependents, including links used by supported tables and classic charts. Moves between two attached workbooks also redirect references in other attached workbooks. Closed or detached workbooks stay outside the operation. Incoming structural updates of cached external defined names remain unsupported.
+Create an `OpenXmlWorkbookSession` and call `Attach` for each participating workbook. Structural edits also update supported direct links and their cached source coordinates in attached dependents, including links used by supported tables, classic charts and uncached ChartEx sources. Moves between two attached workbooks also redirect references in other attached workbooks. Closed or detached workbooks stay outside the operation. Incoming structural updates of cached external defined names remain unsupported.
 
 Copying or moving sheets within a session can create links to unsaved workbooks. The generated temporary name identifies the linked workbook until it is saved. Keep the dependents attached and save them after the linked workbook has a path to persist the resolved link. A previously saved dependent file changes only on its next save. Save and close the workbook instances as usual.
 

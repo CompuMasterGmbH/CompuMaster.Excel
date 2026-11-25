@@ -136,6 +136,10 @@ Namespace ExcelOps
                 change.Key.ChartSpace = change.Value
                 change.Key.ChartSpace.Save()
             Next
+            For Each change In charts.ExtendedCharts
+                change.Key.ChartSpace = change.Value
+                change.Key.ChartSpace.Save()
+            Next
 
             For Each index In links
                 Dim external = TransferExternalBook(book, index)

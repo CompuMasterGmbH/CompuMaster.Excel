@@ -481,6 +481,68 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <TestCase(False)>
+        <TestCase(True)>
+        Public Sub ChartReferences_OpenXmlSessionUpdatesExternalChartExSources(deleteData As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim expected = Path.Combine(caseDirectory, "excel-linked-chart.xlsx")
+            Dim target As MsExcelDataOperations = Nothing
+            Dim source As MsExcelDataOperations = Nothing
+            Const dataName As String = "Data Set"
+            Const chartHost As String = "Remain"
+            Dim editSource As Action(Of ExcelDataOperationsBase) =
+                Sub(engine)
+                    If deleteData Then
+                        engine.RemoveRows(dataName, 2, 3, True)
+                    Else
+                        engine.AddRow(dataName, 3, 1, True)
+                    End If
+                End Sub
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(True)
+                AddTransferTreemap(target.Workbook, dataName)
+                AddTransferTreemap(source.Workbook, dataName).Location(NativeExcel.XlChartLocation.xlLocationAsObject, chartHost)
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                source.CopySheet(chartHost, target, 0)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                editSource(source)
+                target.SaveCopyAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.Close()
+                source.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                Using session As New OpenXmlWorkbookSession(),
+                      origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      dependent As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    session.Attach(origin)
+                    session.Attach(dependent)
+                    editSource(origin)
+                    origin.Save()
+                    dependent.Save()
+                End Using
+                Dim reference = ChartExReferences(expected, chartHost)
+                Dim actual = ChartExReferences(targetPath, chartHost)
+                Assert.That(reference.HasChartData, [Is].EqualTo(Not deleteData))
+                Assert.That(actual.References, [Is].EqualTo(reference.References))
+                Assert.That(actual.HasChartData, [Is].EqualTo(reference.HasChartData))
+                Assert.That(actual.SeriesLayouts, [Is].EqualTo(reference.SeriesLayouts))
+                Assert.That(actual.Anchors, [Is].EqualTo(reference.Anchors))
+                Assert.That(ChartExReferences(targetPath, dataName).References, [Is].EqualTo(ChartExReferences(expected, dataName).References))
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim owner = TransferSheet(target.Workbook, chartHost)
+                Assert.That(DirectCast(owner.ChartObjects(), NativeExcel.ChartObjects).Count, [Is].EqualTo(1))
+                If Not deleteData Then Assert.That(CInt(GetFirstEmbeddedChart(target, chartHost).ChartType), [Is].EqualTo(117))
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
         Private Shared Function AddTransferTreemap(workbook As NativeExcel.Workbook, sheetName As String) As NativeExcel.Chart
             workbook.Activate()
             Dim sheet = TransferSheet(workbook, sheetName)
