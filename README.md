@@ -102,6 +102,15 @@ Use separately owned packages and streams for parallel jobs, with one thread acc
 
 ## Examples
 
+
+### Missing formula results in HTML
+
+The EPPlus and Open XML exporters read stored formula results by default. A formula in the exported area without a result raises `MissingCalculatedCellValueException`, with the position and formula. Set `HtmlSheetExportOptions.MissingFormulaResultText` to plain text such as `"#Value?"`, or set it to `""` to explicitly leave the cell blank. The exporter HTML-encodes the replacement text. A computed empty string, zero, false, or an Excel error is a stored result.
+
+Use `HasMissingCachedFormulaResult` to inspect a cell without calculating it. For direct cell reads, the overloads that accept `FormulaCalculationMode` require an explicit choice. `UseCachedValueOnly` reads the cache. `CalculateIfMissing` asks the engine to calculate a missing result, subject to its calculation capabilities. The earlier `LookupCellValue` and `LookupCellValueAsObject` signatures remain available to compiled callers. Recompile with the overload that takes `FormulaCalculationMode`, using `EngineDefault` to retain the engine's earlier lookup behavior. This migration mode also works with engines that do not expose a separate formula cache.
+
+For HTML, use `UseCachedValueOnly` or `CalculateIfMissing`. Supply an empty replacement string to retain the previous blank rendering. Calculation exceptions remain visible.
+
 ### Epplus 4 (LGPL) 
 
 <details>

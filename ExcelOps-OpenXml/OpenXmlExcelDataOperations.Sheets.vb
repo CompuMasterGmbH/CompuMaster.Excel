@@ -172,15 +172,8 @@ Namespace ExcelOps
             Dim part = GetWorksheetPart(sheetName)
             Dim row = FindRow(GetSheetData(part), rowIndex, False)
             Dim cell = FindCell(row, rowIndex, columnIndex, False)
-            Dim style = cell?.StyleIndex
-            If style Is Nothing AndAlso row IsNot Nothing AndAlso If(row.CustomFormat?.Value, False) Then style = row.StyleIndex
-            If style Is Nothing Then
-                Dim columnNumber = CUInt(columnIndex + 1)
-                style = part.Worksheet.Elements(Of Columns)().SelectMany(Function(group) group.Elements(Of Column)()).
-                    FirstOrDefault(Function(column) column.Min IsNot Nothing AndAlso column.Max IsNot Nothing AndAlso column.Min.Value <= columnNumber AndAlso column.Max.Value >= columnNumber)?.Style
-            End If
             Dim stylesheet = WorkbookPart.WorkbookStylesPart?.Stylesheet
-            Dim format = stylesheet?.CellFormats?.Elements(Of CellFormat)().ElementAtOrDefault(CInt(If(style?.Value, 0UI)))
+            Dim format = GetCellFormat(stylesheet, WorksheetCellStyleIndex(part.Worksheet, row, cell, columnIndex))
             If format Is Nothing Then Return True
             If format.Protection IsNot Nothing AndAlso (format.ApplyProtection Is Nothing OrElse format.ApplyProtection.Value) Then
                 Return If(format.Protection.Locked?.Value, True)

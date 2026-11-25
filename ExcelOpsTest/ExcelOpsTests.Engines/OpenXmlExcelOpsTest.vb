@@ -42,8 +42,8 @@ Public Class OpenXmlExcelOpsTest
             Assert.That(workbook.SheetNames(), [Is].EqualTo({"Inputs", "Notes", "Hidden"}))
             Assert.That(workbook.IsProtectedSheet("Inputs"), [Is].True)
             Assert.That(workbook.IsHiddenSheet("Hidden"), [Is].True)
-            Assert.That(workbook.LookupCellValue(Of String)("inputs", 0, 0), [Is].EqualTo("Template text"))
-            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+            Assert.That(workbook.LookupCellValue(Of String)("inputs", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("Template text"))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(4))
             Assert.That(workbook.LookupCellIsLocked("Inputs", 0, 0), [Is].False)
             Assert.That(workbook.LookupCellIsLocked("Inputs", 0, 2), [Is].True)
 
@@ -105,9 +105,9 @@ Public Class OpenXmlExcelOpsTest
         End Using
 
         Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
-            Assert.That(workbook.LookupCellValue(Of String)("Inputs", 0, 0), [Is].EqualTo(text))
+            Assert.That(workbook.LookupCellValue(Of String)("Inputs", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(text))
             Assert.That(workbook.TryLookupCellValue(Of Decimal)("Inputs", 0, 1), [Is].EqualTo(12.5D))
-            Assert.That(workbook.LookupCellValue(Of Boolean)("Inputs", 0, 26), [Is].True)
+            Assert.That(workbook.LookupCellValue(Of Boolean)("Inputs", 0, 26, FormulaCalculationMode.UseCachedValueOnly), [Is].True)
             Assert.That(workbook.IsEmptyCell("Inputs", 3, 2), [Is].True)
             Assert.That(workbook.TryLookupCellValue(Of Integer)("Inputs", 4, 3), [Is].Null)
         End Using
@@ -128,7 +128,7 @@ Public Class OpenXmlExcelOpsTest
                 Assert.That(HashFile(clean), [Is].EqualTo(HashFile(template)))
                 workbook.WriteCellValue("Inputs", 0, 1, 11)
                 workbook.SaveCopyAs(reset, SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired)
-                Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+                Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(4))
                 workbook.SaveCopyAs(preserved, SaveOptionsForDisabledCalculationEngines.NoReset)
             End Using
             Assert.That(stream.CanRead, [Is].True)
@@ -136,10 +136,10 @@ Public Class OpenXmlExcelOpsTest
 
         Using workbook As New OpenXmlExcelDataOperations(File.ReadAllBytes(reset), New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
             Assert.That(workbook.LookupCellFormula("Inputs", 0, 2), [Is].EqualTo("B1*2"))
-            Assert.Throws(Of MissingCalculatedCellValueException)(Sub() workbook.LookupCellValueAsObject("Inputs", 0, 2))
+            Assert.Throws(Of MissingCalculatedCellValueException)(Sub() workbook.LookupCellValueAsObject("Inputs", 0, 2, FormulaCalculationMode.UseCachedValueOnly))
         End Using
         Using workbook As New OpenXmlExcelDataOperations(preserved, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
-            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(4))
         End Using
         Using document = SpreadsheetDocument.Open(reset, False)
             Assert.That(document.WorkbookPart.CalculationChainPart, [Is].Null)
@@ -168,7 +168,7 @@ Public Class OpenXmlExcelOpsTest
             workbook.WriteCellValue("Inputs", 0, 0, 42)
             workbook.Save()
             workbook.ReloadFromFile()
-            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 0), [Is].EqualTo(42))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(42))
         End Using
         Assert.That(HashFile(template), [Is].EqualTo(originalHash))
     End Sub
@@ -193,7 +193,7 @@ Public Class OpenXmlExcelOpsTest
             Assert.Throws(Of NotSupportedException)(Sub() workbook.WriteCellValue("Inputs", 0, 2, New Object()))
             Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.WriteCellValue("Inputs", 0, 2, Double.NaN))
             Assert.That(workbook.LookupCellFormula("Inputs", 0, 2), [Is].EqualTo("B1*2"))
-            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2), [Is].EqualTo(4))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 2, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(4))
         End Using
         Dim ex = Assert.Throws(Of FileCorruptedOrInvalidFileFormatException)(
             Sub()
@@ -264,8 +264,115 @@ Public Class OpenXmlExcelOpsTest
             workbook.Save()
         End Using
         Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options:=New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
-            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 0), [Is].EqualTo("new"))
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("new"))
         End Using
+    End Sub
+
+    ' The same XLSX must produce the same table in both engines for common formatting.
+    <Test>
+    Public Sub HtmlMatchesEpplus4ForStyledGrid()
+        Dim bytes As Byte()
+        Using package As New CompuMaster.Epplus4.ExcelPackage()
+            Dim sheet = package.Workbook.Worksheets.Add("Grid")
+            sheet.Cells("A1:B1").Merge = True
+            sheet.Cells("A1").Value = "Amounts & dates"
+            sheet.Cells("A1").Style.Font.Bold = True
+            sheet.Cells("A1").Style.Font.Italic = True
+            sheet.Cells("A1").Style.Font.Color.SetColor(System.Drawing.Color.DarkBlue)
+            sheet.Cells("A1").Style.Fill.PatternType = CompuMaster.Epplus4.Style.ExcelFillStyle.Solid
+            sheet.Cells("A1").Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray)
+            sheet.Cells("A1").Style.HorizontalAlignment = CompuMaster.Epplus4.Style.ExcelHorizontalAlignment.Center
+            sheet.Cells("A1").Style.WrapText = True
+            sheet.Cells("A2").Value = 0.25
+            sheet.Cells("A2").Style.Numberformat.Format = "0.00%"
+            sheet.Cells("B2").Value = New DateTime(2026, 11, 25)
+            sheet.Cells("B2").Style.Numberformat.Format = "yyyy-mm-dd"
+            bytes = package.GetAsByteArray()
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Dim htmlOptions As New HtmlSheetExportOptions With {.TableHeaderRowIndexes = New List(Of Integer) From {0}}
+        Dim reference As New EpplusFreeExcelDataOperations(bytes, options)
+        Try
+            Using workbook As New OpenXmlExcelDataOperations(bytes, options)
+                Dim expected = reference.ExportSheetToHtml("Grid", htmlOptions, HtmlDocumentExportParts.TableOnly).ToString()
+                Dim actual = workbook.ExportSheetToHtml("Grid", htmlOptions, HtmlDocumentExportParts.TableOnly).ToString()
+                Assert.That(actual, [Is].EqualTo(expected))
+                Assert.That(workbook.LookupCellFormat("Grid", 1, 0), [Is].EqualTo("0.00%"))
+                Assert.That(workbook.IsMergedCell("Grid", 0, 1), [Is].True)
+                Assert.That(workbook.LookupLastCell("Grid").Address, [Is].EqualTo("B2"))
+            End Using
+        Finally
+            reference.Close()
+        End Try
+    End Sub
+
+    ' Explicit cache resets affect the open workbook and the next saved copy.
+    <Test>
+    Public Sub ExplicitCacheResetsPreserveFormulasAndSource()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "edited.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            Dim worksheet = DirectCast(document.WorkbookPart.GetPartById("rId2"), WorksheetPart).Worksheet
+            worksheet.GetFirstChild(Of SheetData)().Append(New Row(
+                New Cell With {.CellReference = "A1", .CellFormula = New CellFormula("4+1"), .CellValue = New CellValue("5")},
+                New Cell With {.CellReference = "B1", .CellFormula = New CellFormula("3+4"), .CellValue = New CellValue("7")}
+            ) With {.RowIndex = 1UI})
+            Dim hidden = DirectCast(document.WorkbookPart.GetPartById("rId3"), WorksheetPart).Worksheet
+            hidden.GetFirstChild(Of SheetData)().Append(New Row(
+                New Cell With {.CellReference = "A1", .CellFormula = New CellFormula("4+5"), .CellValue = New CellValue("9")}
+            ) With {.RowIndex = 1UI})
+        End Using
+        Dim sourceHash = HashFile(template)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            workbook.ResetCellValueFromFormulaCell(New ExcelCell("Inputs", "C1", ExcelCell.ValueTypes.All))
+            Assert.That(workbook.HasMissingCachedFormulaResult("Inputs", 0, 2), [Is].True)
+            Assert.That(workbook.LookupCellValue(Of Integer)("Notes", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(5))
+            workbook.ResetCellValueFromFormulaCell("Notes", 0, 0)
+            Assert.That(workbook.HasMissingCachedFormulaResult("Notes", 0, 0), [Is].True)
+            Assert.That(workbook.LookupCellValue(Of Integer)("Notes", 0, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(7))
+            workbook.ResetCellValueFromFormulaCell("Notes")
+            Assert.That(workbook.HasMissingCachedFormulaResult("Notes", 0, 1), [Is].True)
+            Assert.That(workbook.LookupCellValue(Of Integer)("Hidden", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(9))
+            workbook.ResetCellValueFromFormulaCellInWholeWorkbook()
+            Assert.That(workbook.HasMissingCachedFormulaResult("Hidden", 0, 0), [Is].True)
+            Assert.Throws(Of ArgumentException)(Sub() workbook.ResetCellValueFromFormulaCell("Inputs", 0, 1))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.HasMissingCachedFormulaResult("Inputs", 0, 2), [Is].True)
+            Assert.That(workbook.LookupCellFormula("Inputs", 0, 2), [Is].EqualTo("B1*2"))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inputs", 0, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(2))
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Assert.That(document.WorkbookPart.CalculationChainPart, [Is].Null)
+            Assert.That(document.WorkbookPart.Workbook.CalculationProperties.FullCalculationOnLoad.Value, [Is].True)
+        End Using
+        Assert.That(HashFile(template), [Is].EqualTo(sourceHash))
+    End Sub
+
+    ' The theme fixtures were written by Excel and exercise indexed colors, theme colors and tints.
+    <TestCase("Office")>
+    <TestCase("Office2013")>
+    <TestCase("Legacy")>
+    <TestCase("Ion")>
+    <TestCase("Red")>
+    Public Sub HtmlMatchesEpplus4ForExcelThemeFixtures(themeVariant As String)
+        Dim template = TestEnvironment.FullPathOfExistingTestFile("test_data", "HtmlExportThemeExcel" & themeVariant & ".xlsx")
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Dim reference As New EpplusFreeExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+        Try
+            Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+                Dim sheet = reference.WorkSheetNames().Single()
+                Dim htmlOptions As New HtmlSheetExportOptions()
+                Dim expected = reference.ExportSheetToHtml(sheet, htmlOptions, HtmlDocumentExportParts.TableOnly).ToString()
+                Dim actual = workbook.ExportSheetToHtml(sheet, htmlOptions, HtmlDocumentExportParts.TableOnly).ToString()
+                Assert.That(actual, [Is].EqualTo(expected))
+            End Using
+        Finally
+            reference.Close()
+        End Try
     End Sub
 
     Private Shared Sub OpenWithOptions(path As String, options As ExcelDataOperationsOptions)

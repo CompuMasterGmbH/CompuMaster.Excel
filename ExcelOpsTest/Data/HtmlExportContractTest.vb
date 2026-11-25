@@ -16,6 +16,7 @@ Namespace Data
 
     <TestFixture("epplus4")>
     <TestFixture("epplus8")>
+    <TestFixture("openxml")>
     <NonParallelizable>
     Public Class HtmlExportContractTest
 
@@ -56,6 +57,8 @@ Namespace Data
             Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
             If _engine = "epplus4" Then
                 _workbook = New EpplusFreeExcelDataOperations(bytes, options)
+            ElseIf _engine = "openxml" Then
+                _workbook = New OpenXmlExcelDataOperations(bytes, options)
             Else
                 ExcelOpsTests.Engines.EpplusPolyformEditionOpsTest.AssignLicenseContext()
                 _workbook = New EpplusPolyformExcelDataOperations(bytes, options)

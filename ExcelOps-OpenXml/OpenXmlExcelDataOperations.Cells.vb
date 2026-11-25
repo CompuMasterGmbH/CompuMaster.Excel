@@ -125,12 +125,28 @@ Namespace ExcelOps
         End Sub
 
         ''' <inheritdoc/>
+        Public Overrides Function HasMissingCachedFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
+            Return IsMissingFormulaResult(GetCell(sheetName, rowIndex, columnIndex))
+        End Function
+
+        Private Shared Function IsMissingFormulaResult(cell As Cell) As Boolean
+            If cell?.CellFormula Is Nothing Then Return False
+            Dim value = cell.CellValue?.Text
+            Return value Is Nothing OrElse (value.Length = 0 AndAlso If(cell.DataType?.Value, CellValues.Number) <> CellValues.String)
+        End Function
+
+        ''' <inheritdoc/>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
-            Dim cell = GetCell(sheetName, rowIndex, columnIndex)
+            Return ReadCellValue(sheetName, rowIndex, columnIndex, GetCell(sheetName, rowIndex, columnIndex))
+        End Function
+
+        Private Function ReadCellValue(sheetName As String, rowIndex As Integer, columnIndex As Integer, cell As Cell) As Object
             If cell Is Nothing Then Return Nothing
             Dim value = cell.CellValue?.Text
             Dim dataType = If(cell.DataType?.Value, CellValues.Number)
-            If cell.CellFormula IsNot Nothing AndAlso (value Is Nothing OrElse (value.Length = 0 AndAlso dataType <> CellValues.String)) Then
+            If IsMissingFormulaResult(cell) Then
                 Throw New MissingCalculatedCellValueException(FilePath, sheetName, rowIndex, columnIndex, cell.CellFormula.Text)
             End If
             If dataType = CellValues.InlineString Then Return DecodeText(cell.InlineString)
@@ -159,14 +175,18 @@ Namespace ExcelOps
         End Function
 
         ''' <inheritdoc/>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             ValidateAddress(cell)
-            Return LookupCellValue(Of T)(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
+            Return ReadLegacyCellValue(Of T)(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
         End Function
 
         ''' <inheritdoc/>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
-            Dim value = LookupCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim value = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
             Return ConvertValue(Of T)(value)
         End Function
 
@@ -189,7 +209,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T?
-            Dim value = LookupCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim value = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
             If value Is Nothing OrElse (TypeOf value Is String AndAlso String.IsNullOrWhiteSpace(DirectCast(value, String))) Then Return Nothing
             Try
                 Return ConvertValue(Of T)(value)
@@ -262,7 +282,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         ''' <remarks>Stores an ordinary cell formula without evaluating it.</remarks>
         Public Overrides Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
-            If immediatelyCalculateCellValue Then Throw CalculationNotSupported()
+            If immediatelyCalculateCellValue Then Throw CalculationFeatureDisabled()
             If String.IsNullOrWhiteSpace(formula) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
             Dim expression = If(formula(0) = "="c, formula.Substring(1), formula)
             If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))

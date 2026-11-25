@@ -11,7 +11,8 @@ Namespace ExcelOps
     ''' <summary>
     ''' Provides the base implementation for the common API of the Excel engines.
     ''' </summary>
-    Public MustInherit Class ExcelDataOperationsBase
+    Partial Public MustInherit Class ExcelDataOperationsBase
+        Implements ILegacyCellValueReader
 
         ''' <summary>
         ''' Defines how an engine instance initializes its workbook.
@@ -751,7 +752,9 @@ Namespace ExcelOps
         ''' <param name="cell">Target cell.</param>
         ''' <returns>The cell values in the range.</returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
-        Public MustOverride Function LookupCellValue(Of T)(cell As ExcelCell) As T
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
+        Public MustOverride Function LookupCellValue(Of T)(cell As ExcelCell) As T Implements ILegacyCellValueReader.ReadCellValue
 
         ''' <summary>
         ''' Reads several cell values.
@@ -760,10 +763,12 @@ Namespace ExcelOps
         ''' <param name="range">Target cell range.</param>
         ''' <returns>The cell value.</returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Function LookupCellValue(Of T)(range As ExcelRange) As List(Of T)
             Dim Result As New List(Of T)
             For Each Cell As ExcelCell In range
-                Result.Add(LookupCellValue(Of T)(Cell))
+                Result.Add(ReadLegacyCellValue(Of T)(Cell))
             Next
             Return Result
         End Function
@@ -777,7 +782,9 @@ Namespace ExcelOps
         ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns>The cell value.</returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
-        Public MustOverride Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
+        Public MustOverride Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T Implements ILegacyCellValueReader.ReadCellValue
 
         ''' <summary>
         ''' Reads a cell value.
@@ -807,7 +814,9 @@ Namespace ExcelOps
         ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns>The cell value.</returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
-        Public MustOverride Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
+        Public MustOverride Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object Implements ILegacyCellValueReader.ReadCellValueAsObject
 
         ''' <summary>
         ''' Reads a cell value.
@@ -815,9 +824,11 @@ Namespace ExcelOps
         ''' <param name="cell">Target cell.</param>
         ''' <returns>The cell value.</returns>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Function LookupCellValueAsObject(cell As ExcelCell) As Object
             If cell.ValidateFullCellAddressInclSheetName() = False Then Throw New ExcelOps.InvalidCellAddressException(cell)
-            Return Me.LookupCellValueAsObject(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
+            Return ReadLegacyCellValueAsObject(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
         End Function
 
         ''' <summary>
@@ -2443,6 +2454,7 @@ Namespace ExcelOps
         Public Sub ExportSheetToHtml(worksheetName As String, anchorName As String, initiallyVisible As Boolean, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions, exportedHtmlDocumentParts As HtmlDocumentExportParts)
             If sb Is Nothing Then Throw New ArgumentNullException(NameOf(sb))
             If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
+            ValidateFormulaCalculationMode(options.FormulaCalculationMode)
             Select Case exportedHtmlDocumentParts
                 Case HtmlDocumentExportParts.FullHtmlDocument
                     sb.AppendLine(options.EffectiveHtmlDocumentHeaderAndBody)

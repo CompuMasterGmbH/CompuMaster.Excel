@@ -141,6 +141,8 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             Dim MyExcelCellAddress As ExcelCellAddress = New ExcelAddress(cell.Address).Start
             If Me.IsMissingCalculatedCellValueFromFormulaCell(cell) Then Throw New MissingCalculatedCellValueException(Me.FilePath, cell, Me.LookupCellFormula(cell))
@@ -218,6 +220,8 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.IsMissingCalculatedCellValueFromFormulaCell(sheetName, rowIndex, columnIndex) Then Throw New MissingCalculatedCellValueException(Me.FilePath, sheetName, rowIndex, columnIndex, Me.LookupCellFormula(sheetName, rowIndex, columnIndex))
@@ -297,6 +301,8 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
@@ -382,7 +388,19 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Calculate
+            Dim target = Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1)
+            If Not SupportsArrayFormulaCalculation AndAlso target.IsArrayFormula Then
+                Dim address As New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
+                Throw New FormulaComplexityNotSupportedException(address, target.Formula,
+                    EngineName & " does not support calculating an array formula at " & address.Address(True) & ".")
+            End If
+            Try
+                target.Calculate()
+            Catch ex As NotImplementedException
+                Dim address As New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
+                Throw New FormulaComplexityNotSupportedException(address, LookupCellFormula(address),
+                    EngineName & " does not implement the requested formula calculation at " & address.Address(True) & ".", ex)
+            End Try
             If throwExceptionOnCalculationError AndAlso Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value?.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
                 Dim Cell As New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
                 Throw New NotSupportedException("Epplus calculation at " & Cell.Address(True) & " resulted in #" & UCase(CType(Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value, CompuMaster.Epplus4.ExcelErrorValue).Type.ToString) & "!" & " for formula =" & Me.LookupCellFormula(Cell))
@@ -874,7 +892,7 @@ Namespace ExcelOps
             Try
                 Dim CellValue As Object = Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Value
                 If CellValue IsNot Nothing AndAlso CellValue.GetType() Is GetType(Boolean) AndAlso Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Style.Numberformat.Format = "General" Then
-                    Return Me.LookupCellValue(Of String)(sheetName, rowIndex, columnIndex)
+                    Return ReadLegacyCellValue(Of String)(sheetName, rowIndex, columnIndex)
                 Else
                     Return Me.Workbook.Worksheets(sheetName).Cells(rowIndex + 1, columnIndex + 1).Text
                 End If
@@ -1150,7 +1168,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Public Overrides Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim CellValue As Object = Me.LookupCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim CellValue As Object = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
             If CellValue IsNot Nothing AndAlso CellValue.GetType Is GetType(CompuMaster.Epplus4.ExcelErrorValue) Then
                 Return CType(CellValue, CompuMaster.Epplus4.ExcelErrorValue).ToString
             Else

@@ -353,6 +353,19 @@ Namespace ExcelOps
             Return CheckResult
         End Function
 
+        Private Const SupportsArrayFormulaCalculation As Boolean = False
+
+        ''' <inheritdoc/>
+        Public Overrides Function HasMissingCachedFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
+            If String.IsNullOrEmpty(sheetName) Then Throw New ArgumentNullException(NameOf(sheetName))
+            If rowIndex < 0 OrElse rowIndex >= 1048576 Then Throw New ArgumentOutOfRangeException(NameOf(rowIndex))
+            If columnIndex < 0 OrElse columnIndex >= 16384 Then Throw New ArgumentOutOfRangeException(NameOf(columnIndex))
+            Dim worksheet = Workbook.Worksheets(sheetName)
+            If worksheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            Dim target = worksheet.Cells(rowIndex + 1, columnIndex + 1)
+            Return target.HasMissingCachedCalculatedFormulaValue()
+        End Function
+
         ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
             Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
@@ -491,7 +504,7 @@ Namespace ExcelOps
         ''' Rendert ein einzelnes Worksheet als vollständiges HTML-Dokument (UTF-8).
         ''' Kompatibel zu EPPlus 4.5.x (kein Lizenz-Setup nötig).
         ''' </summary>
-        Friend Overloads Shared Sub ExportSheetToHtmlInternal(ws As ExcelWorksheet, sb As StringBuilder, options As HtmlSheetExportOptions)
+        Private Overloads Sub ExportSheetToHtmlInternal(ws As ExcelWorksheet, sb As StringBuilder, options As HtmlSheetExportOptions)
 
             ValidateHtmlExportRange(options)
             Dim headerRowIndexes = options.EffectiveTableHeaderRowIndexes()
@@ -546,7 +559,7 @@ Namespace ExcelOps
                 Next
             Next
 
-            Dim tableCssClass As String = options.TableCssClassName
+            Dim tableCssClass = System.Net.WebUtility.HtmlEncode(options.TableCssClassName)
             sb.Append("<table class=""" & tableCssClass & """>")
 
             For RowIndex = firstRow To lastRow
@@ -609,7 +622,7 @@ Namespace ExcelOps
                     Dim styleAttr As String = If(styles.Count > 0, $" style=""{String.Join(";", styles)}""", "")
 
                     ' Inhalt (Text = bereits nach NumberFormat formatiert)
-                    Dim content As String = cell.Text
+                    Dim content As String = ResolveHtmlCellText(ws.Name, RowIndex - 1, ColumnIndex - 1, options, Function() cell.Text)
                     If String.IsNullOrEmpty(content) Then content = " "
                     content = System.Net.WebUtility.HtmlEncode(content)
 

@@ -81,7 +81,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Protected Overrides Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
             If Not options.DisableCalculationEngine.Value OrElse Not options.DisableInitialCalculation.Value Then
-                Throw CalculationNotSupported()
+                Throw CalculationFeatureDisabled()
             End If
             If Not String.IsNullOrEmpty(options.PasswordForOpening) Then
                 Throw New NotSupportedException("The Open XML SDK engine does not open password-encrypted workbooks.")
@@ -290,14 +290,7 @@ Namespace ExcelOps
             End If
             If clearCache Then
                 For Each sheetPart In target.WorksheetParts
-                    Dim cached = sheetPart.Worksheet.Descendants(Of Cell)().
-                        Where(Function(cell) cell.CellFormula IsNot Nothing AndAlso cell.CellValue IsNot Nothing).ToList()
-                    If cached.Count = 0 Then Continue For
-                    For Each cell In cached
-                        cell.CellValue = Nothing
-                        cell.DataType = Nothing
-                    Next
-                    sheetPart.Worksheet.Save()
+                    If ClearFormulaResults(GetSheetData(sheetPart)) Then sheetPart.Worksheet.Save()
                 Next
             End If
             If (_calculationChainInvalid OrElse clearCache) AndAlso target.CalculationChainPart IsNot Nothing Then
@@ -322,23 +315,31 @@ Namespace ExcelOps
             End If
         End Sub
 
-        Private Shared Function CalculationNotSupported() As FeatureDisabledException
-            Return New FeatureDisabledException("Calculation engine", "The Open XML SDK engine cannot evaluate formulas. Use RequestRecalculationOnOpen to have Excel recalculate the saved workbook.")
+        Private Const CalculationUnavailableMessage As String =
+            "The Open XML SDK engine cannot evaluate formulas. Use RequestRecalculationOnOpen to have Excel recalculate the saved workbook."
+
+        Private Shared Function CalculationFeatureDisabled() As FeatureDisabledException
+            Return New FeatureDisabledException("Calculation engine", CalculationUnavailableMessage)
         End Function
 
         ''' <inheritdoc/>
+        Protected Overrides Sub CalculateMissingFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer)
+            Throw New NotSupportedException(CalculationUnavailableMessage)
+        End Sub
+
+        ''' <inheritdoc/>
         Protected Overrides Sub RecalculateAllInternal()
-            Throw CalculationNotSupported()
+            Throw CalculationFeatureDisabled()
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateSheet(sheetName As String)
-            Throw CalculationNotSupported()
+            Throw CalculationFeatureDisabled()
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
-            Throw CalculationNotSupported()
+            Throw CalculationFeatureDisabled()
         End Sub
 
         ''' <inheritdoc/>

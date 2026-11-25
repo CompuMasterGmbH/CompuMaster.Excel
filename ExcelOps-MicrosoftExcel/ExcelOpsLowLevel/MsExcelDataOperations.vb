@@ -678,7 +678,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <inheritdoc/>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(cell As ExcelCell) As T?
             Try
-                Return LookupCellValue(Of T)(cell)
+                Return ReadLegacyCellValue(Of T)(cell)
             Catch ex As Exception
                 Return Nothing
             End Try
@@ -688,16 +688,18 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         Public Overrides Function TryLookupCellValue(Of T As Structure)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T?
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Try
-                Return LookupCellValue(Of T)(sheetName, rowIndex, columnIndex)
+                Return ReadLegacyCellValue(Of T)(sheetName, rowIndex, columnIndex)
             Catch ex As Exception
                 Return Nothing
             End Try
         End Function
 
         ''' <inheritdoc/>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Return LookupCellValue(Of Object)(sheetName, rowIndex, columnIndex)
+            Return ReadLegacyCellValue(Of Object)(sheetName, rowIndex, columnIndex)
         End Function
 
         ''' <summary>
@@ -709,6 +711,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <inheritdoc/>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             Return LookupCellValue(Of T)(CType(Me.Workbook.Worksheets(cell.SheetName), MsExcel.Worksheet), cell)
         End Function
@@ -726,6 +730,8 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <inheritdoc/>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Return Me.LookupCellValue(Of T)(CType(Me.Workbook.Worksheets(sheetName), MsExcel.Worksheet), rowIndex, columnIndex)
@@ -1320,7 +1326,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         ''' <inheritdoc/>
         Public Overrides Function LookupCellErrorValue(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim CellValue As Object = Me.LookupCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim CellValue As Object = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
             If CellValue IsNot Nothing AndAlso Me.IsXLCVErr(CellValue) Then
                 Select Case CType(CellValue, CVErrEnum)
                     Case CVErrEnum.ErrDiv0

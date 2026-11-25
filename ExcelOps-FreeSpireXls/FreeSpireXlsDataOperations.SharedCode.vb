@@ -150,6 +150,8 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(cell As ExcelCell) As T
             Try
                 Dim CurrentCell = Me.Workbook.Worksheets.Item(cell.SheetName).Range(cell.RowNumber, cell.ColumnNumber)
@@ -218,16 +220,18 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Return Me.LookupCellValue(Of T)(New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All))
+            Return ReadLegacyCellValue(Of T)(New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All))
         End Function
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(cell As ExcelCell) As T?
             Try
-                Return Me.LookupCellValue(Of T)(cell)
+                Return ReadLegacyCellValue(Of T)(cell)
             Catch ex As Exception
                 Return Nothing
             End Try
@@ -242,6 +246,8 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         ''' <remarks>Cell values with spaces will be converted to null values in case of method call with types bool, byte, int32, int64, double, decimal</remarks>
+        <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
+        <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If Me.Workbook.Worksheets.Item(sheetName) Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
