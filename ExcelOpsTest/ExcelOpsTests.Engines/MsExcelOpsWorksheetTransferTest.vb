@@ -472,6 +472,163 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <TestCase(False, False)>
+        <TestCase(False, True)>
+        <TestCase(True, False)>
+        <TestCase(True, True)>
+        Public Sub WorksheetTransfer_OpenXmlMatchesExcelDefinedNameScopes(move As Boolean, collision As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim source As MsExcelDataOperations = Nothing
+            Dim target As MsExcelDataOperations = Nothing
+            Dim receivedName = If(collision, "Transfer (2)", "Transfer")
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(collision)
+                Dim sheet = TransferSheet(source.Workbook, "Transfer")
+                Dim targetCheck = TransferSheet(target.Workbook, "Target Check")
+                source.Workbook.Names.Add("SharedInput", RefersTo:="='Data Set'!$A$1")
+                source.Workbook.Names.Add("MovedInput", RefersTo:="=Transfer!$A$1")
+                source.Workbook.Names.Add("UnusedInput", RefersTo:="='Data Set'!$A$2")
+                sheet.Names.Add("Transfer!LocalInput", RefersTo:="=Transfer!$A$1")
+                sheet.Range("B1").Formula = "=SharedInput"
+                sheet.Range("B2").Formula = "=LocalInput"
+                sheet.Range("B3").Formula = "=MovedInput"
+                TransferSheet(source.Workbook, "Remain").Range("B1").Formula = "=MovedInput"
+                If collision Then
+                    targetCheck.Range("B1").Value2 = 900
+                    target.Workbook.Names.Add("SharedInput", RefersTo:="='Target Check'!$B$1")
+                    targetCheck.Range("B2").Formula = "=SharedInput"
+                End If
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+
+                TransferWorksheet(sheet, targetCheck, move)
+                AssertNamedTransferFormulas(target.Workbook, receivedName, collision)
+                If move Then AssertTransferFormula(TransferSheet(source.Workbook, "Remain"), "B1", "=MovedInput", 10)
+                target.Close()
+                source.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Dim received = If(move, origin.MoveSheet("Transfer", destination, 0), origin.CopySheet("Transfer", destination, 0))
+                    Assert.That(received.TargetSheetName, [Is].EqualTo(receivedName))
+                    If move Then origin.Save()
+                    destination.Save()
+                End Using
+
+                Using document = SpreadsheetDocument.Open(targetPath, False)
+                    Dim names = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().ToArray()
+                    Dim local = names.Single(Function(name) name.Name.Value = "LocalInput")
+                    Assert.That(local.LocalSheetId.Value, [Is].Zero)
+                    Assert.That(names.Any(Function(name) name.Name.Value = "UnusedInput"), [Is].False)
+                    Dim imported = names.Single(Function(name) name.Name.Value = "SharedInput" AndAlso
+                        (Not collision OrElse name.LocalSheetId IsNot Nothing))
+                    If collision Then
+                        Assert.That(imported.LocalSheetId.Value, [Is].Zero)
+                    Else
+                        Assert.That(imported.LocalSheetId, [Is].Null)
+                    End If
+                End Using
+
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target.RecalculateAll()
+                AssertNamedTransferFormulas(target.Workbook, receivedName, collision)
+                If move Then AssertTransferFormula(TransferSheet(source.Workbook, "Remain"), "B1", "=MovedInput", 10)
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Sub AssertNamedTransferFormulas(workbook As NativeExcel.Workbook, sheetName As String, collision As Boolean)
+            Dim sheet = TransferSheet(workbook, sheetName)
+            AssertTransferFormula(sheet, "B1", "=SharedInput", 20)
+            AssertTransferFormula(sheet, "B2", "=LocalInput", 10)
+            AssertTransferFormula(sheet, "B3", "=MovedInput", 10)
+            If collision Then AssertTransferFormula(TransferSheet(workbook, "Target Check"), "B2", "=SharedInput", 900)
+        End Sub
+
+        <TestCase("Above", "B5:C7", "B5", "B6", "B5:C7")>
+        <TestCase("Inside", "B4:C6", "B4", "B6", "B4:C7")>
+        <TestCase("DeleteAnchor", Nothing, "#REF!", "B4", "B4:C5")>
+        <TestCase("DeleteTail", "B4:C6", "B4", "B5", "B4:C5")>
+        <TestCase("Obstructed", "B4", "B4", "B5", "B4:C5")>
+        <TestCase("DeleteAll", Nothing, "#REF!", "#REF!", "#REF!")>
+        <TestCase("InsertColumn", "B4:C6", "B4", "B5", "B4:D6")>
+        Public Sub StructuralSpillReferencesMatchExcel(operation As String, anchorRange As String, spillOperand As String,
+                                                       cellOperand As String, rangeOperand As String)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim before = Path.Combine(caseDirectory, "spill.xlsx")
+            Dim expected = Path.Combine(caseDirectory, "excel-spill.xlsx")
+            Dim actual = Path.Combine(caseDirectory, "openxml-spill.xlsx")
+            Const qualifier = "'Spill Data'!"
+            Dim workbook As MsExcelDataOperations = Nothing
+            Try
+                workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile,
+                    New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile))
+                workbook.RenameWorksheet("Sheet1", "Spill Data", True)
+                workbook.AddSheet("Check")
+                Dim data = TransferSheet(workbook.Workbook, "Spill Data")
+                Dim check = TransferSheet(workbook.Workbook, "Check")
+                CallByName(data.Range("B4"), "Formula2", CallType.Let, "=SEQUENCE(3,2)")
+                If operation = "Obstructed" Then data.Range("B7").Value2 = "blocked"
+                CallByName(check.Range("A1"), "Formula2", CallType.Let, "=SUM(" & qualifier & "B4#)")
+                check.Range("A2").Formula = "=" & qualifier & "B5"
+                check.Range("A3").Formula = "=SUM(" & qualifier & "B4:C6)"
+                workbook.SaveAs(before, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                ApplySpillEdit(workbook, operation)
+                workbook.SaveAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Using editor As New OpenXmlExcelDataOperations(before, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    ApplySpillEdit(editor, operation)
+                    editor.SaveCopyAs(actual, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                For Each path In {expected, actual}
+                    Using document = SpreadsheetDocument.Open(path, False)
+                        Dim dataPart = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Spill Data")
+                        Dim anchor = dataPart.Worksheet.Descendants(Of CellFormula)().SingleOrDefault()
+                        Assert.That(anchor?.Reference?.Value, [Is].EqualTo(anchorRange), path)
+                        Dim checkPart = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Check")
+                        Assert.That(StructuralReferenceCoverage.FormulaAt(checkPart, "A1"), [Is].EqualTo("SUM(_xlfn.ANCHORARRAY(" & qualifier & spillOperand & "))"), path)
+                        Assert.That(StructuralReferenceCoverage.FormulaAt(checkPart, "A2"), [Is].EqualTo(qualifier & cellOperand), path)
+                        Assert.That(StructuralReferenceCoverage.FormulaAt(checkPart, "A3"), [Is].EqualTo("SUM(" & qualifier & rangeOperand & ")"), path)
+                    End Using
+                Next
+                workbook = Me.CreateInstance(actual, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                workbook.RecalculateAll()
+                If operation = "Obstructed" Then
+                    Dim reopened = TransferSheet(workbook.Workbook, "Spill Data")
+                    Assert.That(reopened.Range("B6").Value2, [Is].EqualTo("blocked"))
+                    Assert.That(reopened.Range("C4").Value2, [Is].Null)
+                ElseIf anchorRange IsNot Nothing Then
+                    Assert.That(CDbl(TransferSheet(workbook.Workbook, "Check").Range("A1").Value2), [Is].EqualTo(21.0))
+                End If
+            Finally
+                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Sub ApplySpillEdit(workbook As ExcelDataOperationsBase, operation As String)
+            Const sheet = "Spill Data"
+            Select Case operation
+                Case "Above" : workbook.AddRow(sheet, 2, 1, True)
+                Case "Inside" : workbook.AddRow(sheet, 4, 1, True)
+                Case "DeleteAnchor" : workbook.RemoveRows(sheet, 3, 1, True)
+                Case "DeleteTail", "Obstructed" : workbook.RemoveRows(sheet, 5, 1, True)
+                Case "DeleteAll" : workbook.RemoveRows(sheet, 3, 3, True)
+                Case "InsertColumn" : workbook.AddColumn(sheet, 2, 1, True)
+                Case Else : Throw New ArgumentOutOfRangeException(NameOf(operation))
+            End Select
+        End Sub
+
         Private Shared Sub SetTransferChartSeries(chart As NativeExcel.Chart, qualifier As String)
             chart.ChartType = NativeExcel.XlChartType.xlColumnClustered
             Dim collection = DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection)

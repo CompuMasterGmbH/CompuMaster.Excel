@@ -13,4 +13,7 @@
 - `CompuMaster.Excel.OpenXml` updates supported classic chart references, cached points, and drawing anchors during structural edits. Transfers can include embedded classic charts. Worksheet renames also update supported ChartEx source names. `CompuMaster.Excel.MicrosoftExcel` implements the common worksheet rename method using Excel's native reference updates.
 - `CompuMaster.Excel.OpenXml` adds workbook sessions for incoming reference rewrites, move updates in additional open workbooks, and links between workbooks saved after the transfer.
 - `CompuMaster.Excel.OpenXml` supports deleting selected rows in an Excel table's data body, including the first data row, deleting the totals row, and moving a table through whole-column edits before it.
+- `CompuMaster.Excel.OpenXml` supports clearing an entire supported table data body with Excel's retained insertion row and adjusting table columns and structured references during whole-column edits.
+- `CompuMaster.Excel.OpenXml` transfers supported absolute workbook and worksheet-local names and preserves their intended bindings during name collisions.
+- `CompuMaster.Excel.OpenXml` rewrites supported dynamic spill references and uncached ChartEx source ranges and drawing anchors during structural edits.
 - `CompuMaster.Excel.OpenXml` preserves direct 3-D coordinates during single-sheet shifts and updates the endpoint names when a worksheet is renamed.

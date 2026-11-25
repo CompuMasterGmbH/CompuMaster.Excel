@@ -212,6 +212,30 @@ Namespace ExcelOps
             Return index + offset
         End Function
 
+        Private Shared Function TableSelectorUsesColumn(value As String, start As Integer, finish As Integer,
+                                                       columns As HashSet(Of String)) As Boolean
+            Dim leafStart = -1
+            Dim index = start
+            While index < finish
+                Select Case value(index)
+                    Case "'"c
+                        If index + 1 < finish AndAlso "[]#'@".IndexOf(value(index + 1)) >= 0 Then index += 1
+                    Case "["c
+                        leafStart = index + 1
+                    Case "]"c
+                        If leafStart >= 0 AndAlso leafStart < index Then
+                            Dim name = value.Substring(leafStart, index - leafStart)
+                            If name(0) = "@"c Then name = name.Substring(1)
+                            If name.Length > 0 AndAlso name(0) <> "#"c AndAlso
+                               columns.Contains(Regex.Replace(name, "'([\[\]#'@])", "$1")) Then Return True
+                        End If
+                        leafStart = -1
+                End Select
+                index += 1
+            End While
+            Return False
+        End Function
+
         Private Shared Function FormatCopiedEndpoint(endpoint As ReferenceEndpoint, rowOffset As Integer, columnOffset As Integer) As String
             Dim row = TranslateCopiedIndex(endpoint.Row, endpoint.RowText, rowOffset)
             Dim column = TranslateCopiedIndex(endpoint.Column, endpoint.ColumnText, columnOffset)
@@ -227,7 +251,10 @@ Namespace ExcelOps
                                                Optional copyColumnOffset As Integer = 0,
                                         Optional rewriteSheetQualifier As Func(Of String, String, String) = Nothing,
                                         Optional formulaWorkbook As WorkbookPart = Nothing,
-                                        Optional structuralExternalLinks As HashSet(Of Integer) = Nothing) As String
+                                        Optional structuralExternalLinks As HashSet(Of Integer) = Nothing,
+                                        Optional contextualTable As StructuralTable = Nothing,
+                                        Optional observeName As Action(Of String, String) = Nothing,
+                                        Optional allowSpillReferences As Boolean = False) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
             Dim lastReferenceEnd = -1
@@ -245,7 +272,11 @@ Namespace ExcelOps
                     If selectorEnd < value.Length AndAlso (value(selectorEnd) = "!"c OrElse FormulaSheet.Match(value, selectorEnd).Success) Then
                         Throw UnsupportedReferenceSyntax()
                     End If
-                    result.Append(value, index, selectorEnd - index)
+                    If structuralExternalLinks Is Nothing AndAlso shift?.ReferencesDeletedTableColumn(value, index, selectorEnd, Nothing, contextualTable, isDefinedName) = True Then
+                        result.Append("#REF!")
+                    Else
+                        result.Append(value, index, selectorEnd - index)
+                    End If
                     index = selectorEnd
                     Continue While
                 End If
@@ -360,11 +391,14 @@ Namespace ExcelOps
 
                 If sheetSpan.Success Then Throw UnsupportedReferenceSyntax()
                 Dim token = FormulaErrorToken.Match(value, index)
-                If Not token.Success Then token = FormulaName.Match(value, index)
+                Dim isName = False
+                If Not token.Success Then
+                    token = FormulaName.Match(value, index)
+                    isName = token.Success
+                End If
                 If Not token.Success AndAlso explicitSheet Is Nothing Then token = FormulaNumber.Match(value, index)
                 If token.Success Then
-                    If String.Equals(token.Value, "_xlfn.ANCHORARRAY", StringComparison.OrdinalIgnoreCase) Then Throw UnsupportedReferenceSyntax()
-                    result.Append(qualifier).Append(token.Value)
+                    If Not allowSpillReferences AndAlso String.Equals(token.Value, "_xlfn.ANCHORARRAY", StringComparison.OrdinalIgnoreCase) Then Throw UnsupportedReferenceSyntax()
                     index += token.Length
                     If String.Equals(token.Value, "#REF!", StringComparison.OrdinalIgnoreCase) Then lastReferenceEnd = index
                     If index < value.Length AndAlso value(index) = "["c Then
@@ -372,8 +406,18 @@ Namespace ExcelOps
                             Throw UnsupportedReferenceSyntax()
                         End If
                         Dim selectorEnd = ReadTableSelector(value, index)
-                        result.Append(value, index, selectorEnd - index)
+                        If structuralExternalLinks Is Nothing AndAlso shift?.ReferencesDeletedTableColumn(value, index, selectorEnd, token.Value, Nothing, isDefinedName) = True Then
+                            result.Append("#REF!")
+                        Else
+                            result.Append(token.Value).Append(value, index, selectorEnd - index)
+                        End If
                         index = selectorEnd
+                    Else
+                        If observeName IsNot Nothing AndAlso isName Then
+                            Dim afterName = SkipWhitespace(value, index)
+                            If afterName = value.Length OrElse value(afterName) <> "("c Then observeName(token.Value, explicitSheet)
+                        End If
+                        result.Append(qualifier).Append(token.Value)
                     End If
                 ElseIf explicitSheet Is Nothing AndAlso
                        ("+-*/^&=<>%(),;{}@".IndexOf(value(tokenStart)) >= 0 OrElse Char.IsWhiteSpace(value(tokenStart))) Then

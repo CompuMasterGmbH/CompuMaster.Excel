@@ -57,7 +57,7 @@ Namespace ExcelOps
                                        shift As StructuralShift, newSheetName As String)
             Using changes As New StagedWorkbookChanges()
                 ApplyStructuralEditCore(sheetName, shift, newSheetName,
-                    Sub(name)
+                    Sub(name, effectiveShift)
                         Dim savedPath = WorkbookFilePath
                         Dim sourceUri = If(String.IsNullOrEmpty(savedPath), Nothing, WorkbookFileUri(savedPath))
                         For Each dependent In workbooks
@@ -67,8 +67,11 @@ Namespace ExcelOps
                             End If
                             Dim links = New HashSet(Of Integer)(dependent.FindLinksTo(Me))
                             If links.Count = 0 Then Continue For
+                            If effectiveShift IsNot Nothing AndAlso WorkbookPart.CellMetadataPart IsNot Nothing Then
+                                Throw UnsupportedOperation("Shifting a spill workbook with incoming workbook links")
+                            End If
                             changes.Add(dependent,
-                                Sub(book) dependent.RewriteIncomingSessionLinks(book, links, name, shift, newSheetName))
+                                Sub(book) dependent.RewriteIncomingSessionLinks(book, links, name, effectiveShift, newSheetName))
                         Next
                     End Sub)
                 changes.Apply()
@@ -167,6 +170,7 @@ Namespace ExcelOps
                     End If
                     Dim row = reference.Row
                     Dim column = reference.Column
+                    If shift.ClearsTableCell(row, column) Then Continue For
                     If shift.Vertical AndAlso shift.Includes(column) Then
                         row = shift.MoveIndex(row)
                     ElseIf Not shift.Vertical AndAlso shift.Includes(row) Then

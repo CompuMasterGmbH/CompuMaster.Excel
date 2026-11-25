@@ -104,43 +104,59 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
-        <TestCase(117)>
-        <TestCase(118)>
-        Public Sub ChartReferences_OpenXmlRenamesTheWorksheetBehindAChartExSource(chartType As Integer)
+        <TestCase(117, "Rename")>
+        <TestCase(118, "Rename")>
+        <TestCase(117, "InsideRows")>
+        <TestCase(118, "InsideRows")>
+        <TestCase(119, "InsideRows")>
+        <TestCase(120, "InsideRows")>
+        <TestCase(121, "InsideRows")>
+        <TestCase(122, "InsideRows")>
+        <TestCase(123, "InsideRows")>
+        <TestCase(140, "InsideRows")>
+        <TestCase(117, "DeleteRow")>
+        <TestCase(118, "InsertColumn")>
+        Public Sub ChartReferences_OpenXmlMatchesExcelChartExSourcesAndDrawingAnchors(chartType As Integer, operation As String)
             Dim caseDirectory = CreateChartTestDirectory()
             Dim input = Path.Combine(caseDirectory, "chartex.xlsx")
-            Dim expected = Path.Combine(caseDirectory, "excel-renamed.xlsx")
-            Dim output = Path.Combine(caseDirectory, "openxml-renamed.xlsx")
+            Dim expected = Path.Combine(caseDirectory, "excel-edited.xlsx")
+            Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
+            Dim resultSheet = If(operation = "Rename", RenamedChartDataSheet, ChartDataSheet)
             Dim workbook As MsExcelDataOperations = Nothing
             Try
                 workbook = CreateChartWorkbook()
                 Dim data = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
                 data.Range("B2").Value2 = "Category"
-                If chartType = 117 Then
+                Dim numericOnly = chartType = 118 OrElse chartType = 122
+                If Not numericOnly Then
+                    Dim categories = If(chartType = 140, {"Germany", "France", "Canada"}, {"Category 3", "Category 4", "Category 5"})
                     For point = 3 To 5
-                        data.Range("B" & point).Value2 = "Category " & point
+                        data.Range("B" & point).Value2 = categories(point - 3)
                     Next
                 End If
-                data.Range(If(chartType = 118, "C2:C5", "B2:C5")).Select()
-                data.Shapes.AddChart2(-1, CType(chartType, NativeExcel.XlChartType), 240, 20, 220, 150)
+                data.Range(If(numericOnly, "C2:C5", "B2:C5")).Select()
+                data.Shapes.AddChart2(-1, CType(chartType, NativeExcel.XlChartType), 240, 120, 220, 150)
+                DirectCast(data.ChartObjects(1), NativeExcel.ChartObject).Placement = NativeExcel.XlPlacement.xlMoveAndSize
                 workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
-                workbook.RenameWorksheet(ChartDataSheet, RenamedChartDataSheet, True)
+                ApplyChartDataEdit(workbook, operation)
                 workbook.SaveAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 workbook.Close()
 
                 Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
                 Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                    Assert.Throws(Of NotSupportedException)(Sub() editor.AddRow(ChartDataSheet, 3, 1, True))
-                    editor.RenameWorksheet(ChartDataSheet, RenamedChartDataSheet, True)
+                    Assert.Throws(Of NotSupportedException)(Sub() editor.RemoveColumns(ChartDataSheet, 2, 1, True))
+                    ApplyChartDataEdit(editor, operation)
                     editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 End Using
-                Dim nativeNames = ChartExSourceRanges(expected, RenamedChartDataSheet)
-                Assert.That(nativeNames, [Is].Not.Empty)
-                Assert.That(nativeNames, Has.All.StartsWith(ChartSheetQualifier(RenamedChartDataSheet)))
-                Assert.That(ChartExSourceRanges(output, RenamedChartDataSheet), [Is].EqualTo(nativeNames))
+                Dim native = ChartExReferences(expected, resultSheet)
+                Dim edited = ChartExReferences(output, resultSheet)
+                Assert.That(native.References, [Is].Not.Empty)
+                Assert.That(native.References, Has.All.StartsWith(ChartSheetQualifier(resultSheet)))
+                Assert.That(edited.References, [Is].EqualTo(native.References))
+                Assert.That(edited.Anchors, [Is].EqualTo(native.Anchors))
 
                 workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                Dim renamed = DirectCast(workbook.Workbook.Worksheets.Item(RenamedChartDataSheet), NativeExcel.Worksheet)
+                Dim renamed = DirectCast(workbook.Workbook.Worksheets.Item(resultSheet), NativeExcel.Worksheet)
                 Dim chart = DirectCast(renamed.ChartObjects(1), NativeExcel.ChartObject).Chart
                 Assert.That(CInt(chart.ChartType), [Is].EqualTo(chartType))
             Finally
@@ -149,13 +165,16 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
-        Private Shared Function ChartExSourceRanges(path As String, sheet As String) As String()
+        Private Shared Function ChartExReferences(path As String, sheet As String) As (References As String(), Anchors As String())
             Using document = SpreadsheetDocument.Open(path, False)
                 Dim book = document.WorkbookPart
                 Dim drawing = DirectCast(FindChartSourcePart(book, sheet), WorksheetPart).DrawingsPart
                 Dim chart = drawing.Parts.Select(Function(part) part.OpenXmlPart).OfType(Of ExtendedChartPart)().Single()
                 Dim names = book.Workbook.DefinedNames.Elements(Of DefinedName)().ToDictionary(Function(item) item.Name.Value, Function(item) item.Text)
-                Return chart.ChartSpace.Descendants(Of ExtendedChartXml.Formula)().Select(Function(formula) names(formula.Text)).ToArray()
+                Dim namesUsed = chart.ChartSpace.Descendants(Of ExtendedChartXml.Formula)().Select(Function(formula) names(formula.Text)).ToArray()
+                Dim anchors = drawing.WorksheetDrawing.Descendants(Of DrawingXml.MarkerType)().
+                    Select(Function(marker) String.Join(",", marker.ChildElements.Select(Function(element) element.InnerText))).ToArray()
+                Return (namesUsed, anchors)
             End Using
         End Function
 
