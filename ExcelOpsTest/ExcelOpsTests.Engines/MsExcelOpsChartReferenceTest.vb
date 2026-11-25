@@ -437,6 +437,7 @@ Namespace ExcelOpsTests.Engines
             Dim chartBeforeData = Not placement.Contains("After")
             Dim existingChartSheet = If(collision, dataName, "Existing Data")
             Try
+                If group Then ResetChartTransferExcelProcess()
                 source = CreateTransferSource()
                 target = CreateTransferTarget(collision)
                 If Not collision Then target.AddSheet(existingChartSheet, Nothing)
@@ -512,6 +513,7 @@ Namespace ExcelOpsTests.Engines
                                     [Is].Not.True)
                     End Using
                 End If
+                If group Then ResetChartTransferExcelProcess()
                 source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
                 target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
                 Dim reopened = If(host = ChartViewSheet, DirectCast(target.Workbook.Charts.Item(nativeHost), NativeExcel.Chart),
@@ -522,6 +524,13 @@ Namespace ExcelOpsTests.Engines
                 If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
                 Directory.Delete(caseDirectory, True)
             End Try
+        End Sub
+
+        Private Sub ResetChartTransferExcelProcess()
+            ' Open each chart group in a fresh process so prior chart operations cannot affect the comparison.
+            Dim application = MsExcelInstance
+            MsExcelInstance = Nothing
+            application?.Dispose()
         End Sub
 
         <TestCase(False)>
