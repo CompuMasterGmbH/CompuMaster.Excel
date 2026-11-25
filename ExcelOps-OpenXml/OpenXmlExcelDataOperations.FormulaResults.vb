@@ -54,6 +54,10 @@ Namespace ExcelOps
 
         Private Sub MarkFormulaResultsCleared(part As WorksheetPart)
             _changedSheets.Add(part)
+            InvalidateWorkbookFormulaResults()
+        End Sub
+
+        Private Sub InvalidateWorkbookFormulaResults()
             _calculationChainInvalid = True
             RecalculationRequired = True
             Dim workbook = WorkbookPart.Workbook

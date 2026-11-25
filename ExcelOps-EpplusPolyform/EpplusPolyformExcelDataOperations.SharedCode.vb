@@ -624,6 +624,50 @@ Namespace ExcelOps
             Return New OfficeOpenXml.ExcelCellAddress(cell.Address).Column - 1
         End Function
 
+        Private Sub ValidateStructuralReferenceCompatibility(sheet As ExcelWorksheet, start As Integer, shiftsRows As Boolean, inserting As Boolean)
+            If Me.LoadOptions.AllowKnownStructuralReferenceDifferences Then Return
+
+            For Each worksheet In Me.Workbook.Worksheets
+                If UsesLegacyStructuralReferenceRewriter Then
+                    If worksheet.Name.Contains("'"c) Then
+                        RejectStructuralReferenceDifference("references to worksheet names containing an apostrophe may be corrupted")
+                    End If
+                    Dim root = worksheet.WorksheetXml?.DocumentElement
+                    If root IsNot Nothing AndAlso root.LocalName = "worksheet" AndAlso root.GetNamespaceOfPrefix(String.Empty) <> root.NamespaceURI Then
+                        RejectStructuralReferenceDifference("the worksheet XML uses a prefixed SpreadsheetML namespace that this engine may corrupt when saving")
+                    End If
+                End If
+
+                If worksheet Is sheet Then Continue For
+                For Each definition In worksheet.Names
+                    If definition.Worksheet IsNot sheet OrElse definition.End Is Nothing Then Continue For
+                    If start < If(shiftsRows, definition.End.Row, definition.End.Column) Then
+                        RejectStructuralReferenceDifference("a name scoped to another worksheet refers to a range affected by the edit")
+                    End If
+                Next
+            Next
+
+            If sheet.Name.Contains("'"c) AndAlso Me.MergedCells(sheet.Name).Any(Function(area) start <= If(shiftsRows, area.AddressEnd.RowIndex, area.AddressEnd.ColumnIndex)) Then
+                RejectStructuralReferenceDifference("cross-sheet references to merged cells on a worksheet whose name contains an apostrophe may be left unchanged")
+            End If
+
+            For Each excelTable In sheet.Tables
+                If UsesLegacyStructuralReferenceRewriter AndAlso excelTable.Columns.Any(Function(column) Not String.IsNullOrEmpty(column.CalculatedColumnFormula)) Then
+                    RejectStructuralReferenceDifference("calculated table columns may retain outdated formulas")
+                End If
+                If shiftsRows AndAlso inserting Then
+                    Dim firstDataRow = excelTable.Address.Start.Row - 1 + If(excelTable.ShowHeader, 1, 0)
+                    If start = firstDataRow OrElse (excelTable.ShowTotal AndAlso start = excelTable.Address.End.Row - 1) Then
+                        RejectStructuralReferenceDifference("insertion at a table's first data row or totals row can leave references to table data outdated")
+                    End If
+                End If
+            Next
+        End Sub
+
+        Private Sub RejectStructuralReferenceDifference(reason As String)
+            Throw New StructuralReferenceCompatibilityException(Me.EngineName, reason)
+        End Sub
+
         ''' <inheritdoc/>
         Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
             Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
@@ -632,6 +676,7 @@ Namespace ExcelOps
             If rows = 0 Then Return
             Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet.Dimension Is Nothing Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            ValidateStructuralReferenceCompatibility(Sheet, startRowIndex, shiftsRows:=True, inserting:=False)
             Sheet.DeleteRow(startRowIndex + 1, rows)
         End Sub
 
@@ -643,6 +688,7 @@ Namespace ExcelOps
             If columns = 0 Then Return
             Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            ValidateStructuralReferenceCompatibility(Sheet, columnIndex, shiftsRows:=False, inserting:=True)
             Sheet.InsertColumn(columnIndex + 1, columns)
         End Sub
 
@@ -654,6 +700,7 @@ Namespace ExcelOps
             If rows = 0 Then Return
             Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            ValidateStructuralReferenceCompatibility(Sheet, rowIndex, shiftsRows:=True, inserting:=True)
             Sheet.InsertRow(rowIndex + 1, rows)
         End Sub
 
@@ -671,6 +718,7 @@ Namespace ExcelOps
             If columns = 0 Then Return
             Dim Sheet As OfficeOpenXml.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
             If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
+            ValidateStructuralReferenceCompatibility(Sheet, startColumnIndex, shiftsRows:=False, inserting:=False)
             Sheet.DeleteColumn(startColumnIndex + 1, columns)
         End Sub
 

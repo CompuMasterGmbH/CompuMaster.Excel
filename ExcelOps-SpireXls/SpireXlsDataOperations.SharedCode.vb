@@ -398,6 +398,67 @@ Namespace ExcelOps
             Return cell.ColumnIndex
         End Function
 
+        Private Shared ReadOnly CellAddressInCalculatedColumn As New System.Text.RegularExpressions.Regex(
+            "(?<![\w.])\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}(?![\w.])",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase Or System.Text.RegularExpressions.RegexOptions.CultureInvariant)
+
+        Private Sub ValidateStructuralReferenceCompatibility(sheet As Worksheet, start As Integer, shiftsRows As Boolean,
+                                                             Optional stripStart As Integer = 0, Optional stripCount As Integer? = Nothing)
+            If Me.LoadOptions.AllowKnownStructuralReferenceDifferences Then Return
+            If Me.Workbook.ExternalLinks.Count > 0 Then
+                RejectStructuralReferenceDifference("the engine can shift the addresses of references to an external workbook during edits in this workbook")
+            End If
+
+            For Each worksheet As Worksheet In Me.Workbook.Worksheets
+                For Each definition As Spire.Xls.Core.INamedRange In worksheet.Names
+                    If Not definition.IsLocal Then Continue For
+                    Dim range = definition.RefersToRange
+                    If range Is Nothing OrElse Not String.Equals(range.Worksheet?.Name, sheet.Name, StringComparison.OrdinalIgnoreCase) Then Continue For
+                    If CanAffectRange(range.Row - 1, range.Column - 1, range.LastRow - 1, range.LastColumn - 1, start, shiftsRows, stripStart, stripCount) Then
+                        RejectStructuralReferenceDifference("a worksheet-scoped name refers to a range affected by the edit")
+                    End If
+                Next
+            Next
+
+            For Each table As Spire.Xls.Core.IListObject In sheet.ListObjects
+                Dim range = table.Location
+                If CanAffectRange(range.Row - 1, range.Column - 1, range.LastRow - 1, range.LastColumn - 1, start, shiftsRows, stripStart, stripCount) Then
+                    RejectStructuralReferenceDifference("the edit can change or move a table, its filter, or its calculated columns")
+                End If
+                If table.Columns.Any(Function(column) Not String.IsNullOrEmpty(column.CalculatedFormula) AndAlso
+                                     Not column.CalculatedFormula.Contains("["c) AndAlso CellAddressInCalculatedColumn.IsMatch(column.CalculatedFormula)) Then
+                    RejectStructuralReferenceDifference("a calculated table column uses A1 references that may not be updated")
+                End If
+            Next
+
+            For Each merged In Me.MergedCells(sheet.Name)
+                Dim first = merged.AddressStart
+                Dim last = merged.AddressEnd
+                If Not CanAffectRange(first.RowIndex, first.ColumnIndex, last.RowIndex, last.ColumnIndex, start, shiftsRows, stripStart, stripCount) Then Continue For
+                Dim firstInStrip = If(shiftsRows, first.ColumnIndex, first.RowIndex)
+                Dim lastInStrip = If(shiftsRows, last.ColumnIndex, last.RowIndex)
+                If stripCount.HasValue AndAlso (firstInStrip < stripStart OrElse lastInStrip >= CLng(stripStart) + stripCount.Value) Then
+                    RejectStructuralReferenceDifference("the cell shift divides a merged range")
+                End If
+                If Not shiftsRows AndAlso Me.Workbook.Worksheets.Cast(Of Worksheet)().Any(Function(item) item.ListObjects.Count > 0) Then
+                    RejectStructuralReferenceDifference("a column shift across a merged range can corrupt structured table references")
+                End If
+            Next
+        End Sub
+
+        Private Shared Function CanAffectRange(firstRow As Integer, firstColumn As Integer, lastRow As Integer, lastColumn As Integer,
+                                               start As Integer, shiftsRows As Boolean, stripStart As Integer, stripCount As Integer?) As Boolean
+            If start > If(shiftsRows, lastRow, lastColumn) Then Return False
+            If Not stripCount.HasValue Then Return True
+            Dim otherFirst = If(shiftsRows, firstColumn, firstRow)
+            Dim otherLast = If(shiftsRows, lastColumn, lastRow)
+            Return otherFirst < CLng(stripStart) + stripCount.Value AndAlso otherLast >= stripStart
+        End Function
+
+        Private Sub RejectStructuralReferenceDifference(reason As String)
+            Throw New StructuralReferenceCompatibilityException(Me.EngineName, reason)
+        End Sub
+
         ''' <inheritdoc/>
         Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
             Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
@@ -406,6 +467,7 @@ Namespace ExcelOps
             If rows = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            ValidateStructuralReferenceCompatibility(Sheet, startRowIndex, shiftsRows:=True)
             Sheet.DeleteRow(startRowIndex + 1, rows)
         End Sub
 
@@ -417,6 +479,7 @@ Namespace ExcelOps
             If columns = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            ValidateStructuralReferenceCompatibility(Sheet, columnIndex, shiftsRows:=False)
             Try
                 Sheet.InsertColumn(columnIndex + 1, columns)
             Catch ex As Exception When ex.Message.IndexOf("Invalid Column name", StringComparison.OrdinalIgnoreCase) >= 0
@@ -432,6 +495,7 @@ Namespace ExcelOps
             If rows = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            ValidateStructuralReferenceCompatibility(Sheet, rowIndex, shiftsRows:=True)
             Sheet.InsertRow(rowIndex + 1, rows)
         End Sub
 
@@ -444,7 +508,10 @@ Namespace ExcelOps
             If rows = 0 OrElse columns = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
-            Sheet.InsertRange(rowIndex + 1, columnIndex + 1, rows, columns, If(shiftDirection = CellInsertShiftDirection.ShiftCellsDown, InsertMoveOption.MoveDown, InsertMoveOption.MoveRight), InsertOptionsType.FormatDefault)
+            Dim shiftsRows = shiftDirection = CellInsertShiftDirection.ShiftCellsDown
+            ValidateStructuralReferenceCompatibility(Sheet, If(shiftsRows, rowIndex, columnIndex), shiftsRows,
+                                                     If(shiftsRows, columnIndex, rowIndex), If(shiftsRows, columns, rows))
+            Sheet.InsertRange(rowIndex + 1, columnIndex + 1, rows, columns, If(shiftsRows, InsertMoveOption.MoveDown, InsertMoveOption.MoveRight), InsertOptionsType.FormatDefault)
         End Sub
 
         ''' <inheritdoc/>
@@ -455,6 +522,7 @@ Namespace ExcelOps
             If columns = 0 Then Return
             Dim Sheet As Worksheet = Me.Workbook.Worksheets.Item(sheetName)
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            ValidateStructuralReferenceCompatibility(Sheet, startColumnIndex, shiftsRows:=False)
             Try
                 Sheet.DeleteColumn(startColumnIndex + 1, columns)
             Catch ex As Exception When ex.Message.IndexOf("Invalid Column name", StringComparison.OrdinalIgnoreCase) >= 0
@@ -473,7 +541,10 @@ Namespace ExcelOps
             If Sheet.Type <> ExcelSheetType.NormalWorksheet Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Dim toRowIndex As Integer = rowIndex + rows - 1
             Dim toColumnIndex As Integer = columnIndex + columns - 1
-            Sheet.DeleteRange(Sheet.Range(rowIndex + 1, columnIndex + 1, toRowIndex + 1, toColumnIndex + 1), If(shiftDirection = CellRemoveShiftDirection.ShiftCellsUp, DeleteOption.MoveUp, DeleteOption.MoveLeft))
+            Dim shiftsRows = shiftDirection = CellRemoveShiftDirection.ShiftCellsUp
+            ValidateStructuralReferenceCompatibility(Sheet, If(shiftsRows, rowIndex, columnIndex), shiftsRows,
+                                                     If(shiftsRows, columnIndex, rowIndex), If(shiftsRows, columns, rows))
+            Sheet.DeleteRange(Sheet.Range(rowIndex + 1, columnIndex + 1, toRowIndex + 1, toColumnIndex + 1), If(shiftsRows, DeleteOption.MoveUp, DeleteOption.MoveLeft))
         End Sub
 
         ''' <inheritdoc/>

@@ -5,7 +5,7 @@ Imports NUnit.Framework.Legacy
 Namespace ExcelOpsTests.Engines
 
     <NonParallelizable>
-    Public Class MsExcelOpsTest
+    Partial Public Class MsExcelOpsTest
         Inherits ExcelOpsTestBase(Of ExcelOps.MsExcelDataOperations)
 
         Public Overrides ReadOnly Property ExpectedEngineName As String = "Microsoft Excel (2013 or higher)"
@@ -81,6 +81,60 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         Private MsExcelInstance As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
+
+        <TestCase(True)>
+        <TestCase(False)>
+        Public Sub WorkbookReferences_ExcelTracksSourceEditsOnlyInAnOpenDestination(destinationOpen As Boolean)
+            Dim directory = IO.Path.Combine(IO.Path.GetTempPath(), "ExcelOps-WorkbookLinks-" & Guid.NewGuid().ToString("N"))
+            IO.Directory.CreateDirectory(directory)
+            Dim source As MsExcelDataOperations = Nothing
+            Dim target As MsExcelDataOperations = Nothing
+            Try
+                WorkbookReferenceCoverage.CopyPair(directory)
+                AlwaysCloseAllWorkbooksInNewEngineInstances = False
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                source = Me.CreateInstance(IO.Path.Combine(directory, WorkbookReferenceCoverage.SourceName), ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim targetPath = IO.Path.Combine(directory, WorkbookReferenceCoverage.TargetName)
+                If destinationOpen Then target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+
+                source.AddRow(WorkbookReferenceCoverage.RemoteSheet, 1, 1, True)
+                source.Save()
+
+                If Not destinationOpen Then target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim expectedAddress = If(destinationOpen, "$B$3", "$B$2")
+                Dim expectedSuffix = WorkbookReferenceCoverage.RemoteSheet & "'!" & expectedAddress
+                Assert.That(target.LookupCellFormula(WorkbookReferenceCoverage.ChecksSheet, 0, 0), Does.EndWith(expectedSuffix))
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                IO.Directory.Delete(directory, True)
+            End Try
+        End Sub
+
+        <Test>
+        Public Sub WorkbookReferences_ExcelReopensAndCalculatesOpenXmlOutput()
+            Dim directory = IO.Path.Combine(IO.Path.GetTempPath(), "ExcelOps-WorkbookLinks-" & Guid.NewGuid().ToString("N"))
+            IO.Directory.CreateDirectory(directory)
+            Dim target As MsExcelDataOperations = Nothing
+            Try
+                WorkbookReferenceCoverage.CopyPair(directory)
+                Dim original = IO.Path.Combine(directory, WorkbookReferenceCoverage.TargetName)
+                Dim edited = IO.Path.Combine(directory, "edited.xlsx")
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Using editor As New OpenXmlExcelDataOperations(original, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    WorkbookReferenceCoverage.EditTarget(editor)
+                    editor.SaveCopyAs(edited, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+
+                target = Me.CreateInstance(edited, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target.RecalculateAll()
+                Assert.That(target.LookupCellValue(Of Integer)(WorkbookReferenceCoverage.ChecksSheet, 2, 0, FormulaCalculationMode.EngineDefault),
+                            [Is].EqualTo(36))
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                IO.Directory.Delete(directory, True)
+            End Try
+        End Sub
 
         <Test, Explicit("Known2Fail But Less Important")> Public Sub ManualRunOnly_KillAllMsExcelAppProcesses()
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")

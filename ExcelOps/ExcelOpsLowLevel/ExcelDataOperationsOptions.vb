@@ -111,13 +111,22 @@ Namespace ExcelOps
         ''' <returns>The password required to open the workbook, or <see langword="Nothing"/> when no password is configured.</returns>
         Public Property PasswordForOpening As String
 
+        ''' <summary>Allows structural edits with known differences from Microsoft Excel.</summary>
+        ''' <value>True to run an engine's existing implementation despite a detected Excel compatibility limitation. The default is false.</value>
+        ''' <remarks>
+        ''' EPPlus and Spire engines throw <see cref="StructuralReferenceCompatibilityException"/> when they detect a known difference and this option is disabled.
+        ''' The option does not enable unavailable operations or change the requested formula and reference update mode.
+        ''' </remarks>
+        Public Property AllowKnownStructuralReferenceDifferences As Boolean
+
         ''' <summary>
         ''' Creates a clone of this options instance.
         ''' </summary>
         ''' <returns></returns>
         Private Function Clone() As ExcelDataOperationsOptions
             Return New ExcelDataOperationsOptions(PasswordForOpening, DisableInitialCalculation, DisableAutoCalculationInWorkbook, DisableCalculationEngine) With {
-                .FileWriteProtection = Me.FileWriteProtection
+                .FileWriteProtection = Me.FileWriteProtection,
+                .AllowKnownStructuralReferenceDifferences = Me.AllowKnownStructuralReferenceDifferences
             }
         End Function
 
