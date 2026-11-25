@@ -47,14 +47,20 @@ Namespace ExcelOps
             End Property
 
             Friend Function Format(vertical As Boolean, index As Integer) As String
-                If vertical AndAlso index <> Row Then
-                    Return ColumnText & If(RowText(0) = "$"c, "$", "") & (index + 1).ToString(CultureInfo.InvariantCulture)
+                Return Format(If(vertical, index, Row), If(vertical, Column, index))
+            End Function
+
+            Friend Function Format(rowIndex As Integer, columnIndex As Integer) As String
+                Dim rowPart = RowText
+                Dim columnPart = ColumnText
+                If rowIndex <> Row Then
+                    rowPart = If(RowText(0) = "$"c, "$", "") & (rowIndex + 1).ToString(CultureInfo.InvariantCulture)
                 End If
-                If Not vertical AndAlso index <> Column Then
-                    Dim letters = ExcelCell.LocalCellAddress(0, index).TrimEnd("1"c)
-                    Return If(ColumnText(0) = "$"c, "$", "") & letters & RowText
+                If columnIndex <> Column Then
+                    Dim letters = ExcelCell.LocalCellAddress(0, columnIndex).TrimEnd("1"c)
+                    columnPart = If(ColumnText(0) = "$"c, "$", "") & letters
                 End If
-                Return ColumnText & RowText
+                Return columnPart & rowPart
             End Function
         End Class
 
@@ -92,12 +98,45 @@ Namespace ExcelOps
         End Function
 
         Private Shared Function UnsupportedReferenceSyntax() As NotSupportedException
-            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. External, 3-D, structured, spill and compound range references are unsupported.")
+            Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. External, 3-D, spill, unknown table and compound range references are unsupported.")
+        End Function
+
+        Private Shared Function ReadTableSelector(value As String, start As Integer) As Integer
+            Dim depth = 0
+            Dim index = start
+            While index < value.Length
+                Select Case value(index)
+                    Case "'"c
+                        If index + 1 < value.Length AndAlso "[]#'@".IndexOf(value(index + 1)) >= 0 Then index += 1
+                    Case "["c
+                        depth += 1
+                    Case "]"c
+                        depth -= 1
+                        If depth = 0 Then Return index + 1
+                End Select
+                index += 1
+            End While
+            Throw UnsupportedReferenceSyntax()
+        End Function
+
+        Private Shared Function TranslateCopiedIndex(index As Integer, text As String, offset As Integer) As Integer
+            If index < 0 OrElse text(0) = "$"c Then Return index
+            Return index + offset
+        End Function
+
+        Private Shared Function FormatCopiedEndpoint(endpoint As ReferenceEndpoint, rowOffset As Integer, columnOffset As Integer) As String
+            Dim row = TranslateCopiedIndex(endpoint.Row, endpoint.RowText, rowOffset)
+            Dim column = TranslateCopiedIndex(endpoint.Column, endpoint.ColumnText, columnOffset)
+            If (endpoint.Row >= 0 AndAlso row < 0) OrElse row >= RowCount OrElse
+               (endpoint.Column >= 0 AndAlso column < 0) OrElse column >= ColumnCount Then Return Nothing
+            Return endpoint.Format(row, column)
         End Function
 
         ' Identify reference operands without interpreting functions or touching string literals.
         Private Shared Function RewriteFormula(value As String, scopeSheet As String, editedSheet As String,
-                                               shift As StructuralShift, renamedSheet As String, isDefinedName As Boolean) As String
+                                               shift As StructuralShift, renamedSheet As String, isDefinedName As Boolean,
+                                               Optional tableNames As HashSet(Of String) = Nothing, Optional copyRowOffset As Integer = 0,
+                                               Optional copyColumnOffset As Integer = 0) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
             While index < value.Length
@@ -105,6 +144,17 @@ Namespace ExcelOps
                 If literal.Success Then
                     result.Append(literal.Value)
                     index += literal.Length
+                    Continue While
+                End If
+
+                If value(index) = "["c Then
+                    If tableNames Is Nothing OrElse tableNames.Count = 0 Then Throw UnsupportedReferenceSyntax()
+                    Dim selectorEnd = ReadTableSelector(value, index)
+                    If selectorEnd < value.Length AndAlso (value(selectorEnd) = "!"c OrElse FormulaSheet.Match(value, selectorEnd).Success) Then
+                        Throw UnsupportedReferenceSyntax()
+                    End If
+                    result.Append(value, index, selectorEnd - index)
+                    index = selectorEnd
                     Continue While
                 End If
 
@@ -158,7 +208,16 @@ Namespace ExcelOps
                         (second IsNot Nothing AndAlso Not second.IsAbsolute)) Then
                         Throw New NotSupportedException("Structural shifts require every A1 reference in a defined name to be absolute and to have an explicit or worksheet-local scope.")
                     End If
-                    If shift IsNot Nothing AndAlso String.Equals(If(explicitSheet, scopeSheet), editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                    If copyRowOffset <> 0 OrElse copyColumnOffset <> 0 Then
+                        Dim firstAddress = FormatCopiedEndpoint(first, copyRowOffset, copyColumnOffset)
+                        Dim secondAddress = If(second Is Nothing, firstAddress, FormatCopiedEndpoint(second, copyRowOffset, copyColumnOffset))
+                        If firstAddress Is Nothing OrElse secondAddress Is Nothing Then
+                            result.Append("#REF!")
+                        Else
+                            result.Append(firstAddress)
+                            If second IsNot Nothing Then result.Append(separator).Append(secondAddress)
+                        End If
+                    ElseIf shift IsNot Nothing AndAlso String.Equals(If(explicitSheet, scopeSheet), editedSheet, StringComparison.OrdinalIgnoreCase) Then
                         result.Append(shift.RewriteReference(first, second, separator))
                     ElseIf second IsNot Nothing AndAlso renamedSheet IsNot Nothing Then
                         result.Append(first.ColumnText).Append(first.RowText).Append(separator).Append(second.ColumnText).Append(second.RowText)
@@ -176,6 +235,14 @@ Namespace ExcelOps
                     If String.Equals(token.Value, "_xlfn.ANCHORARRAY", StringComparison.OrdinalIgnoreCase) Then Throw UnsupportedReferenceSyntax()
                     result.Append(qualifier).Append(token.Value)
                     index += token.Length
+                    If index < value.Length AndAlso value(index) = "["c Then
+                        If explicitSheet IsNot Nothing OrElse tableNames Is Nothing OrElse Not tableNames.Contains(token.Value) Then
+                            Throw UnsupportedReferenceSyntax()
+                        End If
+                        Dim selectorEnd = ReadTableSelector(value, index)
+                        result.Append(value, index, selectorEnd - index)
+                        index = selectorEnd
+                    End If
                 ElseIf explicitSheet Is Nothing AndAlso
                        ("+-*/^&=<>%(),;{}@".IndexOf(value(tokenStart)) >= 0 OrElse Char.IsWhiteSpace(value(tokenStart))) Then
                     result.Append(value(tokenStart))

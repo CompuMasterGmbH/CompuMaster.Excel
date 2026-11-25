@@ -14,6 +14,7 @@ Namespace ExcelOps
             Friend ReadOnly Inserting As Boolean
             Private ReadOnly _otherStart As Integer
             Private ReadOnly _otherCount As Integer
+            Private ReadOnly _expandedTables As New List(Of StructuralTable)
 
             Friend Sub New(vertical As Boolean, start As Integer, count As Integer, otherStart As Integer, otherCount As Integer, inserting As Boolean)
                 Me.Vertical = vertical
@@ -70,14 +71,11 @@ Namespace ExcelOps
                 If firstIndex >= 0 AndAlso (WholeAxis OrElse (Includes(firstOtherIndex) AndAlso Includes(lastOtherIndex))) Then
                     Dim low = System.Math.Min(firstIndex, lastIndex)
                     Dim high = System.Math.Max(firstIndex, lastIndex)
-                    If (low <> 0 OrElse high <> AxisSize - 1) AndAlso high >= Start Then
-                        If Inserting Then
-                            If low >= Start Then low += Count
-                            high = System.Math.Min(high + Count, AxisSize - 1)
-                        Else
-                            Dim after = Start + Count
-                            low = If(low >= after, low - Count, System.Math.Min(low, Start))
-                            high = If(high >= after, high - Count, Start - 1)
+                    If (low <> 0 OrElse high <> AxisSize - 1) Then
+                        If second IsNot Nothing AndAlso ExtendsTableReference(low, high, firstOtherIndex, lastOtherIndex) Then
+                            high += Count
+                        ElseIf high >= Start Then
+                            ShiftBounds(low, high)
                         End If
                         If low > high Then Return "#REF!"
                         If firstIndex <= lastIndex Then
@@ -94,6 +92,65 @@ Namespace ExcelOps
                 If second IsNot Nothing Then text &= separator & second.Format(Vertical, lastIndex)
                 Return text
             End Function
+
+            Friend Sub PlanTableRows(table As StructuralTable)
+                Dim low = If(Vertical, table.First.Row, table.First.Column)
+                Dim high = If(Vertical, table.Last.Row, table.Last.Column)
+                Dim otherLow = If(Vertical, table.First.Column, table.First.Row)
+                Dim otherHigh = If(Vertical, table.Last.Column, table.Last.Row)
+                If high < Start OrElse otherLow >= _otherStart + _otherCount OrElse otherHigh < _otherStart Then Return
+                If Not Vertical OrElse Not Includes(otherLow) OrElse Not Includes(otherHigh) OrElse
+                   (Not Inserting AndAlso Start + Count > low) Then
+                    Throw New NotSupportedException("This structural edit would change part of an Excel table in an unsupported way.")
+                End If
+                table.TargetLastRow = MoveIndex(high)
+                If Start <= low Then
+                    table.TargetFirstRow = MoveIndex(low)
+                Else
+                    table.AddsDataRows = True
+                    _expandedTables.Add(table)
+                End If
+            End Sub
+
+            Private Function ExtendsTableReference(low As Integer, high As Integer, otherStart As Integer, otherEnd As Integer) As Boolean
+                For Each table In _expandedTables
+                    If System.Math.Min(otherStart, otherEnd) < table.First.Column OrElse
+                       System.Math.Max(otherStart, otherEnd) > table.Last.Column Then Continue For
+                    If Start = table.FirstDataRow AndAlso low = Start AndAlso
+                       (high = table.LastDataRow OrElse high = table.Last.Row) Then Return True
+                    If Start = table.LastDataRow + 1 AndAlso high = table.LastDataRow AndAlso
+                       (low = table.FirstDataRow OrElse low = table.First.Row) Then Return True
+                Next
+                Return False
+            End Function
+
+            Friend Function RewriteMergedArea(first As ReferenceEndpoint, last As ReferenceEndpoint) As String
+                Dim low = If(Vertical, first.Row, first.Column)
+                Dim high = If(Vertical, last.Row, last.Column)
+                Dim otherLow = If(Vertical, first.Column, first.Row)
+                Dim otherHigh = If(Vertical, last.Column, last.Row)
+
+                If high >= Start AndAlso otherLow < _otherStart + _otherCount AndAlso otherHigh >= _otherStart Then
+                    ' Excel removes the merge when only part of its width or height moves.
+                    If Not Includes(otherLow) OrElse Not Includes(otherHigh) Then Return Nothing
+                    If Inserting Then MoveIndex(high)
+                    ShiftBounds(low, high)
+                    If low > high OrElse (low = high AndAlso otherLow = otherHigh) Then Return Nothing
+                End If
+
+                Return first.Format(Vertical, low) & ":" & last.Format(Vertical, high)
+            End Function
+
+            Private Sub ShiftBounds(ByRef low As Integer, ByRef high As Integer)
+                If Inserting Then
+                    If low >= Start Then low += Count
+                    high = System.Math.Min(high + Count, AxisSize - 1)
+                Else
+                    Dim after = Start + Count
+                    low = If(low >= after, low - Count, System.Math.Min(low, Start))
+                    high = If(high >= after, high - Count, Start - 1)
+                End If
+            End Sub
         End Class
 
         ''' <inheritdoc/>
@@ -179,11 +236,11 @@ Namespace ExcelOps
 
         Private Shared ReadOnly StandardWorksheetElements As New HashSet(Of String)(StringComparer.Ordinal) From {
             "sheetPr", "dimension", "sheetViews", "sheetFormatPr", "cols", "sheetData", "sheetProtection",
-            "printOptions", "pageMargins", "pageSetup", "headerFooter", "drawing"
+            "printOptions", "pageMargins", "pageSetup", "headerFooter", "drawing", "mergeCells", "tableParts"
         }
 
         Private Shared ReadOnly LocalWorksheetReferences As New HashSet(Of String)(StringComparer.Ordinal) From {
-            "mergeCells", "autoFilter", "sortState", "rowBreaks", "colBreaks", "protectedRanges"
+            "autoFilter", "sortState", "rowBreaks", "colBreaks", "protectedRanges"
         }
 
         ' Modern Excel adds these workbook metadata elements even to a new, empty workbook.
@@ -257,7 +314,8 @@ Namespace ExcelOps
             End If
 
             For Each relationship In part.Parts
-                If TypeOf relationship.OpenXmlPart Is SpreadsheetPrinterSettingsPart Then Continue For
+                If TypeOf relationship.OpenXmlPart Is SpreadsheetPrinterSettingsPart OrElse
+                   TypeOf relationship.OpenXmlPart Is TableDefinitionPart Then Continue For
                 Dim drawings = TryCast(relationship.OpenXmlPart, DrawingsPart)
                 If drawings?.WorksheetDrawing Is Nothing OrElse Not drawings.Parts.All(Function(item) TypeOf item.OpenXmlPart Is ImagePart) OrElse
                    Not drawings.WorksheetDrawing.ChildElements.All(
@@ -276,10 +334,11 @@ Namespace ExcelOps
                         Throw UnsupportedOperation("Updating references in a worksheet with row or cell extensions")
                     End If
                     Dim formula = cell.CellFormula
+                    Dim formulaType = If(formula?.FormulaType?.Value, CellFormulaValues.Normal)
                     If cell.CellMetaIndex IsNot Nothing OrElse cell.ValueMetaIndex IsNot Nothing OrElse
-                       (formula IsNot Nothing AndAlso (formula.Reference IsNot Nothing OrElse
-                        If(formula.FormulaType?.Value, CellFormulaValues.Normal) <> CellFormulaValues.Normal)) Then
-                        Throw UnsupportedOperation("Updating references in a workbook with shared, array, data-table or metadata-backed cells")
+                       (formulaType <> CellFormulaValues.Shared AndAlso
+                        (formulaType <> CellFormulaValues.Normal OrElse formula?.Reference IsNot Nothing)) Then
+                        Throw UnsupportedOperation("Updating references in a workbook with array, data-table or metadata-backed cells")
                     End If
                 Next
             Next
@@ -302,22 +361,38 @@ Namespace ExcelOps
 
             ' Verify and stage all changes before modifying the open workbook.
             ValidateWorkbookStructure()
+            Dim tables = GetStructuralTables(sheets)
+            Dim tableNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+            For Each table In tables
+                If table.Source.Name IsNot Nothing Then tableNames.Add(table.Source.Name.Value)
+                If table.Source.DisplayName IsNot Nothing Then tableNames.Add(table.Source.DisplayName.Value)
+            Next
+            Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String))
+            Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills)
+            Dim filledCells As New HashSet(Of Cell)
             Dim formulaChanges As New List(Of (Part As WorksheetPart, Cell As Cell, Text As String))
+            Dim revisedSheetData As New Dictionary(Of WorksheetPart, SheetData)
+            Dim originalMerges As MergeCells = Nothing
+            Dim shiftedMerges As MergeCells = Nothing
             Dim shiftedData As SheetData = Nothing
             Dim dimension As String = Nothing
             For Each sheet In sheets
                 Dim part = DirectCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
                 Dim sheetShift = If(part Is editedPart, shift, Nothing)
                 ValidateWorksheetStructure(part, sheetShift)
-                Dim data = GetSheetData(part)
+                Dim originalData = GetSheetData(part)
+                Dim data = ExpandSharedFormulas(originalData, sheet.Name.Value, tableNames)
                 If sheetShift IsNot Nothing Then
-                    shiftedData = ShiftSheetData(data, sheetShift, dimension)
+                    originalMerges = part.Worksheet.GetFirstChild(Of MergeCells)()
+                    shiftedMerges = ShiftMergedCells(originalMerges, sheetShift)
+                    shiftedData = ShiftSheetData(data, sheetShift, shiftedMerges, tableFills, filledCells, dimension)
                     data = shiftedData
                 End If
+                If data IsNot originalData Then revisedSheetData.Add(part, data)
                 For Each cell In data.Descendants(Of Cell)()
                     Dim formula = cell.CellFormula
-                    If formula Is Nothing Then Continue For
-                    Dim text = RewriteFormula(formula.Text, sheet.Name.Value, originalName, shift, newSheetName, isDefinedName:=False)
+                    If formula Is Nothing OrElse filledCells.Contains(cell) Then Continue For
+                    Dim text = RewriteFormula(formula.Text, sheet.Name.Value, originalName, shift, newSheetName, isDefinedName:=False, tableNames:=tableNames)
                     If text <> formula.Text OrElse cell.CellValue IsNot Nothing Then
                         formulaChanges.Add((part, cell, text))
                     End If
@@ -334,15 +409,25 @@ Namespace ExcelOps
                         End If
                         scopeSheet = sheets(CInt(definition.LocalSheetId.Value)).Name.Value
                     End If
-                    Dim text = RewriteFormula(definition.Text, scopeSheet, originalName, shift, newSheetName, isDefinedName:=True)
+                    Dim text = RewriteFormula(definition.Text, scopeSheet, originalName, shift, newSheetName, isDefinedName:=True, tableNames:=tableNames)
                     If text <> definition.Text Then nameChanges.Add((definition, text))
                 Next
             End If
 
+            For Each revision In revisedSheetData
+                revision.Key.Worksheet.ReplaceChild(revision.Value, GetSheetData(revision.Key))
+                _formulaRanges.Remove(revision.Key)
+                _changedSheets.Add(revision.Key)
+            Next
             If shiftedData IsNot Nothing Then
-                editedPart.Worksheet.ReplaceChild(shiftedData, GetSheetData(editedPart))
+                If originalMerges IsNot Nothing Then
+                    If shiftedMerges Is Nothing Then
+                        originalMerges.Remove()
+                    Else
+                        editedPart.Worksheet.ReplaceChild(shiftedMerges, originalMerges)
+                    End If
+                End If
                 If editedPart.Worksheet.SheetDimension IsNot Nothing Then editedPart.Worksheet.SheetDimension.Reference = dimension
-                _changedSheets.Add(editedPart)
             End If
             For Each change In formulaChanges
                 change.Cell.CellFormula.Text = change.Text
@@ -352,12 +437,62 @@ Namespace ExcelOps
             For Each change In nameChanges
                 change.Definition.Text = change.Text
             Next
+            For Each change In tableChanges
+                _changedTables(change.Key) = change.Value
+            Next
             If newSheetName IsNot Nothing Then editedSheet.Name = newSheetName
 
             InvalidateWorkbookFormulaResults()
         End Sub
 
-        Private Shared Function ShiftSheetData(source As SheetData, shift As StructuralShift, ByRef dimension As String) As SheetData
+        Private Shared Function ReadStructuralRange(reference As String) As (First As ReferenceEndpoint, Last As ReferenceEndpoint)
+            If String.IsNullOrEmpty(reference) OrElse reference.IndexOf("$"c) >= 0 Then
+                Throw New IO.InvalidDataException("The worksheet contains an invalid rectangular range.")
+            End If
+
+            Dim firstEnd As Integer
+            Dim first = ReadEndpoint(reference, 0, firstEnd)
+            If first Is Nothing OrElse Not first.IsCell Then
+                Throw New IO.InvalidDataException("Invalid rectangular range: " & reference)
+            End If
+
+            If firstEnd = reference.Length Then Return (first, first)
+            If reference(firstEnd) <> ":"c Then Throw New IO.InvalidDataException("Invalid rectangular range: " & reference)
+
+            Dim lastEnd As Integer
+            Dim last = ReadEndpoint(reference, firstEnd + 1, lastEnd)
+            If last Is Nothing OrElse Not last.IsCell OrElse lastEnd <> reference.Length OrElse
+               first.Row > last.Row OrElse first.Column > last.Column Then
+                Throw New IO.InvalidDataException("Invalid rectangular range: " & reference)
+            End If
+            Return (first, last)
+        End Function
+
+        Private Function ShiftMergedCells(source As MergeCells, shift As StructuralShift) As MergeCells
+            If source Is Nothing Then Return Nothing
+
+            Dim result = DirectCast(source.CloneNode(False), MergeCells)
+            For Each element In source.ChildElements
+                Dim merge = TryCast(element, MergeCell)
+                If merge Is Nothing OrElse merge.HasChildren Then
+                    Throw UnsupportedOperation("Updating a worksheet with extensions in merged cell ranges")
+                End If
+                Dim area = ReadStructuralRange(merge.Reference?.Value)
+                Dim reference = shift.RewriteMergedArea(area.First, area.Last)
+                If reference IsNot Nothing Then
+                    Dim shifted = DirectCast(merge.CloneNode(False), MergeCell)
+                    shifted.Reference = reference
+                    result.Append(shifted)
+                End If
+            Next
+            If Not result.HasChildren Then Return Nothing
+            If source.Count IsNot Nothing Then result.Count = CUInt(result.ChildElements.Count)
+            Return result
+        End Function
+
+        Private Shared Function ShiftSheetData(source As SheetData, shift As StructuralShift, merges As MergeCells,
+                                               tableFills As List(Of (Row As Integer, Column As Integer, Formula As String)),
+                                               filledCells As HashSet(Of Cell), ByRef dimension As String) As SheetData
             Dim rows As New SortedDictionary(Of Integer, Row)
             Dim cells As New Dictionary(Of Integer, List(Of (Column As Integer, Cell As Cell)))
             Dim rowIndex = -1
@@ -413,6 +548,24 @@ Namespace ExcelOps
                 Next
             Next
 
+            For Each fill In tableFills
+                Dim cell As New Cell With {
+                    .CellReference = ExcelCell.LocalCellAddress(fill.Row, fill.Column),
+                    .CellFormula = New CellFormula(fill.Formula)
+                }
+                Dim rowCells As List(Of (Column As Integer, Cell As Cell)) = Nothing
+                If Not cells.TryGetValue(fill.Row, rowCells) Then
+                    rowCells = New List(Of (Column As Integer, Cell As Cell))
+                    cells.Add(fill.Row, rowCells)
+                End If
+                rowCells.Add((fill.Column, cell))
+                filledCells.Add(cell)
+                minRow = System.Math.Min(minRow, fill.Row)
+                maxRow = System.Math.Max(maxRow, fill.Row)
+                minColumn = System.Math.Min(minColumn, fill.Column)
+                maxColumn = System.Math.Max(maxColumn, fill.Column)
+            Next
+
             For Each index In cells.Keys
                 If Not rows.ContainsKey(index) Then rows.Add(index, New Row())
             Next
@@ -427,6 +580,15 @@ Namespace ExcelOps
                 End If
                 result.Append(row)
             Next
+            If merges IsNot Nothing Then
+                For Each merge In merges.Elements(Of MergeCell)()
+                    Dim area = ReadStructuralRange(merge.Reference.Value)
+                    minRow = System.Math.Min(minRow, area.First.Row)
+                    maxRow = System.Math.Max(maxRow, area.Last.Row)
+                    minColumn = System.Math.Min(minColumn, area.First.Column)
+                    maxColumn = System.Math.Max(maxColumn, area.Last.Column)
+                Next
+            End If
             dimension = "A1"
             If maxRow >= 0 Then
                 dimension = ExcelCell.LocalCellAddress(minRow, minColumn)

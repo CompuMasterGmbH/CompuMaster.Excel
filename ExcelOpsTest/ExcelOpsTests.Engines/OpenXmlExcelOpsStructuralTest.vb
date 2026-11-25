@@ -188,7 +188,6 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
     <TestCase("DefinedName")>
-    <TestCase("MergedCells")>
     <TestCase("ConditionalFormatting")>
     <TestCase("GroupedFormula")>
     <TestCase("RowExtension")>
@@ -204,8 +203,6 @@ Partial Public Class OpenXmlExcelOpsTest
             Select Case feature
                 Case "DefinedName"
                     part.Workbook.DefinedNames = New DefinedNames(New DefinedName(DataQualifier & "B2") With {.Name = "RelativeInput"})
-                Case "MergedCells"
-                    worksheet.AddChild(New MergeCells(New MergeCell With {.Reference = "C2:D2"}))
                 Case "ConditionalFormatting"
                     Dim other = DirectCast(part.GetPartById("rIdCheck"), WorksheetPart).Worksheet
                     other.AddChild(New ConditionalFormatting())

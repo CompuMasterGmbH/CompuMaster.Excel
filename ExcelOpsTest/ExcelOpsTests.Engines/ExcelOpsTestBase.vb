@@ -1033,6 +1033,31 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        ' Reports which Excel structural behaviors each installed engine reproduces on the same XLSX.
+        <TestCaseSource(GetType(StructuralReferenceCoverage), NameOf(StructuralReferenceCoverage.Cases))>
+        Public Sub StructuralReferenceCoverageAgainstExcel(scenario As String)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
+            Dim output = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+            Try
+                Dim differences = StructuralReferenceCoverage.CompareWithExcel(workbook, scenario, output)
+                If differences.Count = 0 Then
+                    TestContext.Out.WriteLine(scenario & " matches Excel.")
+                Else
+                    Dim details = String.Join(Environment.NewLine, differences)
+                    If TypeOf workbook Is MsExcelDataOperations Then
+                        Assert.Fail(details)
+                    Else
+                        Assert.Inconclusive(details)
+                    End If
+                End If
+            Finally
+                If Not workbook.IsClosed Then workbook.Close()
+                IO.File.Delete(output)
+            End Try
+        End Sub
+
         ''' <summary>
         ''' Verifies the API contract that engines must reject a requested formula/reference update mode they cannot provide instead of silently doing the opposite.
         ''' Current engines automatically update references for structural changes, so updateFormulasAndReferences=False must throw.

@@ -195,6 +195,7 @@ Namespace ExcelOps
                 _source?.Dispose()
                 _source = Nothing
                 _changedSheets.Clear()
+                _changedTables.Clear()
                 _formulaRanges.Clear()
                 _workbookChanged = False
                 _calculationChainInvalid = False
@@ -283,6 +284,7 @@ Namespace ExcelOps
                     sourceSheet.Worksheet.Save(output)
                 End Using
             Next
+            SaveChangedTables(source, target)
             If _workbookChanged Then
                 Using output = target.GetStream(FileMode.Create, FileAccess.Write)
                     source.Workbook.Save(output)
