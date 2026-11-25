@@ -20,7 +20,8 @@ Namespace ExcelOpsTests.Engines
             "MergeRowBefore", "MergeRowInside", "MergeRowAfter",
             "MergeColumnBefore", "MergeColumnInside", "MergeColumnAfter",
             "MergeSplit", "TableRowBefore", "TableHeader", "TableFirstData", "TableBody",
-            "TableTotals", "TableAfter", "TableDownBody", "TableDownTotals", "TableSplit", "TableDeleteBody", "TableColumnBefore",
+            "TableTotals", "TableAfter", "TableDownBody", "TableDownTotals", "TableSplit", "TableDeleteBody", "TableDeleteFirstData",
+            "TableDeleteTotals", "TableColumnBefore",
             "PlainFirstData", "PlainBody", "TableWithoutTotalsAfter"
         }
 
@@ -101,11 +102,28 @@ Namespace ExcelOpsTests.Engines
                         workbook.AddRow("Data", 7, 1, True)
                     Case "TableDeleteBody"
                         workbook.RemoveRows("Data", 4, 1, True)
+                        workbook.RemoveRows("PlainTable", 4, 1, True)
                         expectedTable = "B3:D6"
                         expectedDataRows = "B3:D5"
                         expectedLastData = 5
                         expectedLastDataCheck = "C5:C5"
                         expectedWideRange = "C4:E5"
+                        expectedPlainLastData = 5
+                        plainAbsoluteRow = 9
+                    Case "TableDeleteFirstData"
+                        workbook.RemoveRows("Data", 3, 1, True)
+                        workbook.RemoveRows("PlainTable", 3, 1, True)
+                        expectedTable = "B3:D6"
+                        expectedDataRows = "B3:D5"
+                        expectedLastData = 5
+                        expectedLastDataCheck = "C4:C5"
+                        expectedWideRange = "C4:E5"
+                        expectedDirectRow = 0
+                        expectedPlainLastData = 5
+                        plainAbsoluteRow = 9
+                    Case "TableDeleteTotals"
+                        workbook.RemoveRows("Data", 6, 1, True)
+                        expectedTable = "B3:D6"
                     Case "TableColumnBefore"
                         workbook.AddColumn("Data", 0, 1, True)
                         expectedTable = "C3:E7"
@@ -165,7 +183,8 @@ Namespace ExcelOpsTests.Engines
                     Compare(differences, "A1 calculated column D" & row, FormulaAt(plainSheet, "D" & row), "C" & row & "*$A$" & absoluteRow)
                 Next
                 Dim template = plain?.GetFirstChild(Of TableColumns)()?.Elements(Of TableColumn)().LastOrDefault()?.CalculatedColumnFormula?.Text
-                Compare(differences, "A1 calculated column template", template, "C4*$A$" & If(scenario = "PlainFirstData", 10, plainAbsoluteRow))
+                Dim plainTemplateAbsoluteRow = If(scenario = "PlainFirstData" OrElse scenario = "TableDeleteFirstData", 10, plainAbsoluteRow)
+                Compare(differences, "A1 calculated column template", template, "C4*$A$" & plainTemplateAbsoluteRow)
                 Compare(differences, "plain data range", NameText(names, "PlainCells"), "PlainTable!$B$4:$D$" & expectedPlainLastData)
                 Compare(differences, "structured formula", FormulaAt(checks, "A1"), "SUM(Sales[Total])")
                 Compare(differences, "structured totals formula", FormulaAt(checks, "A14"), "SUM(Sales[[#Totals],[Qty]])")
@@ -177,14 +196,16 @@ Namespace ExcelOpsTests.Engines
                         "Data!$" & tableColumn & "$" & expectedFirstData & ":$" & totalsColumn & "$" & expectedLastData)
                 Compare(differences, "local data name", NameText(names, "LocalSales"),
                         "Data!$" & quantityColumn & "$" & expectedFirstData & ":$" & quantityColumn & "$" & expectedLastData)
-                Compare(differences, "direct absolute R1C1 in Excel", FormulaAt(checks, "A5"), "Data!$" & quantityColumn & "$" & expectedDirectRow)
-                Compare(differences, "direct mixed R1C1 in Excel", FormulaAt(checks, "A8"), "Data!$" & quantityColumn & expectedDirectRow)
+                Compare(differences, "direct absolute R1C1 in Excel", FormulaAt(checks, "A5"),
+                        "Data!" & If(expectedDirectRow = 0, "#REF!", "$" & quantityColumn & "$" & expectedDirectRow))
+                Compare(differences, "direct mixed R1C1 in Excel", FormulaAt(checks, "A8"),
+                        "Data!" & If(expectedDirectRow = 0, "#REF!", "$" & quantityColumn & expectedDirectRow))
                 Compare(differences, "R1C1 workbook setting", part.Workbook.CalculationProperties?.GetAttributes().
                         FirstOrDefault(Function(attribute) attribute.LocalName = "refMode").Value, "R1C1")
                 Compare(differences, "indirect A1 address", FormulaAt(checks, "A3"), "INDIRECT(""Data!C4"")")
                 Compare(differences, "indirect R1C1 address", FormulaAt(checks, "A4"), "INDIRECT(""Data!R4C3"",FALSE)")
                 Compare(differences, "direct operand inside INDIRECT", FormulaAt(checks, "A9"),
-                        "INDIRECT(""Data!C""&ROW(Data!" & quantityColumn & expectedDirectRow & "))")
+                        "INDIRECT(""Data!C""&ROW(Data!" & If(expectedDirectRow = 0, "#REF!", quantityColumn & expectedDirectRow) & "))")
                 For row = expectedFirstData To expectedLastData
                     Dim formula = FormulaAt(sales, totalsColumn & row)
                     If formula IsNot Nothing Then formula = formula.Replace("Sales[[#This Row],[Qty]]", "[@Qty]")
@@ -192,7 +213,15 @@ Namespace ExcelOpsTests.Engines
                 Next
                 Dim totalsFormula = FormulaAt(sales, totalsColumn & (expectedLastData + 1))
                 If totalsFormula = "SUM([Total])" Then totalsFormula = "SUM(Sales[Total])"
-                Compare(differences, "totals row", totalsFormula, "SUM(Sales[Total])")
+                Compare(differences, "totals row", totalsFormula, If(scenario = "TableDeleteTotals", Nothing, "SUM(Sales[Total])"))
+                If scenario = "TableDeleteTotals" AndAlso table IsNot Nothing Then
+                    Compare(differences, "totals row visibility", If(table.TotalsRowShown?.Value, True).ToString(), "False")
+                    Compare(differences, "totals row count", If(table.TotalsRowCount?.Value, 0UI).ToString(), "0")
+                    If table.GetFirstChild(Of TableColumns)().Elements(Of TableColumn)().Any(
+                        Function(column) column.TotalsRowFormula IsNot Nothing OrElse column.TotalsRowLabel IsNot Nothing OrElse column.TotalsRowFunction IsNot Nothing) Then
+                        differences.Add("The table retains totals column metadata after deleting its totals row.")
+                    End If
+                End If
             End Using
             Return differences
         End Function
