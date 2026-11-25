@@ -164,10 +164,7 @@ Namespace ExcelOps
                                 destinationSheets.InsertBefore(sheet, anchor)
                             End If
                         Next
-                        If copiedNames.Count > 0 Then
-                            If bookPart.Workbook.DefinedNames Is Nothing Then bookPart.Workbook.DefinedNames = New DefinedNames()
-                            bookPart.Workbook.DefinedNames.Append(copiedNames)
-                        End If
+                        InstallTransferredNames(bookPart.Workbook, copiedNames, formulaMode)
                         If move Then
                             Dim obsolete = oldSourceLinks.Where(Function(index) Not retainedTargetLinks.Contains(index) AndAlso Not targetLinks.UsesIndex(index)).ToArray()
                             destination.RemoveUnusedMoveLinks(bookPart, obsolete)

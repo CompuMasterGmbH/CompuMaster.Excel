@@ -480,6 +480,7 @@ Namespace ExcelOpsTests.Engines
             Dim caseDirectory = CreateTransferTestDirectory()
             Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
             Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim nativePath = Path.Combine(caseDirectory, "excel-names.xlsx")
             Dim source As MsExcelDataOperations = Nothing
             Dim target As MsExcelDataOperations = Nothing
             Dim receivedName = If(collision, "Transfer (2)", "Transfer")
@@ -491,15 +492,36 @@ Namespace ExcelOpsTests.Engines
                 source.Workbook.Names.Add("SharedInput", RefersTo:="='Data Set'!$A$1")
                 source.Workbook.Names.Add("MovedInput", RefersTo:="=Transfer!$A$1")
                 source.Workbook.Names.Add("UnusedInput", RefersTo:="='Data Set'!$A$2")
+                source.Workbook.Names.Add("ComputedInput", RefersTo:="=Transfer!$A$1+'Data Set'!$A$1")
+                source.Workbook.Names.Add("FixedInput", RefersTo:="=41")
+                source.Workbook.Names.Add("ChainedInput", RefersTo:="=FixedInput+1")
                 sheet.Names.Add("Transfer!LocalInput", RefersTo:="=Transfer!$A$1")
+                sheet.Names.Add("Transfer!LocalCalculation", RefersTo:="=Transfer!$A$1+3")
+                source.Workbook.Activate()
+                sheet.Activate()
+                sheet.Range("K9").Select()
+                sheet.Names.Add("Transfer!RelativeInput", RefersTo:="=Transfer!B1")
+                sheet.Names.Add("Transfer!MixedInput", RefersTo:="=Transfer!$A1")
                 sheet.Range("B1").Formula = "=SharedInput"
                 sheet.Range("B2").Formula = "=LocalInput"
                 sheet.Range("B3").Formula = "=MovedInput"
+                sheet.Range("B4").Formula = "=ComputedInput"
+                sheet.Range("B5").Formula = "=ChainedInput"
+                sheet.Range("B6").Formula = "=LocalCalculation"
+                sheet.Range("C7").Value2 = 31
+                sheet.Range("B7").Formula = "=RelativeInput"
+                sheet.Range("F9").Value2 = 34
+                sheet.Range("E9").Formula = "=SUM(RelativeInput)"
+                sheet.Range("A9").Value2 = 14
+                sheet.Range("G9").Formula = "=MixedInput"
                 TransferSheet(source.Workbook, "Remain").Range("B1").Formula = "=MovedInput"
                 If collision Then
                     targetCheck.Range("B1").Value2 = 900
                     target.Workbook.Names.Add("SharedInput", RefersTo:="='Target Check'!$B$1")
+                    target.Workbook.Names.Add("ComputedInput", RefersTo:="=900")
+                    target.Workbook.Names.Add("FixedInput", RefersTo:="=100")
                     targetCheck.Range("B2").Formula = "=SharedInput"
+                    targetCheck.Range("E1").Formula = "=FixedInput"
                 End If
                 source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
@@ -507,6 +529,7 @@ Namespace ExcelOpsTests.Engines
                 TransferWorksheet(sheet, targetCheck, move)
                 AssertNamedTransferFormulas(target.Workbook, receivedName, collision)
                 If move Then AssertTransferFormula(TransferSheet(source.Workbook, "Remain"), "B1", "=MovedInput", 10)
+                target.SaveCopyAs(nativePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 target.Close()
                 source.Close()
 
@@ -519,21 +542,33 @@ Namespace ExcelOpsTests.Engines
                     destination.Save()
                 End Using
 
-                Using document = SpreadsheetDocument.Open(targetPath, False)
+                Using document = SpreadsheetDocument.Open(targetPath, False), native = SpreadsheetDocument.Open(nativePath, False)
                     Dim names = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().ToArray()
+                    For Each checkedName As String In {"ChainedInput", "RelativeInput", "MixedInput"}
+                        Dim expectedName = native.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().
+                            Single(Function(name) name.Name.Value = checkedName)
+                        Assert.That(names.Single(Function(name) name.Name.Value = checkedName).Text, [Is].EqualTo(expectedName.Text))
+                    Next
                     Dim local = names.Single(Function(name) name.Name.Value = "LocalInput")
                     Assert.That(local.LocalSheetId.Value, [Is].Zero)
+                    Assert.That(names.Single(Function(name) name.Name.Value = "LocalCalculation").LocalSheetId.Value, [Is].Zero)
                     Assert.That(names.Any(Function(name) name.Name.Value = "UnusedInput"), [Is].False)
                     Dim imported = names.Single(Function(name) name.Name.Value = "SharedInput" AndAlso
                         (Not collision OrElse name.LocalSheetId IsNot Nothing))
                     If collision Then
                         Assert.That(imported.LocalSheetId.Value, [Is].Zero)
+                        Assert.That(names.Single(Function(name) name.Name.Value = "FixedInput" AndAlso name.LocalSheetId IsNot Nothing).Text, [Is].EqualTo("41"))
                     Else
                         Assert.That(imported.LocalSheetId, [Is].Null)
+                        Assert.That(names.Single(Function(name) name.Name.Value = "FixedInput").Text, [Is].EqualTo("41"))
                     End If
                 End Using
 
                 source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(nativePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target.RecalculateAll()
+                AssertNamedTransferFormulas(target.Workbook, receivedName, collision)
+                target.Close()
                 target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
                 target.RecalculateAll()
                 AssertNamedTransferFormulas(target.Workbook, receivedName, collision)
@@ -550,7 +585,17 @@ Namespace ExcelOpsTests.Engines
             AssertTransferFormula(sheet, "B1", "=SharedInput", 20)
             AssertTransferFormula(sheet, "B2", "=LocalInput", 10)
             AssertTransferFormula(sheet, "B3", "=MovedInput", 10)
-            If collision Then AssertTransferFormula(TransferSheet(workbook, "Target Check"), "B2", "=SharedInput", 900)
+            AssertTransferFormula(sheet, "B4", "=ComputedInput", 30)
+            AssertTransferFormula(sheet, "B5", "=ChainedInput", 42)
+            AssertTransferFormula(sheet, "B6", "=LocalCalculation", 13)
+            AssertTransferFormula(sheet, "B7", "=RelativeInput", 31)
+            AssertTransferFormula(sheet, "E9", "=SUM(RelativeInput)", 34)
+            AssertTransferFormula(sheet, "G9", "=MixedInput", 14)
+            If collision Then
+                Dim targetCheck = TransferSheet(workbook, "Target Check")
+                AssertTransferFormula(targetCheck, "B2", "=SharedInput", 900)
+                AssertTransferFormula(targetCheck, "E1", "=FixedInput", 100)
+            End If
         End Sub
 
         <TestCase("Above", "B5:C7", "B5", "B6", "B5:C7")>

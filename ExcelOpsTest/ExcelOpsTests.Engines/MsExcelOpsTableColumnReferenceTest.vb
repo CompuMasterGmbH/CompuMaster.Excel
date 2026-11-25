@@ -16,6 +16,9 @@ Namespace ExcelOpsTests.Engines
         <TestCase("InsertHeaderless")>
         <TestCase("DeleteHeaderless")>
         <TestCase("DeleteOneOfTwoFilters")>
+        <TestCase("DeleteFilterKeepAnd")>
+        <TestCase("DeleteFilterKeepOr")>
+        <TestCase("DeleteFilterWithFormula")>
         Public Sub StructuralReference_OpenXmlMatchesTableColumnsWithFiltersOrHiddenHeaders(operation As String)
             Dim directoryPath = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "ExcelOps-TableColumns-" & Guid.NewGuid().ToString("N"))).FullName
             Dim input = Path.Combine(directoryPath, "before.xlsx")
@@ -35,8 +38,9 @@ Namespace ExcelOpsTests.Engines
                 For row = 2 To 5
                     workbook.WriteCellValue("Data", row, 1, row - 1)
                     workbook.WriteCellValue("Data", row, 2, If(row Mod 2 = 1, "West", "East"))
-                    workbook.WriteCellValue("Data", row, 3, If(row = 3, 5, 8))
+                    workbook.WriteCellValue("Data", row, 3, If(row = 3, 5, If(row = 4, 10, 8)))
                 Next
+                If operation = "DeleteFilterWithFormula" Then workbook.WriteCellFormula("Data", 3, 3, "2+3", False)
                 Dim table = sheet.ListObjects.Add(NativeExcel.XlListObjectSourceType.xlSrcRange, sheet.Range("B2:D6"),
                                                   Type.Missing, NativeExcel.XlYesNoGuess.xlYes)
                 table.Name = "SalesTable"
@@ -52,7 +56,14 @@ Namespace ExcelOpsTests.Engines
                     sheet.Range("A6").EntireRow.Hidden = True
                     sheet.Range("A7").EntireRow.Hidden = True
                 End If
-                If operation = "DeleteOneOfTwoFilters" Then table.Range.AutoFilter(3, ">5")
+                Select Case operation
+                    Case "DeleteOneOfTwoFilters", "DeleteFilterWithFormula"
+                        table.Range.AutoFilter(3, ">5")
+                    Case "DeleteFilterKeepAnd"
+                        table.Range.AutoFilter(3, ">5", NativeExcel.XlAutoFilterOperator.xlAnd, "<9")
+                    Case "DeleteFilterKeepOr"
+                        table.Range.AutoFilter(3, "<7", NativeExcel.XlAutoFilterOperator.xlOr, ">9")
+                End Select
                 workbook.WriteCellFormula("Checks", 0, 0, "COUNTIF(SalesTable[Region],""West"")", False)
                 workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
 
@@ -71,7 +82,7 @@ Namespace ExcelOpsTests.Engines
                 workbook.Close()
 
                 Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                    If operation = "DeleteOneOfTwoFilters" Then
+                    If operation = "DeleteFilterWithFormula" Then
                         Assert.That(ReadTableColumnState(nativeOutput).HiddenRows, [Is].EqualTo({4UI}))
                         Assert.Throws(Of NotSupportedException)(Sub() edit(editor))
                     Else
@@ -79,12 +90,20 @@ Namespace ExcelOpsTests.Engines
                     End If
                     editor.SaveCopyAs(openXmlOutput, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 End Using
-                If operation = "DeleteOneOfTwoFilters" Then
+                If operation = "DeleteFilterWithFormula" Then
                     Assert.That(File.ReadAllBytes(openXmlOutput), [Is].EqualTo(File.ReadAllBytes(input)))
                     Return
                 End If
                 Dim expected = ReadTableColumnState(nativeOutput)
                 Dim actual = ReadTableColumnState(openXmlOutput)
+                Select Case operation
+                    Case "DeleteOneOfTwoFilters"
+                        Assert.That(expected.HiddenRows, [Is].EqualTo({4UI}))
+                    Case "DeleteFilterKeepAnd"
+                        Assert.That(expected.HiddenRows, [Is].EqualTo({4UI, 5UI}))
+                    Case "DeleteFilterKeepOr"
+                        Assert.That(expected.HiddenRows, [Is].EqualTo({3UI, 6UI}))
+                End Select
                 Assert.That(actual.TableRange, [Is].EqualTo(expected.TableRange))
                 Assert.That(actual.Columns, [Is].EqualTo(expected.Columns))
                 Assert.That(actual.FilterRange, [Is].EqualTo(expected.FilterRange))
