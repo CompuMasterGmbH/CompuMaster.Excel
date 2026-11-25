@@ -204,6 +204,67 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    ' The link follows the workbook identity even when a local worksheet has the same name.
+    <Test>
+    Public Sub WorkbookSession_UpdatesAllAttachedDependentsAndTheirExternalCaches()
+        WorkbookReferenceCoverage.CopyPair(_directory)
+        Dim sourcePath = Path.Combine(_directory, WorkbookReferenceCoverage.SourceName)
+        Dim firstPath = Path.Combine(_directory, WorkbookReferenceCoverage.TargetName)
+        Dim secondPath = Path.Combine(_directory, "second.xlsx")
+        Dim output = Path.Combine(_directory, "saved-links.xlsx")
+        File.Copy(firstPath, secondPath)
+        Dim sourceName = WorkbookReferenceCoverage.RemoteSheet
+        Dim updatedName = "O'Brien source"
+        Dim checks = WorkbookReferenceCoverage.ChecksSheet
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using session As New OpenXmlWorkbookSession(),
+              source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              first As New OpenXmlExcelDataOperations(firstPath, OpenMode.OpenExistingFile, options),
+              second As New OpenXmlExcelDataOperations(secondPath, OpenMode.OpenExistingFile, options)
+            first.RenameWorksheet(WorkbookReferenceCoverage.LocalSheet, sourceName, True)
+            session.Attach(source)
+            session.Attach(first)
+            session.Attach(second)
+            source.AddRow(sourceName, 1, 1, True)
+            Assert.That(first.LookupCellFormula(checks, 0, 0), [Is].EqualTo("'[1]Remote Data'!$B$3"))
+            Assert.That(second.LookupCellFormula(checks, 0, 0), [Is].EqualTo("'[1]Remote Data'!$B$3"))
+            Assert.That(session.Detach(second), [Is].True)
+            source.RenameWorksheet(sourceName, updatedName, True)
+            Assert.That(first.LookupCellFormula(checks, 1, 0),
+                        [Is].EqualTo("SUM('Remote Data'!$B2:B$3,'[1]O''Brien source'!$B$3:$B$4)"))
+            Assert.That(second.LookupCellFormula(checks, 0, 0), [Is].EqualTo("'[1]Remote Data'!$B$3"))
+            Assert.That(first.HasMissingCachedFormulaResult(checks, 0, 0), [Is].True)
+            first.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim external = document.WorkbookPart.ExternalWorkbookParts.Single().ExternalLink.GetFirstChild(Of ExternalBook)()
+            Assert.That(external.SheetNames.GetFirstChild(Of SheetName)().Val.Value, [Is].EqualTo("O'Brien source"))
+            Dim cached = external.SheetDataSet.Descendants(Of ExternalCell)()
+            Assert.That(cached.Select(Function(cell) cell.CellReference.Value), [Is].EqualTo({"B3", "B4"}))
+            Assert.That(cached.Select(Function(cell) cell.Xstring.Text), [Is].EqualTo({"11", "13"}))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub WorkbookSession_RejectsAnUnsupportedDependentBeforeChangingAnyWorkbook()
+        WorkbookReferenceCoverage.CopyPair(_directory)
+        Dim sourcePath = Path.Combine(_directory, WorkbookReferenceCoverage.SourceName)
+        Dim targetPath = Path.Combine(_directory, WorkbookReferenceCoverage.TargetName)
+        Dim output = Path.Combine(_directory, "source-unchanged.xlsx")
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using session As New OpenXmlWorkbookSession(),
+              source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              target As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
+            session.Attach(source)
+            session.Attach(target)
+            target.WriteCellFormula(WorkbookReferenceCoverage.ChecksSheet, 3, 0, "A1#", False)
+            Assert.Throws(Of NotSupportedException)(Sub() source.AddRow(WorkbookReferenceCoverage.RemoteSheet, 1, 1, True))
+            Assert.That(target.LookupCellFormula(WorkbookReferenceCoverage.ChecksSheet, 0, 0), [Is].EqualTo("'[1]Remote Data'!$B$2"))
+            source.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(HashFile(sourcePath)))
+    End Sub
+
     <TestCase("SUM('O''Brien Data:Check'!B2)")>
     <TestCase("SUM(Check:Unrelated!B2)")>
     <TestCase("'C:\Temp\[External.xlsx]Data'!B2")>

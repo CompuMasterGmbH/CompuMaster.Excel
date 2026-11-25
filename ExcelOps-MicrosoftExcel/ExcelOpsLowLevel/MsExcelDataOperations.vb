@@ -1032,6 +1032,15 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Sub
 
         ''' <inheritdoc/>
+        Public Overrides Sub RenameWorksheet(sheetName As String, newSheetName As String, updateFormulasAndReferences As Boolean)
+            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
+            If sheetName Is Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
+            If newSheetName Is Nothing Then Throw New ArgumentNullException(NameOf(newSheetName))
+            Dim sheet = DirectCast(Workbook.Worksheets(sheetName), MsExcel.Worksheet)
+            sheet.Name = newSheetName
+        End Sub
+
+        ''' <inheritdoc/>
         Public Overrides Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
             Me.ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))

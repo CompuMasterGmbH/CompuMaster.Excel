@@ -15,7 +15,7 @@ Namespace ExcelOps
         Private Shared ReadOnly FormulaSheet As New Regex("\G(?<name>'(?:[^']|'')+'|(?:\[[1-9][0-9]*\])?[\p{L}\p{M}\p{Nd}_.]+)!", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaName As New Regex("\G[\p{L}_\\][\p{L}\p{M}\p{Nd}_.\\?]*", RegexOptions.CultureInvariant)
         Private Shared ReadOnly FormulaNumber As New Regex("\G(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?", RegexOptions.CultureInvariant)
-        Private Shared ReadOnly FormulaError As New Regex("\G#(?:NULL!|DIV/0!|VALUE!|REF!|NAME\?|NUM!|N/A|GETTING_DATA|SPILL!|CALC!|FIELD!|BLOCKED!|UNKNOWN!|CONNECT!|BUSY!|PYTHON!)", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+        Private Shared ReadOnly FormulaErrorToken As New Regex("\G#(?:NULL!|DIV/0!|VALUE!|REF!|NAME\?|NUM!|N/A|GETTING_DATA|SPILL!|CALC!|FIELD!|BLOCKED!|UNKNOWN!|CONNECT!|BUSY!|PYTHON!)", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
         Private Shared ReadOnly A1Endpoint As New Regex(
             "\G(?:(?<column>\$?[A-Za-z]{1,3})(?<row>\$?0*[1-9][0-9]{0,6})?|(?<row>\$?0*[1-9][0-9]{0,6}))(?![\p{L}\p{M}\p{Nd}_.\\?$])",
             RegexOptions.CultureInvariant)
@@ -188,7 +188,8 @@ Namespace ExcelOps
                                                Optional tableNames As HashSet(Of String) = Nothing, Optional copyRowOffset As Integer = 0,
                                                Optional copyColumnOffset As Integer = 0,
                                         Optional rewriteSheetQualifier As Func(Of String, String, String) = Nothing,
-                                               Optional formulaWorkbook As WorkbookPart = Nothing) As String
+                                        Optional formulaWorkbook As WorkbookPart = Nothing,
+                                        Optional structuralExternalLinks As HashSet(Of Integer) = Nothing) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
             Dim lastReferenceEnd = -1
@@ -222,13 +223,27 @@ Namespace ExcelOps
                 Dim sheetToken = FormulaSheet.Match(value, index)
                 Dim explicitSheet As String = Nothing
                 Dim externalBook As Boolean
+                Dim linkedSheet As String = Nothing
+                Dim linkedPrefix As String = Nothing
                 Dim qualifier As String = Nothing
                 If sheetToken.Success Then
                     explicitSheet = SheetNameFromToken(If(formulaWorkbook, WorkbookPart), sheetToken, externalBook)
+                    If externalBook AndAlso structuralExternalLinks IsNot Nothing Then
+                        Dim bracket = explicitSheet.IndexOf("]"c)
+                        Dim link = Integer.Parse(explicitSheet.Substring(1, bracket - 1), CultureInfo.InvariantCulture)
+                        If structuralExternalLinks.Contains(link) Then
+                            linkedSheet = explicitSheet.Substring(bracket + 1)
+                            linkedPrefix = explicitSheet.Substring(0, bracket + 1)
+                        End If
+                    End If
                     If rewriteSheetQualifier IsNot Nothing Then
                         qualifier = rewriteSheetQualifier(explicitSheet, sheetToken.Value)
+                    ElseIf linkedSheet IsNot Nothing AndAlso renamedSheet IsNot Nothing AndAlso
+                           String.Equals(linkedSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                        qualifier = "'" & linkedPrefix & renamedSheet.Replace("'", "''") & "'!"
                     Else
-                        qualifier = If(Not externalBook AndAlso renamedSheet IsNot Nothing AndAlso String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase),
+                        qualifier = If(Not externalBook AndAlso structuralExternalLinks Is Nothing AndAlso
+                                       renamedSheet IsNot Nothing AndAlso String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase),
                                        FormatSheetName(renamedSheet), sheetToken.Value)
                     End If
                     index += sheetToken.Length
@@ -260,8 +275,7 @@ Namespace ExcelOps
                             If secondQualifier.Success AndAlso rewriteSheetQualifier IsNot Nothing Then
                                 separator = value.Substring(referenceEnd, secondQualifier.Index - referenceEnd) &
                                     rewriteSheetQualifier(explicitSheet, secondQualifier.Value)
-                            ElseIf secondQualifier.Success AndAlso Not externalBook AndAlso renamedSheet IsNot Nothing AndAlso
-                                   String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                            ElseIf secondQualifier.Success AndAlso qualifier <> sheetToken.Value Then
                                 separator = value.Substring(referenceEnd, secondQualifier.Index - referenceEnd) & qualifier
                             End If
                             referenceEnd = secondEnd
@@ -289,7 +303,9 @@ Namespace ExcelOps
                             result.Append(firstAddress)
                             If second IsNot Nothing Then result.Append(separator).Append(secondAddress)
                         End If
-                    ElseIf shift IsNot Nothing AndAlso Not externalBook AndAlso String.Equals(If(explicitSheet, scopeSheet), editedSheet, StringComparison.OrdinalIgnoreCase) Then
+                    ElseIf shift IsNot Nothing AndAlso
+                           String.Equals(If(externalBook OrElse structuralExternalLinks IsNot Nothing, linkedSheet, If(explicitSheet, scopeSheet)),
+                                         editedSheet, StringComparison.OrdinalIgnoreCase) Then
                         result.Append(shift.RewriteReference(first, second, separator))
                     ElseIf second IsNot Nothing AndAlso (renamedSheet IsNot Nothing OrElse rewriteSheetQualifier IsNot Nothing) Then
                         result.Append(first.ColumnText).Append(first.RowText).Append(separator).Append(second.ColumnText).Append(second.RowText)
@@ -301,7 +317,7 @@ Namespace ExcelOps
                     Continue While
                 End If
 
-                Dim token = FormulaError.Match(value, index)
+                Dim token = FormulaErrorToken.Match(value, index)
                 If Not token.Success Then token = FormulaName.Match(value, index)
                 If Not token.Success AndAlso explicitSheet Is Nothing Then token = FormulaNumber.Match(value, index)
                 If token.Success Then

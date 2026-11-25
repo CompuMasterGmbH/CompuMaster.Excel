@@ -20,7 +20,8 @@ Namespace ExcelOpsTests.Engines
             "MergeRowBefore", "MergeRowInside", "MergeRowAfter",
             "MergeColumnBefore", "MergeColumnInside", "MergeColumnAfter",
             "MergeSplit", "TableRowBefore", "TableHeader", "TableFirstData", "TableBody",
-            "TableTotals", "TableAfter", "TableDownBody", "TableDownTotals", "TableSplit", "PlainFirstData", "PlainBody", "TableWithoutTotalsAfter"
+            "TableTotals", "TableAfter", "TableDownBody", "TableDownTotals", "TableSplit", "TableDeleteBody", "TableColumnBefore",
+            "PlainFirstData", "PlainBody", "TableWithoutTotalsAfter"
         }
 
         Friend Shared Function CompareWithExcel(workbook As ExcelDataOperationsBase, scenario As String, outputPath As String) As List(Of String)
@@ -34,6 +35,9 @@ Namespace ExcelOpsTests.Engines
             Dim expectedLastDataCheck As String = "C5:C6"
             Dim expectedWideRange As String = "C4:E6"
             Dim expectedDirectRow As Integer = 4
+            Dim tableColumn = "B"
+            Dim quantityColumn = "C"
+            Dim totalsColumn = "D"
             Dim expectedPlainLastData As Integer = 6
             Dim plainAbsoluteRow As Integer = 10
 
@@ -95,6 +99,22 @@ Namespace ExcelOpsTests.Engines
                         expectedLastData = 7
                     Case "TableAfter"
                         workbook.AddRow("Data", 7, 1, True)
+                    Case "TableDeleteBody"
+                        workbook.RemoveRows("Data", 4, 1, True)
+                        expectedTable = "B3:D6"
+                        expectedDataRows = "B3:D5"
+                        expectedLastData = 5
+                        expectedLastDataCheck = "C5:C5"
+                        expectedWideRange = "C4:E5"
+                    Case "TableColumnBefore"
+                        workbook.AddColumn("Data", 0, 1, True)
+                        expectedTable = "C3:E7"
+                        expectedDataRows = "C3:E6"
+                        expectedLastDataCheck = "D5:D6"
+                        expectedWideRange = "D4:F6"
+                        tableColumn = "C"
+                        quantityColumn = "D"
+                        totalsColumn = "E"
                     Case "TableSplit"
                         workbook.AddCells("Data", 4, 2, 1, 2, CellInsertShiftDirection.ShiftCellsDown, True)
                         differences.Add("Excel rejects a cell shift that changes only part of the table width; the engine accepted it.")
@@ -149,24 +169,28 @@ Namespace ExcelOpsTests.Engines
                 Compare(differences, "plain data range", NameText(names, "PlainCells"), "PlainTable!$B$4:$D$" & expectedPlainLastData)
                 Compare(differences, "structured formula", FormulaAt(checks, "A1"), "SUM(Sales[Total])")
                 Compare(differences, "structured totals formula", FormulaAt(checks, "A14"), "SUM(Sales[[#Totals],[Qty]])")
-                Compare(differences, "direct data range", FormulaAt(checks, "A2"), "SUM(Data!C" & expectedFirstData & ":C" & expectedLastData & ")")
+                Compare(differences, "direct data range", FormulaAt(checks, "A2"),
+                        "SUM(Data!" & quantityColumn & expectedFirstData & ":" & quantityColumn & expectedLastData & ")")
                 Compare(differences, "partial data range", FormulaAt(checks, "A6"), "SUM(Data!" & expectedLastDataCheck & ")")
                 Compare(differences, "range wider than the table", FormulaAt(checks, "A7"), "SUM(Data!" & expectedWideRange & ")")
-                Compare(differences, "workbook data name", NameText(names, "SalesCells"), "Data!$B$" & expectedFirstData & ":$D$" & expectedLastData)
-                Compare(differences, "local data name", NameText(names, "LocalSales"), "Data!$C$" & expectedFirstData & ":$C$" & expectedLastData)
-                Compare(differences, "direct absolute R1C1 in Excel", FormulaAt(checks, "A5"), "Data!$C$" & expectedDirectRow)
-                Compare(differences, "direct mixed R1C1 in Excel", FormulaAt(checks, "A8"), "Data!$C" & expectedDirectRow)
+                Compare(differences, "workbook data name", NameText(names, "SalesCells"),
+                        "Data!$" & tableColumn & "$" & expectedFirstData & ":$" & totalsColumn & "$" & expectedLastData)
+                Compare(differences, "local data name", NameText(names, "LocalSales"),
+                        "Data!$" & quantityColumn & "$" & expectedFirstData & ":$" & quantityColumn & "$" & expectedLastData)
+                Compare(differences, "direct absolute R1C1 in Excel", FormulaAt(checks, "A5"), "Data!$" & quantityColumn & "$" & expectedDirectRow)
+                Compare(differences, "direct mixed R1C1 in Excel", FormulaAt(checks, "A8"), "Data!$" & quantityColumn & expectedDirectRow)
                 Compare(differences, "R1C1 workbook setting", part.Workbook.CalculationProperties?.GetAttributes().
                         FirstOrDefault(Function(attribute) attribute.LocalName = "refMode").Value, "R1C1")
                 Compare(differences, "indirect A1 address", FormulaAt(checks, "A3"), "INDIRECT(""Data!C4"")")
                 Compare(differences, "indirect R1C1 address", FormulaAt(checks, "A4"), "INDIRECT(""Data!R4C3"",FALSE)")
-                Compare(differences, "direct operand inside INDIRECT", FormulaAt(checks, "A9"), "INDIRECT(""Data!C""&ROW(Data!C" & expectedDirectRow & "))")
+                Compare(differences, "direct operand inside INDIRECT", FormulaAt(checks, "A9"),
+                        "INDIRECT(""Data!C""&ROW(Data!" & quantityColumn & expectedDirectRow & "))")
                 For row = expectedFirstData To expectedLastData
-                    Dim formula = FormulaAt(sales, "D" & row)
+                    Dim formula = FormulaAt(sales, totalsColumn & row)
                     If formula IsNot Nothing Then formula = formula.Replace("Sales[[#This Row],[Qty]]", "[@Qty]")
-                    Compare(differences, "calculated column D" & row, formula, "[@Qty]*2")
+                    Compare(differences, "calculated column " & totalsColumn & row, formula, "[@Qty]*2")
                 Next
-                Dim totalsFormula = FormulaAt(sales, "D" & (expectedLastData + 1))
+                Dim totalsFormula = FormulaAt(sales, totalsColumn & (expectedLastData + 1))
                 If totalsFormula = "SUM([Total])" Then totalsFormula = "SUM(Sales[Total])"
                 Compare(differences, "totals row", totalsFormula, "SUM(Sales[Total])")
             End Using

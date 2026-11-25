@@ -250,6 +250,56 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <TestCase(False)>
+        <TestCase(True)>
+        Public Sub WorksheetTransfer_ExcelReopensOpenXmlLinksCreatedBetweenUnsavedBooks(targetFirst As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim source As MsExcelDataOperations = Nothing
+            Dim target As MsExcelDataOperations = Nothing
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(False)
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                source.Close()
+                target.Close()
+
+                Dim originTemplate = File.ReadAllBytes(sourcePath)
+                Dim targetTemplate = File.ReadAllBytes(targetPath)
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                Using session As New OpenXmlWorkbookSession(),
+                      origin As New OpenXmlExcelDataOperations(originTemplate, options),
+                      destination As New OpenXmlExcelDataOperations(targetTemplate, options)
+                    session.Attach(origin)
+                    session.Attach(destination)
+                    origin.MoveSheet("Transfer", destination)
+                    If targetFirst Then
+                        destination.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                        origin.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                    Else
+                        origin.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                        destination.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                    End If
+                    origin.Save()
+                    destination.Save()
+                End Using
+
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target.RecalculateAll()
+                AssertTransferFormula(TransferSheet(source.Workbook, "Remain"), "A1",
+                    "=" & OpenWorkbookQualifier(target.Workbook, "Transfer") & "$A$1", 10)
+                AssertTransferFormula(TransferSheet(target.Workbook, "Transfer"), "A3",
+                    "=" & OpenWorkbookQualifier(source.Workbook, "Data Set") & "$A$1", 20)
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
         <Test>
         Public Sub WorksheetTransfer_OpenXmlMovesMixedGroupAndExcelRecalculatesBothBooks()
             Dim caseDirectory = CreateTransferTestDirectory()

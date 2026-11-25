@@ -15,6 +15,17 @@ Namespace ExcelOps
                                                         formulaMode As CopyWorksheetFormulaMode) As IReadOnlyList(Of String)
             Dim destination = TryCast(targetWorkbook, OpenXmlExcelDataOperations)
             If destination Is Nothing Then Throw UnsupportedOperation("Transferring sheets between different engines")
+            SyncLock WorkbookSessionLock
+                Dim books = If(move AndAlso WorkbookSession IsNot Nothing AndAlso WorkbookSession Is destination.WorkbookSession,
+                               WorkbookSession.Snapshot(), {Me, destination})
+                Return WithLockedWorkbooks(books, Function() TransferSheetsCore(sheetNames, destination, targetSheetIndex, move, formulaMode, books))
+            End SyncLock
+        End Function
+
+        Private Overloads Function TransferSheetsCore(sheetNames As IReadOnlyList(Of String), destination As OpenXmlExcelDataOperations,
+                                                      targetSheetIndex As Integer, move As Boolean,
+                                                      formulaMode As CopyWorksheetFormulaMode,
+                                                      sessionBooks As OpenXmlExcelDataOperations()) As IReadOnlyList(Of String)
             If If(destination.WorkbookPart.Workbook.WorkbookProtection?.LockStructure?.Value, False) Then
                 Throw UnsupportedOperation("Adding sheets to a structure-protected workbook")
             End If
@@ -32,7 +43,10 @@ Namespace ExcelOps
             Dim sourceWorksheets As New HashSet(Of String)(WorkSheetNames(), StringComparer.OrdinalIgnoreCase)
             Dim remaining = sheetOrder.Where(Function(sheet) Not assigned.ContainsKey(sheet.Name.Value)).ToArray()
             Dim sourceLinkNames = If(move, remaining, sheetOrder.ToArray()).Select(Function(sheet) sheet.Name.Value).ToArray()
-            Dim targetLinkNames = destination.SheetNames().Concat(assigned.Values).ToArray()
+            Dim destinationOrder = destination.SheetNames()
+            destinationOrder.InsertRange(targetSheetIndex, sheetNames.Select(Function(name) assigned(name)))
+            Dim targetLinkNames = destinationOrder.ToArray()
+            Dim sameSession = WorkbookSession IsNot Nothing AndAlso WorkbookSession Is destination.WorkbookSession
             Dim targetLinks As New SheetTransferLinks(destination)
             Dim sourceLinks As New SheetTransferLinks(Me)
 
@@ -63,11 +77,12 @@ Namespace ExcelOps
                     End If
                     Dim newName As String = Nothing
                     If assigned.TryGetValue(referencedName, newName) Then Return FormatSheetName(newName)
-                    Return targetLinks.ReferenceTo(TransferWorkbookPath(), sourceLinkNames, referencedName)
+                    Return targetLinks.ReferenceTo(TransferWorkbookPath(sameSession), sourceLinkNames, referencedName)
                 End Function
 
             Dim copiedSheets As New List(Of (Name As String, State As SheetStateValues?, Worksheet As Worksheet,
-                                             ChartSheet As ChartsheetPart, Charts As Dictionary(Of String, ChartXml.ChartSpace)))
+                                             ChartSheet As ChartsheetPart, Drawing As DrawingsPart,
+                                             Charts As Dictionary(Of String, ChartXml.ChartSpace)))
             For Each name In sheetNames
                 Dim source = FindSheet(name)
                 Dim sourceIndex = CUInt(sheetOrder.IndexOf(source))
@@ -80,19 +95,19 @@ Namespace ExcelOps
                 Dim chartSheet = TryCast(part, ChartsheetPart)
                 If worksheet IsNot Nothing Then
                     Dim prepared = PrepareWorksheetCopy(worksheet, name, formulaMode, resolveQualifier, move)
-                    copiedSheets.Add((assigned(name), source.State?.Value, prepared, Nothing, Nothing))
+                    Dim drawing = worksheet.DrawingsPart
+                    Dim charts = If(drawing Is Nothing, Nothing, PrepareDrawingChartCopy(drawing, name, formulaMode, resolveQualifier, move))
+                    copiedSheets.Add((assigned(name), source.State?.Value, prepared, Nothing, drawing, charts))
                 ElseIf chartSheet IsNot Nothing Then
                     Dim charts = PrepareChartSheetCopy(chartSheet, name, formulaMode, resolveQualifier, move)
-                    copiedSheets.Add((assigned(name), source.State?.Value, Nothing, chartSheet, charts))
+                    copiedSheets.Add((assigned(name), source.State?.Value, Nothing, chartSheet, chartSheet.DrawingsPart, charts))
                 Else
                     Throw UnsupportedOperation("Copying this sheet type")
                 End If
             Next
 
-            Dim targetSnapshot As MemoryStream = Nothing
-            Dim sourceSnapshot As MemoryStream = Nothing
-            Try
-                targetSnapshot = destination.StageSheetTransfer(
+            Using changes As New StagedWorkbookChanges()
+                changes.Add(destination,
                     Sub(bookPart)
                         If WorkbookPart.WorkbookStylesPart IsNot Nothing AndAlso bookPart.WorkbookStylesPart Is Nothing Then
                             bookPart.AddPart(WorkbookPart.WorkbookStylesPart)
@@ -121,6 +136,16 @@ Namespace ExcelOps
                             If copied.Worksheet IsNot Nothing Then
                                 Dim worksheetPart = bookPart.AddNewPart(Of WorksheetPart)()
                                 worksheetPart.Worksheet = copied.Worksheet
+                                If copied.Drawing IsNot Nothing Then
+                                    Dim drawingId = copied.Worksheet.GetFirstChild(Of Drawing)().Id.Value
+                                    Dim drawing = worksheetPart.AddPart(copied.Drawing, drawingId)
+                                    Dim placement As DocumentFormat.OpenXml.Drawing.Spreadsheet.WorksheetDrawing = Nothing
+                                    If _changedDrawings.TryGetValue(copied.Drawing, placement) Then
+                                        drawing.WorksheetDrawing = DirectCast(placement.CloneNode(True), DocumentFormat.OpenXml.Drawing.Spreadsheet.WorksheetDrawing)
+                                        drawing.WorksheetDrawing.Save()
+                                    End If
+                                    SaveTransferredCharts(drawing, copied.Charts)
+                                End If
                                 worksheetPart.Worksheet.Save()
                                 part = worksheetPart
                             Else
@@ -129,11 +154,7 @@ Namespace ExcelOps
                                     view.TabSelected = Nothing
                                 Next
                                 chartSheet.Chartsheet.Save()
-                                For Each chart In copied.Charts
-                                    Dim targetChart = DirectCast(chartSheet.DrawingsPart.GetPartById(chart.Key), ChartPart)
-                                    targetChart.ChartSpace = chart.Value
-                                    targetChart.ChartSpace.Save()
-                                Next
+                                SaveTransferredCharts(chartSheet.DrawingsPart, copied.Charts)
                                 part = chartSheet
                             End If
 
@@ -152,26 +173,23 @@ Namespace ExcelOps
                         End If
                     End Sub)
                 If move Then
-                    sourceSnapshot = StageSheetTransfer(
+                    changes.Add(Me,
                         Sub(bookPart)
                             RewriteMoveDependents(bookPart, assigned,
                                 Function(referencedName, originalQualifier)
                                     Dim assignedName As String = Nothing
                                     If assigned.TryGetValue(referencedName, assignedName) Then
-                                        Return sourceLinks.ReferenceTo(destination.TransferWorkbookPath(), targetLinkNames, assignedName)
+                                        Return sourceLinks.ReferenceTo(destination.TransferWorkbookPath(sameSession), targetLinkNames, assignedName)
                                     End If
                                     Return originalQualifier
                                 End Function)
                             sourceLinks.ApplyTo(bookPart)
                             RemoveTransferredSheets(bookPart, assigned)
                         End Sub)
+                    StageSessionMoveDependents(changes, sessionBooks, destination, assigned, targetLinkNames)
                 End If
-                CommitSheetTransfer(destination, targetSnapshot, sourceSnapshot)
-            Catch
-                targetSnapshot?.Dispose()
-                sourceSnapshot?.Dispose()
-                Throw
-            End Try
+                changes.Apply()
+            End Using
             Return copiedSheets.Select(Function(sheet) sheet.Name).ToArray()
         End Function
 
@@ -221,7 +239,21 @@ Namespace ExcelOps
                 Throw UnsupportedOperation("Copying chart sheets with unsupported drawings or chart types")
             End If
             ValidateChartCopyRelationships(part)
+            Return PrepareDrawingChartCopy(drawings, name, formulaMode, resolveQualifier, move, retained, formulaWorkbook)
+        End Function
+
+        Private Function PrepareDrawingChartCopy(drawings As DrawingsPart, name As String, formulaMode As CopyWorksheetFormulaMode,
+                                                  resolveQualifier As Func(Of String, String, String), move As Boolean,
+                                                  Optional retained As Boolean = False,
+                                                  Optional formulaWorkbook As WorkbookPart = Nothing) As Dictionary(Of String, ChartXml.ChartSpace)
+            If drawings.WorksheetDrawing Is Nothing OrElse drawings.Parts.Any(
+                Function(item) Not TypeOf item.OpenXmlPart Is ChartPart AndAlso Not TypeOf item.OpenXmlPart Is ImagePart) Then
+                Throw UnsupportedOperation("Transferring a worksheet with unsupported drawings or chart types")
+            End If
             ValidateChartCopyRelationships(drawings)
+            Dim placement As DocumentFormat.OpenXml.Drawing.Spreadsheet.WorksheetDrawing = Nothing
+            If Not _changedDrawings.TryGetValue(drawings, placement) Then placement = drawings.WorksheetDrawing
+            StageChartAnchors(placement, Nothing)
 
             Dim result As New Dictionary(Of String, ChartXml.ChartSpace)(StringComparer.Ordinal)
             For Each chart In drawings.ChartParts
@@ -234,7 +266,9 @@ Namespace ExcelOps
                 End If
                 ValidateChartCopyRelationships(chart)
 
-                Dim chartSpace = DirectCast(chart.ChartSpace.CloneNode(True), ChartXml.ChartSpace)
+                Dim sourceChart As ChartXml.ChartSpace = Nothing
+                If Not _changedCharts.TryGetValue(chart, sourceChart) Then sourceChart = chart.ChartSpace
+                Dim chartSpace = DirectCast(sourceChart.CloneNode(True), ChartXml.ChartSpace)
                 Dim formulas = chartSpace.Descendants(Of ChartXml.Formula)().ToArray()
                 If formulas.Length > 0 AndAlso Not retained Then ValidateCopiedFormulaContext(formulaMode, move)
                 For Each formula In formulas
@@ -255,6 +289,14 @@ Namespace ExcelOps
             Next
             Return result
         End Function
+
+        Private Shared Sub SaveTransferredCharts(drawing As DrawingsPart, charts As Dictionary(Of String, ChartXml.ChartSpace))
+            For Each chart In charts
+                Dim target = DirectCast(drawing.GetPartById(chart.Key), ChartPart)
+                target.ChartSpace = chart.Value
+                target.ChartSpace.Save()
+            Next
+        End Sub
 
         Private Sub ValidateChartCopyRelationships(part As OpenXmlPart)
             If part.ExternalRelationships.Any() OrElse part.HyperlinkRelationships.Any() OrElse part.DataPartReferenceRelationships.Any() Then
@@ -298,7 +340,8 @@ Namespace ExcelOps
         End Sub
 
         Private Sub ValidateCopySourceWorksheet(part As WorksheetPart)
-            If part.Parts.Any() OrElse part.ExternalRelationships.Any() OrElse part.HyperlinkRelationships.Any() OrElse
+            If part.Parts.Any(Function(item) Not TypeOf item.OpenXmlPart Is DrawingsPart) OrElse
+               part.ExternalRelationships.Any() OrElse part.HyperlinkRelationships.Any() OrElse
                part.Worksheet.ChildElements.Any(Function(item) Not StandardWorksheetElements.Contains(item.LocalName)) Then
                 Throw UnsupportedOperation("Copying a worksheet with related parts or unsupported worksheet elements")
             End If
@@ -328,14 +371,15 @@ Namespace ExcelOps
         Private Shared Function NextCopiedSheetName(name As String, taken As HashSet(Of String)) As String
             If taken.Add(name) Then Return name
             Dim index = 2
-            While True
+            Dim candidate As String
+            Do
                 Dim suffix = " (" & index.ToString(CultureInfo.InvariantCulture) & ")"
                 Dim baseName = name.Substring(0, System.Math.Min(name.Length, 31 - suffix.Length))
                 If Char.IsHighSurrogate(baseName(baseName.Length - 1)) Then baseName = baseName.Substring(0, baseName.Length - 1)
-                Dim candidate = baseName & suffix
-                If taken.Add(candidate) Then Return candidate
+                candidate = baseName & suffix
                 index += 1
-            End While
+            Loop Until taken.Add(candidate)
+            Return candidate
         End Function
 
         Private Shared Function AddTransferLink(target As WorkbookPart, source As Uri, sheets As IEnumerable(Of String)) As ExternalBook
@@ -358,6 +402,8 @@ Namespace ExcelOps
             _document = document
             _changedSheets.Clear()
             _changedTables.Clear()
+            _changedCharts.Clear()
+            _changedDrawings.Clear()
             _formulaRanges.Clear()
             _workbookChanged = False
             _calculationChainInvalid = False

@@ -27,14 +27,12 @@ The reference run used Windows desktop Excel 16.0, build 20625. The tests call t
 
 `ExcelDataOperationsBase.CopySheet` and `CopySheets` accept a per-call `CopyWorksheetFormulaMode`. The default `ExcelCompatible` preserves the identity of the referenced sheets. `PreserveFormulas` keeps the original cell and supported chart formula text, which can make a same-named worksheet in the target supply the value. Excel's native provider implements `ExcelCompatible` and rejects `PreserveFormulas` before transferring sheets. Open XML implements both modes for supported worksheets and classic chart sheets, including mixed groups.
 
-Excel and Open XML implement `MoveSheet` and `MoveSheets` for supported groups containing worksheets and chart sheets. Open XML updates direct references in the two participating workbooks, stages both changes together, and requires a saved path when it creates a workbook link. Transfer overloads accept a zero-based index in the combined destination tab order. Each `SheetTransferResult` contains the assigned name and actual index in that combined order. A shared session is needed to extend this behavior to additional open workbooks and to rebind links when an unsaved workbook acquires a filename.
+Excel and Open XML implement `MoveSheet` and `MoveSheets` for supported groups containing worksheets and chart sheets. Transfer overloads accept a zero-based index in the combined destination tab order. Each `SheetTransferResult` contains the assigned name and actual index in that combined order.
 
-## Requirements for an Open XML workbook session
+## Open XML workbook sessions
 
-1. Maintain an identity for each open workbook, including an unsaved workbook and one that acquires a path on its first save.
-2. Determine destination sheet names and the full set of transferred sheets before rewriting references. Preserve the identity of any existing sheets with the same name.
-3. On a copy, redirect references between simultaneously copied sheets to their copies and keep other references bound to their original sheets. On a move, update registered dependents on both sides and convert qualifiers between local and external as necessary.
-4. Update references in open dependents when an unsaved workbook receives a path. Persist those changes when the dependent workbook is saved.
-5. Use the existing cross-workbook insertion and worksheet transfer tests as the Excel reference. Defined-name collisions, 3-D formulas, and worksheet objects such as charts and tables require separate behavior tests before claiming compatibility.
+`OpenXmlWorkbookSession` connects participating workbook instances. It stages supported incoming reference changes before applying a structural edit and redirects references in additional attached workbooks after a move. It uses saved paths and temporary names to establish workbook identity. When the linked workbook receives a path, the session resolves the temporary name to that path. An attached dependent writes the resolved link on its next save. Microsoft Excel reopened the output and calculated the linked formulas in a move that was saved in both possible orders.
+
+Defined-name collisions, 3-D formulas and table transfers remain outside the supported scope. Incoming structural updates in dependents with charts or tables raise an exception before the source changes. The session writes resolved external link paths as absolute paths.
 
 The native reference tests are in [MsExcelOpsWorksheetTransferTest.vb](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsWorksheetTransferTest.vb). Microsoft describes the distinction between workbook-link display and storage in its [workbook link documentation](https://support.microsoft.com/en-us/excel/description-of-workbook-link-management-and-storage-in-excel).

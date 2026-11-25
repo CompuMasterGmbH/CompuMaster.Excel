@@ -21,6 +21,8 @@ Namespace ExcelOps
 
             Friend TargetFirstRow As Integer
             Friend TargetLastRow As Integer
+            Friend TargetFirstColumn As Integer
+            Friend TargetLastColumn As Integer
             Friend AddsDataRows As Boolean
 
             Friend Sub New(worksheet As WorksheetPart, sheetName As String, part As TableDefinitionPart, source As Table)
@@ -33,6 +35,8 @@ Namespace ExcelOps
                 Last = area.Last
                 TargetFirstRow = First.Row
                 TargetLastRow = Last.Row
+                TargetFirstColumn = First.Column
+                TargetLastColumn = Last.Column
                 Dim headers = If(source.HeaderRowCount?.Value, 1UI)
                 Dim totals = If(source.TotalsRowCount?.Value, 0UI)
                 If headers > 1UI OrElse totals > 1UI OrElse headers + totals > CUInt(Last.Row - First.Row + 1) Then
@@ -54,15 +58,17 @@ Namespace ExcelOps
                 End Get
             End Property
 
-            Friend Function FormatRows(firstRow As Integer, lastRow As Integer) As String
-                Return First.Format(True, firstRow) & ":" & Last.Format(True, lastRow)
+            Friend Function FormatRange(lastRow As Integer) As String
+                Return ExcelCell.LocalCellAddress(TargetFirstRow, TargetFirstColumn) & ":" &
+                       ExcelCell.LocalCellAddress(lastRow, TargetLastColumn)
             End Function
         End Class
 
         Private Function GetStructuralTables(sheets As List(Of Sheet)) As List(Of StructuralTable)
             Dim result As New List(Of StructuralTable)
             For Each sheet In sheets
-                Dim worksheet = DirectCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
+                Dim worksheet = TryCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
+                If worksheet Is Nothing Then Continue For
                 For Each part In worksheet.TableDefinitionParts
                     Dim source As Table = Nothing
                     If Not _changedTables.TryGetValue(part, source) Then source = part.Table
@@ -82,22 +88,23 @@ Namespace ExcelOps
                                            fills As List(Of (Row As Integer, Column As Integer, Formula As String))) As Dictionary(Of TableDefinitionPart, Table)
             If shift IsNot Nothing Then
                 For Each table In tables
-                    If table.Worksheet Is editedPart Then shift.PlanTableRows(table)
+                    If table.Worksheet Is editedPart Then shift.PlanTableShift(table)
                 Next
             End If
 
             Dim changes As New Dictionary(Of TableDefinitionPart, Table)
             For Each table In tables
                 Dim replacement = DirectCast(table.Source.CloneNode(True), Table)
-                Dim changed = table.TargetFirstRow <> table.First.Row OrElse table.TargetLastRow <> table.Last.Row
+                Dim changed = table.TargetFirstRow <> table.First.Row OrElse table.TargetLastRow <> table.Last.Row OrElse
+                              table.TargetFirstColumn <> table.First.Column OrElse table.TargetLastColumn <> table.Last.Column
                 If changed Then
-                    replacement.Reference = table.FormatRows(table.TargetFirstRow, table.TargetLastRow)
+                    replacement.Reference = table.FormatRange(table.TargetLastRow)
                     Dim filter = replacement.GetFirstChild(Of AutoFilter)()
                     If replacement.GetFirstChild(Of SortState)() IsNot Nothing OrElse filter?.GetFirstChild(Of SortState)() IsNot Nothing Then
-                        Throw UnsupportedOperation("Shifting rows in a table with a saved sort state")
+                        Throw UnsupportedOperation("Shifting a table with a saved sort state")
                     End If
                     If filter IsNot Nothing Then
-                        filter.Reference = table.FormatRows(table.TargetFirstRow, table.TargetLastRow - table.TotalsCount)
+                        filter.Reference = table.FormatRange(table.TargetLastRow - table.TotalsCount)
                     End If
                 End If
 

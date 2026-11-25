@@ -79,6 +79,85 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub WorksheetTransfer_OpenXmlSessionRedirectsAThirdWorkbookToTheMovedSheet()
+        Dim sourcePath = Path.Combine(_directory, "origin.xlsx")
+        Dim targetPath = Path.Combine(_directory, "destination.xlsx")
+        Dim dependentPath = Path.Combine(_directory, "dependent.xlsx")
+        Dim output = Path.Combine(_directory, "saved-dependent.xlsx")
+        CreateSimpleMoveWorkbook(sourcePath, withIncomingReference:=False)
+        CreateSimpleMoveWorkbook(targetPath, withIncomingReference:=False)
+        CreateSimpleMoveWorkbook(dependentPath, withIncomingReference:=False)
+        Using document = SpreadsheetDocument.Open(dependentPath, True)
+            Dim book = document.WorkbookPart
+            book.Workbook.ExternalReferences = New ExternalReferences()
+            AddMoveTestLink(book, sourcePath, "Data")
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using session As New OpenXmlWorkbookSession(),
+              source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              target As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options),
+              dependent As New OpenXmlExcelDataOperations(dependentPath, OpenMode.OpenExistingFile, options)
+            dependent.WriteCellFormula("Remain", 0, 0, "[1]Data!$A$1", False)
+            session.Attach(source)
+            session.Attach(target)
+            session.Attach(dependent)
+            Dim moved = source.MoveSheet("Data", target, 0)
+            Assert.That(moved.TargetSheetName, [Is].EqualTo("Data (2)"))
+            Assert.That(dependent.LookupCellFormula("Remain", 0, 0), [Is].EqualTo("'[1]Data (2)'!$A$1"))
+            target.RenameWorksheet("Data (2)", "Moved", True)
+            Assert.That(dependent.LookupCellFormula("Remain", 0, 0), [Is].EqualTo("'[1]Moved'!$A$1"))
+            dependent.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim link = document.WorkbookPart.ExternalWorkbookParts.Single()
+            Assert.That(link.ExternalRelationships.Single().Uri.LocalPath, [Is].EqualTo(targetPath))
+        End Using
+    End Sub
+
+    ' Both save orders retain the temporary workbook identity until the dependent is saved again.
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub WorksheetTransfer_OpenXmlSessionResolvesNewWorkbookLinksOnFirstSave(targetFirst As Boolean)
+        Dim input = Path.Combine(_directory, "template.xlsx")
+        Dim sourcePath = Path.Combine(_directory, "source.xlsx")
+        Dim targetPath = Path.Combine(_directory, "target.xlsx")
+        CreateSimpleMoveWorkbook(input, withIncomingReference:=True)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.DefaultBehaviourOnCreateFile)
+        Using session As New OpenXmlWorkbookSession(),
+              source As New OpenXmlExcelDataOperations(File.ReadAllBytes(input), options),
+              target As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options)
+            session.Attach(source)
+            session.Attach(target)
+            source.WriteCellFormula("Data", 0, 1, "Remain!B1", False)
+            source.MoveSheet("Data", target, 0)
+            target.AddRow("Data", 0, 1, True)
+            Assert.That(source.LookupCellFormula("Remain", 0, 0), [Is].EqualTo("[1]Data!A2"))
+            Assert.That(target.LookupCellFormula("Data", 1, 1), [Is].EqualTo("[1]Remain!B1"))
+            If targetFirst Then
+                target.SaveAs(targetPath, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.That(SavedLink(targetPath).OriginalString, Does.StartWith("Book-"))
+                source.SaveAs(sourcePath, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.That(SavedLink(targetPath).OriginalString, Does.StartWith("Book-"))
+            Else
+                source.SaveAs(sourcePath, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.That(SavedLink(sourcePath).OriginalString, Does.StartWith("Book-"))
+                target.SaveAs(targetPath, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Assert.That(SavedLink(sourcePath).OriginalString, Does.StartWith("Book-"))
+            End If
+            source.Save()
+            target.Save()
+            Assert.That(SavedLink(sourcePath).LocalPath, [Is].EqualTo(targetPath))
+            Assert.That(SavedLink(targetPath).LocalPath, [Is].EqualTo(sourcePath))
+        End Using
+    End Sub
+
+    Private Shared Function SavedLink(path As String) As Uri
+        Using document = SpreadsheetDocument.Open(path, False)
+            Return document.WorkbookPart.ExternalWorkbookParts.Single().ExternalRelationships.Single().Uri
+        End Using
+    End Function
+
     Private Shared Sub AddMoveTestLink(book As WorkbookPart, path As String, sheet As String)
         Dim part = book.AddNewPart(Of ExternalWorkbookPart)()
         Dim link = part.AddExternalRelationship(

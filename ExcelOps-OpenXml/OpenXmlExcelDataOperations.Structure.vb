@@ -1,7 +1,6 @@
 ﻿Imports DocumentFormat.OpenXml
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
-Imports SpreadsheetDrawing = DocumentFormat.OpenXml.Drawing.Spreadsheet
 
 Namespace ExcelOps
 
@@ -93,20 +92,31 @@ Namespace ExcelOps
                 Return text
             End Function
 
-            Friend Sub PlanTableRows(table As StructuralTable)
+            Friend Sub PlanTableShift(table As StructuralTable)
                 Dim low = If(Vertical, table.First.Row, table.First.Column)
                 Dim high = If(Vertical, table.Last.Row, table.Last.Column)
                 Dim otherLow = If(Vertical, table.First.Column, table.First.Row)
                 Dim otherHigh = If(Vertical, table.Last.Column, table.Last.Row)
                 If high < Start OrElse otherLow >= _otherStart + _otherCount OrElse otherHigh < _otherStart Then Return
-                If Not Vertical OrElse Not Includes(otherLow) OrElse Not Includes(otherHigh) OrElse
-                   (Not Inserting AndAlso Start + Count > low) Then
+                If Not Includes(otherLow) OrElse Not Includes(otherHigh) Then
                     Throw New NotSupportedException("This structural edit would change part of an Excel table in an unsupported way.")
+                End If
+                If Not Vertical Then
+                    If Not WholeAxis OrElse Start > low OrElse (Not Inserting AndAlso Start + Count > low) Then
+                        Throw New NotSupportedException("This structural edit would change the columns of an Excel table in an unsupported way.")
+                    End If
+                    table.TargetFirstColumn = MoveIndex(low)
+                    table.TargetLastColumn = MoveIndex(high)
+                    Return
+                End If
+                If Not Inserting AndAlso Start + Count > low AndAlso
+                   (Not WholeAxis OrElse Start <= table.FirstDataRow OrElse Start + Count > table.LastDataRow + 1) Then
+                    Throw New NotSupportedException("This deletion would remove rows of an Excel table in an unsupported way.")
                 End If
                 table.TargetLastRow = MoveIndex(high)
                 If Start <= low Then
                     table.TargetFirstRow = MoveIndex(low)
-                Else
+                ElseIf Inserting Then
                     table.AddsDataRows = True
                     _expandedTables.Add(table)
                 End If
@@ -323,13 +333,8 @@ Namespace ExcelOps
             For Each relationship In part.Parts
                 If TypeOf relationship.OpenXmlPart Is SpreadsheetPrinterSettingsPart OrElse
                    TypeOf relationship.OpenXmlPart Is TableDefinitionPart Then Continue For
-                Dim drawings = TryCast(relationship.OpenXmlPart, DrawingsPart)
-                If drawings?.WorksheetDrawing Is Nothing OrElse Not drawings.Parts.All(Function(item) TypeOf item.OpenXmlPart Is ImagePart) OrElse
-                   Not drawings.WorksheetDrawing.ChildElements.All(
-                       Function(anchor) anchor.GetFirstChild(Of SpreadsheetDrawing.Picture)() IsNot Nothing AndAlso
-                           (shift Is Nothing OrElse TypeOf anchor Is SpreadsheetDrawing.AbsoluteAnchor)) Then
-                    Throw UnsupportedOperation("Updating references in a worksheet with " & relationship.OpenXmlPart.GetType().Name)
-                End If
+                If TypeOf relationship.OpenXmlPart Is DrawingsPart Then Continue For
+                Throw UnsupportedOperation("Updating references in a worksheet with " & relationship.OpenXmlPart.GetType().Name)
             Next
             For Each rowElement In GetSheetData(part).ChildElements
                 Dim row = TryCast(rowElement, Row)
@@ -352,6 +357,10 @@ Namespace ExcelOps
         End Sub
 
         Private Sub ApplyStructuralEdit(sheetName As String, shift As StructuralShift, newSheetName As String)
+            ApplyWorkbookSessionEdit(sheetName, shift, newSheetName)
+        End Sub
+
+        Private Sub ApplyStructuralEditCore(sheetName As String, shift As StructuralShift, newSheetName As String)
             Dim editedSheet = FindSheet(sheetName)
             Dim editedPart = TryCast(WorkbookPart.GetPartById(editedSheet.Id.Value), WorksheetPart)
             If editedPart Is Nothing Then Throw New ArgumentException("The selected sheet is not a worksheet.", NameOf(sheetName))
@@ -367,7 +376,7 @@ Namespace ExcelOps
             End If
 
             ' Verify and stage all changes before modifying the open workbook.
-            ValidateWorkbookStructure()
+            ValidateWorkbookStructure(allowChartSheets:=True)
             Dim tables = GetStructuralTables(sheets)
             Dim tableNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
             For Each table In tables
@@ -376,6 +385,7 @@ Namespace ExcelOps
             Next
             Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String))
             Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills)
+            Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName)
             Dim filledCells As New HashSet(Of Cell)
             Dim formulaChanges As New List(Of (Part As WorksheetPart, Cell As Cell, Text As String))
             Dim revisedSheetData As New Dictionary(Of WorksheetPart, SheetData)
@@ -384,7 +394,8 @@ Namespace ExcelOps
             Dim shiftedData As SheetData = Nothing
             Dim dimension As String = Nothing
             For Each sheet In sheets
-                Dim part = DirectCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
+                Dim part = TryCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
+                If part Is Nothing Then Continue For
                 Dim sheetShift = If(part Is editedPart, shift, Nothing)
                 ValidateWorksheetStructure(part, sheetShift)
                 Dim originalData = GetSheetData(part)
@@ -446,6 +457,12 @@ Namespace ExcelOps
             Next
             For Each change In tableChanges
                 _changedTables(change.Key) = change.Value
+            Next
+            For Each change In chartChanges.Charts
+                _changedCharts(change.Key) = change.Value
+            Next
+            For Each change In chartChanges.Drawings
+                _changedDrawings(change.Key) = change.Value
             Next
             If newSheetName IsNot Nothing Then editedSheet.Name = newSheetName
 

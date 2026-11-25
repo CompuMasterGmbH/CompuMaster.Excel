@@ -28,7 +28,7 @@ Namespace ExcelOps
             Next
 
             For Each follower In followers
-                Dim group As (First As ReferenceEndpoint, Last As ReferenceEndpoint, Formula As String)
+                Dim group As (First As ReferenceEndpoint, Last As ReferenceEndpoint, Formula As String) = Nothing
                 Dim address = ReadSharedCellAddress(follower.Cell)
                 If Not groups.TryGetValue(follower.Formula.SharedIndex.Value, group) OrElse
                    address.Row < group.First.Row OrElse address.Row > group.Last.Row OrElse

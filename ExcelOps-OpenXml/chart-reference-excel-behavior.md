@@ -26,11 +26,8 @@ On desktop Excel 16.0 build 20625, the survey obtained reference snapshots for 8
 
 The eight ChartEx cases include treemap, histogram, waterfall, sunburst, box and whisker, Pareto, funnel, and map. Their chart formulas used hidden `_xlchart` defined names in the tested packages. The survey resolves those names to the sheet ranges to show the effect of each edit. The histogram, Pareto, and map examples lost their source references after the input column was deleted.
 
-## Open XML milestone
+## Open XML support
 
-- Resolve the chart parts through the drawing relationships of both worksheet parts and chart sheet parts.
-- Rewrite the chart's source references using the edited worksheet and the reference's role. Preserve the Excel distinction between a missing category reference and an invalid X or values reference.
-- Keep saved chart caches consistent with the new references, including gaps. Handle the drawing anchor according to its host worksheet and placement. Stage chart, drawing, and worksheet changes together before applying them.
-- Verify round trips with the reference cases and Excel reopening. Defined names, external workbook chart sources, linked axis titles and labels, and specialized chart types are candidates for additional reference tests.
+The engine rewrites supported direct source references in classic chart parts. It maps cached points onto the new coordinates and updates supported cell anchors on the edited worksheet. The tests compare the saved references and points for each scenario above and reopen the Open XML output in Excel. The transfer tests also reopen copied embedded charts and chart sheets in both formula modes.
 
-The current Open XML guard tests verify that unsupported chart edits throw before changing either kind of workbook. The tests cover both native behavior and the guard. [Reference tests](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsChartReferenceTest.vb) · [Chart source references in Open XML](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.drawing.charts.formula)
+ChartEx, named or extended chart formulas, and complete source range deletions in multiple-series charts are still outside the supported scope. The guard tests verify that unsupported chart edits fail before changing the workbook. [Reference tests](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsChartReferenceTest.vb) · [Chart source references in Open XML](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.drawing.charts.formula)

@@ -136,6 +136,7 @@ Namespace ExcelOps
                 If document.WorkbookPart?.Workbook?.Sheets Is Nothing Then
                     Throw New InvalidDataException("The package does not contain a workbook with sheets.")
                 End If
+                BeginWorkbookIdentity()
                 _source = snapshot
                 _document = document
                 _currentDocumentType = document.DocumentType
@@ -203,6 +204,8 @@ Namespace ExcelOps
                     _source = Nothing
                     _changedSheets.Clear()
                     _changedTables.Clear()
+                    _changedCharts.Clear()
+                    _changedDrawings.Clear()
                     _formulaRanges.Clear()
                     _workbookChanged = False
                     _calculationChainInvalid = False
@@ -300,6 +303,7 @@ Namespace ExcelOps
         Protected Overrides Sub OnSavedAs(destination As String)
             _currentDocumentType = GetDocumentType(destination)
             If IsMacroFree(_currentDocumentType) AndAlso HasVbaProject Then _vbaProjectRemoved = True
+            WorkbookSession?.BindTemporaryLink(TemporaryWorkbookName, destination)
         End Sub
 
         Private Function ValidateSaveDestination(fileName As String) As String
@@ -355,9 +359,11 @@ Namespace ExcelOps
 
         Private Sub WritePackage(output As Stream, clearCache As Boolean, documentType As SpreadsheetDocumentType, removeVba As Boolean)
             Dim sourceWorkbook = WorkbookPart
+            Dim linkedPaths = ResolvedSessionLinks(sourceWorkbook)
             _source.WriteTo(output)
             If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _calculationChainInvalid OrElse
                     _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache OrElse
+                    linkedPaths.Count > 0 OrElse
                     (removeVba AndAlso sourceWorkbook.VbaProjectPart IsNot Nothing) OrElse
                     documentType <> _document.DocumentType OrElse (IsMacroFree(documentType) AndAlso HasMacroSheets(sourceWorkbook))) Then Return
 
@@ -368,6 +374,11 @@ Namespace ExcelOps
                     Throw UnsupportedOperation("Saving Excel 4.0 macro sheets to a macro-free format")
                 End If
                 SaveChangedParts(sourceWorkbook, targetWorkbook, clearCache)
+                For Each change In linkedPaths
+                    Dim linkPart = DirectCast(targetWorkbook.GetPartById(change.Id), ExternalWorkbookPart)
+                    linkPart.DeleteExternalRelationship(change.Link.Id)
+                    linkPart.AddExternalRelationship(change.Link.RelationshipType, change.Path, change.Link.Id)
+                Next
                 If removeVba AndAlso targetWorkbook.VbaProjectPart IsNot Nothing Then
                     targetWorkbook.DeletePart(targetWorkbook.VbaProjectPart)
                 End If
@@ -387,6 +398,7 @@ Namespace ExcelOps
                 End Using
             Next
             SaveChangedTables(source, target)
+            SaveChangedCharts(source, target)
             If _workbookChanged Then
                 Using output = target.GetStream(FileMode.Create, FileAccess.Write)
                     source.Workbook.Save(output)

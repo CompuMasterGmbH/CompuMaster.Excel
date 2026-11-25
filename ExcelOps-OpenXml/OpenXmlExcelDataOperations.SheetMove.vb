@@ -43,15 +43,17 @@ Namespace ExcelOps
                         End If
                     Next
                     If changed Then worksheet.Worksheet.Save()
+                    Dim drawing = worksheet.DrawingsPart
+                    If drawing IsNot Nothing Then
+                        Dim charts = PrepareDrawingChartCopy(drawing, name, CopyWorksheetFormulaMode.ExcelCompatible, rewriteQualifier,
+                                                            move:=True, retained:=True, formulaWorkbook:=formulaWorkbook)
+                        SaveTransferredCharts(drawing, charts)
+                    End If
                 Else
                     Dim chartSheet = DirectCast(part, ChartsheetPart)
                     Dim charts = PrepareChartSheetCopy(chartSheet, name, CopyWorksheetFormulaMode.ExcelCompatible, rewriteQualifier,
                                                        move:=True, retained:=True, formulaWorkbook:=formulaWorkbook)
-                    For Each chart In charts
-                        Dim target = DirectCast(chartSheet.DrawingsPart.GetPartById(chart.Key), ChartPart)
-                        target.ChartSpace = chart.Value
-                        target.ChartSpace.Save()
-                    Next
+                    SaveTransferredCharts(chartSheet.DrawingsPart, charts)
                 End If
             Next
             If book.Workbook.DefinedNames Is Nothing Then Return
@@ -71,6 +73,35 @@ Namespace ExcelOps
             Next
             Return matches.ToArray()
         End Function
+
+        Private Sub StageSessionMoveDependents(changes As StagedWorkbookChanges, workbooks As OpenXmlExcelDataOperations(),
+                                               destination As OpenXmlExcelDataOperations, assigned As Dictionary(Of String, String),
+                                               targetSheetNames As String())
+            For Each dependent In workbooks
+                If dependent Is Me OrElse dependent Is destination OrElse dependent.IsClosed Then Continue For
+                Dim oldLinks = dependent.FindLinksTo(Me)
+                If oldLinks.Length = 0 Then Continue For
+                dependent.ValidateMoveWorkbook()
+                Dim links As New SheetTransferLinks(dependent)
+                Dim keep As New HashSet(Of Integer)
+                changes.Add(dependent,
+                    Sub(book)
+                        dependent.RewriteMoveDependents(book, Nothing,
+                            Function(name, qualifier)
+                                If Not name.StartsWith("[", StringComparison.Ordinal) Then Return qualifier
+                                Dim external = dependent.ReadTransferExternalReference(name)
+                                Dim renamed As String = Nothing
+                                If oldLinks.Contains(external.Index) AndAlso assigned.TryGetValue(external.Sheet, renamed) Then
+                                    Return links.ReferenceTo(destination.TransferWorkbookPath(allowUnsaved:=True), targetSheetNames, renamed)
+                                End If
+                                keep.Add(external.Index)
+                                Return qualifier
+                            End Function)
+                        links.ApplyTo(book)
+                        dependent.RemoveUnusedMoveLinks(book, oldLinks.Where(Function(index) Not keep.Contains(index)).ToArray())
+                    End Sub)
+            Next
+        End Sub
 
         Private Sub RemoveUnusedMoveLinks(book As WorkbookPart, obsolete As Integer())
             If obsolete.Length = 0 Then Return
@@ -173,40 +204,64 @@ Namespace ExcelOps
             End Try
         End Function
 
-        Private Sub CommitSheetTransfer(destination As OpenXmlExcelDataOperations, targetSnapshot As MemoryStream,
-                                        sourceSnapshot As MemoryStream)
-            Dim sourceDocument As SpreadsheetDocument = Nothing
-            Dim targetDocument As SpreadsheetDocument = Nothing
-            Try
-                targetSnapshot.Position = 0
-                targetDocument = SpreadsheetDocument.Open(targetSnapshot, False, New OpenSettings With {.AutoSave = False})
-                If sourceSnapshot IsNot Nothing Then
-                    sourceSnapshot.Position = 0
-                    sourceDocument = SpreadsheetDocument.Open(sourceSnapshot, False, New OpenSettings With {.AutoSave = False})
-                End If
-            Catch
-                targetDocument?.Dispose()
-                sourceDocument?.Dispose()
-                Throw
-            End Try
-            destination.InstallTransferSnapshot(targetSnapshot, targetDocument)
-            If sourceDocument IsNot Nothing Then InstallTransferSnapshot(sourceSnapshot, sourceDocument)
-        End Sub
+        Private NotInheritable Class StagedWorkbookChanges
+            Implements IDisposable
 
-        Private Function TransferWorkbookPath() As Uri
+            Private ReadOnly _changes As New List(Of (Workbook As OpenXmlExcelDataOperations, Snapshot As MemoryStream, Document As SpreadsheetDocument))
+
+            Friend Sub Add(workbook As OpenXmlExcelDataOperations, edit As Action(Of WorkbookPart))
+                Dim snapshot = workbook.StageSheetTransfer(edit)
+                Try
+                    snapshot.Position = 0
+                    Dim document = SpreadsheetDocument.Open(snapshot, False, New OpenSettings With {.AutoSave = False})
+                    _changes.Add((workbook, snapshot, document))
+                Catch
+                    snapshot.Dispose()
+                    Throw
+                End Try
+            End Sub
+
+            Friend Sub Apply()
+                Dim applied As Integer
+                Try
+                    For Each change In _changes
+                        change.Workbook.InstallTransferSnapshot(change.Snapshot, change.Document)
+                        applied += 1
+                    Next
+                Finally
+                    _changes.RemoveRange(0, applied)
+                End Try
+            End Sub
+
+            Private Sub Dispose() Implements IDisposable.Dispose
+                For Each change In _changes
+                    change.Document.Dispose()
+                    change.Snapshot.Dispose()
+                Next
+                _changes.Clear()
+            End Sub
+        End Class
+
+        Private Function TransferWorkbookPath(allowUnsaved As Boolean) As Uri
             Dim path = WorkbookFilePath
             If String.IsNullOrEmpty(path) OrElse Not File.Exists(path) Then
+                If allowUnsaved Then Return New Uri(TemporaryWorkbookName, UriKind.Relative)
                 Throw UnsupportedOperation("Creating a workbook link to a workbook that has not been saved")
             End If
             Return New Uri(System.IO.Path.GetFullPath(path))
         End Function
 
         Private Function MatchesTransferPath(path As Uri) As Boolean
-            Return Not String.IsNullOrEmpty(FilePath) AndAlso
-                SameTransferPath(New Uri(System.IO.Path.GetFullPath(FilePath)), path)
+            If Not path.IsAbsoluteUri Then Return path.OriginalString = TemporaryWorkbookName
+            Dim savedPath = WorkbookFilePath
+            Return Not String.IsNullOrEmpty(savedPath) AndAlso
+                SameTransferPath(New Uri(System.IO.Path.GetFullPath(savedPath)), path)
         End Function
 
         Private Shared Function SameTransferPath(first As Uri, second As Uri) As Boolean
+            If Not first.IsAbsoluteUri OrElse Not second.IsAbsoluteUri Then
+                Return Not first.IsAbsoluteUri AndAlso Not second.IsAbsoluteUri AndAlso first.OriginalString = second.OriginalString
+            End If
             If first.IsFile AndAlso second.IsFile Then
                 Dim comparison = If(Path.DirectorySeparatorChar = "\"c, StringComparison.OrdinalIgnoreCase, StringComparison.Ordinal)
                 Return String.Equals(first.LocalPath, second.LocalPath, comparison)
@@ -241,6 +296,8 @@ Namespace ExcelOps
             Dim relationship = part.ExternalRelationships.FirstOrDefault(Function(item) item.Id = book.Id.Value)
             If relationship Is Nothing Then Return Nothing
             If relationship.Uri.IsAbsoluteUri Then Return relationship.Uri
+            Dim resolved = WorkbookSession?.ResolveTemporaryLink(relationship.Uri)
+            If resolved IsNot Nothing Then Return resolved
             If String.IsNullOrEmpty(FilePath) Then Return Nothing
             Dim workbookUri As New Uri(Path.GetFullPath(FilePath))
             ' An explicit file URI prevents encoded path segments from being escaped twice.
