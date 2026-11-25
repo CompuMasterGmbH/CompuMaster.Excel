@@ -52,6 +52,47 @@ Public Class OpenXmlAutomaticFormulaTest
         End Using
     End Sub
 
+    ' The normalized results were verified with Excel's real clock and calculation modes.
+    <Test>
+    Public Sub MatchesExcelAcrossFiveWorksheetDependenciesInBothCalculationModes()
+        Dim path = TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", "FormulaReference1900.xlsx")
+        Dim options = MakeOptions()
+        Dim clock As New DateTime(2026, 11, 25, 11, 0, 0)
+        options.FormulaLocalClock = Function() clock
+        options.FormulaCulture = System.Globalization.CultureInfo.GetCultureInfo("de-DE")
+        Const row As Integer = 49
+        Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
+            workbook.WriteCellFormula("Standard", row, 1, "A50+NOW()", False)
+            workbook.WriteCellFormula("Dates", row, 0, "Standard!B50+1", False)
+            For column = 1 To 4
+                Dim precedingAddress = ExcelCell.LocalCellAddress(row, column - 1)
+                workbook.WriteCellFormula("Dates", row, column, precedingAddress & "+1", False)
+            Next
+            workbook.WriteCellFormula("Dates", row, 5, "NOW()", False)
+
+            Dim output As New ExcelCell("Dates", row, 4, ExcelCell.ValueTypes.All)
+            Dim observedTime As New ExcelCell("Dates", row, 5, ExcelCell.ValueTypes.All)
+            Dim value As Func(Of ExcelCell, Double) =
+                Function(cell) workbook.LookupCellValue(Of Double)(cell, FormulaCalculationMode.UseCachedValueOnly)
+
+            workbook.WriteCellValue("Standard", row, 0, 1.0)
+            Assert.That(value(output) - value(observedTime), [Is].EqualTo(6.0))
+
+            clock = clock.AddHours(1)
+            workbook.WriteCellValue("Standard", row, 0, 2.0)
+            Assert.That(value(output) - value(observedTime), [Is].EqualTo(7.0))
+            Dim previous = value(output)
+
+            workbook.AutoCalculationEnabledWorkbookSetting = False
+            clock = clock.AddHours(1)
+            workbook.WriteCellValue("Standard", row, 0, 4.0)
+            Assert.That(value(output), [Is].EqualTo(previous))
+
+            workbook.RecalculateAll()
+            Assert.That(value(output) - value(observedTime), [Is].EqualTo(9.0))
+        End Using
+    End Sub
+
     <Test>
     Public Sub TracksCellsThatWereEmptyWhenAnAggregateWasLastEvaluated()
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, MakeOptions())
