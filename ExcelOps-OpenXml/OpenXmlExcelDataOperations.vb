@@ -240,6 +240,7 @@ Namespace ExcelOps
                     _pendingCellEdits.Clear()
                     _completeDependencyRevision = Nothing
                     _formulaRanges.Clear()
+                    _authoredDynamicMetadata = Nothing
                     _workbookChanged = False
                     _calculationChainInvalid = False
                     _recalculateOnOpen = False
@@ -447,6 +448,12 @@ Namespace ExcelOps
                     source.Workbook.Save(output)
                 End Using
             End If
+            If _authoredDynamicMetadata IsNot Nothing Then
+                Dim metadataPart = If(target.CellMetadataPart, target.AddNewPart(Of CellMetadataPart)())
+                metadataPart.Metadata = DirectCast(_authoredDynamicMetadata.CloneNode(True), Metadata)
+                metadataPart.Metadata.Save()
+                EnsureWorkbookCalculationFeature(target.Workbook, "microsoft.com:Single")
+            End If
             Dim richErrorMetadataIndices As New Dictionary(Of String, UInteger)(StringComparer.Ordinal)
             For Each sourceSheet In _changedSheets
                 Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
@@ -461,7 +468,7 @@ Namespace ExcelOps
             SaveChangedCharts(source, target)
             If clearCache Then
                 For Each sheetPart In target.WorksheetParts
-                    If ClearFormulaResults(target, sheetPart) Then sheetPart.Worksheet.Save()
+                    If ClearFormulaResults(GetSheetData(sheetPart), target.CellMetadataPart?.Metadata) Then sheetPart.Worksheet.Save()
                 Next
             End If
             If (_calculationChainInvalid OrElse clearCache) AndAlso target.CalculationChainPart IsNot Nothing Then

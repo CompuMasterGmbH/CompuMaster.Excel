@@ -71,14 +71,15 @@ Namespace ExcelOps
             Return data
         End Function
 
-        Private Sub EditCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, payload As Cell, Optional calculateOnEdit As Boolean = True)
+        Private Sub EditCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, payload As Cell,
+                             Optional calculateOnEdit As Boolean = True, Optional replaceSpillAnchor As Boolean = False)
             ValidateCoordinates(rowIndex, columnIndex)
             Dim part = GetWorksheetPart(sheetName)
             Dim data = GetSheetData(part)
             Dim row = FindRow(data, rowIndex, False)
             Dim existing = FindCell(row, rowIndex, columnIndex, False)
             If existing Is Nothing AndAlso Not payload.HasChildren Then Return
-            If IsGroupedFormulaCell(part, sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
+            If Not replaceSpillAnchor AndAlso IsGroupedFormulaCell(part, sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
                 Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
             End If
             Dim target = existing
@@ -97,6 +98,10 @@ Namespace ExcelOps
             Next
             target.DataType = payload.DataType
             target.ValueMetaIndex = payload.ValueMetaIndex
+            If payload.CellMetaIndex IsNot Nothing Then
+                target.CellMetaIndex = payload.CellMetaIndex
+                _formulaRanges.Remove(part)
+            End If
             _changedSheets.Add(part)
             RecalculationRequired = True
             RecordCellEdit(sheetName, rowIndex, columnIndex, calculateOnEdit)
@@ -130,9 +135,9 @@ Namespace ExcelOps
         Public Overrides Function HasMissingCachedFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
             Dim cell = GetCell(sheetName, rowIndex, columnIndex)
             If cell?.CellFormula IsNot Nothing Then Return IsMissingFormulaResult(cell)
-            If cell?.CellValue IsNot Nothing OrElse cell?.InlineString IsNot Nothing OrElse WorkbookPart.CellMetadataPart Is Nothing Then Return False
+            If cell?.CellValue IsNot Nothing OrElse cell?.InlineString IsNot Nothing OrElse FormulaCellMetadata Is Nothing Then Return False
             Dim cells = GetSheetData(GetWorksheetPart(sheetName)).Descendants(Of Cell)().Where(AddressOf IsMissingFormulaResult)
-            Return ReadDynamicSpills(WorkbookPart, cells).Any(Function(spill) spill.Contains(rowIndex, columnIndex))
+            Return ReadDynamicSpills(FormulaCellMetadata, cells).Any(Function(spill) spill.Contains(rowIndex, columnIndex))
         End Function
 
         Private Shared Function IsMissingFormulaResult(cell As Cell) As Boolean

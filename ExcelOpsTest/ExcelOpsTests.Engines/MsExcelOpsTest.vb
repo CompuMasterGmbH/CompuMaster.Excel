@@ -136,6 +136,37 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <Test>
+        Public Sub ExcelReopensAndCalculatesOpenXmlAuthoredDynamicArrays()
+            Dim output = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+                .DisableCalculationEngine = False
+            }
+            Dim excel As MsExcelDataOperations = Nothing
+            Try
+                Dim name As String
+                Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), ExcelDataOperationsBase.OpenMode.CreateFile, options)
+                    name = workbook.SheetNames()(0)
+                    workbook.AutoCalculationEnabledWorkbookSetting = False
+                    workbook.WriteDynamicArrayFormula(name, 1, 1, "SEQUENCE(3,2,10,2)", True)
+                    workbook.WriteDynamicArrayFormula(name, 1, 4, "TRANSPOSE(B2#)", False)
+                    workbook.WriteCellValue(name, 2, 11, 123.0)
+                    workbook.WriteDynamicArrayFormula(name, 1, 11, "SEQUENCE(2)", True)
+                    workbook.SaveCopyAs(output, recalculateWorkbook:=False, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+
+                excel = CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Assert.That(excel.LookupCellValue(Of Double)(name, 3, 2, FormulaCalculationMode.EngineDefault), [Is].EqualTo(20.0))
+                excel.RecalculateAll()
+                Assert.That(excel.LookupCellValue(Of Double)(name, 2, 6, FormulaCalculationMode.EngineDefault), [Is].EqualTo(20.0))
+                Assert.That(ReadFormulaReferenceResult(excel, New ExcelCell(name, "L2", ExcelCell.ValueTypes.All)), [Is].EqualTo("#SPILL!"))
+                Assert.That(excel.LookupCellValue(Of Double)(name, 2, 11, FormulaCalculationMode.EngineDefault), [Is].EqualTo(123.0))
+            Finally
+                If excel IsNot Nothing AndAlso Not excel.IsClosed Then excel.Close()
+                IO.File.Delete(output)
+            End Try
+        End Sub
+
         <Test, Explicit("Known2Fail But Less Important")> Public Sub ManualRunOnly_KillAllMsExcelAppProcesses()
             Dim MsExcelProcessesBefore As System.Diagnostics.Process() = System.Diagnostics.Process.GetProcessesByName("EXCEL")
             Console.WriteLine("Found " & MsExcelProcessesBefore.Length & " EXCEL processes")

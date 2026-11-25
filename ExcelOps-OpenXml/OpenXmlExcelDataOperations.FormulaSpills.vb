@@ -7,10 +7,10 @@ Namespace ExcelOps
 
         Private Const SpillErrorCode As String = "#SPILL!"
 
-        Private Shared Iterator Function ReadDynamicSpills(workbook As WorkbookPart, cells As IEnumerable(Of Cell)) As IEnumerable(Of SpillArea)
-            If workbook.CellMetadataPart Is Nothing Then Return
+        Private Shared Iterator Function ReadDynamicSpills(metadata As Metadata, cells As IEnumerable(Of Cell)) As IEnumerable(Of SpillArea)
+            If metadata Is Nothing Then Return
             For Each cell In cells
-                If IsDynamicFormulaAnchor(workbook, cell) Then Yield New SpillArea(cell, Nothing)
+                If IsDynamicFormulaAnchor(metadata, cell) Then Yield New SpillArea(cell, Nothing)
             Next
         End Function
 

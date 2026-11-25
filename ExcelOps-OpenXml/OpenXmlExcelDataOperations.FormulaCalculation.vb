@@ -104,7 +104,7 @@ Namespace ExcelOps
                 run.Workbooks.Add(owner, Me)
                 For Each sheet In owner.WorkbookSheets()
                     Dim part = TryCast(owner.WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
-                    If part IsNot Nothing Then _worksheets.Add(sheet.Name.Value, New WorksheetSnapshot(owner.WorkbookPart, sheet.Name.Value, part))
+                    If part IsNot Nothing Then _worksheets.Add(sheet.Name.Value, New WorksheetSnapshot(owner.FormulaCellMetadata, sheet.Name.Value, part))
                 Next
             End Sub
 
@@ -128,7 +128,12 @@ Namespace ExcelOps
             End Sub
 
             Friend Function EvaluateReplacement(sheetName As String, rowIndex As Integer, columnIndex As Integer, replacement As Cell) As Object
-                _worksheets(sheetName).Cells((rowIndex, columnIndex)) = replacement
+                Dim worksheet = _worksheets(sheetName)
+                Dim coordinates = (rowIndex, columnIndex)
+                If replacement.CellMetaIndex IsNot Nothing AndAlso Not worksheet.SpillAnchors.ContainsKey(coordinates) Then
+                    worksheet.SpillAnchors.Add(coordinates, New SpillArea(replacement, Nothing))
+                End If
+                worksheet.Cells(coordinates) = replacement
                 ReadCell(sheetName, rowIndex, columnIndex)
                 CompleteIterations()
                 Dim result = _results(replacement).Result
@@ -136,6 +141,10 @@ Namespace ExcelOps
                 WriteCachedResult(replacement, result)
                 Return result
             End Function
+
+            Friend Sub AttachDynamicReplacement(sheetName As String, rowIndex As Integer, columnIndex As Integer, cell As Cell)
+                _worksheets(sheetName).Cells((rowIndex, columnIndex)) = cell
+            End Sub
 
             Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer,
                                      Optional trackRead As Boolean = True, Optional calculateIterationMember As Boolean = False) As Object
@@ -331,14 +340,14 @@ Namespace ExcelOps
                 Friend ReadOnly SpillResults As New Dictionary(Of SpillArea, FormulaMatrix)
                 Friend ReadOnly SpillChildren As New Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
 
-                Friend Sub New(workbook As WorkbookPart, name As String, part As WorksheetPart)
+                Friend Sub New(metadata As Metadata, name As String, part As WorksheetPart)
                     Me.Name = name
                     Me.Part = part
                     _cells = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))(
                         Function() EnumerateWorksheetCells(GetSheetData(part)).ToDictionary(
                             Function(item) (item.RowIndex, item.ColumnIndex), Function(item) item.Value))
                     _spillAnchors = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))(
-                        Function() ReadDynamicSpills(workbook, Cells.Values).ToDictionary(Function(item) (item.First.Row, item.First.Column)))
+                        Function() ReadDynamicSpills(metadata, Cells.Values).ToDictionary(Function(item) (item.First.Row, item.First.Column)))
                 End Sub
 
                 Friend ReadOnly Property SpillAnchors As Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)

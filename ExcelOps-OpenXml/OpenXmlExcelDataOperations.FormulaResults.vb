@@ -45,7 +45,7 @@ Namespace ExcelOps
                         Throw New ArgumentException("Cell " & New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All).Address(True) & " doesn't contain a formula.")
                     End If
                     Dim changed = ClearFormulaResult(cell)
-                    If IsDynamicFormulaAnchor(WorkbookPart, cell) Then
+                    If IsDynamicFormulaAnchor(FormulaCellMetadata, cell) Then
                         changed = ClearSpillChildResults(GetSheetData(part).Descendants(Of Cell)(), {New SpillArea(cell, Nothing)}) OrElse changed
                     End If
                     If changed Then MarkFormulaResultsCleared(part)
@@ -53,7 +53,7 @@ Namespace ExcelOps
         End Sub
 
         Private Sub ClearWorksheetFormulaResults(part As WorksheetPart)
-            If ClearFormulaResults(WorkbookPart, part) Then MarkFormulaResultsCleared(part)
+            If ClearFormulaResults(GetSheetData(part), FormulaCellMetadata) Then MarkFormulaResultsCleared(part)
         End Sub
 
         Private Sub MarkFormulaResultsCleared(part As WorksheetPart)
@@ -71,13 +71,9 @@ Namespace ExcelOps
             _workbookChanged = True
         End Sub
 
-        Private Shared Function ClearFormulaResults(workbook As WorkbookPart, part As WorksheetPart) As Boolean
-            Return ClearFormulaResults(GetSheetData(part), workbook)
-        End Function
-
-        Private Shared Function ClearFormulaResults(data As SheetData, Optional workbook As WorkbookPart = Nothing) As Boolean
+        Private Shared Function ClearFormulaResults(data As SheetData, Optional metadata As Metadata = Nothing) As Boolean
             Dim cells = data.Descendants(Of Cell)()
-            Dim changed = workbook IsNot Nothing AndAlso ClearSpillChildResults(cells, ReadDynamicSpills(workbook, cells).ToArray())
+            Dim changed = metadata IsNot Nothing AndAlso ClearSpillChildResults(cells, ReadDynamicSpills(metadata, cells).ToArray())
             For Each cell In cells
                 If ClearFormulaResult(cell) Then changed = True
             Next

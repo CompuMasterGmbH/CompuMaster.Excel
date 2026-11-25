@@ -487,7 +487,7 @@ Namespace ExcelOps
             End If
 
             ' Verify and stage all changes before modifying the open workbook.
-            Dim allowSpills = HasSupportedSpillMetadata(WorkbookPart.CellMetadataPart)
+            Dim allowSpills = HasSupportedSpillMetadata(FormulaCellMetadata)
             ValidateWorkbookStructure(allowChartSheets:=True, allowSpillMetadata:=allowSpills)
             Dim tables = GetStructuralTables(sheets)
             If shift IsNot Nothing Then shift = shift.RetainEmptyTableRow(editedPart, tables)

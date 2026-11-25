@@ -16,13 +16,22 @@ Namespace ExcelOps
         Private Const DynamicArrayNamespace As String = "http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray"
         Private Const RichDataNamespace As String = "http://schemas.microsoft.com/office/spreadsheetml/2017/richdata"
 
-        Private Shared Function IsDynamicFormulaAnchor(workbook As WorkbookPart, cell As Cell) As Boolean
+        Private ReadOnly Property FormulaCellMetadata As Metadata
+            Get
+                Return If(_authoredDynamicMetadata, WorkbookPart.CellMetadataPart?.Metadata)
+            End Get
+        End Property
+
+        Private Shared Function IsDynamicFormulaAnchor(metadata As Metadata, cell As Cell) As Boolean
             If cell?.CellFormula?.FormulaType Is Nothing OrElse cell.CellFormula.FormulaType.Value <> CellFormulaValues.Array OrElse
                cell.CellMetaIndex Is Nothing OrElse cell.CellReference Is Nothing OrElse cell.CellFormula.Reference Is Nothing Then Return False
 
-            Dim metadata = workbook.CellMetadataPart?.Metadata
+            Return IsDynamicMetadataRecord(metadata, cell.CellMetaIndex.Value)
+        End Function
+
+        Private Shared Function IsDynamicMetadataRecord(metadata As Metadata, index As UInteger) As Boolean
             Dim blocks = metadata?.GetFirstChild(Of CellMetadata)()
-            Dim block = FindFutureMetadataBlock(metadata, blocks, cell.CellMetaIndex.Value, DynamicArrayMetadataName)
+            Dim block = FindFutureMetadataBlock(metadata, blocks, index, DynamicArrayMetadataName)
             Dim isDynamic = MetadataExtensionAttribute(block, DynamicArrayNamespace, "dynamicArrayProperties", "fDynamic")
             Dim collapsed = MetadataExtensionAttribute(block, DynamicArrayNamespace, "dynamicArrayProperties", "fCollapsed")
             Return (isDynamic = "1" OrElse isDynamic = "true") AndAlso (collapsed Is Nothing OrElse collapsed = "0" OrElse collapsed = "false")
@@ -148,11 +157,7 @@ Namespace ExcelOps
             values.Count = valueIndex + 1UI
             values.Save()
 
-            Dim future = metadata.Elements(Of FutureMetadata)().FirstOrDefault(Function(item) item.Name?.Value = RichValueMetadataName)
-            If future Is Nothing Then
-                future = New FutureMetadata With {.Name = RichValueMetadataName}
-                metadata.AddChild(future)
-            End If
+            Dim future = GetOrAddFutureMetadata(metadata, RichValueMetadataName)
             Dim futureIndex = CUInt(future.Elements(Of FutureMetadataBlock)().Count())
             Dim extension As New Extension With {.Uri = "{3e2802c4-a4d2-4d8b-9148-e3be6c30e623}"}
             extension.AppendChild(New Rich.RichValueBlock With {.I = valueIndex})
@@ -167,17 +172,28 @@ Namespace ExcelOps
             blocks.AppendChild(New MetadataBlock(New MetadataRecord With {.TypeIndex = CUInt(typeIndex + 1), .Val = futureIndex}))
             blocks.Count = CUInt(blocks.Elements(Of MetadataBlock)().Count())
             metadata.Save()
-            EnsureRichDataCalculationFeature(workbook.Workbook)
+            EnsureWorkbookCalculationFeature(workbook.Workbook, "microsoft.com:RD")
             Return blocks.Count.Value
         End Function
 
-        Private Shared Sub EnsureRichDataCalculationFeature(workbook As Workbook)
+        Private Shared Function GetOrAddFutureMetadata(metadata As Metadata, name As String) As FutureMetadata
+            Dim existing = metadata.Elements(Of FutureMetadata)().FirstOrDefault(Function(item) item.Name?.Value = name)
+            If existing IsNot Nothing Then Return existing
+
+            ' Append a sibling section while preserving the indices of all previously registered metadata.
+            Dim section As New FutureMetadata With {.Name = name}
+            Dim following = metadata.ChildElements.FirstOrDefault(Function(item) TypeOf item Is CellMetadata OrElse
+                TypeOf item Is ValueMetadata OrElse TypeOf item Is ExtensionList)
+            If following Is Nothing Then Return metadata.AppendChild(section)
+            Return metadata.InsertBefore(section, following)
+        End Function
+
+        Private Shared Sub EnsureWorkbookCalculationFeature(workbook As Workbook, featureName As String)
             Const extensionUri As String = "{B58B0392-4F1F-4190-BB64-5DF3571DCE5F}"
-            Const featureName As String = "microsoft.com:RD"
             Const featuresNamespace As String = "http://schemas.microsoft.com/office/spreadsheetml/2018/calcfeatures"
             Const richErrorCalculationVersion As UInteger = 181029UI
 
-            ' Excel loads saved rich errors only with compatible workbook and calculation version metadata.
+            ' Excel loads newer calculation features with compatible workbook and calculation version metadata.
             If workbook.FileVersion Is Nothing Then
                 workbook.FileVersion = New FileVersion With {.ApplicationName = "xl", .LastEdited = "7", .LowestEdited = "7"}
             End If

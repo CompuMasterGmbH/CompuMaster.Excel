@@ -1,13 +1,11 @@
 ﻿Imports System.IO
-Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 
 Namespace ExcelOps
 
     Partial Public Class OpenXmlExcelDataOperations
 
-        Private Shared Function HasSupportedSpillMetadata(part As CellMetadataPart) As Boolean
-            Dim metadata = part?.Metadata
+        Private Shared Function HasSupportedSpillMetadata(metadata As Metadata) As Boolean
             If metadata Is Nothing OrElse metadata.ChildElements.Count <> 3 Then Return False
             Dim types = metadata.GetFirstChild(Of MetadataTypes)()
             Dim category = metadata.GetFirstChild(Of FutureMetadata)()
