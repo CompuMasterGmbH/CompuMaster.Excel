@@ -69,7 +69,17 @@ Namespace ExcelOps
                         Return Math.Abs(DirectCast(operand, Double))
                     Case "ROW", "COLUMN", "ROWS", "COLUMNS"
                         Return EvaluateReferenceFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT"
+                    Case "DATE", "TIME", "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND", "TODAY", "NOW"
+                        Return EvaluateDateFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
+                        Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
+                        Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "IFERROR", "IFNA", "NOT", "AND", "OR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
+                        Return EvaluateLogicalFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "COUNTA", "COUNTBLANK"
+                        Return CountValues(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"
                         Return Aggregate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case Else
                         Return EvaluateRegisteredFunction(name, arguments, formulaCell)
@@ -104,6 +114,7 @@ Namespace ExcelOps
             Private Function Aggregate(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
                 If arguments.Count = 0 Then Return New FormulaError("#VALUE!")
                 Dim sum As Double
+                Dim product = 1.0
                 Dim minimum As Double = Double.PositiveInfinity
                 Dim maximum As Double = Double.NegativeInfinity
                 Dim count As Integer
@@ -123,6 +134,7 @@ Namespace ExcelOps
                         Dim numeric = DirectCast(number, Double)
                         count += 1
                         sum += numeric
+                        product *= numeric
                         minimum = Math.Min(minimum, numeric)
                         maximum = Math.Max(maximum, numeric)
                     Next
@@ -131,6 +143,7 @@ Namespace ExcelOps
                 If firstError IsNot Nothing Then Return firstError
                 Select Case name
                     Case "SUM" : Return FiniteNumber(sum)
+                    Case "PRODUCT" : Return If(count = 0, 0.0, FiniteNumber(product))
                     Case "AVERAGE"
                         If count = 0 Then Return New FormulaError("#DIV/0!")
                         Return FiniteNumber(sum / count)

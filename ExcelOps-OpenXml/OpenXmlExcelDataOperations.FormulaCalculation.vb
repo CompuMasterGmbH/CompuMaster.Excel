@@ -87,7 +87,7 @@ Namespace ExcelOps
             Private ReadOnly _run As CalculationRun
 
             Friend Sub New(owner As OpenXmlExcelDataOperations)
-                Me.New(owner, New CalculationRun(owner._formulaSession?.Snapshot()))
+                Me.New(owner, New CalculationRun(owner._formulaSession?.Snapshot(), owner.LoadOptions.FormulaLocalClock))
             End Sub
 
             Private Sub New(owner As OpenXmlExcelDataOperations, run As CalculationRun)
@@ -128,7 +128,7 @@ Namespace ExcelOps
                     If cell?.DataType?.Value = CellValues.Error Then Return New FormulaError(If(cell.CellValue?.Text, "#VALUE!"))
                     Dim value = _owner.ReadCellValue(worksheet.Name, rowIndex, columnIndex, cell)
                     If TypeOf value Is Double Then Return FiniteNumber(DirectCast(value, Double))
-                    If TypeOf value Is DateTime Then Throw New NotSupportedException("ISO date cells are outside the supported calculation scope.")
+                    If TypeOf value Is DateTime Then Return ToExcelDateSerial(DirectCast(value, DateTime))
                     Return value
                 End If
 
@@ -234,9 +234,11 @@ Namespace ExcelOps
                 Friend ReadOnly Active As New HashSet(Of Cell)
                 Friend ReadOnly Session As ExcelFormulaSessionSnapshot
                 Friend ExpressionDepth As Integer
+                Friend ReadOnly LocalTime As Lazy(Of DateTime)
 
-                Friend Sub New(session As ExcelFormulaSessionSnapshot)
+                Friend Sub New(session As ExcelFormulaSessionSnapshot, clock As Func(Of DateTime))
                     Me.Session = session
+                    LocalTime = New Lazy(Of DateTime)(If(clock, Function() DateTime.Now))
                 End Sub
             End Class
 
