@@ -64,13 +64,15 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaArea
             Friend ReadOnly Sheet As String
+            Friend ReadOnly WorkbookIndex As Integer?
             Friend ReadOnly FirstRow As Integer
             Friend ReadOnly FirstColumn As Integer
             Friend ReadOnly LastRow As Integer
             Friend ReadOnly LastColumn As Integer
 
-            Friend Sub New(sheet As String, first As ExcelCell, last As ExcelCell)
+            Friend Sub New(sheet As String, first As ExcelCell, last As ExcelCell, workbookIndex As Integer?)
                 Me.Sheet = sheet
+                Me.WorkbookIndex = workbookIndex
                 FirstRow = Math.Min(first.RowIndex, last.RowIndex)
                 FirstColumn = Math.Min(first.ColumnIndex, last.ColumnIndex)
                 LastRow = Math.Max(first.RowIndex, last.RowIndex)
@@ -82,11 +84,16 @@ Namespace ExcelOps
             Private ReadOnly _owner As OpenXmlExcelDataOperations
             Private ReadOnly _worksheets As New Dictionary(Of String, WorksheetSnapshot)(StringComparer.OrdinalIgnoreCase)
             Private ReadOnly _results As New Dictionary(Of Cell, (Part As WorksheetPart, Result As Object))
-            Private ReadOnly _active As New HashSet(Of Cell)
-            Private _expressionDepth As Integer
+            Private ReadOnly _run As CalculationRun
 
             Friend Sub New(owner As OpenXmlExcelDataOperations)
+                Me.New(owner, New CalculationRun(owner._formulaSession?.Snapshot()))
+            End Sub
+
+            Private Sub New(owner As OpenXmlExcelDataOperations, run As CalculationRun)
                 _owner = owner
+                _run = run
+                run.Workbooks.Add(owner, Me)
                 For Each sheet In owner.WorkbookSheets()
                     Dim part = TryCast(owner.WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
                     If part IsNot Nothing Then _worksheets.Add(sheet.Name.Value, New WorksheetSnapshot(sheet.Name.Value, part))
@@ -125,15 +132,16 @@ Namespace ExcelOps
                     Return value
                 End If
 
+                _owner.EnsureCalculationEnabled()
                 Dim cached As (Part As WorksheetPart, Result As Object) = Nothing
                 If _results.TryGetValue(cell, cached) Then Return cached.Result
                 Dim formula = cell.CellFormula.Text
                 Dim address As New ExcelCell(worksheet.Name, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
-                If _active.Contains(cell) Then Throw New CircularReferenceException(address, formula)
-                If _active.Count >= 256 Then
+                If _run.Active.Contains(cell) Then Throw New CircularReferenceException(address, formula)
+                If _run.Active.Count >= 256 Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
-                _active.Add(cell)
+                _run.Active.Add(cell)
                 Try
                     Dim expression = FormulaParser.Parse(formula)
                     Dim result = If(Scalar(EvaluateExpression(expression, address)), 0.0)
@@ -144,24 +152,26 @@ Namespace ExcelOps
                 Catch ex As ArgumentOutOfRangeException
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula refers to a cell outside the XLSX grid.", ex)
                 Finally
-                    _active.Remove(cell)
+                    _run.Active.Remove(cell)
                 End Try
             End Function
 
             Friend Function EvaluateExpression(expression As FormulaExpression, formulaCell As ExcelCell) As Object
-                If _expressionDepth >= 512 Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
-                _expressionDepth += 1
+                If _run.ExpressionDepth >= 512 Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
+                _run.ExpressionDepth += 1
                 Try
                     Return expression(Me, formulaCell)
                 Finally
-                    _expressionDepth -= 1
+                    _run.ExpressionDepth -= 1
                 End Try
             End Function
 
             Friend Sub Commit()
-                For Each item In _results
-                    WriteCachedResult(item.Key, item.Value.Result)
-                    _owner._changedSheets.Add(item.Value.Part)
+                For Each evaluatedWorkbook In _run.Workbooks.Values
+                    For Each item In evaluatedWorkbook._results
+                        WriteCachedResult(item.Key, item.Value.Result)
+                        evaluatedWorkbook._owner._changedSheets.Add(item.Value.Part)
+                    Next
                 Next
             End Sub
 
@@ -195,22 +205,40 @@ Namespace ExcelOps
                 If area.FirstRow <> area.LastRow OrElse area.FirstColumn <> area.LastColumn Then
                     Throw New NotSupportedException("A multi-cell reference requires a function that supports ranges.")
                 End If
-                Return ReadCell(area.Sheet, area.FirstRow, area.FirstColumn)
+                Return ResolveReference(area).ReadCell(area.Sheet, area.FirstRow, area.FirstColumn)
             End Function
 
             Private Iterator Function RangeValues(area As FormulaArea) As IEnumerable(Of Object)
+                Dim source = ResolveReference(area)
                 Dim worksheet As WorksheetSnapshot = Nothing
-                If Not _worksheets.TryGetValue(area.Sheet, worksheet) Then
+                If Not source._worksheets.TryGetValue(area.Sheet, worksheet) Then
                     Yield New FormulaError("#REF!")
                     Return
                 End If
                 For Each address In worksheet.Cells.Keys
                     If address.RowIndex >= area.FirstRow AndAlso address.RowIndex <= area.LastRow AndAlso
                         address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn Then
-                        Yield ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex)
+                        Yield source.ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex)
                     End If
                 Next
             End Function
+
+            Private Function ForWorkbook(workbook As OpenXmlExcelDataOperations) As FormulaCalculation
+                Dim calculation As FormulaCalculation = Nothing
+                If _run.Workbooks.TryGetValue(workbook, calculation) Then Return calculation
+                Return New FormulaCalculation(workbook, _run)
+            End Function
+
+            Private NotInheritable Class CalculationRun
+                Friend ReadOnly Workbooks As New Dictionary(Of OpenXmlExcelDataOperations, FormulaCalculation)
+                Friend ReadOnly Active As New HashSet(Of Cell)
+                Friend ReadOnly Session As ExcelFormulaSessionSnapshot
+                Friend ExpressionDepth As Integer
+
+                Friend Sub New(session As ExcelFormulaSessionSnapshot)
+                    Me.Session = session
+                End Sub
+            End Class
 
             Private NotInheritable Class WorksheetSnapshot
                 Private ReadOnly _cells As Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))

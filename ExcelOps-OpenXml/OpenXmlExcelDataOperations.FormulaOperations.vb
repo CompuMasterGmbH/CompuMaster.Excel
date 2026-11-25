@@ -72,7 +72,7 @@ Namespace ExcelOps
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT"
                         Return Aggregate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case Else
-                        Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
+                        Return EvaluateRegisteredFunction(name, arguments, formulaCell)
                 End Select
             End Function
 
@@ -91,7 +91,7 @@ Namespace ExcelOps
                     If name = "ROWS" OrElse name = "COLUMNS" Then Return 1.0
                     Return New FormulaError("#VALUE!")
                 End If
-                If Not _worksheets.ContainsKey(area.Sheet) Then Return New FormulaError("#REF!")
+                If Not ResolveReference(area)._worksheets.ContainsKey(area.Sheet) Then Return New FormulaError("#REF!")
 
                 Select Case name
                     Case "ROW" : Return CDbl(area.FirstRow + 1)

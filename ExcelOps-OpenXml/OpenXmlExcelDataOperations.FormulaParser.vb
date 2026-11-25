@@ -9,7 +9,7 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaParser
             Private Shared ReadOnly TokenPattern As New Regex(
-                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!])",
+                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!])",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly CellAddressPattern As New Regex("^\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
@@ -104,8 +104,20 @@ Namespace ExcelOps
                     If token(0) = "'"c Then
                         sheetName = token.Substring(1, token.Length - 2).Replace("''", "'")
                     End If
-                    If sheetName.IndexOfAny(UnsupportedSheetCharacters) >= 0 Then Throw New NotSupportedException("External workbook and 3-D references are outside the supported calculation scope.")
-                    Return ParseReference(sheetName, Consume())
+                    Dim workbookIndex As Integer? = Nothing
+                    If sheetName.StartsWith("[", StringComparison.Ordinal) Then
+                        Dim close = sheetName.IndexOf("]"c)
+                        Dim index As Integer
+                        If close < 2 OrElse Not Integer.TryParse(sheetName.Substring(1, close - 1), NumberStyles.None, CultureInfo.InvariantCulture, index) OrElse index < 1 Then
+                            Throw New NotSupportedException("The external reference must use a workbook index from the XLSX package.")
+                        End If
+                        workbookIndex = index
+                        sheetName = sheetName.Substring(close + 1)
+                    End If
+                    If sheetName.Length = 0 OrElse sheetName.IndexOfAny(UnsupportedSheetCharacters) >= 0 Then
+                        Throw New NotSupportedException("Unsupported worksheet name or 3-D reference.")
+                    End If
+                    Return ParseReference(sheetName, Consume(), workbookIndex)
                 End If
                 If Match("(") Then Return ParseFunction(token)
 
@@ -120,10 +132,10 @@ Namespace ExcelOps
                 Return ParseReference(Nothing, token)
             End Function
 
-            Private Function ParseReference(sheetName As String, first As String) As FormulaExpression
+            Private Function ParseReference(sheetName As String, first As String, Optional workbookIndex As Integer? = Nothing) As FormulaExpression
                 Dim start = ParseAddress(first)
                 Dim finish = If(Match(":"), ParseAddress(Consume()), start)
-                Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish)
+                Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish, workbookIndex)
             End Function
 
             Private Shared Function ParseAddress(token As String) As ExcelCell

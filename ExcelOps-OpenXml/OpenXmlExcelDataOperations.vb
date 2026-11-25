@@ -7,7 +7,7 @@ Imports DocumentFormat.OpenXml.Spreadsheet
 Namespace ExcelOps
 
     ''' <summary>Edits XLSX workbooks using the Open XML SDK.</summary>
-    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and does not evaluate formulas or perform structural edits.</remarks>
+    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in evaluation of selected worksheet formulas.</remarks>
     Public NotInheritable Partial Class OpenXmlExcelDataOperations
         Inherits ExcelDataOperationsBase
         Implements IDisposable
@@ -21,6 +21,9 @@ Namespace ExcelOps
         Private _initialAutomaticCalculation As Boolean?
         Private _automaticCalculation As Boolean?
         Private _openedFromFile As Boolean
+        Private ReadOnly _formulaSession As ExcelFormulaSession
+        Private ReadOnly _configuredFormulaName As String
+        Private _formulaWorkbookName As String
 
         ''' <summary>Opens or creates an XLSX workbook.</summary>
         ''' <param name="file">Source path or intended path for a new workbook.</param>
@@ -28,7 +31,12 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options.</param>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             Me.New(options)
-            ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
+            Try
+                ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
+            Catch
+                Close()
+                Throw
+            End Try
         End Sub
 
         ''' <summary>Opens an XLSX workbook from bytes.</summary>
@@ -36,7 +44,12 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             Me.New(options)
-            LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Try
+                LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Catch
+                Close()
+                Throw
+            End Try
         End Sub
 
         ''' <summary>Opens an XLSX workbook from a stream.</summary>
@@ -44,11 +57,18 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Stream, options As ExcelDataOperationsOptions)
             Me.New(options)
-            LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Try
+                LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Catch
+                Close()
+                Throw
+            End Try
         End Sub
 
         Private Sub New(options As ExcelDataOperationsOptions)
             MyBase.New(options)
+            _formulaSession = LoadOptions.FormulaSession
+            _configuredFormulaName = LoadOptions.FormulaWorkbookName
             If options.DisableAutoCalculationInWorkbook.HasValue Then
                 _initialAutomaticCalculation = Not options.DisableAutoCalculationInWorkbook.Value
                 ' Apply the option to the package after it has been opened.
@@ -131,6 +151,12 @@ Namespace ExcelOps
                 If document.WorkbookPart?.Workbook?.Sheets Is Nothing Then
                     Throw New InvalidDataException("The package does not contain a workbook with sheets.")
                 End If
+                If _formulaSession IsNot Nothing Then
+                    Dim name = If(_configuredFormulaName, Path.GetFileName(FilePath))
+                    If String.IsNullOrWhiteSpace(name) Then Throw New ArgumentException("A workbook name is required to attach to a formula session.", NameOf(ExcelDataOperationsOptions.FormulaWorkbookName))
+                    _formulaSession.AttachWorkbook(name, Me)
+                    _formulaWorkbookName = name
+                End If
                 _source = snapshot
                 _document = document
                 _automaticCalculation = _initialAutomaticCalculation
@@ -191,6 +217,8 @@ Namespace ExcelOps
             Try
                 _document?.Dispose()
             Finally
+                If _formulaWorkbookName IsNot Nothing Then _formulaSession.DetachWorkbook(_formulaWorkbookName, Me)
+                _formulaWorkbookName = Nothing
                 _document = Nothing
                 _source?.Dispose()
                 _source = Nothing
@@ -215,7 +243,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <inheritdoc/>
-        ''' <remarks>Controls the saved workbook's calculation mode. The engine itself cannot evaluate formulas.</remarks>
+        ''' <remarks>Controls the saved workbook's calculation mode.</remarks>
         Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
                 Return If(_automaticCalculation, Not IsClosed AndAlso If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto) <> CalculateModeValues.Manual)

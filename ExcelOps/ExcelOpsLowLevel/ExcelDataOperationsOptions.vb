@@ -105,6 +105,16 @@ Namespace ExcelOps
         ''' <remarks>Feature belongs to workbook and changes permanently the workbook's behaviour when saved</remarks>
         Public Property DisableAutoCalculationInWorkbook As Boolean?
 
+        ''' <summary>Gets or sets the session used for application-registered formula functions.</summary>
+        ''' <value>The session, or Nothing for a workbook without a formula session.</value>
+        ''' <remarks>Supported by the Open XML engine.</remarks>
+        Public Property FormulaSession As ExcelFormulaSession
+
+        ''' <summary>Gets or sets the workbook name used to resolve references within the formula session.</summary>
+        ''' <value>An explicit name, or Nothing to use the file name of a path-backed workbook.</value>
+        ''' <remarks>A name is required when a workbook without a file path is opened in a session.</remarks>
+        Public Property FormulaWorkbookName As String
+
         ''' <summary>
         ''' Password for opening protected Excel files.
         ''' </summary>
@@ -117,7 +127,9 @@ Namespace ExcelOps
         ''' <returns></returns>
         Private Function Clone() As ExcelDataOperationsOptions
             Return New ExcelDataOperationsOptions(PasswordForOpening, DisableInitialCalculation, DisableAutoCalculationInWorkbook, DisableCalculationEngine) With {
-                .FileWriteProtection = Me.FileWriteProtection
+                .FileWriteProtection = Me.FileWriteProtection,
+                .FormulaSession = Me.FormulaSession,
+                .FormulaWorkbookName = Me.FormulaWorkbookName
             }
         End Function
 

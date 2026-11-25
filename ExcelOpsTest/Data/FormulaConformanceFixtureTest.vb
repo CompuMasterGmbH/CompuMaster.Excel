@@ -72,6 +72,40 @@ Public Class FormulaConformanceFixtureTest
         End Using
     End Sub
 
+    <TestCase(True)>
+    <TestCase(False)>
+    Public Sub RecalculatesExcelExternalReferencesFromOpenSource(usePaths As Boolean)
+        Dim session As New ExcelFormulaSession()
+        Dim fixture = FixturePath(ReferenceWorkbook)
+        Dim sourcePath = FixturePath(CompanionWorkbook)
+        Using workbook = OpenInSession(fixture, session, usePaths)
+            Using source = OpenInSession(sourcePath, session, usePaths)
+                workbook.ResetCellValueFromFormulaCell("External cases")
+                workbook.RecalculateSheet("External cases")
+                Assert.That(ExternalValues(workbook), [Is].EqualTo({42.0, 100.0, 46.0}))
+                source.WriteCellValue("Source Data", 1, 0, 45.0)
+                workbook.RecalculateSheet("External cases")
+                Assert.That(ExternalValues(workbook), [Is].EqualTo({45.0, 106.0, 49.0}))
+            End Using
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateSheet("External cases"))
+            Assert.That(ExternalValues(workbook), [Is].EqualTo({45.0, 106.0, 49.0}))
+        End Using
+    End Sub
+
+    Private Shared Function ExternalValues(workbook As OpenXmlExcelDataOperations) As Double()
+        Return Enumerable.Range(1, 3).Select(
+            Function(row) workbook.LookupCellValue(Of Double)("External cases", row, 2, FormulaCalculationMode.UseCachedValueOnly)).ToArray()
+    End Function
+
+    Private Shared Function OpenInSession(path As String, session As ExcelFormulaSession, usePath As Boolean) As OpenXmlExcelDataOperations
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
+            .DisableCalculationEngine = False, .FormulaSession = session
+        }
+        If usePath Then Return New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
+        options.FormulaWorkbookName = IO.Path.GetFileName(path)
+        Return New OpenXmlExcelDataOperations(File.ReadAllBytes(path), options)
+    End Function
+
     Private Shared Function OpenForCalculation(path As String) As OpenXmlExcelDataOperations
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
         Return New OpenXmlExcelDataOperations(File.ReadAllBytes(path), options)
