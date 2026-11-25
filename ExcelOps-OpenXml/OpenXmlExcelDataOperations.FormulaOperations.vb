@@ -85,6 +85,8 @@ Namespace ExcelOps
                         Return EvaluateCalendarFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "WORKDAY", "WORKDAY.INTL", "NETWORKDAYS", "NETWORKDAYS.INTL", "_XLFN.WORKDAY.INTL", "_XLFN.NETWORKDAYS.INTL"
                         Return EvaluateWorkdayFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DATEVALUE", "TIMEVALUE"
+                        Return EvaluateDateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "DATE", "TIME", "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND", "TODAY", "NOW"
                         Return EvaluateDateFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"

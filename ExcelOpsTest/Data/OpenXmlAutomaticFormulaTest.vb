@@ -94,6 +94,23 @@ Public Class OpenXmlAutomaticFormulaTest
     End Sub
 
     <Test>
+    Public Sub RecalculatesDateTextWithoutAYearWhenTheLocalClockChanges()
+        Dim current As New DateTime(2011, 7, 1)
+        Dim options = MakeOptions()
+        options.FormulaLocalClock = Function() current
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            workbook.WriteCellFormula("Sheet1", 0, 1, "YEAR(DATEVALUE(""2/1""))", False)
+            workbook.WriteCellFormula("Sheet1", 0, 2, "B1+1", False)
+            workbook.WriteCellValue("Sheet1", 0, 0, 1)
+            Assert.That(Result(workbook, 2), [Is].EqualTo(2012.0))
+
+            current = current.AddYears(1)
+            workbook.WriteCellValue("Sheet1", 0, 0, 2)
+            Assert.That(Result(workbook, 2), [Is].EqualTo(2013.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub TracksCellsThatWereEmptyWhenAnAggregateWasLastEvaluated()
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, MakeOptions())
             workbook.WriteCellFormula("Sheet1", 0, 3, "SUM(A1:A3)", False)
