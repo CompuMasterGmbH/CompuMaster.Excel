@@ -1847,8 +1847,10 @@ Namespace ExcelOps
             ''' assigned in the destination. For example, if the copied Data sheet is named Data (2) in the
             ''' destination, a reference to Data!$A$1 in another sheet of the group becomes 'Data (2)'!$A$1.
             ''' A reference to a sheet left in the source becomes an external workbook link, even if the
-            ''' destination already contains a sheet with that name. The Open XML engine requires an existing
-            ''' source file when it needs to create that link. Microsoft Excel uses its native copy behavior.
+            ''' destination already contains a sheet with that name. Open XML can create the link when the source
+            ''' has a saved path or both workbooks are attached to the same <c>OpenXmlWorkbookSession</c>.
+            ''' In a session, saving an unsaved source resolves its link. Save the destination again to persist
+            ''' the resolved link. The Microsoft Excel engine uses Excel's native copy behavior.
             ''' </remarks>
             ExcelCompatible = 0
             ''' <summary>Preserves the original text of formulas on the copied sheets.</summary>
