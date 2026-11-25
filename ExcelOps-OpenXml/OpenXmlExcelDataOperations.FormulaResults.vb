@@ -69,6 +69,7 @@ Namespace ExcelOps
             If cell.CellFormula Is Nothing OrElse cell.CellValue Is Nothing Then Return False
             cell.CellValue = Nothing
             cell.DataType = Nothing
+            cell.ValueMetaIndex = Nothing
             Return True
         End Function
 

@@ -96,7 +96,7 @@
                 Dim rows = Math.Truncate(parameters(0))
                 Dim columns = Math.Truncate(parameters(1))
                 If rows < 0 OrElse columns < 0 Then Return New FormulaError("#VALUE!")
-                If rows = 0 OrElse columns = 0 Then Return New FormulaError("#CALC!")
+                If rows = 0 OrElse columns = 0 Then Return New FormulaError(CalcErrorCode)
                 If rows > 1048576 OrElse columns > 16384 Then Return New FormulaError("#NUM!")
                 Dim rowCount = CInt(rows)
                 Dim columnCount = CInt(columns)
@@ -128,7 +128,7 @@
                 Next
                 If indexes.Count = 0 Then
                     If arguments.Count = 3 Then Return If(EvaluateExpression(arguments(2), formulaCell), 0.0)
-                    Return New FormulaError("#CALC!")
+                    Return New FormulaError(CalcErrorCode)
                 End If
 
                 Dim rows = If(selectRows, indexes.Count, matrix.Rows)

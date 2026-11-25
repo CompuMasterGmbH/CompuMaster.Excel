@@ -6,6 +6,26 @@ Namespace ExcelOps
 
         Private NotInheritable Partial Class FormulaCalculation
             Private ReadOnly _activeNames As New HashSet(Of DefinedName)
+            Private ReadOnly _localValues As New Dictionary(Of Object, Lazy(Of Object))
+
+            Friend Function EvaluateLet(bindings As IReadOnlyList(Of (Key As Object, Value As FormulaExpression)),
+                                        result As FormulaExpression, formulaCell As ExcelCell) As Object
+                Try
+                    For Each binding In bindings
+                        Dim expression = binding.Value
+                        _localValues.Add(binding.Key, New Lazy(Of Object)(Function() EvaluateExpression(expression, formulaCell)))
+                    Next
+                    Return EvaluateExpression(result, formulaCell)
+                Finally
+                    For Each binding In bindings
+                        _localValues.Remove(binding.Key)
+                    Next
+                End Try
+            End Function
+
+            Friend Function ReadLocalName(key As Object) As Object
+                Return _localValues(key).Value
+            End Function
 
             Friend Function EvaluateDefinedName(name As String, sheetName As String, formulaCell As ExcelCell) As Object
                 If Not IsValidDefinedNameToken(name) Then Throw New NotSupportedException("Unsupported worksheet reference or name " & name & ".")
@@ -32,11 +52,12 @@ Namespace ExcelOps
                 End Try
             End Function
 
-            Private Shared Function IsValidDefinedNameToken(name As String) As Boolean
-                Return name.Length > 0 AndAlso (Char.IsLetter(name(0)) OrElse name(0) = "_"c) AndAlso
-                    name.All(Function(character) Char.IsLetterOrDigit(character) OrElse character = "_"c OrElse character = "."c)
-            End Function
         End Class
+
+        Private Shared Function IsValidDefinedNameToken(name As String) As Boolean
+            Return name.Length > 0 AndAlso (Char.IsLetter(name(0)) OrElse name(0) = "_"c) AndAlso
+                name.All(Function(character) Char.IsLetterOrDigit(character) OrElse character = "_"c OrElse character = "."c)
+        End Function
 
     End Class
 

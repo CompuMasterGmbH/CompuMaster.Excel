@@ -128,11 +128,12 @@ Namespace ExcelOps
                 If trackRead Then RecordPrecedent(New FormulaPrecedent(location, rowIndex, columnIndex))
                 Dim cell As Cell = Nothing
                 worksheet.Cells.TryGetValue((rowIndex, columnIndex), cell)
-                If _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) Then
+                If _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) AndAlso
+                    Not _owner.IsSingleCellDynamicFormula(cell) Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, cell?.CellFormula?.Text, "Grouped, array and data-table formulas are outside the supported calculation scope.")
                 End If
                 If cell?.CellFormula Is Nothing Then
-                    If cell?.DataType?.Value = CellValues.Error Then Return New FormulaError(If(cell.CellValue?.Text, "#VALUE!"))
+                    If cell?.DataType?.Value = CellValues.Error Then Return New FormulaError(_owner.ReadStoredFormulaError(cell))
                     Dim value = _owner.ReadCellValue(worksheet.Name, rowIndex, columnIndex, cell)
                     If TypeOf value Is Double Then Return FiniteNumber(DirectCast(value, Double))
                     If TypeOf value Is DateTime Then Return ToExcelDateSerial(DirectCast(value, DateTime))
@@ -194,6 +195,7 @@ Namespace ExcelOps
 
             Private Shared Sub WriteCachedResult(cell As Cell, value As Object)
                 cell.InlineString = Nothing
+                cell.ValueMetaIndex = Nothing
                 If TypeOf value Is FormulaError Then
                     cell.DataType = CellValues.Error
                     cell.CellValue = New CellValue(DirectCast(value, FormulaError).Code)

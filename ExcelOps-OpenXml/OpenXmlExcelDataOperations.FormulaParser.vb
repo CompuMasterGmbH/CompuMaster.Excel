@@ -17,6 +17,7 @@ Namespace ExcelOps
             Private ReadOnly _tokens As New List(Of String)
             Private _position As Integer
             Private ReadOnly _requireAbsoluteReferences As Boolean
+            Private _localNames As Dictionary(Of String, Object)
 
             Private Sub New(formula As String, requireAbsoluteReferences As Boolean)
                 _requireAbsoluteReferences = requireAbsoluteReferences
@@ -121,7 +122,11 @@ Namespace ExcelOps
                     End If
                     Return ParseReferenceOrName(sheetName, Consume(), workbookIndex)
                 End If
-                If Match("(") Then Return ParseFunction(token)
+                If Match("(") Then
+                    If token.Equals("LET", StringComparison.OrdinalIgnoreCase) OrElse
+                        token.Equals("_xlfn.LET", StringComparison.OrdinalIgnoreCase) Then Return ParseLet()
+                    Return ParseFunction(token)
+                End If
 
                 If Char.IsDigit(token(0)) OrElse token(0) = "."c Then
                     Dim number As Double
@@ -131,7 +136,52 @@ Namespace ExcelOps
                 End If
                 If String.Equals(token, "TRUE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) True
                 If String.Equals(token, "FALSE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) False
+                Dim binding As Object = Nothing
+                If _localNames IsNot Nothing AndAlso _localNames.TryGetValue(LocalName(token), binding) Then
+                    Return Function(calculation, formulaCell) calculation.ReadLocalName(binding)
+                End If
                 Return ParseReferenceOrName(Nothing, token, Nothing)
+            End Function
+
+            Private Function ParseLet() As FormulaExpression
+                Dim outerNames = _localNames
+                _localNames = If(outerNames Is Nothing,
+                    New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase),
+                    New Dictionary(Of String, Object)(outerNames, StringComparer.OrdinalIgnoreCase))
+                Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+                Dim bindings As New List(Of (Key As Object, Value As FormulaExpression))
+                Try
+                    Do
+                        Dim name = LocalName(Consume())
+                        If Not IsValidDefinedNameToken(name) OrElse CellAddressPattern.IsMatch(name) OrElse
+                            name.Equals("TRUE", StringComparison.OrdinalIgnoreCase) OrElse
+                            name.Equals("FALSE", StringComparison.OrdinalIgnoreCase) OrElse Not names.Add(name) Then
+                            Throw New NotSupportedException("Unsupported or repeated LET name " & name & ".")
+                        End If
+                        Expect(",")
+                        Dim value As FormulaExpression
+                        If Current = "," Then
+                            value = Function(calculation, formulaCell) Nothing
+                        Else
+                            value = ParseExpression(1)
+                        End If
+                        Expect(",")
+                        Dim key As New Object()
+                        bindings.Add((key, value))
+                        _localNames(name) = key
+                    Loop While _position + 1 < _tokens.Count AndAlso _tokens(_position + 1) = ","
+
+                    Dim result = ParseExpression(1)
+                    Expect(")")
+                    Return Function(calculation, formulaCell) calculation.EvaluateLet(bindings, result, formulaCell)
+                Finally
+                    _localNames = outerNames
+                End Try
+            End Function
+
+            Private Shared Function LocalName(token As String) As String
+                Const localPrefix As String = "_xlpm."
+                Return If(token.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase), token.Substring(localPrefix.Length), token)
             End Function
 
             Private Function ParseReferenceOrName(sheetName As String, token As String, workbookIndex As Integer?) As FormulaExpression

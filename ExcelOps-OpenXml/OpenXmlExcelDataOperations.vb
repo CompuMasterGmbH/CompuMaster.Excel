@@ -309,17 +309,21 @@ Namespace ExcelOps
         End Sub
 
         Private Sub SaveChangedParts(source As WorkbookPart, target As WorkbookPart, clearCache As Boolean)
-            For Each sourceSheet In _changedSheets
-                Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
-                Using output = targetSheet.GetStream(FileMode.Create, FileAccess.Write)
-                    sourceSheet.Worksheet.Save(output)
-                End Using
-            Next
             If _workbookChanged Then
                 Using output = target.GetStream(FileMode.Create, FileAccess.Write)
                     source.Workbook.Save(output)
                 End Using
             End If
+            Dim calcErrorMetadataIndex As UInteger?
+            For Each sourceSheet In _changedSheets
+                Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
+                Using output = targetSheet.GetStream(FileMode.Create, FileAccess.Write)
+                    sourceSheet.Worksheet.Save(output)
+                End Using
+                If Not clearCache AndAlso GetSheetData(sourceSheet).Descendants(Of Cell)().Any(AddressOf IsUnencodedCalcError) Then
+                    SaveRichFormulaErrors(target, targetSheet, calcErrorMetadataIndex)
+                End If
+            Next
             If clearCache Then
                 For Each sheetPart In target.WorksheetParts
                     If ClearFormulaResults(GetSheetData(sheetPart)) Then sheetPart.Worksheet.Save()

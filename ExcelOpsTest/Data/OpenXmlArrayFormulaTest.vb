@@ -1,6 +1,9 @@
-﻿Imports CompuMaster.Excel.ExcelOps
+﻿Imports System.IO
+Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
+Imports DocumentFormat.OpenXml.Packaging
+Imports DocumentFormat.OpenXml.Spreadsheet
 Imports NUnit.Framework
 
 <TestFixture>
@@ -47,6 +50,35 @@ Public Class OpenXmlArrayFormulaTest
             Assert.That(workbook.HasMissingCachedFormulaResult("Sheet1", 0, 4), [Is].True)
             Assert.That(workbook.HasMissingCachedFormulaResult("Sheet1", 1, 4), [Is].True)
         End Using
+    End Sub
+
+    <Test>
+    Public Sub SavesAndReopensCalcErrorsInANewWorkbook()
+        Dim output = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+        Try
+            Using workbook = CreateWorkbook()
+                workbook.WriteCellFormula("Sheet1", 0, 4, "SUM(_xlfn.SEQUENCE(0))", False)
+                workbook.RecalculateCell("Sheet1", 0, 4, throwExceptionOnCalculationError:=False)
+                workbook.SaveCopyAs(output, recalculateWorkbook:=False, SaveOptionsForDisabledCalculationEngines.NoReset)
+            End Using
+            Using package = SpreadsheetDocument.Open(output, False)
+                Dim part = package.WorkbookPart
+                Dim cell = part.WorksheetParts.Single().Worksheet.Descendants(Of Cell)().Single(Function(item) item.CellReference.Value = "E1")
+                Assert.That(cell.DataType.Value, [Is].EqualTo(CellValues.Error))
+                Assert.That(cell.CellValue.Text, [Is].EqualTo("#VALUE!"))
+                Assert.That(cell.ValueMetaIndex?.Value, [Is].EqualTo(1UI))
+                Assert.That(part.CellMetadataPart, [Is].Not.Null)
+                Assert.That(part.RdRichValueParts.Count(), [Is].EqualTo(1))
+            End Using
+            Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+            Using reopened As New OpenXmlExcelDataOperations(File.ReadAllBytes(output), options)
+                Assert.That(reopened.LookupCellValueAsObject("Sheet1", 0, 4, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("#CALC!"))
+                reopened.ResetCellValueFromFormulaCell("Sheet1", 0, 4)
+                Assert.That(reopened.HasMissingCachedFormulaResult("Sheet1", 0, 4), [Is].True)
+            End Using
+        Finally
+            If File.Exists(output) Then File.Delete(output)
+        End Try
     End Sub
 
     Private Shared Function CreateWorkbook() As OpenXmlExcelDataOperations

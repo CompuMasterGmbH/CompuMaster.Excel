@@ -96,6 +96,7 @@ Namespace ExcelOps
                 target.AddChild(child)
             Next
             target.DataType = payload.DataType
+            target.ValueMetaIndex = payload.ValueMetaIndex
             _changedSheets.Add(part)
             RecalculationRequired = True
             RecordCellEdit(sheetName, rowIndex, columnIndex, calculateOnEdit)
@@ -161,6 +162,7 @@ Namespace ExcelOps
             If dataType = CellValues.Boolean Then Return Xml.XmlConvert.ToBoolean(value)
             If dataType = CellValues.Number Then Return If(value.Length = 0, Nothing, CType(Double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture), Object))
             If dataType = CellValues.Date Then Return Xml.XmlConvert.ToDateTime(value, Xml.XmlDateTimeSerializationMode.RoundtripKind)
+            If dataType = CellValues.Error Then Return ReadStoredFormulaError(cell)
             Return DecodeText(value)
         End Function
 
