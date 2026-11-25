@@ -13,6 +13,10 @@ For a full engine overview and comparison chart, please see https://github.com/C
   * Please see license file in project directory
   * Pay attention to required licensing of the 3rd party components (commercial vs. community licensing, user licensing, etc.)
 
+## Formula results in HTML
+
+The export now throws `MissingCalculatedCellValueException` by default when an exported formula has no cached result. Set `MissingFormulaResultText` to `""` to retain the previous blank display, or supply replacement text. Set `FormulaCalculationMode` to `CalculateIfMissing` to request evaluation of missing results.
+
 ## Examples
 
 ### Quick-Start: Create a workbook and put some values and formulas, then output the result to console

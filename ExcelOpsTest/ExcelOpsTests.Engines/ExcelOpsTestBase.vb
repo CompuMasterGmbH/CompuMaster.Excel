@@ -627,12 +627,12 @@ Namespace ExcelOpsTests.Engines
             SheetName = "ZahlenUndProzentwerte"
             ClassicAssert.AreEqual("0.00", eppeo.LookupCellFormat(SheetName, 0, 1))
             ClassicAssert.AreEqual("0.00%", eppeo.LookupCellFormat(SheetName, 1, 1))
-            ClassicAssert.AreEqual(10.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-            ClassicAssert.AreEqual(0.1, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
+            ClassicAssert.AreEqual(10.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1, FormulaCalculationMode.EngineDefault), 2))
+            ClassicAssert.AreEqual(0.1, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1, FormulaCalculationMode.EngineDefault), 2))
             eppeo.WriteCellValue(Of Double)(SheetName, 0, 1, 20.0)
             eppeo.WriteCellValue(Of Double)(SheetName, 1, 1, 0.2)
-            ClassicAssert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1), 2))
-            ClassicAssert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1), 2))
+            ClassicAssert.AreEqual(20.0, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 0, 1, FormulaCalculationMode.EngineDefault), 2))
+            ClassicAssert.AreEqual(0.2, System.Math.Round(eppeo.LookupCellValue(Of Double)(SheetName, 1, 1, FormulaCalculationMode.EngineDefault), 2))
         End Sub
 
         <Test> Public Sub IsMergedCell()
@@ -867,7 +867,7 @@ Namespace ExcelOpsTests.Engines
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                     Return
                 End Try
-                ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 2), "B1 must move to C1")
+                ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 2, FormulaCalculationMode.EngineDefault), "B1 must move to C1")
                 ClassicAssert.AreEqual("C1", workbook.LookupCellFormula("Data", 0, 4), "Formula moved from D1 to E1 and must reference moved B1/C1")
                 ClassicAssert.AreEqual("SUM(C1:D1)", workbook.LookupCellFormula("Data", 0, 5), "Range formula moved from E1 to F1 and must reference moved B1:C1/C1:D1")
                 ClassicAssert.AreEqual("DATA!C1", workbook.LookupCellFormula("Refs", 0, 0).Replace("'", "").ToUpperInvariant, "Cross-sheet single-cell reference must follow Data!B1 to Data!C1")
@@ -879,7 +879,7 @@ Namespace ExcelOpsTests.Engines
             workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Try
                 workbook.AddRow("Data", 1, 1, True)
-                ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 2, 1), "Row 2 must move to row 3")
+                ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 2, 1, FormulaCalculationMode.EngineDefault), "Row 2 must move to row 3")
                 ClassicAssert.AreEqual("B3", workbook.LookupCellFormula("Data", 2, 3), "Formula moved from D2 to D3 and must reference moved B2/B3")
                 ClassicAssert.AreEqual("SUM(B3:C3)", workbook.LookupCellFormula("Data", 2, 4), "Range formula moved from E2 to E3 and must reference moved row")
                 ClassicAssert.AreEqual("SUM(DataValues)", workbook.LookupCellFormula("Refs", 1, 0), "Named range formula must stay syntactically stable")
@@ -903,7 +903,7 @@ Namespace ExcelOpsTests.Engines
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                     Return
                 End Try
-                ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 1), "B1 must remain in B1 when deleting C")
+                ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 1, FormulaCalculationMode.EngineDefault), "B1 must remain in B1 when deleting C")
                 ClassicAssert.AreEqual("B1", workbook.LookupCellFormula("Data", 0, 2), "Formula moved from D1 to C1 and must still reference B1")
                 ClassicAssert.That(workbook.LookupCellFormula("Data", 0, 3), [Is].AnyOf("SUM(B1)", "SUM(B1:B1)"), "Range formula moved from E1 to D1 and must shrink after deleting C")
             Finally
@@ -913,7 +913,7 @@ Namespace ExcelOpsTests.Engines
             workbook = Me.CreateInstance(TestFile, ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
             Try
                 workbook.RemoveRows("Data", 2, 1, True)
-                ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 1, 1), "Row 2 must remain in row 2 when deleting row 3")
+                ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 1, 1, FormulaCalculationMode.EngineDefault), "Row 2 must remain in row 2 when deleting row 3")
                 ClassicAssert.AreEqual("B2", workbook.LookupCellFormula("Data", 1, 3), "Formula in D2 must still reference B2")
                 ClassicAssert.AreEqual("SUM(B2:C2)", workbook.LookupCellFormula("Data", 1, 4), "Range formula in E2 must still reference row 2")
             Finally
@@ -932,7 +932,7 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.AddCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsRight, True)
-                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 2), "B1 must move right to C1")
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 2, FormulaCalculationMode.EngineDefault), "B1 must move right to C1")
                 Catch ex As NotSupportedException
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                 End Try
@@ -944,8 +944,8 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.AddCells("Data", 0, 1, 1, 3, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsRight, True)
-                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 4), "B1 must move right to E1 when inserting 3 cells")
-                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 5), "C1 must move right to F1 when inserting 3 cells")
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 4, FormulaCalculationMode.EngineDefault), "B1 must move right to E1 when inserting 3 cells")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 5, FormulaCalculationMode.EngineDefault), "C1 must move right to F1 when inserting 3 cells")
                 Catch ex As NotSupportedException
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                 End Try
@@ -957,8 +957,8 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.AddCells("Data", 0, 1, 3, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
-                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 3, 1), "B1 must move down to B4 when inserting 3 cells")
-                    ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 4, 1), "B2 must move down to B5 when inserting 3 cells")
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 3, 1, FormulaCalculationMode.EngineDefault), "B1 must move down to B4 when inserting 3 cells")
+                    ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 4, 1, FormulaCalculationMode.EngineDefault), "B2 must move down to B5 when inserting 3 cells")
                 Catch ex As NotSupportedException
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                 End Try
@@ -970,8 +970,8 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.AddCells("Data", 0, 1, 3, 5, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsRight, True)
-                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 6), "B1 must move right to G1 when inserting a 3x5 range")
-                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 7), "C1 must move right to H1 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 0, 6, FormulaCalculationMode.EngineDefault), "B1 must move right to G1 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 7, FormulaCalculationMode.EngineDefault), "C1 must move right to H1 when inserting a 3x5 range")
                     ClassicAssert.AreEqual("G1", workbook.LookupCellFormula("Data", 0, 8), "Formula from D1 must move right and reference moved B1")
                     ClassicAssert.AreEqual("SUM(G1:H1)", workbook.LookupCellFormula("Data", 0, 9), "Formula from E1 must move right and reference moved B1:C1")
                 Catch ex As NotSupportedException
@@ -985,8 +985,8 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.AddCells("Data", 0, 1, 3, 5, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
-                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 3, 1), "B1 must move down to B4 when inserting a 3x5 range")
-                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 3, 2), "C1 must move down to C4 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 3, 1, FormulaCalculationMode.EngineDefault), "B1 must move down to B4 when inserting a 3x5 range")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 3, 2, FormulaCalculationMode.EngineDefault), "C1 must move down to C4 when inserting a 3x5 range")
                     ClassicAssert.AreEqual("B4", workbook.LookupCellFormula("Data", 3, 3), "Formula from D1 must move down and reference moved B1")
                     ClassicAssert.AreEqual("SUM(B4:C4)", workbook.LookupCellFormula("Data", 3, 4), "Formula from E1 must move down and reference moved B1:C1")
                 Catch ex As NotSupportedException
@@ -1000,7 +1000,7 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.AddCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellInsertShiftDirection.ShiftCellsDown, True)
-                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 1, 1), "B1 must move down to B2")
+                    ClassicAssert.AreEqual(10, workbook.LookupCellValue(Of Integer)("Data", 1, 1, FormulaCalculationMode.EngineDefault), "B1 must move down to B2")
                 Catch ex As NotSupportedException
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                 End Try
@@ -1012,7 +1012,7 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.RemoveCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellRemoveShiftDirection.ShiftCellsLeft, True)
-                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 1), "C1 must move left to B1")
+                    ClassicAssert.AreEqual(20, workbook.LookupCellValue(Of Integer)("Data", 0, 1, FormulaCalculationMode.EngineDefault), "C1 must move left to B1")
                 Catch ex As NotSupportedException
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                 End Try
@@ -1024,7 +1024,7 @@ Namespace ExcelOpsTests.Engines
             Try
                 Try
                     workbook.RemoveCells("Data", 0, 1, 1, 1, ExcelDataOperationsBase.CellRemoveShiftDirection.ShiftCellsUp, True)
-                    ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 0, 1), "B2 must move up to B1")
+                    ClassicAssert.AreEqual(11, workbook.LookupCellValue(Of Integer)("Data", 0, 1, FormulaCalculationMode.EngineDefault), "B2 must move up to B1")
                 Catch ex As NotSupportedException
                     ClassicAssert.That(workbook.EngineName, [Is].Not.EqualTo("Microsoft Excel (2013 or higher)"))
                 End Try
@@ -1131,7 +1131,7 @@ Namespace ExcelOpsTests.Engines
             wb.WriteCellFormula(SheetName, 0, 0, "1/1", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
             ClassicAssert.AreEqual(Nothing, wb.LookupCellErrorValue(SheetName, 0, 0))
-            ClassicAssert.AreEqual(1, wb.LookupCellValue(Of Integer)(SheetName, 0, 0))
+            ClassicAssert.AreEqual(1, wb.LookupCellValue(Of Integer)(SheetName, 0, 0, FormulaCalculationMode.EngineDefault))
 
             wb.WriteCellFormula(SheetName, 0, 0, "INVALIDFUNCTION(B2)", False)
             wb.RecalculateCell(SheetName, 0, 0, False)
@@ -1586,18 +1586,18 @@ Namespace ExcelOpsTests.Engines
                     '"40|                            |=SUMME(B36:B39)|   |                                   |      
 
                     'D3
-                    ClassicAssert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual("Januar", eppeo.LookupCellValue(Of String)(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All), FormulaCalculationMode.EngineDefault))
                     ClassicAssert.AreEqual("Januar", eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
                     ClassicAssert.AreEqual("INDEX(B23:B34,MATCH(B3,A23:A34,0))", eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "D3", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'A8
-                    ClassicAssert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual(14.09D, eppeo.LookupCellValue(Of Double)(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All), FormulaCalculationMode.EngineDefault))
                     ClassicAssert.AreEqual(ExpectedResultInCultureContextAndPlateformLineBreakEncoding("Chef: 14▲09"), eppeo.LookupCellFormattedText(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
                     ClassicAssert.AreEqual(Nothing, eppeo.LookupCellFormula(New ExcelOps.ExcelCell(TestSheet, "A8", ExcelOps.ExcelCell.ValueTypes.All)))
 
                     'E1
-                    ClassicAssert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
-                    ClassicAssert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
+                    ClassicAssert.AreEqual(False, eppeo.LookupCellValue(Of Boolean)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All), FormulaCalculationMode.EngineDefault))
+                    ClassicAssert.AreEqual("False", eppeo.LookupCellValue(Of String)(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All), FormulaCalculationMode.EngineDefault))
                     ClassicAssert.AreEqual("False", eppeo.LookupCellFormattedText(New ExcelCell(TestSheet, "E1", ExcelCell.ValueTypes.All)))
                 End Sub)
         End Sub
@@ -2060,7 +2060,7 @@ Namespace ExcelOpsTests.Engines
                     Next
                 End If
                 ' Identify the source in review exports without changing the checked-in workbook.
-                Dim exportHeader = workbook.LookupCellValue(Of String)("Accent reference", 1, 0) & " - XLSX-Vorlage: " & fileName
+                Dim exportHeader = workbook.LookupCellValue(Of String)("Accent reference", 1, 0, FormulaCalculationMode.EngineDefault) & " - XLSX-Vorlage: " & fileName
                 workbook.WriteCellValue(Of String)("Accent reference", 1, 0, exportHeader)
                 Dim sheetHtml = workbook.ExportSheetToHtml("Accent reference", New HtmlSheetExportOptions()).ToString()
                 Dim workbookHtml = workbook.ExportWorkbookToHtml(New HtmlWorkbookExportOptions()).ToString()

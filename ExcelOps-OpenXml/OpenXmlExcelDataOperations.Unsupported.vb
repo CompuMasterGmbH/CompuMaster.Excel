@@ -12,11 +12,6 @@
         End Sub
 
         ''' <inheritdoc/>
-        Public Overrides Function LookupLastCell(sheetName As String) As ExcelCell
-            Throw UnsupportedOperation("Looking up the last cell")
-        End Function
-
-        ''' <inheritdoc/>
         Public Overrides Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
             ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
             Throw UnsupportedOperation("Inserting columns")
@@ -63,16 +58,6 @@
         End Sub
 
         ''' <inheritdoc/>
-        Public Overrides Function LookupCellFormattedText(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
-            Throw UnsupportedOperation("Rendering formatted cell text")
-        End Function
-
-        ''' <inheritdoc/>
-        Public Overrides Function LookupCellFormat(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
-            Throw UnsupportedOperation("Looking up Excel number formats")
-        End Function
-
-        ''' <inheritdoc/>
         Public Overrides Sub ClearCells(overrideSheetName As String, rangeFirstCell As ExcelCell, rangeLastCell As ExcelCell)
             Throw UnsupportedOperation("Clearing cell ranges")
         End Sub
@@ -103,11 +88,6 @@
         End Sub
 
         ''' <inheritdoc/>
-        Public Overrides Function IsMergedCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
-            Throw UnsupportedOperation("Inspecting merged cells")
-        End Function
-
-        ''' <inheritdoc/>
         Public Overrides Sub UnMergeCells(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             Throw UnsupportedOperation("Unmerging cells")
         End Sub
@@ -116,11 +96,6 @@
         Public Overrides Sub MergeCells(sheetName As String, fromRowIndex As Integer, fromColumnIndex As Integer, toRowIndex As Integer, toColumnIndex As Integer)
             Throw UnsupportedOperation("Merging cells")
         End Sub
-
-        ''' <inheritdoc/>
-        Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelOps.ExcelRange)
-            Throw UnsupportedOperation("Listing merged cells")
-        End Function
 
         ''' <inheritdoc/>
         Public Overrides Sub AutoFitColumns(sheetName As String)
@@ -151,11 +126,6 @@
         Public Overrides Function ExportChartImage(workSheetName As String) As System.Drawing.Image()
             Throw UnsupportedOperation("Rendering chart images")
         End Function
-
-        ''' <inheritdoc/>
-        Protected Overrides Sub ExportSheetToHtmlInternal(worksheetName As String, sb As System.Text.StringBuilder, options As HtmlSheetExportOptions)
-            Throw UnsupportedOperation("Exporting sheets to HTML")
-        End Sub
 
     End Class
 

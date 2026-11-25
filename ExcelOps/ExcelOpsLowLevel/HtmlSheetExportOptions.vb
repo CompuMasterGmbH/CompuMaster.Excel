@@ -131,6 +131,16 @@ Namespace ExcelOps
         ''' <value>The CSS class name assigned to exported tables.</value>
         Public Property TableCssClassName As String = "xlTable"
 
+        ''' <summary>Gets or sets whether the export may calculate missing formula results.</summary>
+        ''' <value>The calculation policy. The default uses only cached values.</value>
+        ''' <remarks>Use <see cref="FormulaCalculationMode.UseCachedValueOnly"/> or <see cref="FormulaCalculationMode.CalculateIfMissing"/>.</remarks>
+        Public Property FormulaCalculationMode As FormulaCalculationMode = FormulaCalculationMode.UseCachedValueOnly
+
+        ''' <summary>Gets or sets the text displayed for a formula without a result.</summary>
+        ''' <value>The replacement text. An empty string displays a blank cell. Nothing raises <see cref="MissingCalculatedCellValueException"/>.</value>
+        ''' <remarks>The renderer HTML-encodes this text. Calculation exceptions are propagated.</remarks>
+        Public Property MissingFormulaResultText As String
+
 #Disable Warning CA1805 ' Keine unnötige Initialisierung
         ''' <summary>
         ''' Gets or sets the zero-based index of the first worksheet row to export.
