@@ -51,7 +51,7 @@
                 Dim lastRow = If(rowNumber = 0, rows - 1, firstRow)
                 Dim lastColumn = If(columnNumber = 0, columns - 1, firstColumn)
                 If area IsNot Nothing Then Return SliceArea(area, firstRow, firstColumn, lastRow, lastColumn)
-                Return SliceLookupMatrix(matrix, firstRow, firstColumn, lastRow, lastColumn)
+                Return SliceMatrix(matrix, firstRow, firstColumn, lastRow, lastColumn)
             End Function
 
             Private Function EvaluateMatch(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
@@ -147,7 +147,7 @@
                         Dim lastRow = If(byRow, index, rows - 1)
                         Dim lastColumn = If(byRow, columns - 1, index)
                         If area IsNot Nothing Then Return SliceArea(area, firstRow, firstColumn, lastRow, lastColumn)
-                        Return SliceLookupMatrix(matrix, firstRow, firstColumn, lastRow, lastColumn)
+                        Return SliceMatrix(matrix, firstRow, firstColumn, lastRow, lastColumn)
                     End Function)
             End Function
 
@@ -203,20 +203,6 @@
                 Dim candidates As Integer() = Nothing
                 If Not binaryPositions.TryGetValue(LookupValueType(needle), candidates) Then Return selectValue(-1)
                 Return selectValue(FindBinaryLookupIndex(needle, keys, candidates, mode))
-            End Function
-
-            Private Shared Function SliceLookupMatrix(matrix As FormulaMatrix, firstRow As Integer, firstColumn As Integer,
-                                                       lastRow As Integer, lastColumn As Integer) As Object
-                If firstRow = lastRow AndAlso firstColumn = lastColumn Then Return matrix.At(firstRow, firstColumn)
-                Dim rows = lastRow - firstRow + 1
-                Dim columns = lastColumn - firstColumn + 1
-                Dim values = AllocateMatrixValues(rows, columns)
-                For row = 0 To rows - 1
-                    For column = 0 To columns - 1
-                        values(row * columns + column) = matrix.At(firstRow + row, firstColumn + column)
-                    Next
-                Next
-                Return New FormulaMatrix(rows, columns, values)
             End Function
 
             Private Function ReadIndex(expression As FormulaExpression, formulaCell As ExcelCell) As Object

@@ -87,12 +87,16 @@ Namespace ExcelOps
                         Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "IFERROR", "IFNA", "_XLFN.IFNA", "NOT", "AND", "OR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
                         Return EvaluateLogicalFunction(If(name.Equals("_xlfn.IFNA", StringComparison.OrdinalIgnoreCase), "IFNA", name.ToUpperInvariant()), arguments, formulaCell)
-                    Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS"
-                        Return EvaluateCriteriaFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS", "AVERAGEIF", "AVERAGEIFS", "MINIFS", "MAXIFS", "_XLFN.MINIFS", "_XLFN.MAXIFS"
+                        Return EvaluateCriteriaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "SUMPRODUCT"
+                        Return EvaluateSumProduct(arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "SEQUENCE", "_XLFN.SEQUENCE", "TRANSPOSE", "FILTER", "_XLFN.FILTER", "_XLFN._XLWS.FILTER"
-                        Return EvaluateArrayFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "SEQUENCE", "_XLFN.SEQUENCE", "TRANSPOSE", "FILTER", "_XLFN.FILTER", "_XLFN._XLWS.FILTER",
+                         "TAKE", "_XLFN.TAKE", "DROP", "_XLFN.DROP", "CHOOSECOLS", "_XLFN.CHOOSECOLS",
+                         "CHOOSEROWS", "_XLFN.CHOOSEROWS", "HSTACK", "_XLFN.HSTACK", "VSTACK", "_XLFN.VSTACK"
+                        Return EvaluateArrayFunction(name.ToUpperInvariant().Replace("_XLFN.", "").Replace("_XLWS.", ""), arguments, formulaCell)
                     Case "COUNTA", "COUNTBLANK"
                         Return CountValues(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"

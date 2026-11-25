@@ -61,9 +61,30 @@
                 Return New FormulaMatrix(rows, columns, values)
             End Function
 
+            Private Function EvaluateSumProduct(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+                If arguments.Count = 0 Then Return New FormulaError("#VALUE!")
+                Dim arrays = arguments.Select(Function(expression) AsMatrix(EvaluateExpression(expression, formulaCell))).ToArray()
+                Dim first = arrays(0)
+                If arrays.Any(Function(array) array.Rows <> first.Rows OrElse array.Columns <> first.Columns) Then
+                    Return New FormulaError("#VALUE!")
+                End If
+
+                Dim result As Double
+                For index = 0 To first.Values.Length - 1
+                    Dim product = 1.0
+                    For Each array In arrays
+                        Dim item = array.Values(index)
+                        If TypeOf item Is FormulaError Then Return item
+                        product *= If(TypeOf item Is Double, DirectCast(item, Double), 0.0)
+                    Next
+                    result += product
+                Next
+                Return FiniteNumber(result)
+            End Function
+
             Private Function EvaluateArrayFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
                 Select Case name
-                    Case "SEQUENCE", "_XLFN.SEQUENCE"
+                    Case "SEQUENCE"
                         Return EvaluateSequence(arguments, formulaCell)
                     Case "TRANSPOSE"
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
@@ -77,6 +98,12 @@
                             Next
                         Next
                         Return New FormulaMatrix(matrix.Columns, matrix.Rows, values)
+                    Case "TAKE", "DROP"
+                        Return EvaluateArrayWindow(arguments, formulaCell, drop:=name = "DROP")
+                    Case "CHOOSEROWS", "CHOOSECOLS"
+                        Return EvaluateArraySelection(arguments, formulaCell, byRow:=name = "CHOOSEROWS")
+                    Case "HSTACK", "VSTACK"
+                        Return EvaluateArrayStack(arguments, formulaCell, vertical:=name = "VSTACK")
                     Case Else
                         Return EvaluateFilter(arguments, formulaCell)
                 End Select

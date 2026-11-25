@@ -80,7 +80,9 @@ Public Class OpenXmlLookupFormulaTest
     End Sub
 
     Private Shared Function Options() As ExcelDataOperationsOptions
-        Return New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Return New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
+            .DisableCalculationEngine = False, .FormulaCulture = System.Globalization.CultureInfo.GetCultureInfo("de-DE")
+        }
     End Function
 
     Private Shared Function NamedWorkbook() As Byte()

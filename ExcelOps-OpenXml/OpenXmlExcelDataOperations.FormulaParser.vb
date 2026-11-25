@@ -9,7 +9,7 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaParser
             Private Shared ReadOnly TokenPattern As New Regex(
-                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!])",
+                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!{};])",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly CellAddressPattern As New Regex("^\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
@@ -88,19 +88,14 @@ Namespace ExcelOps
                     Expect(")")
                     Return inner
                 End If
+                If token = "{" Then Return ParseArrayConstant()
                 If token(0) = """"c Then
-                    Dim contents = token.Substring(1, token.Length - 2).Replace("""""", """")
+                    Dim contents = ReadTextLiteral(token)
                     Return Function(calculation, formulaCell) contents
                 End If
                 If token(0) = "#"c Then
-                    Dim code = token.ToUpperInvariant()
-                    Select Case code
-                        Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"
-                            Dim excelError = New FormulaError(code)
-                            Return Function(calculation, formulaCell) excelError
-                        Case Else
-                            Throw New NotSupportedException("Unsupported Excel error literal " & token & ".")
-                    End Select
+                    Dim excelError = ReadErrorLiteral(token)
+                    Return Function(calculation, formulaCell) excelError
                 End If
                 If Match("!") Then
                     Dim sheetName = token
@@ -129,9 +124,7 @@ Namespace ExcelOps
                 End If
 
                 If Char.IsDigit(token(0)) OrElse token(0) = "."c Then
-                    Dim number As Double
-                    Dim value = If(Double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, number),
-                        FormulaCalculation.FiniteNumber(number), New FormulaError("#NUM!"))
+                    Dim value = ReadNumberLiteral(token)
                     Return Function(calculation, formulaCell) value
                 End If
                 If String.Equals(token, "TRUE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) True
@@ -141,6 +134,62 @@ Namespace ExcelOps
                     Return Function(calculation, formulaCell) calculation.ReadLocalName(binding)
                 End If
                 Return ParseReferenceOrName(Nothing, token, Nothing)
+            End Function
+
+            Private Function ParseArrayConstant() As FormulaExpression
+                Dim values As New List(Of Object)
+                Dim rows = 0
+                Dim columns = 0
+                Do
+                    Dim rowLength = 0
+                    Do
+                        values.Add(ReadArrayConstantElement())
+                        rowLength += 1
+                    Loop While Match(",")
+                    If rows = 0 Then columns = rowLength
+                    If rowLength <> columns Then Throw New NotSupportedException("Array constant rows must have the same number of elements.")
+                    rows += 1
+                Loop While Match(";")
+                Expect("}")
+                Dim matrix As New FormulaMatrix(rows, columns, values.ToArray())
+                Return Function(calculation, formulaCell) matrix
+            End Function
+
+            Private Function ReadArrayConstantElement() As Object
+                Dim token = Consume()
+                If token = "+" OrElse token = "-" Then
+                    Dim number = Consume()
+                    If Not Char.IsDigit(number(0)) AndAlso number(0) <> "."c Then
+                        Throw New NotSupportedException("A signed array constant element must be a number.")
+                    End If
+                    Return ReadNumberLiteral(token & number)
+                End If
+                If Char.IsDigit(token(0)) OrElse token(0) = "."c Then Return ReadNumberLiteral(token)
+                If token(0) = """"c Then Return ReadTextLiteral(token)
+                If token(0) = "#"c Then Return ReadErrorLiteral(token)
+                If token.Equals("TRUE", StringComparison.OrdinalIgnoreCase) Then Return True
+                If token.Equals("FALSE", StringComparison.OrdinalIgnoreCase) Then Return False
+                Throw New NotSupportedException("An array constant must contain literal numbers, text, logical values or Excel errors.")
+            End Function
+
+            Private Shared Function ReadTextLiteral(token As String) As String
+                Return token.Substring(1, token.Length - 2).Replace("""""", """")
+            End Function
+
+            Private Shared Function ReadNumberLiteral(token As String) As Object
+                Dim number As Double
+                Return If(Double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, number),
+                    FormulaCalculation.FiniteNumber(number), New FormulaError("#NUM!"))
+            End Function
+
+            Private Shared Function ReadErrorLiteral(token As String) As FormulaError
+                Dim code = token.ToUpperInvariant()
+                Select Case code
+                    Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"
+                        Return New FormulaError(code)
+                    Case Else
+                        Throw New NotSupportedException("Unsupported Excel error literal " & token & ".")
+                End Select
             End Function
 
             Private Function ParseLet() As FormulaExpression

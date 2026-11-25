@@ -12,8 +12,8 @@ Namespace ExcelOps
             Private Function EvaluateCriteriaFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                                       formulaCell As ExcelCell) As Object
                 Dim countOnly = name = "COUNTIF" OrElse name = "COUNTIFS"
-                Dim multiple = name = "COUNTIFS" OrElse name = "SUMIFS"
-                Dim firstCriterion = If(name = "SUMIFS", 1, 0)
+                Dim multiple = name.EndsWith("IFS", StringComparison.Ordinal)
+                Dim firstCriterion = If(multiple AndAlso Not countOnly, 1, 0)
                 Dim criterionCount = If(multiple, (arguments.Count - firstCriterion) \ 2, 1)
                 If multiple Then
                     If criterionCount < 1 OrElse (arguments.Count - firstCriterion) Mod 2 <> 0 Then Return New FormulaError("#VALUE!")
@@ -32,20 +32,19 @@ Namespace ExcelOps
                     If firstArea Is Nothing Then firstArea = area
                     If Not SameSize(firstArea, area) Then Return New FormulaError("#VALUE!")
                     Dim value = Scalar(EvaluateExpression(arguments(argumentIndex + 1), formulaCell))
-                    If TypeOf value Is FormulaError Then Return value
                     ranges.Add((MaterializeRange(area), MakeCriterion(value)))
                 Next
 
                 Dim amounts As Object() = Nothing
                 If Not countOnly Then
-                    If name = "SUMIF" AndAlso arguments.Count = 2 Then
+                    If Not multiple AndAlso arguments.Count = 2 Then
                         amounts = ranges(0).Values
                     Else
-                        Dim input = EvaluateExpression(arguments(If(name = "SUMIFS", 0, 2)), formulaCell)
+                        Dim input = EvaluateExpression(arguments(If(multiple, 0, 2)), formulaCell)
                         If TypeOf input Is FormulaError Then Return input
                         Dim area = TryCast(input, FormulaArea)
                         If area Is Nothing Then Return New FormulaError("#VALUE!")
-                        If name = "SUMIF" Then
+                        If Not multiple Then
                             Dim lastRow = area.FirstRow + firstArea.LastRow - firstArea.FirstRow
                             Dim lastColumn = area.FirstColumn + firstArea.LastColumn - firstArea.FirstColumn
                             ValidateCoordinates(lastRow, lastColumn)
@@ -57,19 +56,38 @@ Namespace ExcelOps
                     End If
                 End If
 
-                Dim result As Double
+                Dim minimum = name = "MINIFS"
+                Dim maximum = name = "MAXIFS"
+                Dim average = name = "AVERAGEIF" OrElse name = "AVERAGEIFS"
+                Dim count As Integer
+                Dim result = If(minimum, Double.PositiveInfinity, If(maximum, Double.NegativeInfinity, 0.0))
                 For index = 0 To ranges(0).Values.Length - 1
                     Dim itemIndex = index
                     If Not ranges.All(Function(input) input.Matches(input.Values(itemIndex))) Then Continue For
                     If countOnly Then
-                        result += 1.0
+                        count += 1
+                        Continue For
+                    End If
+                    Dim value = amounts(index)
+                    If TypeOf value Is FormulaError Then Return value
+                    If Not TypeOf value Is Double Then Continue For
+                    count += 1
+                    Dim number = DirectCast(value, Double)
+                    If minimum Then
+                        result = Math.Min(result, number)
+                    ElseIf maximum Then
+                        result = Math.Max(result, number)
                     Else
-                        Dim value = amounts(index)
-                        If TypeOf value Is FormulaError Then Return value
-                        If TypeOf value Is Double Then result += DirectCast(value, Double)
+                        result += number
                     End If
                 Next
-                Return FiniteNumber(result)
+
+                If countOnly Then Return CDbl(count)
+                If average Then
+                    If count = 0 Then Return New FormulaError("#DIV/0!")
+                    Return FiniteNumber(result / count)
+                End If
+                Return If(count = 0, 0.0, FiniteNumber(result))
             End Function
 
             Private Function MaterializeRange(area As FormulaArea) As Object()
@@ -106,6 +124,8 @@ Namespace ExcelOps
 
             Private Function MakeCriterion(value As Object) As Predicate(Of Object)
                 If value Is Nothing Then Return NumericCriterion("=", 0.0)
+                Dim criterionError = TryCast(value, FormulaError)
+                If criterionError IsNot Nothing Then Return ErrorCriterion(criterionError.Code, negate:=False)
                 If TypeOf value Is Double Then Return NumericCriterion("=", DirectCast(value, Double))
                 If TypeOf value Is Boolean Then
                     Dim expected = DirectCast(value, Boolean)
@@ -120,6 +140,10 @@ Namespace ExcelOps
                 ElseIf text.Length > 0 AndAlso "=<>".IndexOf(text(0)) >= 0 Then
                     operation = text.Substring(0, 1)
                     text = text.Substring(1)
+                End If
+                If operation = "=" OrElse operation = "<>" Then
+                    Dim errorCode = CriterionErrorCode(text)
+                    If errorCode IsNot Nothing Then Return ErrorCriterion(errorCode, negate:=operation = "<>")
                 End If
                 Dim number As Double
                 If Double.TryParse(text, NumberStyles.Float, ConversionCulture, number) AndAlso Not Double.IsInfinity(number) AndAlso Not Double.IsNaN(number) Then
@@ -137,6 +161,32 @@ Namespace ExcelOps
                            End Function
                 End If
                 Return Function(actual) TypeOf actual Is String AndAlso EvaluateComparison(operation, actual, text)
+            End Function
+
+            Private Function CriterionErrorCode(text As String) As String
+                Dim label = text.ToUpperInvariant()
+                Select Case label
+                    Case "#NULL!", "#DIV/0!", "#NAME?"
+                        Return label
+                End Select
+                If ConversionCulture.TwoLetterISOLanguageName = "de" Then
+                    Select Case label
+                        Case "#NV" : Return "#N/A"
+                        Case "#WERT!" : Return "#VALUE!"
+                        Case "#BEZUG!" : Return "#REF!"
+                        Case "#ZAHL!" : Return "#NUM!"
+                    End Select
+                Else
+                    Select Case label
+                        Case "#N/A", "#VALUE!", "#REF!", "#NUM!"
+                            Return label
+                    End Select
+                End If
+                Return Nothing
+            End Function
+
+            Private Shared Function ErrorCriterion(errorCode As String, negate As Boolean) As Predicate(Of Object)
+                Return Function(actual) (TypeOf actual Is FormulaError AndAlso DirectCast(actual, FormulaError).Code = errorCode) <> negate
             End Function
 
             Private Function NumericCriterion(operation As String, number As Double) As Predicate(Of Object)
