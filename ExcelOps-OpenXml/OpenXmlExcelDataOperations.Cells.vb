@@ -170,6 +170,10 @@ Namespace ExcelOps
                 Function(child) If(TypeOf child Is Text OrElse TypeOf child Is Run, child.InnerText, Nothing))))
         End Function
 
+        Private Shared Function EncodeText(value As String) As String
+            Return TextToEscape.Replace(value, Function(m) "_x" & (AscW(m.Value(0)) And &HFFFF).ToString("X4", CultureInfo.InvariantCulture) & "_")
+        End Function
+
         Private Shared Function DecodeText(value As String) As String
             Return EscapedText.Replace(value, Function(m) ChrW(Integer.Parse(m.Groups(1).Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture)).ToString())
         End Function
@@ -256,8 +260,7 @@ Namespace ExcelOps
             Dim payload As New Cell()
             If TypeOf boxed Is String Then
                 payload.DataType = CellValues.InlineString
-                Dim encoded = TextToEscape.Replace(DirectCast(boxed, String),
-                    Function(m) "_x" & (AscW(m.Value(0)) And &HFFFF).ToString("X4", CultureInfo.InvariantCulture) & "_")
+                Dim encoded = EncodeText(DirectCast(boxed, String))
                 payload.InlineString = New InlineString(New Text(encoded) With {.Space = SpaceProcessingModeValues.Preserve})
             ElseIf TypeOf boxed Is Boolean Then
                 payload.DataType = CellValues.Boolean
@@ -280,13 +283,27 @@ Namespace ExcelOps
         End Sub
 
         ''' <inheritdoc/>
-        ''' <remarks>Stores an ordinary cell formula without evaluating it.</remarks>
+        ''' <remarks>Evaluates the formula before editing the cell when immediate calculation is requested.</remarks>
         Public Overrides Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
-            If immediatelyCalculateCellValue Then Throw CalculationFeatureDisabled()
+            If immediatelyCalculateCellValue Then EnsureCalculationEnabled()
             If String.IsNullOrWhiteSpace(formula) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
             Dim expression = If(formula(0) = "="c, formula.Substring(1), formula)
             If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
-            EditCell(sheetName, rowIndex, columnIndex, New Cell With {.CellFormula = New CellFormula(expression)})
+            Dim replacement As New Cell With {.CellFormula = New CellFormula(expression)}
+            If Not immediatelyCalculateCellValue Then
+                EditCell(sheetName, rowIndex, columnIndex, replacement)
+                Return
+            End If
+
+            Dim existing = GetCell(sheetName, rowIndex, columnIndex)
+            If IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
+                Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
+            End If
+            Dim calculation As New FormulaCalculation(Me)
+            Dim result = calculation.EvaluateReplacement(sheetName, rowIndex, columnIndex, replacement)
+            EditCell(sheetName, rowIndex, columnIndex, replacement)
+            calculation.Commit()
+            ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
         End Sub
 
         ''' <inheritdoc/>
