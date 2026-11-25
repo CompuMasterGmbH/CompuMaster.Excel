@@ -164,12 +164,12 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
-        Private Shared Function ReadClassicSeries(path As String) As String()
+        Private Shared Function ReadClassicSeries(path As String, Optional expectedCount As Integer = 2) As String()
             Using document = SpreadsheetDocument.Open(path, False)
                 Dim sheet = DirectCast(FindChartSourcePart(document.WorkbookPart, ChartDataSheet), WorksheetPart)
                 Dim chart = sheet.DrawingsPart.ChartParts.Single().ChartSpace
                 Dim series = chart.Descendants().Where(Function(item) item.LocalName = "ser").ToArray()
-                Assert.That(series.Length, [Is].EqualTo(2))
+                Assert.That(series.Length, [Is].EqualTo(expectedCount))
                 Return series.Select(Function(item)
                     Dim references = item.Descendants(Of ChartXml.Formula)().Select(Function(formula)
                         Dim reference = formula.Parent
@@ -184,6 +184,66 @@ Namespace ExcelOpsTests.Engines
                 End Function).ToArray()
             End Using
         End Function
+
+        <TestCase(51, True)>
+        <TestCase(51, False)>
+        <TestCase(123, True)>
+        <TestCase(123, False)>
+        Public Sub ChartReferences_OpenXmlMatchesExcelWhenClearingTableBody(chartType As Integer, useTable As Boolean)
+            Dim caseDirectory = CreateChartTestDirectory()
+            Dim input = Path.Combine(caseDirectory, "table-chart.xlsx")
+            Dim expected = Path.Combine(caseDirectory, "excel-edited.xlsx")
+            Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook As MsExcelDataOperations = Nothing
+            Try
+                workbook = CreateChartWorkbook()
+                Dim sheet = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
+                sheet.Range("B2").Value2 = "Category"
+                sheet.Range("D2").Value2 = "Count"
+                sheet.Range("F9").Value2 = "Category"
+                sheet.Range("G9").Value2 = "Outside sales"
+                For point = 1 To 3
+                    sheet.Range("B" & point + 2).Value2 = "Category " & point
+                    sheet.Range("D" & point + 2).Value2 = point
+                    sheet.Range("F" & point + 9).Value2 = "Outside " & point
+                    sheet.Range("G" & point + 9).Value2 = point * 20
+                Next
+                sheet.ListObjects.Add(NativeExcel.XlListObjectSourceType.xlSrcRange, sheet.Range("B2:D5"), Type.Missing, NativeExcel.XlYesNoGuess.xlYes)
+                sheet.Range(If(useTable, "B2:C5", "F9:G12")).Select()
+                sheet.Shapes.AddChart2(-1, CType(chartType, NativeExcel.XlChartType), 240, 120, 220, 150)
+                DirectCast(sheet.ChartObjects(1), NativeExcel.ChartObject).Placement = NativeExcel.XlPlacement.xlMoveAndSize
+                workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.RemoveRows(ChartDataSheet, 2, 3, True)
+                workbook.SaveAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.Close()
+
+                Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    editor.RemoveRows(ChartDataSheet, 2, 3, True)
+                    editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                Using document = SpreadsheetDocument.Open(output, False)
+                    Dim result = DirectCast(FindChartSourcePart(document.WorkbookPart, ChartDataSheet), WorksheetPart)
+                    Assert.That(result.TableDefinitionParts.Single().Table.Reference.Value, [Is].EqualTo("B2:D3"))
+                End Using
+                If chartType = 123 Then
+                    Dim native = ChartExReferences(expected, ChartDataSheet)
+                    Dim actual = ChartExReferences(output, ChartDataSheet)
+                    Assert.That(actual.References, [Is].EqualTo(native.References))
+                    Assert.That(actual.SeriesLayouts, [Is].EqualTo(native.SeriesLayouts))
+                    Assert.That(actual.Anchors, [Is].EqualTo(native.Anchors))
+                Else
+                    Assert.That(ReadClassicSeries(output, 1), [Is].EqualTo(ReadClassicSeries(expected, 1)))
+                End If
+                workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim reopened = GetFirstEmbeddedChart(workbook, ChartDataSheet)
+                Assert.That(CInt(reopened.ChartType), [Is].EqualTo(chartType))
+                Assert.That(DirectCast(reopened.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(1))
+            Finally
+                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
 
         <TestCase(117, "Rename")>
         <TestCase(118, "Rename")>

@@ -109,10 +109,14 @@ Namespace ExcelOps
                     sheet = LinkedStructuralSheet(sheet, links, externalPrefix)
                 End If
                 If Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
-                If shift.ClearsTableDataBody Then Throw UnsupportedOperation("Clearing a table's data body on a ChartEx source worksheet")
                 Dim rewritten = RewriteFormula(definition.Text, Nothing, editedSheet, shift, Nothing, True, formulaWorkbook:=book,
                                                structuralExternalLinks:=links)
-                If rewritten = definition.Text Then Continue For
+                Dim clearsSource = False
+                If shift.ClearsTableDataBody Then
+                    Dim original = ReadChartRange(definition.Text.Substring(qualifier.Length))
+                    clearsSource = shift.ClearsTableRange(original.First, original.Last)
+                End If
+                If rewritten = definition.Text AndAlso Not clearsSource Then Continue For
                 If formula.Parent.ChildElements.Any(Function(item) item.LocalName = "lvl" OrElse item.LocalName = "numLvl" OrElse item.LocalName = "strLvl") Then
                     Throw UnsupportedOperation("Shifting cached ChartEx data")
                 End If
@@ -202,7 +206,6 @@ Namespace ExcelOps
                 If external <> (links IsNot Nothing) Then Continue For
                 If external Then sheet = LinkedStructuralSheet(sheet, links, externalPrefix)
                 If Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
-                If shift?.ClearsTableDataBody = True Then Throw UnsupportedOperation("Clearing a table's data body on a chart source worksheet")
                 Dim newQualifier = qualifier.Value
                 If newSheetName IsNot Nothing Then
                     newQualifier = If(external, FormatLinkedSheetName(externalPrefix, newSheetName), FormatSheetName(newSheetName))
@@ -217,7 +220,8 @@ Namespace ExcelOps
                 End If
                 Dim original = ReadChartRange(address)
                 Dim rewritten = If(shift Is Nothing, address, shift.RewriteReference(original.First, original.Last, ":"))
-                If rewritten = address AndAlso newSheetName Is Nothing Then Continue For
+                Dim clearsSource = If(shift?.ClearsTableRange(original.First, original.Last), False)
+                If rewritten = address AndAlso newSheetName Is Nothing AndAlso Not clearsSource Then Continue For
                 Dim reference = formula.Parent
                 Dim role = reference.Parent
                 If rewritten = "#REF!" AndAlso multipleSeries AndAlso
@@ -244,7 +248,7 @@ Namespace ExcelOps
                         If TypeOf role Is ChartXml.Values OrElse TypeOf role Is ChartXml.YValues Then removedValueSources.Add(role.Parent)
                         UpdateInvalidChartCache(reference)
                     End If
-                ElseIf shift IsNot Nothing AndAlso rewritten <> address Then
+                ElseIf shift IsNot Nothing AndAlso (rewritten <> address OrElse clearsSource) Then
                     RemapChartCache(reference, original, rewritten, shift)
                 End If
             Next
@@ -329,6 +333,10 @@ Namespace ExcelOps
                 If index.Value > CUInt(last.Row - first.Row + last.Column - first.Column) Then Throw UnsupportedReferenceSyntax()
                 Dim row = first.Row + If(byRow, CInt(index.Value), 0)
                 Dim column = first.Column + If(byRow, 0, CInt(index.Value))
+                If shift.ClearsTableCell(row, column) Then
+                    point.Remove()
+                    Continue For
+                End If
                 If shift.Vertical AndAlso shift.Includes(column) Then
                     row = shift.MoveIndex(row)
                 ElseIf Not shift.Vertical AndAlso shift.Includes(row) Then
