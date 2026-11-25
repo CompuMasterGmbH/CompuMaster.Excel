@@ -180,6 +180,9 @@ Namespace ExcelOps
             End If
 
             Dim revised = DirectCast(source.CloneNode(True), ChartXml.ChartSpace)
+            Dim multipleSeries = revised.Descendants().Where(Function(element) element.LocalName = "ser").Skip(1).Any()
+            Dim removedValueSources As New HashSet(Of OpenXmlElement)
+            Dim removedSeriesNames As New List(Of OpenXmlElement)
             Dim changed = False
             For Each formula In revised.Descendants(Of ChartXml.Formula)().ToArray()
                 Dim qualifier = FormulaSheet.Match(formula.Text, 0)
@@ -206,12 +209,13 @@ Namespace ExcelOps
                 Dim original = ReadChartRange(address)
                 Dim rewritten = If(shift Is Nothing, address, shift.RewriteReference(original.First, original.Last, ":"))
                 If rewritten = address AndAlso newSheetName Is Nothing Then Continue For
-                If rewritten = "#REF!" AndAlso revised.Descendants().Count(Function(element) element.LocalName = "ser") > 1 Then
-                    Throw UnsupportedOperation("Deleting an entire source range in a chart with multiple series")
-                End If
-
                 Dim reference = formula.Parent
                 Dim role = reference.Parent
+                If rewritten = "#REF!" AndAlso multipleSeries AndAlso
+                   Not (TypeOf role.Parent Is ChartXml.BarChartSeries OrElse TypeOf role.Parent Is ChartXml.LineChartSeries OrElse
+                        TypeOf role.Parent Is ChartXml.ScatterChartSeries) Then
+                    Throw UnsupportedOperation("Deleting an entire source range in an unsupported chart with multiple series")
+                End If
                 If Not (TypeOf role Is ChartXml.CategoryAxisData OrElse TypeOf role Is ChartXml.Values OrElse
                         TypeOf role Is ChartXml.XValues OrElse TypeOf role Is ChartXml.YValues OrElse
                         TypeOf role Is ChartXml.SeriesText OrElse
@@ -222,10 +226,24 @@ Namespace ExcelOps
 
                 changed = True
                 formula.Text = newQualifier & rewritten
-                If rewritten = "#REF!" AndAlso (TypeOf role Is ChartXml.CategoryAxisData OrElse TypeOf role Is ChartXml.SeriesText) Then
-                    role.Remove()
+                If rewritten = "#REF!" Then
+                    If TypeOf role Is ChartXml.CategoryAxisData Then
+                        role.Remove()
+                    ElseIf TypeOf role Is ChartXml.SeriesText Then
+                        removedSeriesNames.Add(reference)
+                    Else
+                        If TypeOf role Is ChartXml.Values OrElse TypeOf role Is ChartXml.YValues Then removedValueSources.Add(role.Parent)
+                        UpdateInvalidChartCache(reference)
+                    End If
                 ElseIf shift IsNot Nothing AndAlso rewritten <> address Then
                     RemapChartCache(reference, original, rewritten, shift)
+                End If
+            Next
+            For Each reference In removedSeriesNames
+                If multipleSeries AndAlso removedValueSources.Contains(reference.Parent.Parent) Then
+                    UpdateInvalidChartCache(reference)
+                Else
+                    reference.Parent.Remove()
                 End If
             Next
             Return If(changed, revised, Nothing)
@@ -244,31 +262,47 @@ Namespace ExcelOps
             Return (first, last)
         End Function
 
-        Private Shared Sub RemapChartCache(reference As OpenXmlElement, original As (First As ReferenceEndpoint, Last As ReferenceEndpoint),
-                                           rewritten As String, shift As StructuralShift)
+        Private Shared Sub UpdateInvalidChartCache(reference As OpenXmlElement)
             Dim numberCache = reference.GetFirstChild(Of ChartXml.NumberingCache)()
             Dim stringCache = reference.GetFirstChild(Of ChartXml.StringCache)()
+            If TypeOf reference.Parent Is ChartXml.SeriesText Then
+                If Not TypeOf reference Is ChartXml.StringReference Then Throw UnsupportedReferenceSyntax()
+                If stringCache Is Nothing Then
+                    stringCache = New ChartXml.StringCache()
+                    DirectCast(reference, OpenXmlCompositeElement).AddChild(stringCache)
+                End If
+            End If
             Dim cache As OpenXmlCompositeElement = If(DirectCast(numberCache, OpenXmlCompositeElement), stringCache)
             If cache Is Nothing Then Return
 
-            If rewritten = "#REF!" Then
-                cache.RemoveAllChildren(Of ChartXml.NumericPoint)()
-                cache.RemoveAllChildren(Of ChartXml.StringPoint)()
-                Dim count = cache.GetFirstChild(Of ChartXml.PointCount)()
-                If count Is Nothing Then
-                    count = New ChartXml.PointCount()
-                    cache.AddChild(count)
-                End If
-                If TypeOf reference.Parent Is ChartXml.Values OrElse TypeOf reference.Parent Is ChartXml.YValues Then
-                    If numberCache Is Nothing Then Throw UnsupportedReferenceSyntax()
-                    count.Val = 1UI
-                    cache.AddChild(New ChartXml.NumericPoint(New ChartXml.NumericValue("1")) With {.Index = 0UI})
-                Else
-                    count.Val = 0UI
-                End If
+            If TypeOf reference.Parent Is ChartXml.XValues Then
+                cache.Remove()
                 Return
             End If
+            cache.RemoveAllChildren(Of ChartXml.NumericPoint)()
+            cache.RemoveAllChildren(Of ChartXml.StringPoint)()
+            Dim count = cache.GetFirstChild(Of ChartXml.PointCount)()
+            If count Is Nothing Then
+                count = New ChartXml.PointCount()
+                cache.AddChild(count)
+            End If
+            If TypeOf reference.Parent Is ChartXml.Values OrElse TypeOf reference.Parent Is ChartXml.YValues Then
+                If numberCache Is Nothing Then Throw UnsupportedReferenceSyntax()
+                count.Val = 1UI
+                cache.AddChild(New ChartXml.NumericPoint(New ChartXml.NumericValue("1")) With {.Index = 0UI})
+            ElseIf TypeOf reference.Parent Is ChartXml.SeriesText Then
+                count.Val = 1UI
+                cache.AddChild(New ChartXml.StringPoint(New ChartXml.NumericValue("#REF!")) With {.Index = 0UI})
+            Else
+                count.Val = 0UI
+            End If
+        End Sub
 
+        Private Shared Sub RemapChartCache(reference As OpenXmlElement, original As (First As ReferenceEndpoint, Last As ReferenceEndpoint),
+                                           rewritten As String, shift As StructuralShift)
+            Dim cache As OpenXmlCompositeElement = If(DirectCast(reference.GetFirstChild(Of ChartXml.NumberingCache)(), OpenXmlCompositeElement),
+                                                      reference.GetFirstChild(Of ChartXml.StringCache)())
+            If cache Is Nothing Then Return
             Dim newRange = ReadChartRange(rewritten)
             Dim first = original.First
             Dim last = If(original.Last, first)

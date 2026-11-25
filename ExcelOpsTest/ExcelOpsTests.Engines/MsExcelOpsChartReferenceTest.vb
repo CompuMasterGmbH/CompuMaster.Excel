@@ -104,6 +104,87 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <TestCase(51, "DeleteValues")>
+        <TestCase(51, "DeleteDataRows")>
+        <TestCase(51, "DeleteCategories")>
+        <TestCase(51, "DeleteTitleRow")>
+        <TestCase(-4169, "DeleteValues")>
+        <TestCase(-4169, "DeleteDataRows")>
+        <TestCase(-4169, "DeleteCategories")>
+        <TestCase(-4169, "DeleteTitleRow")>
+        <TestCase(65, "DeleteValues")>
+        <TestCase(65, "DeleteDataRows")>
+        <TestCase(65, "DeleteCategories")>
+        <TestCase(65, "DeleteTitleRow")>
+        Public Sub ChartReferences_OpenXmlMatchesExcelMultiSeriesDeletion(chartType As Integer, operation As String)
+            Dim caseDirectory = CreateChartTestDirectory()
+            Dim input = Path.Combine(caseDirectory, "before.xlsx")
+            Dim expected = Path.Combine(caseDirectory, "excel-edited.xlsx")
+            Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook As MsExcelDataOperations = Nothing
+            Try
+                workbook = CreateChartWorkbook()
+                Dim data = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
+                data.Range("E2").Value2 = "Costs"
+                For row = 3 To 5
+                    data.Range("E" & row).Value2 = row * 7
+                    If chartType <> -4169 Then data.Range("B" & row).Value2 = "Item " & row
+                Next
+                Dim chart = AddEmbeddedReferenceChart(data).Chart
+                chart.ChartType = CType(chartType, NativeExcel.XlChartType)
+                Dim series = DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection)
+                Dim qualifier = ChartSheetQualifier(ChartDataSheet)
+                While series.Count > 0
+                    series.Item(1).Delete()
+                End While
+                For Each column As String In {"C", "E"}
+                    Dim entry = series.NewSeries()
+                    Dim order = If(column = "C", "1", "2")
+                    entry.Formula = "=SERIES(" & qualifier & "$" & column & "$2," & qualifier & "$B$3:$B$5," &
+                                    qualifier & "$" & column & "$3:$" & column & "$5," & order & ")"
+                Next
+                workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                ApplyChartDataEdit(workbook, operation)
+                workbook.SaveAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.Close()
+
+                Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    ApplyChartDataEdit(editor, operation)
+                    editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                Assert.That(ReadClassicSeries(output), [Is].EqualTo(ReadClassicSeries(expected)))
+                workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim reopened = GetFirstEmbeddedChart(workbook, ChartDataSheet)
+                Assert.That(CInt(reopened.ChartType), [Is].EqualTo(chartType))
+                Assert.That(DirectCast(reopened.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(2))
+            Finally
+                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Function ReadClassicSeries(path As String) As String()
+            Using document = SpreadsheetDocument.Open(path, False)
+                Dim sheet = DirectCast(FindChartSourcePart(document.WorkbookPart, ChartDataSheet), WorksheetPart)
+                Dim chart = sheet.DrawingsPart.ChartParts.Single().ChartSpace
+                Dim series = chart.Descendants().Where(Function(item) item.LocalName = "ser").ToArray()
+                Assert.That(series.Length, [Is].EqualTo(2))
+                Return series.Select(Function(item)
+                    Dim references = item.Descendants(Of ChartXml.Formula)().Select(Function(formula)
+                        Dim reference = formula.Parent
+                        Dim cache = If(DirectCast(reference.GetFirstChild(Of ChartXml.NumberingCache)(), OpenXmlElement),
+                                       reference.GetFirstChild(Of ChartXml.StringCache)())
+                        Dim points = If(cache?.ChildElements.Where(Function(child) child.LocalName = "pt").Select(
+                            Function(point) point.GetAttribute("idx", "").Value & "=" & point.InnerText), Array.Empty(Of String)())
+                        Return reference.Parent.LocalName & "=" & formula.Text & ":" &
+                               If(cache?.GetFirstChild(Of ChartXml.PointCount)()?.Val?.Value.ToString(), "") & ":" & String.Join(",", points)
+                    End Function)
+                    Return item.Parent.LocalName & ":" & String.Join("|", references)
+                End Function).ToArray()
+            End Using
+        End Function
+
         <TestCase(117, "Rename")>
         <TestCase(118, "Rename")>
         <TestCase(117, "InsideRows")>
