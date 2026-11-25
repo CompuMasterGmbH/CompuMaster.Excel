@@ -109,9 +109,18 @@ Namespace ExcelOps
                     table.TargetLastColumn = MoveIndex(high)
                     Return
                 End If
-                If Not Inserting AndAlso Start + Count > low AndAlso
-                   (Not WholeAxis OrElse Start <= table.FirstDataRow OrElse Start + Count > table.LastDataRow + 1) Then
-                    Throw New NotSupportedException("This deletion would remove rows of an Excel table in an unsupported way.")
+                If Not Inserting AndAlso Start + Count > low Then
+                    If WholeAxis AndAlso table.TotalsCount = 1 AndAlso Start = high AndAlso Count = 1 AndAlso
+                       table.LastDataRow >= table.FirstDataRow Then
+                        table.RemovesTotalsRow = True
+                        table.TargetLastRow = high - 1
+                        Return
+                    End If
+                    If Not WholeAxis OrElse Start <= low OrElse Start < table.FirstDataRow OrElse
+                       Start + Count > table.LastDataRow + 1 OrElse Count >= table.LastDataRow - table.FirstDataRow + 1 Then
+                        Throw New NotSupportedException("This deletion would remove rows of an Excel table in an unsupported way.")
+                    End If
+                    table.RemovesFirstDataRow = Start = table.FirstDataRow
                 End If
                 table.TargetLastRow = MoveIndex(high)
                 If Start <= low Then

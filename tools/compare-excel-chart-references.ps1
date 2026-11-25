@@ -165,10 +165,11 @@ try {
             if ($type -eq -4152) {
                 $shape = $chartSheet.Shapes.AddChart2(-1, 51, 240, 20, 220, 150)
                 $shape.Chart.SeriesCollection().Item(2).ChartType = 4
-            } elseif ($type -in 83, 84, 85, 86, 87, 88, 89, 90, 91, 113, 114, 115 -or ($type -ge 124 -and $type -le 139)) {
+            } elseif ($type -in 83, 84, 85, 86, 87, 88, 89, 90, 91) {
                 $shape = $chartSheet.Shapes.AddChart2(-1, 51, 240, 20, 220, 150)
                 $shape.Chart.ChartType = $type
             } else {
+                # Create built-in combination presets directly.
                 $shape = $chartSheet.Shapes.AddChart2(-1, $type, 240, 20, 220, 150)
             }
             $shape.Name = 'ChartType_' + $type
