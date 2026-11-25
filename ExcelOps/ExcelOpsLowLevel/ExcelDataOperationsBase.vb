@@ -318,7 +318,9 @@ Namespace ExcelOps
         ''' </summary>
         ''' <remarks>If workbook is still opened, workbook state like selected sheet can be restored from memory, otherwise state will be restored as saved in file</remarks>
         Public Sub ReloadFromFile()
-            Me.LoadAndInitializeWorkbookFile(Me.FilePath, Me.LoadOptions)
+            SyncLock WorkbookSaveLock
+                    Me.LoadAndInitializeWorkbookFile(Me.FilePath, Me.LoadOptions)
+            End SyncLock
         End Sub
 
         ''' <summary>
@@ -494,15 +496,16 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption">Controls how cached formula results are handled when saving.</param>
         ''' <remarks>Depending on <see cref="AutoCalculationResetToEnabledForAllSavedWorkbooks"/>, <see cref="AutoCalculationEnabledWorkbookSetting"/> will be reset to <see langword="True"/> in the saved workbook.</remarks>
         Public Sub Save(recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            SyncLock WorkbookSaveLock
+                SaveCurrentFile(recalculateWorkbook, cachedCalculationsOption)
+            End SyncLock
+        End Sub
+
+        Private Sub SaveCurrentFile(recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             If Me.ReadOnly = True Then
                 Throw New FileReadOnlyException("File is read-only and can't be saved at same location")
             End If
-            If FilePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) AndAlso Me.HasVbaProject Then
-                Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
-            End If
-            If FilePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
-                Me.RemoveVbaProject()
-            End If
+            PrepareVbaForSave(FilePath)
 
             If Me.FilePath <> Nothing AndAlso Me.WorkbookFilePath = Nothing Then
                 'Created workbook, initial save must provide a file path, so use SaveAs method instead
@@ -583,7 +586,10 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption">Controls how cached formula results are handled when saving.</param>
         ''' <remarks>Depending on <see cref="AutoCalculationResetToEnabledForAllSavedWorkbooks"/>, <see cref="AutoCalculationEnabledWorkbookSetting"/> will be reset to <see langword="True"/> in the saved workbook.</remarks>
         Public Sub SaveAs(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            Me.SaveAs_Internal(filePath, recalculateWorkbook, cachedCalculationsOption, SaveMethodMode.SaveAs)
+            SyncLock WorkbookSaveLock
+                Me.SaveAs_Internal(filePath, recalculateWorkbook, cachedCalculationsOption, SaveMethodMode.SaveAs)
+                OnSavedAs(Me.FilePath)
+            End SyncLock
         End Sub
 
         ''' <summary>
@@ -604,7 +610,36 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption">Controls how cached formula results are handled when saving.</param>
         ''' <remarks>Depending on <see cref="AutoCalculationResetToEnabledForAllSavedWorkbooks"/>, <see cref="AutoCalculationEnabledWorkbookSetting"/> will be reset to <see langword="True"/> in the saved workbook.</remarks>
         Public Sub SaveCopyAs(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            SyncLock WorkbookSaveLock
+                SaveCopyAsCore(filePath, recalculateWorkbook, cachedCalculationsOption)
+            End SyncLock
+        End Sub
+
+        ''' <summary>Serializes saves and engine operations that share workbook state.</summary>
+        Protected ReadOnly Property WorkbookSaveLock As Object = New Object()
+
+        ''' <summary>Writes a copy of the workbook to a separate file.</summary>
+        ''' <param name="filePath">Destination path.</param>
+        ''' <param name="recalculateWorkbook">Whether to recalculate, or use the default when omitted.</param>
+        ''' <param name="cachedCalculationsOption">Controls whether to clear cached formula results.</param>
+        Protected Overridable Sub SaveCopyAsCore(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Me.SaveAs_Internal(filePath, recalculateWorkbook, cachedCalculationsOption, SaveMethodMode.SaveCopyAs)
+        End Sub
+
+        ''' <summary>Applies the engine's VBA policy before saving.</summary>
+        ''' <param name="destination">Destination path.</param>
+        Protected Overridable Sub PrepareVbaForSave(destination As String)
+            If destination.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) AndAlso Me.HasVbaProject Then
+                Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
+            End If
+            If destination.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
+                Me.RemoveVbaProject()
+            End If
+        End Sub
+
+        ''' <summary>Updates engine state after the workbook has been saved to a new path.</summary>
+        ''' <param name="destination">The new workbook path.</param>
+        Protected Overridable Sub OnSavedAs(destination As String)
         End Sub
 
         Private Enum SaveMethodMode As Byte
@@ -625,17 +660,11 @@ Namespace ExcelOps
             If Me.ReadOnly = True AndAlso Me._FilePath = filePath AndAlso Me.WorkbookFilePath <> Nothing Then
                 Throw New FileReadOnlyException("File """ & filePath & """ is read-only and can't be saved at same location")
             End If
-            If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) AndAlso Me.HasVbaProject Then
-                Throw New NotSupportedException("VBA projects are not supported for .xlsx files, run RemoveVbaProject() method, first")
-            End If
-
             Dim OriginalFilePath As String = Me._FilePath
             Dim OriginalReadOnlyStatus As Boolean = Me.ReadOnly
             Dim SaveFilePath As New System.IO.FileInfo(filePath)
 
-            If filePath.ToLowerInvariant.EndsWith(".xlsx", False, System.Globalization.CultureInfo.InvariantCulture) Then 'remove any last bit of a VBA project (HasVbaModule is not 100% sure)
-                Me.RemoveVbaProject()
-            End If
+            PrepareVbaForSave(filePath)
 
             Dim DoRecalculateWorkbook As Boolean = Me.RecalculationRequired AndAlso Me.CalculationModuleDisabled = False
             If recalculateWorkbook.HasValue Then DoRecalculateWorkbook = recalculateWorkbook.Value
@@ -1298,8 +1327,10 @@ Namespace ExcelOps
         ''' Recalculates everything.
         ''' </summary>
         Public Sub RecalculateAll()
-            Me.RecalculateAllInternal()
-            Me.RecalculationRequired = False
+            SyncLock WorkbookSaveLock
+                    Me.RecalculateAllInternal()
+                    Me.RecalculationRequired = False
+            End SyncLock
         End Sub
 
         ''' <summary>

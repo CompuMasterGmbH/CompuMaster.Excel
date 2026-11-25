@@ -23,7 +23,7 @@ Public Class FormulaResultContractTest
     Private Function OpenWorkbook(Optional disableCalculation As Boolean = False, Optional arrayFormula As Boolean = False) As ExcelDataOperationsBase
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
             .DisableInitialCalculation = True,
-            .DisableCalculationEngine = _engine = "openxml" OrElse disableCalculation
+            .DisableCalculationEngine = disableCalculation
         }
         Dim bytes = CreateWorkbook(arrayFormula)
         Select Case _engine
@@ -93,21 +93,15 @@ Public Class FormulaResultContractTest
             Dim options As New HtmlSheetExportOptions With {
                 .FormulaCalculationMode = FormulaCalculationMode.CalculateIfMissing, .MissingFormulaResultText = "#Value?"
             }
-            If _engine = "openxml" Then
-                Assert.Throws(Of NotSupportedException)(Sub() workbook.ExportSheetToHtml("Grid", options))
-                Assert.Throws(Of NotSupportedException)(
-                    Sub() workbook.LookupCellValueAsObject("Grid", 0, 0, FormulaCalculationMode.CalculateIfMissing))
-            Else
-                Dim html = workbook.ExportSheetToHtml("Grid", options, HtmlDocumentExportParts.TableOnly).ToString()
-                Assert.That(XElement.Parse(html).Descendants("td").First().Value, [Is].EqualTo("3"))
-                Assert.That(workbook.LookupCellValue(Of Integer)("Grid", 0, 0, FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(3))
-                Assert.That(workbook.HasMissingCachedFormulaResult("Grid", 0, 0), [Is].False)
+            Dim html = workbook.ExportSheetToHtml("Grid", options, HtmlDocumentExportParts.TableOnly).ToString()
+            Assert.That(XElement.Parse(html).Descendants("td").First().Value, [Is].EqualTo("3"))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Grid", 0, 0, FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(3))
+            Assert.That(workbook.HasMissingCachedFormulaResult("Grid", 0, 0), [Is].False)
 
-                workbook.WriteCellFormula("Grid", 0, 0, "1/0", immediatelyCalculateCellValue:=False)
-                html = workbook.ExportSheetToHtml("Grid", options, HtmlDocumentExportParts.TableOnly).ToString()
-                Assert.That(XElement.Parse(html).Descendants("td").First().Value, [Is].EqualTo("#DIV/0!").IgnoreCase)
-                Assert.That(workbook.HasMissingCachedFormulaResult("Grid", 0, 0), [Is].False)
-            End If
+            workbook.WriteCellFormula("Grid", 0, 0, "1/0", immediatelyCalculateCellValue:=False)
+            html = workbook.ExportSheetToHtml("Grid", options, HtmlDocumentExportParts.TableOnly).ToString()
+            Assert.That(XElement.Parse(html).Descendants("td").First().Value, [Is].EqualTo("#DIV/0!").IgnoreCase)
+            Assert.That(workbook.HasMissingCachedFormulaResult("Grid", 0, 0), [Is].False)
         Finally
             workbook.Close()
         End Try
@@ -115,7 +109,6 @@ Public Class FormulaResultContractTest
 
     <Test>
     Public Sub DisabledCalculationIsDifferentFromAnUnsupportedFormula()
-        If _engine = "openxml" Then Assert.Ignore("This engine has no calculation feature.")
         Dim workbook = OpenWorkbook(disableCalculation:=True)
         Try
             Assert.Throws(Of FeatureDisabledException)(

@@ -177,7 +177,6 @@ Partial Public Class OpenXmlExcelOpsTest
     Public Sub RejectsUnsupportedOperationsBeforeEditing()
         Dim template = Path.Combine(_directory, "template.xlsx")
         CreateTemplate(template)
-        Assert.Throws(Of FeatureDisabledException)(Sub() OpenWithOptions(template, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}))
         Assert.Throws(Of FeatureDisabledException)(Sub() OpenWithOptions(template, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = False}))
         Assert.Throws(Of NotSupportedException)(Sub() OpenWithOptions(template, New ExcelDataOperationsOptions("password")))
         Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))

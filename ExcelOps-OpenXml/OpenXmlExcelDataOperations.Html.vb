@@ -60,7 +60,8 @@ Namespace ExcelOps
                 Dim rowCells = rows(rowIndex).ToDictionary(Function(c) c.ColumnIndex, Function(c) c.Value)
                 Dim row As Row = Nothing
                 rowsByIndex.TryGetValue(rowIndex, row)
-                Dim rowMerges = includedMerges.Where(Function(m) m.AddressStart.RowIndex <= rowIndex AndAlso m.AddressEnd.RowIndex >= rowIndex).ToArray()
+                Dim currentRow = rowIndex
+                Dim rowMerges = includedMerges.Where(Function(m) m.AddressStart.RowIndex <= currentRow AndAlso m.AddressEnd.RowIndex >= currentRow).ToArray()
                 Dim tag = If(headers IsNot Nothing AndAlso headers.Contains(rowIndex), "th", "td")
                 sb.Append("<tr>")
                 Dim columnIndex = firstColumn
@@ -70,14 +71,14 @@ Namespace ExcelOps
                         Dim cell As Cell = Nothing
                         rowCells.TryGetValue(columnIndex, cell)
                         Dim index = WorksheetCellStyleIndex(part.Worksheet, row, cell, columnIndex)
+                        Dim format = GetCachedNumberFormat(stylesheet, index, formatCache)
                         Dim content As String
                         If IsMissingFormulaResult(cell) Then
-                            content = ResolveHtmlCellText(worksheetName, rowIndex, columnIndex, options, Function() Nothing)
+                            Dim currentColumn = columnIndex
+                            content = ResolveHtmlCellText(worksheetName, currentRow, currentColumn, options,
+                                Function() ReadHtmlCellText(worksheetName, currentRow, currentColumn, cell, format))
                         Else
-                            Dim value = ReadCellValue(worksheetName, rowIndex, columnIndex, cell)
-                            ' EPPlus 4 renders Boolean cells as 0/1 in its HTML tables.
-                            If TypeOf value Is Boolean Then value = If(DirectCast(value, Boolean), 1.0, 0.0)
-                            content = FormatCellValue(value, GetCachedNumberFormat(stylesheet, index, formatCache))
+                            content = ReadHtmlCellText(worksheetName, currentRow, columnIndex, cell, format)
                         End If
                         If Not styleCache.ContainsKey(index) Then styleCache.Add(index, HtmlCellStyle(stylesheet, index, palette))
                         AppendHtmlCell(sb, tag, merge, styleCache(index), content)
@@ -88,6 +89,13 @@ Namespace ExcelOps
             Next
             sb.AppendLine("</table>")
         End Sub
+
+        Private Function ReadHtmlCellText(sheetName As String, rowIndex As Integer, columnIndex As Integer, cell As Cell, format As NumberFormat) As String
+            Dim value = ReadCellValue(sheetName, rowIndex, columnIndex, cell)
+            ' EPPlus 4 renders Boolean cells as 0/1 in its HTML tables.
+            If TypeOf value Is Boolean Then value = If(DirectCast(value, Boolean), 1.0, 0.0)
+            Return FormatCellValue(value, format)
+        End Function
 
         Private Shared Sub AppendHtmlCell(sb As StringBuilder, tag As String, merge As ExcelRange, style As String, content As String)
             sb.Append("<").Append(tag)

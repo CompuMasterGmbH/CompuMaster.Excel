@@ -6,14 +6,15 @@ Imports DocumentFormat.OpenXml.Spreadsheet
 
 Namespace ExcelOps
 
-    ''' <summary>Edits XLSX workbooks using the Open XML SDK.</summary>
-    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports structural reference updates on compatible workbooks. Formula evaluation is unavailable.</remarks>
+    ''' <summary>Edits Open XML workbooks and templates using the Open XML SDK.</summary>
+    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in formula evaluation and structural reference updates on compatible workbooks.</remarks>
     Public NotInheritable Partial Class OpenXmlExcelDataOperations
         Inherits ExcelDataOperationsBase
-        Implements IDisposable
+        Implements IDisposable, ICloneable
 
         Private _source As MemoryStream
         Private _document As SpreadsheetDocument
+        Private _currentDocumentType As SpreadsheetDocumentType
         Private ReadOnly _changedSheets As New HashSet(Of WorksheetPart)
         Private _workbookChanged As Boolean
         Private _calculationChainInvalid As Boolean
@@ -21,8 +22,9 @@ Namespace ExcelOps
         Private _initialAutomaticCalculation As Boolean?
         Private _automaticCalculation As Boolean?
         Private _openedFromFile As Boolean
+        Private _vbaProjectRemoved As Boolean
 
-        ''' <summary>Opens or creates an XLSX workbook.</summary>
+        ''' <summary>Opens or creates an Open XML workbook or template.</summary>
         ''' <param name="file">Source path or intended path for a new workbook.</param>
         ''' <param name="mode">Mode used to open or create the workbook.</param>
         ''' <param name="options">File and engine options.</param>
@@ -31,15 +33,15 @@ Namespace ExcelOps
             ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
         End Sub
 
-        ''' <summary>Opens an XLSX workbook from bytes.</summary>
-        ''' <param name="data">XLSX package bytes to copy.</param>
+        ''' <summary>Opens an Open XML workbook or template from bytes.</summary>
+        ''' <param name="data">Open XML package bytes to copy.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             Me.New(options)
             LoadAndInitializeWorkbookFile(data, LoadOptions)
         End Sub
 
-        ''' <summary>Opens an XLSX workbook from a stream.</summary>
+        ''' <summary>Opens an Open XML workbook or template from a stream.</summary>
         ''' <param name="data">Stream positioned at the start of the package. The caller retains ownership.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Stream, options As ExcelDataOperationsOptions)
@@ -80,7 +82,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
-            If Not options.DisableCalculationEngine.Value OrElse Not options.DisableInitialCalculation.Value Then
+            If options.DisableCalculationEngine.Value AndAlso Not options.DisableInitialCalculation.Value Then
                 Throw CalculationFeatureDisabled()
             End If
             If Not String.IsNullOrEmpty(options.PasswordForOpening) Then
@@ -125,14 +127,18 @@ Namespace ExcelOps
             Dim document As SpreadsheetDocument = Nothing
             Try
                 document = SpreadsheetDocument.Open(snapshot, False, New OpenSettings With {.AutoSave = False})
-                If document.DocumentType <> SpreadsheetDocumentType.Workbook Then
-                    Throw New NotSupportedException("The Open XML SDK engine supports XLSX workbooks.")
-                End If
+                Select Case document.DocumentType
+                    Case SpreadsheetDocumentType.Workbook, SpreadsheetDocumentType.MacroEnabledWorkbook,
+                         SpreadsheetDocumentType.Template, SpreadsheetDocumentType.MacroEnabledTemplate
+                    Case Else
+                        Throw New NotSupportedException("The Open XML SDK engine supports XLSX, XLSM, XLTX and XLTM files.")
+                End Select
                 If document.WorkbookPart?.Workbook?.Sheets Is Nothing Then
                     Throw New InvalidDataException("The package does not contain a workbook with sheets.")
                 End If
                 _source = snapshot
                 _document = document
+                _currentDocumentType = document.DocumentType
                 _automaticCalculation = _initialAutomaticCalculation
                 RecalculationRequired = False
             Catch ex As Exception
@@ -149,7 +155,7 @@ Namespace ExcelOps
         Protected Overrides Sub CreateWorkbook()
             Dim snapshot As New MemoryStream()
             Try
-                Using document = SpreadsheetDocument.Create(snapshot, SpreadsheetDocumentType.Workbook)
+                Using document = SpreadsheetDocument.Create(snapshot, If(String.IsNullOrEmpty(FilePath), SpreadsheetDocumentType.Workbook, GetDocumentType(FilePath)))
                     Dim workbookPart = document.AddWorkbookPart()
                     Dim worksheetPart = workbookPart.AddNewPart(Of WorksheetPart)()
                     worksheetPart.Worksheet = New Worksheet(New SheetData())
@@ -166,7 +172,7 @@ Namespace ExcelOps
 
         Private ReadOnly Property WorkbookPart As WorkbookPart
             Get
-                If IsClosed Then Throw New InvalidOperationException("No XLSX workbook is open.")
+                If IsClosed Then Throw New InvalidOperationException("No workbook is open.")
                 Return _document.WorkbookPart
             End Get
         End Property
@@ -188,21 +194,24 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Sub Close()
-            Try
-                _document?.Dispose()
-            Finally
-                _document = Nothing
-                _source?.Dispose()
-                _source = Nothing
-                _changedSheets.Clear()
-                _changedTables.Clear()
-                _formulaRanges.Clear()
-                _workbookChanged = False
-                _calculationChainInvalid = False
-                _recalculateOnOpen = False
-                _automaticCalculation = Nothing
-                _openedFromFile = False
-            End Try
+            SyncLock WorkbookSaveLock
+                Try
+                    _document?.Dispose()
+                Finally
+                    _document = Nothing
+                    _source?.Dispose()
+                    _source = Nothing
+                    _changedSheets.Clear()
+                    _changedTables.Clear()
+                    _formulaRanges.Clear()
+                    _workbookChanged = False
+                    _calculationChainInvalid = False
+                    _recalculateOnOpen = False
+                    _automaticCalculation = Nothing
+                    _openedFromFile = False
+                    _vbaProjectRemoved = False
+                End Try
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
@@ -222,18 +231,22 @@ Namespace ExcelOps
                 Return If(_automaticCalculation, Not IsClosed AndAlso If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto) <> CalculateModeValues.Manual)
             End Get
             Set(value As Boolean)
-                ' The base constructor calls this setter before a package is open.
-                If IsClosed Then Return
-                Dim originalMode = If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto)
-                _automaticCalculation = If(value = (originalMode <> CalculateModeValues.Manual), CType(Nothing, Boolean?), value)
+                SyncLock WorkbookSaveLock
+                        ' The base constructor calls this setter before a package is open.
+                        If IsClosed Then Return
+                        Dim originalMode = If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto)
+                        _automaticCalculation = If(value = (originalMode <> CalculateModeValues.Manual), CType(Nothing, Boolean?), value)
+                End SyncLock
             End Set
         End Property
 
         ''' <summary>Requests a full recalculation when the saved workbook is opened in Excel.</summary>
         ''' <remarks>The request sets automatic workbook calculation and the full-calculation-on-load flag in subsequent saves. Use a save cache option to clear existing cached formula results.</remarks>
         Public Sub RequestRecalculationOnOpen()
-            If IsClosed Then Throw New InvalidOperationException("No XLSX workbook is open.")
-            _recalculateOnOpen = True
+            SyncLock WorkbookSaveLock
+                If IsClosed Then Throw New InvalidOperationException("No workbook is open.")
+                _recalculateOnOpen = True
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
@@ -243,15 +256,8 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
-            Dim sourceWorkbook = WorkbookPart
-            If Not String.Equals(Path.GetExtension(fileName), ".xlsx", StringComparison.OrdinalIgnoreCase) Then
-                Throw New NotSupportedException("The Open XML SDK engine saves XLSX files.")
-            End If
-            Dim destination = Path.GetFullPath(fileName)
-            Dim pathComparison = If(Path.DirectorySeparatorChar = "\"c, StringComparison.OrdinalIgnoreCase, StringComparison.Ordinal)
-            If Me.ReadOnly AndAlso _openedFromFile AndAlso String.Equals(destination, FilePath, pathComparison) Then
-                Throw New FileReadOnlyException(destination)
-            End If
+            Dim destination = ValidateSaveDestination(fileName)
+            Dim documentType = GetDocumentType(destination)
             Dim clearCache = cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation OrElse
                 (cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired AndAlso RecalculationRequired)
 
@@ -259,13 +265,7 @@ Namespace ExcelOps
             Dim temporaryFile As New FileStream(temporaryPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None)
             Try
                 Using output = temporaryFile
-                    _source.WriteTo(output)
-                    output.Position = 0
-                    If _workbookChanged OrElse _changedSheets.Count > 0 OrElse _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache Then
-                        Using target = SpreadsheetDocument.Open(output, True, New OpenSettings With {.AutoSave = False})
-                            SaveChangedParts(sourceWorkbook, target.WorkbookPart, clearCache)
-                        End Using
-                    End If
+                    WritePackage(output, clearCache, documentType, _vbaProjectRemoved OrElse IsMacroFree(documentType))
                 End Using
                 If File.Exists(destination) Then
                     File.Replace(temporaryPath, destination, Nothing)
@@ -276,6 +276,108 @@ Namespace ExcelOps
                 File.Delete(temporaryPath)
             End Try
         End Sub
+
+        ''' <inheritdoc/>
+        Protected Overrides Sub SaveCopyAsCore(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            Dim destination = ValidateSaveDestination(filePath)
+            If Not recalculateWorkbook.GetValueOrDefault(RecalculationRequired AndAlso Not CalculationModuleDisabled) Then
+                SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
+                SaveAsInternal(destination, cachedCalculationsOption)
+                Return
+            End If
+
+            Using copy = Clone()
+                copy.SaveAs(destination, recalculateWorkbook, cachedCalculationsOption)
+            End Using
+        End Sub
+
+        ''' <inheritdoc/>
+        Protected Overrides Sub PrepareVbaForSave(destination As String)
+            ' Apply format-specific VBA removal to the output package.
+        End Sub
+
+        ''' <inheritdoc/>
+        Protected Overrides Sub OnSavedAs(destination As String)
+            _currentDocumentType = GetDocumentType(destination)
+            If IsMacroFree(_currentDocumentType) AndAlso HasVbaProject Then _vbaProjectRemoved = True
+        End Sub
+
+        Private Function ValidateSaveDestination(fileName As String) As String
+            Dim destination = Path.GetFullPath(fileName)
+            Dim pathComparison = If(Path.DirectorySeparatorChar = ChrW(92), StringComparison.OrdinalIgnoreCase, StringComparison.Ordinal)
+            If Me.ReadOnly AndAlso String.Equals(destination, FilePath, pathComparison) Then
+                Throw New FileReadOnlyException(destination)
+            End If
+            Return destination
+        End Function
+
+        Private Shared Function GetDocumentType(fileName As String) As SpreadsheetDocumentType
+            Select Case Path.GetExtension(fileName).ToLowerInvariant()
+                Case ".xlsx" : Return SpreadsheetDocumentType.Workbook
+                Case ".xlsm" : Return SpreadsheetDocumentType.MacroEnabledWorkbook
+                Case ".xltx" : Return SpreadsheetDocumentType.Template
+                Case ".xltm" : Return SpreadsheetDocumentType.MacroEnabledTemplate
+                Case Else : Throw New NotSupportedException("The Open XML SDK engine saves XLSX, XLSM, XLTX and XLTM files.")
+            End Select
+        End Function
+
+        Private Shared Function IsMacroFree(documentType As SpreadsheetDocumentType) As Boolean
+            Return documentType = SpreadsheetDocumentType.Workbook OrElse documentType = SpreadsheetDocumentType.Template
+        End Function
+
+        ''' <summary>Creates an independent copy of the current workbook.</summary>
+        ''' <returns>A writable workbook with no associated file path.</returns>
+        ''' <remarks>Includes unsaved changes, VBA and cached formula results. Use SaveAs to give the clone a file path.</remarks>
+        ''' <exception cref="InvalidOperationException">The workbook is closed.</exception>
+        Public Function Clone() As OpenXmlExcelDataOperations
+            SyncLock WorkbookSaveLock
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite,
+                    Nothing, disableInitialCalculation:=True, disableAutoCalculation:=Nothing, disableCalculationEngine:=CalculationModuleDisabled)
+                Dim copy As New OpenXmlExcelDataOperations(options)
+                Dim snapshot As New MemoryStream()
+                Try
+                    WritePackage(snapshot, clearCache:=False, documentType:=_currentDocumentType, removeVba:=_vbaProjectRemoved)
+                    copy.OpenSnapshot(snapshot)
+                    copy.RecalculationRequired = RecalculationRequired
+                    copy._recalculateOnOpen = _recalculateOnOpen
+                    copy.AutoCalculationResetToEnabledForAllSavedWorkbooks = AutoCalculationResetToEnabledForAllSavedWorkbooks
+                    Return copy
+                Catch
+                    snapshot.Dispose()
+                    Throw
+                End Try
+            End SyncLock
+        End Function
+
+        Private Function CloneObject() As Object Implements ICloneable.Clone
+            Return Clone()
+        End Function
+
+        Private Sub WritePackage(output As Stream, clearCache As Boolean, documentType As SpreadsheetDocumentType, removeVba As Boolean)
+            Dim sourceWorkbook = WorkbookPart
+            _source.WriteTo(output)
+            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _calculationChainInvalid OrElse
+                    _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache OrElse
+                    (removeVba AndAlso sourceWorkbook.VbaProjectPart IsNot Nothing) OrElse
+                    documentType <> _document.DocumentType OrElse (IsMacroFree(documentType) AndAlso HasMacroSheets(sourceWorkbook))) Then Return
+
+            output.Position = 0
+            Using target = SpreadsheetDocument.Open(output, True, New OpenSettings With {.AutoSave = False})
+                Dim targetWorkbook = target.WorkbookPart
+                If IsMacroFree(documentType) AndAlso HasMacroSheets(targetWorkbook) Then
+                    Throw UnsupportedOperation("Saving Excel 4.0 macro sheets to a macro-free format")
+                End If
+                SaveChangedParts(sourceWorkbook, targetWorkbook, clearCache)
+                If removeVba AndAlso targetWorkbook.VbaProjectPart IsNot Nothing Then
+                    targetWorkbook.DeletePart(targetWorkbook.VbaProjectPart)
+                End If
+                If documentType <> target.DocumentType Then target.ChangeDocumentType(documentType)
+            End Using
+        End Sub
+
+        Private Shared Function HasMacroSheets(workbook As WorkbookPart) As Boolean
+            Return workbook.Parts.Any(Function(part) part.OpenXmlPart.ContentType.EndsWith("macrosheet+xml", StringComparison.OrdinalIgnoreCase))
+        End Function
 
         Private Sub SaveChangedParts(source As WorkbookPart, target As WorkbookPart, clearCache As Boolean)
             For Each sourceSheet In _changedSheets
@@ -317,43 +419,25 @@ Namespace ExcelOps
             End If
         End Sub
 
-        Private Const CalculationUnavailableMessage As String =
-            "The Open XML SDK engine cannot evaluate formulas. Use RequestRecalculationOnOpen to have Excel recalculate the saved workbook."
-
         Private Shared Function CalculationFeatureDisabled() As FeatureDisabledException
-            Return New FeatureDisabledException("Calculation engine", CalculationUnavailableMessage)
+            Return New FeatureDisabledException("Calculation engine", "Initial formula evaluation requires the Open XML calculation module to be enabled.")
         End Function
-
-        ''' <inheritdoc/>
-        Protected Overrides Sub CalculateMissingFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Throw New NotSupportedException(CalculationUnavailableMessage)
-        End Sub
-
-        ''' <inheritdoc/>
-        Protected Overrides Sub RecalculateAllInternal()
-            Throw CalculationFeatureDisabled()
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RecalculateSheet(sheetName As String)
-            Throw CalculationFeatureDisabled()
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
-            Throw CalculationFeatureDisabled()
-        End Sub
 
         ''' <inheritdoc/>
         Public Overrides ReadOnly Property HasVbaProject As Boolean
             Get
-                Return WorkbookPart.VbaProjectPart IsNot Nothing
+                SyncLock WorkbookSaveLock
+                    Return WorkbookPart.VbaProjectPart IsNot Nothing AndAlso Not _vbaProjectRemoved
+                End SyncLock
             End Get
         End Property
 
         ''' <inheritdoc/>
+        ''' <remarks>The project is removed from the package on the next save.</remarks>
         Public Overrides Sub RemoveVbaProject()
-            If HasVbaProject Then Throw UnsupportedOperation("Removing VBA projects")
+            SyncLock WorkbookSaveLock
+                If HasVbaProject Then _vbaProjectRemoved = True
+            End SyncLock
         End Sub
 
     End Class
