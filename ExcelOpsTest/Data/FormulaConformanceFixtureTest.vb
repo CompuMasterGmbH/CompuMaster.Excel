@@ -37,6 +37,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceInformation1900.xlsx", "Information arrays", 40)>
     <TestCase("FormulaReferenceStatistics1900.xlsx", "Order statistics", 388)>
     <TestCase("FormulaReferenceStatistics1900.xlsx", "Statistical arrays", 27)>
+    <TestCase("FormulaReferenceDispersion1900.xlsx", "Summary statistics", 648)>
+    <TestCase("FormulaReferenceDispersion1900.xlsx", "Mode arrays", 10)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -123,6 +125,12 @@ Public Class FormulaConformanceFixtureTest
             "D84", "D88", "D89", "E92", "F92", "G92", "H92", "E97", "F97", "G97",
             "H97", "E102", "F102", "G102", "H102", "E107", "F107", "G107", "H107", "E112",
             "F112", "G112", "H112", "E117", "F117", "G117", "H117")
+    End Sub
+
+    <Test>
+    Public Sub RecalculatesTheSpilledExcelModes()
+        AssertSpilledFormulaResults("FormulaReferenceDispersion1900.xlsx", "Mode arrays",
+            "D3", "D8", "D13", "D18", "D19", "D23", "D24", "D28", "D33", "D34", "D38", "D39", "D43")
     End Sub
 
     Private Shared Sub AssertSpilledFormulaResults(fileName As String, sheetName As String, ParamArray addresses As String())

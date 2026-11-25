@@ -10,7 +10,7 @@
                 If name = "MEDIAN" Then
                     If arguments.Count = 0 Then Return New FormulaError("#VALUE!")
                     For Each argument In arguments
-                        Dim failure = AddOrderStatisticValues(EvaluateExpression(argument, formulaCell), values)
+                        Dim failure = AddStatisticValues(EvaluateExpression(argument, formulaCell), values)
                         If failure IsNot Nothing Then Return failure
                     Next
                     If values.Count = 0 Then Return New FormulaError("#NUM!")
@@ -22,7 +22,7 @@
                 If arguments.Count < 2 OrElse arguments.Count > If(isRank, 3, 2) Then Return New FormulaError("#VALUE!")
                 Dim data = EvaluateExpression(arguments(If(isRank, 1, 0)), formulaCell)
                 If isRank AndAlso Not TypeOf data Is FormulaArea Then Return New FormulaError("#VALUE!")
-                Dim dataError = AddOrderStatisticValues(data, values)
+                Dim dataError = AddStatisticValues(data, values)
                 If dataError IsNot Nothing Then Return dataError
                 values.Sort()
 
@@ -49,20 +49,41 @@
                 Return New FormulaMatrix(rows, columns, results)
             End Function
 
-            Private Function AddOrderStatisticValues(input As Object, target As List(Of Double)) As FormulaError
+            Private Enum StatisticInput
+                Numeric
+                IncludeReferenceTextAndBooleans
+                AverageWithText
+                Mode
+            End Enum
+
+            Private Function AddStatisticValues(input As Object, target As List(Of Double),
+                                               Optional policy As StatisticInput = StatisticInput.Numeric) As FormulaError
                 Dim area = TryCast(input, FormulaArea)
                 Dim matrix = TryCast(input, FormulaMatrix)
-                If area Is Nothing AndAlso matrix Is Nothing Then
-                    Dim number = NumberValue(input)
-                    If TypeOf number Is FormulaError Then Return DirectCast(number, FormulaError)
-                    target.Add(DirectCast(number, Double))
-                    Return Nothing
+                Dim values As IEnumerable(Of Object)
+                If area IsNot Nothing AndAlso (policy <> StatisticInput.Mode OrElse IsMultiValue(area)) Then
+                    values = RangeValues(area)
+                ElseIf matrix IsNot Nothing Then
+                    values = matrix.Values
+                Else
+                    Dim value = Scalar(input)
+                    If policy = StatisticInput.Mode Then
+                        If value Is Nothing Then Return New FormulaError("#VALUE!")
+                    Else
+                        value = NumberValue(value)
+                    End If
+                    values = {value}
                 End If
 
-                Dim values = If(area IsNot Nothing, RangeValues(area), CType(matrix.Values, IEnumerable(Of Object)))
                 For Each value In values
                     If TypeOf value Is FormulaError Then Return DirectCast(value, FormulaError)
-                    If TypeOf value Is Double Then target.Add(DirectCast(value, Double))
+                    If TypeOf value Is Double Then
+                        target.Add(DirectCast(value, Double))
+                    ElseIf policy = StatisticInput.AverageWithText OrElse
+                        (area IsNot Nothing AndAlso policy = StatisticInput.IncludeReferenceTextAndBooleans) Then
+                        If area IsNot Nothing AndAlso TypeOf value Is Boolean Then target.Add(If(DirectCast(value, Boolean), 1.0, 0.0))
+                        If TypeOf value Is String Then target.Add(0.0)
+                    End If
                 Next
                 Return Nothing
             End Function
