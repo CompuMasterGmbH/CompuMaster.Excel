@@ -229,8 +229,10 @@ Namespace ExcelOpsTests.Engines
             Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
             Dim resultSheet = If(operation = "Rename", RenamedChartDataSheet, ChartDataSheet)
             Dim workbook As MsExcelDataOperations = Nothing
+            Dim mapApplication As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper = Nothing
             Try
-                workbook = CreateChartWorkbook()
+                If chartType = 140 Then mapApplication = NewMapChartApplication()
+                workbook = CreateChartWorkbook(mapApplication)
                 Dim data = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
                 data.Range("B2").Value2 = "Category"
                 Dim numericOnly = chartType = 118 OrElse chartType = 122
@@ -275,9 +277,22 @@ Namespace ExcelOpsTests.Engines
 
                 If emptyChart Then
                     ' The saved part verifies the empty series and axes. Reopen the workbook to verify the chart object remains.
-                    workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                    Dim owner = DirectCast(workbook.Workbook.Worksheets.Item(resultSheet), NativeExcel.Worksheet)
-                    Assert.That(DirectCast(owner.ChartObjects(), NativeExcel.ChartObjects).Count, [Is].EqualTo(1))
+                    If chartType = 140 Then
+                        ' Exercise the native and Open XML map packages in fresh Excel processes.
+                        For Each path In {expected, output}
+                            Using application = NewMapChartApplication()
+                                Dim reopened As New MsExcelDataOperations(path, ExcelDataOperationsBase.OpenMode.OpenExistingFile, application, False, options)
+                                Try
+                                    AssertSingleEmbeddedChart(reopened, resultSheet)
+                                Finally
+                                    reopened.Close()
+                                End Try
+                            End Using
+                        Next
+                    Else
+                        workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                        AssertSingleEmbeddedChart(workbook, resultSheet)
+                    End If
                     Return
                 End If
                 workbook = Me.CreateInstance(expected, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
@@ -290,9 +305,24 @@ Namespace ExcelOpsTests.Engines
                 Assert.That(CInt(chart.ChartType), [Is].EqualTo(nativeType))
                 Assert.That(DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(nativeSeries))
             Finally
-                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
-                Directory.Delete(caseDirectory, True)
+                Try
+                    If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Finally
+                    mapApplication?.Dispose()
+                    Directory.Delete(caseDirectory, True)
+                End Try
             End Try
+        End Sub
+
+        Private Shared Function NewMapChartApplication() As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
+            Dim application As New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper()
+            application.ComObjectStronglyTyped.ScreenUpdating = True
+            Return application
+        End Function
+
+        Private Shared Sub AssertSingleEmbeddedChart(workbook As MsExcelDataOperations, sheet As String)
+            Dim owner = DirectCast(workbook.Workbook.Worksheets.Item(sheet), NativeExcel.Worksheet)
+            Assert.That(DirectCast(owner.ChartObjects(), NativeExcel.ChartObjects).Count, [Is].EqualTo(1))
         End Sub
 
         Private Shared Function GetFirstEmbeddedChart(workbook As MsExcelDataOperations, sheet As String) As NativeExcel.Chart
@@ -646,9 +676,10 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
-        Private Function CreateChartWorkbook() As MsExcelDataOperations
+        Private Function CreateChartWorkbook(Optional application As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper = Nothing) As MsExcelDataOperations
             Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)
-            Dim workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, options)
+            Dim workbook = If(application Is Nothing, Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, options),
+                New MsExcelDataOperations(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, application, False, options))
             Dim data = DirectCast(workbook.Workbook.Worksheets.Item(1), NativeExcel.Worksheet)
             data.Name = ChartDataSheet
             data.Range("C2").Value2 = "Revenue"

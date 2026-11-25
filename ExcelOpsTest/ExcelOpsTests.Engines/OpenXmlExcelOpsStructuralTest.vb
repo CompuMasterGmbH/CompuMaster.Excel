@@ -212,6 +212,11 @@ Partial Public Class OpenXmlExcelOpsTest
         Dim firstPath = Path.Combine(_directory, WorkbookReferenceCoverage.TargetName)
         Dim secondPath = Path.Combine(_directory, "second.xlsx")
         Dim output = Path.Combine(_directory, "saved-links.xlsx")
+        Using document = SpreadsheetDocument.Open(firstPath, True)
+            Dim book = document.WorkbookPart.Workbook
+            If book.DefinedNames Is Nothing Then book.DefinedNames = New DefinedNames()
+            book.DefinedNames.Append(New DefinedName("'[1]Remote Data'!$B$2:B3") With {.Name = "RemoteMixed"})
+        End Using
         File.Copy(firstPath, secondPath)
         Dim sourceName = WorkbookReferenceCoverage.RemoteSheet
         Dim updatedName = "O'Brien source"
@@ -237,6 +242,8 @@ Partial Public Class OpenXmlExcelOpsTest
             first.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
         End Using
         Using document = SpreadsheetDocument.Open(output, False)
+            Dim mixed = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().Single(Function(item) item.Name.Value = "RemoteMixed")
+            Assert.That(mixed.Text, [Is].EqualTo("'[1]O''Brien source'!$B$3:B3"))
             Dim external = document.WorkbookPart.ExternalWorkbookParts.Single().ExternalLink.GetFirstChild(Of ExternalBook)()
             Assert.That(external.SheetNames.GetFirstChild(Of SheetName)().Val.Value, [Is].EqualTo("O'Brien source"))
             Dim cached = external.SheetDataSet.Descendants(Of ExternalCell)()
@@ -391,7 +398,7 @@ Partial Public Class OpenXmlExcelOpsTest
         Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
     End Sub
 
-    <TestCase("DefinedName")>
+    <TestCase("UnscopedDefinedName")>
     <TestCase("ConditionalFormatting")>
     <TestCase("GroupedFormula")>
     <TestCase("RowExtension")>
@@ -405,8 +412,8 @@ Partial Public Class OpenXmlExcelOpsTest
             Dim part = document.WorkbookPart
             Dim worksheet = DirectCast(part.GetPartById("rIdData"), WorksheetPart).Worksheet
             Select Case feature
-                Case "DefinedName"
-                    part.Workbook.DefinedNames = New DefinedNames(New DefinedName(DataQualifier & "B2") With {.Name = "RelativeInput"})
+                Case "UnscopedDefinedName"
+                    part.Workbook.DefinedNames = New DefinedNames(New DefinedName("B2") With {.Name = "RelativeInput"})
                 Case "ConditionalFormatting"
                     Dim other = DirectCast(part.GetPartById("rIdCheck"), WorksheetPart).Worksheet
                     other.AddChild(New ConditionalFormatting())
@@ -431,6 +438,27 @@ Partial Public Class OpenXmlExcelOpsTest
             workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
         End Using
         Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+    End Sub
+
+    <Test>
+    Public Sub StructuralReference_DefinedNameShiftsKeepTheRelativeCoordinates()
+        Dim source = Path.Combine(_directory, "relative-names.xlsx")
+        Dim output = Path.Combine(_directory, "shifted-names.xlsx")
+        CreateStructuralWorkbook(source, {ValueCell("D4", 4)}, {FormulaCell("A1", "SUM(MixedInput)")},
+            New DefinedName(DataQualifier & "D4:F5") With {.Name = "RelativeInput"},
+            New DefinedName(DataQualifier & "$D$4:F5") With {.Name = "MixedInput"},
+            New DefinedName(DataQualifier & "D$4:F$5") With {.Name = "FixedRows"},
+            New DefinedName("$D4:$F5") With {.Name = "LocalColumns", .LocalSheetId = 0UI})
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            workbook.AddCells(DataSheet, 3, 3, 1, 1, CellInsertShiftDirection.ShiftCellsDown, True)
+            workbook.AddColumn(DataSheet, 3, 1, True)
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(MixedInput)"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Assert.That(document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().Select(Function(item) item.Text),
+                [Is].EqualTo({DataQualifier & "D4:F5", DataQualifier & "$E$5:F5", DataQualifier & "D$4:F$5", "$E4:$G5"}))
+        End Using
     End Sub
 
     <Test>

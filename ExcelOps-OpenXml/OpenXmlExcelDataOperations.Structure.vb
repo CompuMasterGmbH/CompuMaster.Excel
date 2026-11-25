@@ -133,6 +133,24 @@ Namespace ExcelOps
                 Return text
             End Function
 
+            Friend Function RewriteDefinedNameReference(first As ReferenceEndpoint, second As ReferenceEndpoint,
+                                                         separator As String, unchanged As String) As String
+                ' A whole-axis edit can move absolute coordinates on that axis even if the other coordinate is relative.
+                ' A partial edit needs both coordinates fixed to identify the shifted cell.
+                Dim firstFixed = If(WholeAxis, first.IsAbsoluteOnAxis(Vertical), first.IsAbsolute)
+                Dim last = If(second, first)
+                Dim lastFixed = If(WholeAxis, last.IsAbsoluteOnAxis(Vertical), last.IsAbsolute)
+                If firstFixed AndAlso lastFixed Then Return RewriteReference(first, second, separator)
+                If Not firstFixed AndAlso Not lastFixed Then Return unchanged
+
+                ' Excel applies a shift to the fixed endpoint of a mixed range as if it were a single reference.
+                Dim fixedEndpoint = If(firstFixed, first, last)
+                Dim rewritten = RewriteReference(fixedEndpoint, Nothing, Nothing)
+                If rewritten = "#REF!" Then Return rewritten
+                If firstFixed Then Return rewritten & separator & last.ColumnText & last.RowText
+                Return first.ColumnText & first.RowText & separator & rewritten
+            End Function
+
             Friend Sub PlanTableShift(table As StructuralTable)
                 If table Is _emptiedTable Then
                     table.TargetLastRow -= Count
