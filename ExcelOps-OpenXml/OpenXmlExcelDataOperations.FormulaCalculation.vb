@@ -18,23 +18,27 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateSheet(sheetName As String)
-            EnsureCalculationEnabled()
-            GetWorksheetPart(sheetName)
-            Dim calculation As New FormulaCalculation(Me)
-            calculation.RecalculateSheet(sheetName)
-            calculation.Commit()
+            SyncLock WorkbookSaveLock
+                    EnsureCalculationEnabled()
+                    GetWorksheetPart(sheetName)
+                    Dim calculation As New FormulaCalculation(Me)
+                    calculation.RecalculateSheet(sheetName)
+                    calculation.Commit()
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
-            EnsureCalculationEnabled()
-            ValidateCoordinates(rowIndex, columnIndex)
-            Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
-            If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
-            Dim calculation As New FormulaCalculation(Me)
-            Dim result = calculation.ReadCell(sheetName, rowIndex, columnIndex)
-            calculation.Commit()
-            If throwExceptionOnCalculationError Then ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+            SyncLock WorkbookSaveLock
+                    EnsureCalculationEnabled()
+                    ValidateCoordinates(rowIndex, columnIndex)
+                    Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
+                    If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
+                    Dim calculation As New FormulaCalculation(Me)
+                    Dim result = calculation.ReadCell(sheetName, rowIndex, columnIndex)
+                    calculation.Commit()
+                    If throwExceptionOnCalculationError Then ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
