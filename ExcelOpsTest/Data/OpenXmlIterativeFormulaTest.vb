@@ -56,13 +56,44 @@ Public Class OpenXmlIterativeFormulaTest
     End Sub
 
     <Test>
-    Public Sub ReportsAnIndirectCycleWithoutChangingThePreviousResults()
-        Using workbook = OpenReference("Steps")
-            workbook.WriteCellFormula("Cycle", 0, 0, "(B1+D1)/2", False)
-            Dim failure = Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateSheet("Cycle"))
-            Assert.That(failure.Message, Does.Contain("multiple circular formula cells"))
-            Assert.That(workbook.HasMissingCachedFormulaResult("Cycle", 0, 0), [Is].True)
-            Assert.That(Cached(workbook, "Cycle", 0, 1), [Is].EqualTo(15.0))
+    Public Sub AdvancesAnExcelCycleAcrossSheetsInNameOrder()
+        Using workbook = OpenReference("Cycles")
+            For pass = 0 To 5
+                If pass > 0 Then workbook.RecalculateCell("Z cycle", 0, 1)
+                Assert.That(Cached(workbook, "Z cycle", 0, 0),
+                    [Is].EqualTo(Cached(workbook, "Reference", pass + 1, 4)).Within(1.0E-12), "Z cycle on pass " & pass)
+                Assert.That(Cached(workbook, "A cycle", 0, 0),
+                    [Is].EqualTo(Cached(workbook, "Reference", pass + 1, 5)).Within(1.0E-12), "A cycle on pass " & pass)
+                Assert.That(Cached(workbook, "Z cycle", 0, 1),
+                    [Is].EqualTo(Cached(workbook, "Reference", pass + 1, 6)).Within(1.0E-12), "Dependent on pass " & pass)
+            Next
+        End Using
+    End Sub
+
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub AdvancesTheExcelTwoCellCycleFromItsSavedOrZeroSeeds(clearSeeds As Boolean)
+        Using workbook = OpenReference("Cycles")
+            If clearSeeds Then
+                workbook.ResetCellValueFromFormulaCell("Cycle")
+                workbook.RecalculateAll()
+            End If
+
+            For pass = 0 To 5
+                If pass > 0 Then
+                    ' Refreshing the dependent alone must use the same circular sweep as refreshing the full sheet.
+                    If pass Mod 2 = 0 Then
+                        workbook.RecalculateSheet("Cycle")
+                    Else
+                        workbook.RecalculateCell("Cycle", 0, 2)
+                    End If
+                End If
+                For column = 0 To 2
+                    Assert.That(Cached(workbook, "Cycle", 0, column),
+                        [Is].EqualTo(Cached(workbook, "Reference", pass + 1, column + 1)).Within(1.0E-12),
+                        "Cell " & ExcelCell.LocalCellAddress(0, column) & " on pass " & pass)
+                Next
+            Next
         End Using
     End Sub
 

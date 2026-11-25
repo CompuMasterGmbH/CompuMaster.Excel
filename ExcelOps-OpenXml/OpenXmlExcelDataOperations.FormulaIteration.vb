@@ -1,4 +1,5 @@
-﻿Imports DocumentFormat.OpenXml.Spreadsheet
+﻿Imports DocumentFormat.OpenXml.Packaging
+Imports DocumentFormat.OpenXml.Spreadsheet
 
 Namespace ExcelOps
 
@@ -9,9 +10,9 @@ Namespace ExcelOps
             Private Function ReadCircularValue(cell As Cell, address As ExcelCell, formula As String) As Object
                 Dim settings = _owner.WorkbookPart.Workbook.CalculationProperties
                 If Not If(settings?.Iterate?.Value, False) Then Throw New CircularReferenceException(address, formula)
-                If _run.Active.Peek() IsNot cell Then
+                If _run.InOrderedIterationPass Then
                     Throw UnsupportedFormula(address.SheetName, address.RowIndex, address.ColumnIndex, formula,
-                                             "Iteration across multiple circular formula cells is outside the supported calculation scope.")
+                                             "The circular dependency changed during the iteration.")
                 End If
                 If _run.IterationWorkbook IsNot Nothing AndAlso _run.IterationWorkbook IsNot _owner Then
                     Throw UnsupportedFormula(address.SheetName, address.RowIndex, address.ColumnIndex, formula,
@@ -19,7 +20,13 @@ Namespace ExcelOps
                 End If
                 _run.IterationWorkbook = _owner
                 MarkIterationDependents()
+                _run.CircularCells.UnionWith(_run.Active.TakeWhile(Function(member) member IsNot cell))
+                _run.CircularCells.Add(cell)
+                _run.HasMultipleCellCycle = _run.HasMultipleCellCycle OrElse _run.Active.Peek() IsNot cell
+                Return IterationSeed(cell, address, formula)
+            End Function
 
+            Private Function IterationSeed(cell As Cell, address As ExcelCell, formula As String) As Object
                 Dim seed As Object = Nothing
                 If Not _run.IterationSeeds.TryGetValue(cell, seed) Then seed = ReadIterationSeed(cell, address)
                 If Not TypeOf seed Is Double AndAlso Not TypeOf seed Is FormulaError Then
@@ -54,23 +61,53 @@ Namespace ExcelOps
                                              "The workbook contains invalid Excel iteration settings.")
                 End If
 
-                ' Excel applies the maximum change to the circular cell and the calculated cells that depend on it.
+                EnsureIterationIsLocal(iterationOwner)
+                Dim participants = iterationCalculator.IterationParticipants()
+                If _run.HasMultipleCellCycle Then iterationCalculator.ReplayIterationPass(participants)
+
+                ' Excel applies the maximum change to the circular cells and the calculated cells that depend on them.
                 For pass = 1 To CInt(limit)
                     EnsureIterationIsLocal(iterationOwner)
-                    Dim participants = iterationCalculator._results.Where(Function(item) _run.IterationCells.Contains(item.Key)).ToArray()
+                    participants = iterationCalculator.IterationParticipants()
                     If pass = CInt(limit) OrElse participants.All(
                         Function(item) iterationCalculator.IterationValueIsStable(item.Key, item.Value.Location, item.Value.Result, tolerance)) Then Exit For
 
                     For Each item In participants
                         _run.IterationSeeds(item.Key) = item.Value.Result
-                        iterationCalculator._results.Remove(item.Key)
                     Next
-                    For Each item In participants
-                        Dim location = item.Value.Location
-                        iterationCalculator.ReadCell(location.Sheet, location.Row, location.Column)
-                    Next
+                    iterationCalculator.ReplayIterationPass(participants)
                 Next
                 _run.IterationsApplied = True
+            End Sub
+
+            Private Function IterationParticipants() As KeyValuePair(Of Cell, (Part As WorksheetPart, Location As FormulaLocation, Result As Object))()
+                Return _results.Where(Function(item) _run.IterationCells.Contains(item.Key)).ToArray()
+            End Function
+
+            Private Sub ReplayIterationPass(participants As KeyValuePair(Of Cell, (Part As WorksheetPart, Location As FormulaLocation, Result As Object))())
+                For Each item In participants
+                    _results.Remove(item.Key)
+                Next
+
+                _run.InOrderedIterationPass = _run.HasMultipleCellCycle
+                Try
+                    If _run.InOrderedIterationPass Then
+                        ' Excel visits sheets by name and circular cells in row order before refreshing dependents.
+                        Dim sheetOrder = StringComparer.Create(ConversionCulture, ignoreCase:=True)
+                        For Each item In participants.Where(Function(entry) _run.CircularCells.Contains(entry.Key)).
+                                OrderBy(Function(entry) entry.Value.Location.Sheet, sheetOrder).
+                                ThenBy(Function(entry) entry.Value.Location.Row).ThenBy(Function(entry) entry.Value.Location.Column)
+                            Dim location = item.Value.Location
+                            ReadCell(location.Sheet, location.Row, location.Column, calculateIterationMember:=True)
+                        Next
+                    End If
+                    For Each item In participants
+                        Dim location = item.Value.Location
+                        ReadCell(location.Sheet, location.Row, location.Column)
+                    Next
+                Finally
+                    _run.InOrderedIterationPass = False
+                End Try
             End Sub
 
             Private Sub EnsureIterationIsLocal(iterationOwner As OpenXmlExcelDataOperations)

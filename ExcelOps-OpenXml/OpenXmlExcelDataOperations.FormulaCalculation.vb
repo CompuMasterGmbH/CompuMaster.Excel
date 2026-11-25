@@ -137,7 +137,8 @@ Namespace ExcelOps
                 Return result
             End Function
 
-            Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, Optional trackRead As Boolean = True) As Object
+            Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer,
+                                     Optional trackRead As Boolean = True, Optional calculateIterationMember As Boolean = False) As Object
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not _worksheets.TryGetValue(sheetName, worksheet) Then Return New FormulaError("#REF!")
                 Dim location As New FormulaLocation(_owner, worksheet.Name, rowIndex, columnIndex)
@@ -169,6 +170,10 @@ Namespace ExcelOps
                 End If
                 Dim formula = cell.CellFormula.Text
                 Dim address As New ExcelCell(worksheet.Name, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
+                If _run.InOrderedIterationPass AndAlso _run.CircularCells.Contains(cell) AndAlso Not calculateIterationMember Then
+                    MarkIterationDependents()
+                    Return IterationSeed(cell, address, formula)
+                End If
                 If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
                 If _run.Active.Count >= 256 Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
@@ -289,6 +294,9 @@ Namespace ExcelOps
                 Friend ReadOnly Workbooks As New Dictionary(Of OpenXmlExcelDataOperations, FormulaCalculation)
                 Friend ReadOnly Active As New Stack(Of Cell)
                 Friend ReadOnly IterationCells As New HashSet(Of Cell)
+                Friend ReadOnly CircularCells As New HashSet(Of Cell)
+                Friend HasMultipleCellCycle As Boolean
+                Friend InOrderedIterationPass As Boolean
                 Friend ReadOnly IterationSeeds As New Dictionary(Of Cell, Object)
                 Friend IterationWorkbook As OpenXmlExcelDataOperations
                 Friend IterationsApplied As Boolean
