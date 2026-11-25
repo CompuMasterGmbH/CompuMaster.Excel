@@ -85,6 +85,8 @@ Namespace ExcelOps
                         Return EvaluateCalendarFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "WORKDAY", "WORKDAY.INTL", "NETWORKDAYS", "NETWORKDAYS.INTL", "_XLFN.WORKDAY.INTL", "_XLFN.NETWORKDAYS.INTL"
                         Return EvaluateWorkdayFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "YEARFRAC"
+                        Return EvaluateYearFraction(arguments, formulaCell)
                     Case "DATEDIF", "DAYS360"
                         Return EvaluateDateDifferenceFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "DATEVALUE", "TIMEVALUE"
