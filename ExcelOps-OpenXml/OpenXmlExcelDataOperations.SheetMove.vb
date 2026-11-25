@@ -19,7 +19,8 @@ Namespace ExcelOps
 
         Private Sub RewriteMoveDependents(book As WorkbookPart, excluded As Dictionary(Of String, String),
                                           rewriteQualifier As Func(Of String, String, String),
-                                          Optional formulaWorkbook As WorkbookPart = Nothing)
+                                          Optional formulaWorkbook As WorkbookPart = Nothing,
+                                          Optional observeName As Action(Of String, String) = Nothing)
             For Each sheet In book.Workbook.Sheets.Elements(Of Sheet)()
                 Dim name = sheet.Name.Value
                 If excluded IsNot Nothing AndAlso excluded.ContainsKey(name) Then Continue For
@@ -36,7 +37,7 @@ Namespace ExcelOps
                     If changed Then worksheet.Worksheet.ReplaceChild(data, original)
                     For Each formula In data.Descendants(Of CellFormula)()
                         Dim revised = RewriteFormula(formula.Text, name, name, Nothing, Nothing, False,
-                                                     rewriteSheetQualifier:=rewriteQualifier, formulaWorkbook:=formulaWorkbook)
+                                                     rewriteSheetQualifier:=rewriteQualifier, formulaWorkbook:=formulaWorkbook, observeName:=observeName)
                         If revised <> formula.Text Then
                             formula.Text = revised
                             changed = True
@@ -58,8 +59,12 @@ Namespace ExcelOps
             Next
             If book.Workbook.DefinedNames Is Nothing Then Return
             For Each definition In book.Workbook.DefinedNames.Elements(Of DefinedName)()
+                If excluded IsNot Nothing AndAlso definition.LocalSheetId IsNot Nothing Then
+                    Dim scope = book.Workbook.Sheets.Elements(Of Sheet)().ElementAt(CInt(definition.LocalSheetId.Value))
+                    If excluded.ContainsKey(scope.Name.Value) Then Continue For
+                End If
                 definition.Text = RewriteFormula(definition.Text, Nothing, Nothing, Nothing, Nothing, True,
-                                                 rewriteSheetQualifier:=rewriteQualifier, formulaWorkbook:=formulaWorkbook)
+                                                 rewriteSheetQualifier:=rewriteQualifier, formulaWorkbook:=formulaWorkbook, observeName:=observeName)
             Next
         End Sub
 
@@ -157,11 +162,17 @@ Namespace ExcelOps
                 End If
             Next
             If workbook.DefinedNames IsNot Nothing Then
-                For Each definition In workbook.DefinedNames.Elements(Of DefinedName)()
+                For Each definition In workbook.DefinedNames.Elements(Of DefinedName)().ToArray()
                     If definition.LocalSheetId IsNot Nothing Then
-                        definition.LocalSheetId = CUInt(positions(CInt(definition.LocalSheetId.Value)))
+                        Dim index = positions(CInt(definition.LocalSheetId.Value))
+                        If index < 0 Then
+                            definition.Remove()
+                        Else
+                            definition.LocalSheetId = CUInt(index)
+                        End If
                     End If
                 Next
+                If Not workbook.DefinedNames.HasChildren Then workbook.DefinedNames.Remove()
             End If
             If workbook.BookViews Is Nothing Then Return
             For Each view In workbook.BookViews.Elements(Of WorkbookView)()

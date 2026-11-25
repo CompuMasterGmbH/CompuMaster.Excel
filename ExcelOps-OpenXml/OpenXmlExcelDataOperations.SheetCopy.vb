@@ -38,8 +38,8 @@ Namespace ExcelOps
             Next
 
             Dim workbook = WorkbookPart.Workbook
-            Dim names = workbook.DefinedNames?.Elements(Of DefinedName)().ToArray()
             Dim sheetOrder = WorkbookSheets()
+            Dim names As New TransferNamePlan(workbook, destination.WorkbookPart.Workbook, sheetOrder, assigned)
             Dim sourceWorksheets As New HashSet(Of String)(WorkSheetNames(), StringComparer.OrdinalIgnoreCase)
             Dim remaining = sheetOrder.Where(Function(sheet) Not assigned.ContainsKey(sheet.Name.Value)).ToArray()
             Dim sourceLinkNames = If(move, remaining, sheetOrder.ToArray()).Select(Function(sheet) sheet.Name.Value).ToArray()
@@ -85,16 +85,12 @@ Namespace ExcelOps
                                              Charts As Dictionary(Of String, ChartXml.ChartSpace)))
             For Each name In sheetNames
                 Dim source = FindSheet(name)
-                Dim sourceIndex = CUInt(sheetOrder.IndexOf(source))
-                If names IsNot Nothing AndAlso names.Any(Function(item) item.LocalSheetId IsNot Nothing AndAlso item.LocalSheetId.Value = sourceIndex) Then
-                    Throw UnsupportedOperation("Transferring sheets with sheet-scoped defined names")
-                End If
-
                 Dim part = WorkbookPart.GetPartById(source.Id.Value)
                 Dim worksheet = TryCast(part, WorksheetPart)
                 Dim chartSheet = TryCast(part, ChartsheetPart)
                 If worksheet IsNot Nothing Then
-                    Dim prepared = PrepareWorksheetCopy(worksheet, name, formulaMode, resolveQualifier, move)
+                    Dim prepared = PrepareWorksheetCopy(worksheet, name, formulaMode, resolveQualifier, move,
+                                                        Sub(identifier, qualifier) names.Observe(name, identifier, qualifier))
                     Dim drawing = worksheet.DrawingsPart
                     Dim charts = If(drawing Is Nothing, Nothing, PrepareDrawingChartCopy(drawing, name, formulaMode, resolveQualifier, move))
                     copiedSheets.Add((assigned(name), source.State?.Value, prepared, Nothing, drawing, charts))
@@ -105,6 +101,7 @@ Namespace ExcelOps
                     Throw UnsupportedOperation("Copying this sheet type")
                 End If
             Next
+            Dim copiedNames = PrepareTransferredNames(names, sheetNames, targetSheetIndex, resolveQualifier, formulaMode, move)
 
             Using changes As New StagedWorkbookChanges()
                 changes.Add(destination,
@@ -167,6 +164,10 @@ Namespace ExcelOps
                                 destinationSheets.InsertBefore(sheet, anchor)
                             End If
                         Next
+                        If copiedNames.Count > 0 Then
+                            If bookPart.Workbook.DefinedNames Is Nothing Then bookPart.Workbook.DefinedNames = New DefinedNames()
+                            bookPart.Workbook.DefinedNames.Append(copiedNames)
+                        End If
                         If move Then
                             Dim obsolete = oldSourceLinks.Where(Function(index) Not retainedTargetLinks.Contains(index) AndAlso Not targetLinks.UsesIndex(index)).ToArray()
                             destination.RemoveUnusedMoveLinks(bookPart, obsolete)
@@ -182,7 +183,7 @@ Namespace ExcelOps
                                         Return sourceLinks.ReferenceTo(destination.TransferWorkbookPath(sameSession), targetLinkNames, assignedName)
                                     End If
                                     Return originalQualifier
-                                End Function)
+                                End Function, observeName:=AddressOf names.ValidateRetainedReference)
                             sourceLinks.ApplyTo(bookPart)
                             RemoveTransferredSheets(bookPart, assigned)
                         End Sub)
@@ -194,12 +195,13 @@ Namespace ExcelOps
         End Function
 
         Private Function PrepareWorksheetCopy(part As WorksheetPart, name As String, formulaMode As CopyWorksheetFormulaMode,
-                                              resolveQualifier As Func(Of String, String, String), move As Boolean) As Worksheet
+                                              resolveQualifier As Func(Of String, String, String), move As Boolean,
+                                              observeName As Action(Of String, String)) As Worksheet
             ValidateCopySourceWorksheet(part)
             Dim worksheet = DirectCast(part.Worksheet.CloneNode(True), Worksheet)
             Dim data = worksheet.GetFirstChild(Of SheetData)()
             If data.Descendants(Of CellFormula)().Any() Then
-                ValidateCopiedFormulaContext(formulaMode, move)
+                ValidateCopiedFormulaContext(move)
                 If formulaMode = CopyWorksheetFormulaMode.ExcelCompatible Then
                     Dim expanded = ExpandSharedFormulas(data, name, Nothing)
                     If expanded IsNot data Then
@@ -207,7 +209,8 @@ Namespace ExcelOps
                         data = expanded
                     End If
                     For Each formula In data.Descendants(Of CellFormula)()
-                        formula.Text = RewriteFormula(formula.Text, name, name, Nothing, Nothing, False, rewriteSheetQualifier:=resolveQualifier)
+                        formula.Text = RewriteFormula(formula.Text, name, name, Nothing, Nothing, False,
+                                                      rewriteSheetQualifier:=resolveQualifier, observeName:=observeName)
                     Next
                 End If
                 ClearFormulaResults(data)
@@ -219,13 +222,10 @@ Namespace ExcelOps
             Return worksheet
         End Function
 
-        Private Sub ValidateCopiedFormulaContext(formulaMode As CopyWorksheetFormulaMode, move As Boolean)
+        Private Sub ValidateCopiedFormulaContext(move As Boolean)
             Dim workbook = WorkbookPart.Workbook
             If Not move AndAlso If(workbook.ExternalReferences?.HasChildren, False) Then
                 Throw UnsupportedOperation("Copying formulas from a workbook with external links")
-            End If
-            If formulaMode = CopyWorksheetFormulaMode.ExcelCompatible AndAlso If(workbook.DefinedNames?.HasChildren, False) Then
-                Throw UnsupportedOperation("Adapting copied formulas from a workbook with defined names")
             End If
         End Sub
 
@@ -270,10 +270,12 @@ Namespace ExcelOps
                 If Not _changedCharts.TryGetValue(chart, sourceChart) Then sourceChart = chart.ChartSpace
                 Dim chartSpace = DirectCast(sourceChart.CloneNode(True), ChartXml.ChartSpace)
                 Dim formulas = chartSpace.Descendants(Of ChartXml.Formula)().ToArray()
-                If formulas.Length > 0 AndAlso Not retained Then ValidateCopiedFormulaContext(formulaMode, move)
+                If formulas.Length > 0 AndAlso Not retained Then ValidateCopiedFormulaContext(move)
                 For Each formula In formulas
                     If formulaMode = CopyWorksheetFormulaMode.ExcelCompatible Then
-                        If Not FormulaSheet.Match(formula.Text, 0).Success Then
+                        Dim qualifier = FormulaSheet.Match(formula.Text, 0)
+                        Dim endpointEnd As Integer
+                        If Not qualifier.Success OrElse ReadEndpoint(formula.Text, qualifier.Length, endpointEnd) Is Nothing Then
                             Throw UnsupportedOperation("Adapting a chart formula without an explicit worksheet reference")
                         End If
                         formula.Text = RewriteFormula(formula.Text, name, name, Nothing, Nothing, False,

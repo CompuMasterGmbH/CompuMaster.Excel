@@ -1,5 +1,6 @@
 ﻿Imports System.IO
 Imports DocumentFormat.OpenXml
+Imports System.Globalization
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 
@@ -26,6 +27,9 @@ Namespace ExcelOps
             Friend AddsDataRows As Boolean
             Friend RemovesFirstDataRow As Boolean
             Friend RemovesTotalsRow As Boolean
+            Friend ClearsDataBody As Boolean
+            Friend ColumnEditOffset As Integer = -1
+            Friend ReadOnly DeletedColumnNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
 
             Friend Sub New(worksheet As WorksheetPart, sheetName As String, part As TableDefinitionPart, source As Table)
                 Me.Worksheet = worksheet
@@ -97,8 +101,9 @@ Namespace ExcelOps
 
         Private Function StageTableChanges(tables As List(Of StructuralTable), editedPart As WorksheetPart, editedName As String,
                                            shift As StructuralShift, newSheetName As String, tableNames As HashSet(Of String),
-                                           fills As List(Of (Row As Integer, Column As Integer, Formula As String)),
-                                           Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing) As Dictionary(Of TableDefinitionPart, Table)
+                                           fills As List(Of (Row As Integer, Column As Integer, Formula As String, Header As String)),
+                                           Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing,
+                                           Optional allowSpillReferences As Boolean = False) As Dictionary(Of TableDefinitionPart, Table)
             If shift IsNot Nothing Then
                 For Each table In tables
                     If table.Worksheet Is editedPart Then shift.PlanTableShift(table)
@@ -109,9 +114,11 @@ Namespace ExcelOps
             For Each table In tables
                 Dim replacement = DirectCast(table.Source.CloneNode(True), Table)
                 Dim changed = table.TargetFirstRow <> table.First.Row OrElse table.TargetLastRow <> table.Last.Row OrElse
-                              table.TargetFirstColumn <> table.First.Column OrElse table.TargetLastColumn <> table.Last.Column
+                              table.TargetFirstColumn <> table.First.Column OrElse table.TargetLastColumn <> table.Last.Column OrElse
+                              table.ClearsDataBody
                 If changed Then
                     replacement.Reference = table.FormatRange(table.TargetLastRow)
+                    If table.ClearsDataBody Then replacement.InsertRow = True
                     If table.RemovesTotalsRow Then
                         replacement.TotalsRowShown = False
                         replacement.TotalsRowCount = Nothing
@@ -129,6 +136,10 @@ Namespace ExcelOps
                 If columns Is Nothing OrElse columns.Length <> table.Last.Column - table.First.Column + 1 Then
                     Throw New InvalidDataException("The table's columns do not match its range.")
                 End If
+                If table.ColumnEditOffset >= 0 Then
+                    EditTableColumns(replacement.GetFirstChild(Of TableColumns)(), columns, table, shift, fills)
+                    columns = replacement.GetFirstChild(Of TableColumns)().Elements(Of TableColumn)().ToArray()
+                End If
                 For columnIndex = 0 To columns.Length - 1
                     Dim column = columns(columnIndex)
                     Dim calculation = column.CalculatedColumnFormula
@@ -136,7 +147,8 @@ Namespace ExcelOps
                     If calculation IsNot Nothing AndAlso Not table.RemovesFirstDataRow Then
                         Dim original = calculation.Text
                         Dim rewritten = RewriteFormula(original, table.SheetName, editedName, shift, newSheetName, False, tableNames,
-                                                       formulaWorkbook:=book, structuralExternalLinks:=links)
+                                                       formulaWorkbook:=book, structuralExternalLinks:=links, contextualTable:=table,
+                                                       allowSpillReferences:=allowSpillReferences)
                         If table.AddsDataRows Then
                             If calculation.GetAttributes().Any(Function(attribute) attribute.LocalName = "array" AndAlso
                                                                (attribute.Value = "1" OrElse attribute.Value = "true")) Then
@@ -146,8 +158,8 @@ Namespace ExcelOps
                             Dim fillTemplate = If(shift.Start = table.FirstDataRow, original, rewritten)
                             For row = shift.Start To shift.Start + shift.Count - 1
                                 Dim formula = RewriteFormula(fillTemplate, table.SheetName, editedName, Nothing, Nothing, False,
-                                                             tableNames, copyRowOffset:=row - table.FirstDataRow)
-                                fills.Add((row, table.First.Column + columnIndex, formula))
+                                                             tableNames, copyRowOffset:=row - table.FirstDataRow, allowSpillReferences:=allowSpillReferences)
+                                fills.Add((row, table.First.Column + columnIndex, formula, Nothing))
                                 If row = table.FirstDataRow Then rewritten = formula
                             Next
                         End If
@@ -164,7 +176,8 @@ Namespace ExcelOps
                         column.TotalsRowFormula = Nothing
                     ElseIf totals IsNot Nothing Then
                         Dim text = RewriteFormula(totals.Text, table.SheetName, editedName, shift, newSheetName, False, tableNames,
-                                                  formulaWorkbook:=book, structuralExternalLinks:=links)
+                                                  formulaWorkbook:=book, structuralExternalLinks:=links, contextualTable:=table,
+                                                  allowSpillReferences:=allowSpillReferences)
                         If text <> totals.Text Then
                             totals.Text = text
                             changed = True
@@ -175,6 +188,32 @@ Namespace ExcelOps
             Next
             Return changes
         End Function
+
+        Private Shared Sub EditTableColumns(definition As TableColumns, columns As TableColumn(), table As StructuralTable,
+                                            shift As StructuralShift, fills As List(Of (Row As Integer, Column As Integer, Formula As String, Header As String)))
+            If shift.Inserting Then
+                Dim names As New HashSet(Of String)(columns.Select(Function(column) column.Name.Value), StringComparer.OrdinalIgnoreCase)
+                Dim anchor = columns(table.ColumnEditOffset)
+                Dim id = columns.Max(Function(column) column.Id.Value)
+                Dim number = 1
+                Dim prefix = If(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName = "de", "Spalte", "Column")
+                For index = 0 To shift.Count - 1
+                    Dim name As String
+                    Do
+                        name = prefix & number.ToString(CultureInfo.InvariantCulture)
+                        number += 1
+                    Loop Until names.Add(name)
+                    id += 1UI
+                    definition.InsertBefore(New TableColumn With {.Id = id, .Name = name}, anchor)
+                    fills.Add((table.First.Row, shift.Start + index, Nothing, name))
+                Next
+            Else
+                For Each removed In columns.Skip(table.ColumnEditOffset).Take(shift.Count)
+                    removed.Remove()
+                Next
+            End If
+            definition.Count = CUInt(definition.ChildElements.Count)
+        End Sub
 
         Private Sub SaveChangedTables(source As WorkbookPart, target As WorkbookPart)
             For Each change In _changedTables

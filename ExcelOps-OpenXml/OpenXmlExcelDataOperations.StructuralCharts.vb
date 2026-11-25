@@ -35,13 +35,13 @@ Namespace ExcelOps
                 End If
                 If drawing Is Nothing Then Continue For
                 Dim extendedCharts = drawing.Parts.Select(Function(item) item.OpenXmlPart).OfType(Of ExtendedChartPart)().ToArray()
-                Dim allowExtendedCharts = extendedCharts.Length > 0 AndAlso shift Is Nothing
+                Dim allowExtendedCharts = extendedCharts.Length > 0
                 If drawing.WorksheetDrawing Is Nothing OrElse drawing.GetParentParts().Count() <> 1 OrElse drawing.Parts.Any(
                     Function(part) Not TypeOf part.OpenXmlPart Is ChartPart AndAlso Not TypeOf part.OpenXmlPart Is ImagePart AndAlso
                         Not (allowExtendedCharts AndAlso TypeOf part.OpenXmlPart Is ExtendedChartPart)) Then
                     Throw UnsupportedOperation("Updating references in unsupported drawing parts")
                 End If
-                If allowExtendedCharts Then ValidateExtendedChartNames(extendedCharts, book)
+                If allowExtendedCharts Then ValidateExtendedChartNames(extendedCharts, book, editedSheet, shift, links)
                 Dim placement As DrawingXml.WorksheetDrawing = Nothing
                 If Not _changedDrawings.TryGetValue(drawing, placement) Then placement = drawing.WorksheetDrawing
                 Dim changedPlacement = StageChartAnchors(placement, If(worksheet IsNot Nothing AndAlso worksheet Is editedPart, shift, Nothing),
@@ -58,24 +58,42 @@ Namespace ExcelOps
             Return (charts, drawings)
         End Function
 
-        Private Sub ValidateExtendedChartNames(charts As ExtendedChartPart(), book As WorkbookPart)
-            Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        Private Sub ValidateExtendedChartNames(charts As ExtendedChartPart(), book As WorkbookPart, editedSheet As String,
+                                               shift As StructuralShift, links As HashSet(Of Integer))
+            Dim names As New Dictionary(Of String, DefinedName)(StringComparer.OrdinalIgnoreCase)
             If book.Workbook.DefinedNames IsNot Nothing Then
                 For Each definition In book.Workbook.DefinedNames.Elements(Of DefinedName)()
                     If definition.LocalSheetId Is Nothing AndAlso definition.Name.Value.StartsWith("_xlchart", StringComparison.OrdinalIgnoreCase) Then
-                        names.Add(definition.Name.Value)
+                        names.Add(definition.Name.Value, definition)
                     End If
                 Next
             End If
-            ' A rename can update the workbook definitions while leaving the chart, caches and layout intact.
             For Each chart In charts
                 Dim source = chart.ChartSpace
                 If source Is Nothing OrElse chart.EmbeddedPackagePart IsNot Nothing OrElse chart.ExternalRelationships.Any() OrElse
                    source.Descendants().Any(Function(element) element.LocalName = "externalData" OrElse
                        (element.LocalName = "f" AndAlso Not TypeOf element Is ExtendedChartXml.Formula)) OrElse
-                   source.Descendants(Of ExtendedChartXml.Formula)().Any(Function(formula) Not names.Contains(formula.Text)) Then
-                    Throw UnsupportedOperation("Renaming a worksheet used by a ChartEx chart with unsupported sources")
+                   source.Descendants(Of ExtendedChartXml.Formula)().Any(Function(formula) Not names.ContainsKey(formula.Text)) Then
+                    Throw UnsupportedOperation("Updating a ChartEx chart with unsupported sources")
                 End If
+                If shift Is Nothing Then Continue For
+                If links IsNot Nothing Then Throw UnsupportedOperation("Shifting incoming workbook links in ChartEx data")
+                ' Excel stores the uncached data references in the workbook's hidden names.
+                For Each formula In source.Descendants(Of ExtendedChartXml.Formula)()
+                    Dim definition = names(formula.Text)
+                    If Not IsDirectAbsoluteName(definition) Then Throw UnsupportedOperation("Shifting a ChartEx source that is not a direct absolute range")
+                    Dim qualifier = FormulaSheet.Match(definition.Text, 0)
+                    Dim external As Boolean
+                    Dim sheet = SheetNameFromToken(book, qualifier, external)
+                    If external OrElse Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
+                    If shift.ClearsTableDataBody Then Throw UnsupportedOperation("Clearing a table's data body on a ChartEx source worksheet")
+                    Dim rewritten = RewriteFormula(definition.Text, Nothing, editedSheet, shift, Nothing, True, formulaWorkbook:=book)
+                    If rewritten = definition.Text Then Continue For
+                    If rewritten.EndsWith("#REF!", StringComparison.Ordinal) OrElse
+                       formula.Parent.ChildElements.Any(Function(item) item.LocalName = "lvl" OrElse item.LocalName = "numLvl" OrElse item.LocalName = "strLvl") Then
+                        Throw UnsupportedOperation("Deleting an entire ChartEx source or shifting cached ChartEx data")
+                    End If
+                Next
             Next
         End Sub
 
@@ -105,6 +123,7 @@ Namespace ExcelOps
                 If external <> (links IsNot Nothing) Then Continue For
                 If external Then sheet = LinkedStructuralSheet(sheet, links, externalPrefix)
                 If Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
+                If shift?.ClearsTableDataBody = True Then Throw UnsupportedOperation("Clearing a table's data body on a chart source worksheet")
                 Dim newQualifier = qualifier.Value
                 If newSheetName IsNot Nothing Then
                     newQualifier = If(external, FormatLinkedSheetName(externalPrefix, newSheetName), FormatSheetName(newSheetName))
@@ -223,11 +242,12 @@ Namespace ExcelOps
             Dim revised = DirectCast(source.CloneNode(True), DrawingXml.WorksheetDrawing)
             Dim changed = False
             For Each anchor In revised.ChildElements
-                If allowExtendedCharts AndAlso anchor.Descendants().Any(
-                    Function(element) element.LocalName = "chart" AndAlso element.NamespaceUri = ExtendedChartNamespace) Then Continue For
+                Dim extendedFrame = allowExtendedCharts AndAlso anchor.Descendants().Any(
+                    Function(element) element.LocalName = "chart" AndAlso element.NamespaceUri = ExtendedChartNamespace)
                 Dim picture = anchor.GetFirstChild(Of DrawingXml.Picture)()
                 Dim frame = anchor.GetFirstChild(Of DrawingXml.GraphicFrame)()
-                If picture Is Nothing AndAlso (frame Is Nothing OrElse Not frame.Descendants(Of ChartXml.ChartReference)().Any()) Then
+                If Not extendedFrame AndAlso picture Is Nothing AndAlso
+                   (frame Is Nothing OrElse Not frame.Descendants(Of ChartXml.ChartReference)().Any()) Then
                     Throw UnsupportedOperation("Updating a drawing with unsupported worksheet objects")
                 End If
                 If shift Is Nothing OrElse TypeOf anchor Is DrawingXml.AbsoluteAnchor Then Continue For

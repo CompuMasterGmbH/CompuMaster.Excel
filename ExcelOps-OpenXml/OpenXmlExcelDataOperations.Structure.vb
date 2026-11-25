@@ -14,6 +14,8 @@ Namespace ExcelOps
             Private ReadOnly _otherStart As Integer
             Private ReadOnly _otherCount As Integer
             Private ReadOnly _expandedTables As New List(Of StructuralTable)
+            Private ReadOnly _tablesWithDeletedColumns As New List(Of StructuralTable)
+            Private ReadOnly _emptiedTable As StructuralTable
 
             Friend Sub New(vertical As Boolean, start As Integer, count As Integer, otherStart As Integer, otherCount As Integer, inserting As Boolean)
                 Me.Vertical = vertical
@@ -27,6 +29,45 @@ Namespace ExcelOps
                 If otherStart < 0 OrElse otherStart >= OtherAxisSize Then Throw New ArgumentOutOfRangeException(NameOf(otherStart))
                 If otherCount < 1 OrElse otherCount > OtherAxisSize - otherStart Then Throw New ArgumentOutOfRangeException(NameOf(otherCount))
             End Sub
+
+            Private Sub New(original As StructuralShift, emptiedTable As StructuralTable)
+                Vertical = True
+                Start = original.Start + 1
+                Count = original.Count - 1
+                _otherCount = ColumnCount
+                _emptiedTable = emptiedTable
+            End Sub
+
+            Friend Function RetainEmptyTableRow(worksheet As WorksheetPart, tables As IEnumerable(Of StructuralTable)) As StructuralShift
+                If Not Vertical OrElse Inserting OrElse Not WholeAxis Then Return Me
+                Dim affected = tables.Where(Function(table) table.Worksheet Is worksheet AndAlso
+                    Start <= table.Last.Row AndAlso Start + Count > table.First.Row).ToArray()
+                Dim emptied = affected.FirstOrDefault(Function(table) table.HeaderCount = 1 AndAlso
+                    Start = table.FirstDataRow AndAlso Start + Count = table.LastDataRow + 1)
+                If emptied Is Nothing Then Return Me
+                If affected.Length <> 1 OrElse If(emptied.Source.GetFirstChild(Of AutoFilter)()?.Elements(Of FilterColumn)().Any(), False) Then
+                    Throw New NotSupportedException("Deleting a table's entire data body with another intersecting table or an active filter is unsupported.")
+                End If
+                ' Excel retains the first row across the worksheet and clears only the cells inside the table.
+                Return New StructuralShift(Me, emptied)
+            End Function
+
+            Friend ReadOnly Property ClearsTableDataBody As Boolean
+                Get
+                    Return _emptiedTable IsNot Nothing
+                End Get
+            End Property
+
+            Friend Function ClearsTableCell(row As Integer, column As Integer) As Boolean
+                Return _emptiedTable IsNot Nothing AndAlso row = _emptiedTable.FirstDataRow AndAlso
+                    column >= _emptiedTable.First.Column AndAlso column <= _emptiedTable.Last.Column
+            End Function
+
+            Friend ReadOnly Property RetainsClearedCellStyles As Boolean
+                Get
+                    Return _emptiedTable.TotalsCount = 0
+                End Get
+            End Property
 
             Private ReadOnly Property AxisSize As Integer
                 Get
@@ -93,6 +134,12 @@ Namespace ExcelOps
             End Function
 
             Friend Sub PlanTableShift(table As StructuralTable)
+                If table Is _emptiedTable Then
+                    table.TargetLastRow -= Count
+                    table.ClearsDataBody = True
+                    Return
+                End If
+                If Count = 0 Then Return
                 Dim low = If(Vertical, table.First.Row, table.First.Column)
                 Dim high = If(Vertical, table.Last.Row, table.Last.Column)
                 Dim otherLow = If(Vertical, table.First.Column, table.First.Row)
@@ -102,12 +149,34 @@ Namespace ExcelOps
                     Throw New NotSupportedException("This structural edit would change part of an Excel table in an unsupported way.")
                 End If
                 If Not Vertical Then
-                    If Not WholeAxis OrElse Start > low OrElse (Not Inserting AndAlso Start + Count > low) Then
+                    If Not WholeAxis Then
                         Throw New NotSupportedException("This structural edit would change the columns of an Excel table in an unsupported way.")
                     End If
-                    table.TargetFirstColumn = MoveIndex(low)
-                    table.TargetLastColumn = MoveIndex(high)
+                    If (Inserting AndAlso Start <= low) OrElse (Not Inserting AndAlso Start + Count <= low) Then
+                        table.TargetFirstColumn = MoveIndex(low)
+                        table.TargetLastColumn = MoveIndex(high)
+                        Return
+                    End If
+                    If table.HeaderCount <> 1 OrElse If(table.Source.GetFirstChild(Of AutoFilter)()?.Elements(Of FilterColumn)().Any(), False) OrElse
+                       (Not Inserting AndAlso (Start < low OrElse Start + Count > high + 1 OrElse Count >= high - low + 1)) Then
+                        Throw New NotSupportedException("Changing the columns of a headerless, filtered or fully removed Excel table is unsupported.")
+                    End If
+                    table.ColumnEditOffset = Start - low
+                    If Inserting Then
+                        table.TargetLastColumn = MoveIndex(high)
+                    Else
+                        table.TargetLastColumn = high - Count
+                        Dim columns = table.Source.GetFirstChild(Of TableColumns)()?.Elements(Of TableColumn)().ToArray()
+                        If columns Is Nothing OrElse columns.Length <> high - low + 1 Then
+                            Throw New IO.InvalidDataException("The table's columns do not match its range.")
+                        End If
+                        table.DeletedColumnNames.UnionWith(columns.Skip(table.ColumnEditOffset).Take(Count).Select(Function(column) column.Name.Value))
+                        _tablesWithDeletedColumns.Add(table)
+                    End If
                     Return
+                End If
+                If If(table.Source.InsertRow?.Value, False) AndAlso Start > low Then
+                    Throw New NotSupportedException("Shifting through an empty Excel table's insertion row is unsupported.")
                 End If
                 If Not Inserting AndAlso Start + Count > low Then
                     If WholeAxis AndAlso table.TotalsCount = 1 AndAlso Start = high AndAlso Count = 1 AndAlso
@@ -130,6 +199,35 @@ Namespace ExcelOps
                     _expandedTables.Add(table)
                 End If
             End Sub
+
+            Friend Function TableForCell(sheetName As String, address As String) As StructuralTable
+                If _tablesWithDeletedColumns.Count = 0 OrElse address Is Nothing Then Return Nothing
+                Dim cell = ReadStructuralRange(address).First
+                Return _tablesWithDeletedColumns.FirstOrDefault(Function(table)
+                    Return String.Equals(table.SheetName, sheetName, StringComparison.OrdinalIgnoreCase) AndAlso
+                        cell.Row >= table.TargetFirstRow AndAlso cell.Row <= table.TargetLastRow AndAlso
+                        cell.Column >= table.TargetFirstColumn AndAlso cell.Column <= table.TargetLastColumn
+                End Function)
+            End Function
+
+            Friend Function ReferencesDeletedTableColumn(value As String, selectorStart As Integer, selectorEnd As Integer,
+                                                         tableName As String, contextualTable As StructuralTable, isDefinedName As Boolean) As Boolean
+                If _tablesWithDeletedColumns.Count = 0 Then Return False
+                If tableName IsNot Nothing Then
+                    contextualTable = _tablesWithDeletedColumns.FirstOrDefault(Function(table)
+                        Return String.Equals(table.Source.Name?.Value, tableName, StringComparison.OrdinalIgnoreCase) OrElse
+                            String.Equals(table.Source.DisplayName?.Value, tableName, StringComparison.OrdinalIgnoreCase)
+                    End Function)
+                End If
+                If contextualTable IsNot Nothing Then
+                    Return TableSelectorUsesColumn(value, selectorStart, selectorEnd, contextualTable.DeletedColumnNames)
+                End If
+                If tableName Is Nothing AndAlso isDefinedName AndAlso _tablesWithDeletedColumns.Any(
+                    Function(table) TableSelectorUsesColumn(value, selectorStart, selectorEnd, table.DeletedColumnNames)) Then
+                    Throw New NotSupportedException("A defined name contains a contextual reference to a removed table column.")
+                End If
+                Return False
+            End Function
 
             Private Function ExtendsTableReference(low As Integer, high As Integer, otherStart As Integer, otherEnd As Integer) As Boolean
                 For Each table In _expandedTables
@@ -298,7 +396,7 @@ Namespace ExcelOps
             End Select
         End Function
 
-        Private Sub ValidateWorkbookStructure(Optional allowChartSheets As Boolean = False)
+        Private Sub ValidateWorkbookStructure(Optional allowChartSheets As Boolean = False, Optional allowSpillMetadata As Boolean = False)
             For Each child In WorkbookPart.Workbook.ChildElements
                 If TypeOf child Is ExternalReferences Then Continue For
                 If Not IsReferenceFreeWorkbookMetadata(child) AndAlso
@@ -309,6 +407,7 @@ Namespace ExcelOps
             For Each relationship In WorkbookPart.Parts
                 Dim part = relationship.OpenXmlPart
                 If allowChartSheets AndAlso TypeOf part Is ChartsheetPart Then Continue For
+                If allowSpillMetadata AndAlso TypeOf part Is CellMetadataPart Then Continue For
                 Dim externalPart = TryCast(part, ExternalWorkbookPart)
                 Dim externalBookId = externalPart?.ExternalLink?.GetFirstChild(Of ExternalBook)()?.Id?.Value
                 If externalBookId IsNot Nothing AndAlso
@@ -321,7 +420,7 @@ Namespace ExcelOps
             Next
         End Sub
 
-        Private Sub ValidateWorksheetStructure(part As WorksheetPart, shift As StructuralShift)
+        Private Sub ValidateWorksheetStructure(part As WorksheetPart, shift As StructuralShift, Optional allowSpills As Boolean = False)
             Dim worksheet = part.Worksheet
             For Each child In worksheet.ChildElements
                 If TypeOf child Is OpenXmlUnknownElement OrElse
@@ -356,6 +455,8 @@ Namespace ExcelOps
                     End If
                     Dim formula = cell.CellFormula
                     Dim formulaType = If(formula?.FormulaType?.Value, CellFormulaValues.Normal)
+                    If allowSpills AndAlso If(cell.CellMetaIndex?.Value, 0UI) = 1UI AndAlso cell.ValueMetaIndex Is Nothing AndAlso
+                       formulaType = CellFormulaValues.Array AndAlso Not String.IsNullOrEmpty(formula.Reference?.Value) Then Continue For
                     If cell.CellMetaIndex IsNot Nothing OrElse cell.ValueMetaIndex IsNot Nothing OrElse
                        (formulaType <> CellFormulaValues.Shared AndAlso
                         (formulaType <> CellFormulaValues.Normal OrElse formula?.Reference IsNot Nothing)) Then
@@ -370,7 +471,7 @@ Namespace ExcelOps
         End Sub
 
         Private Sub ApplyStructuralEditCore(sheetName As String, shift As StructuralShift, newSheetName As String,
-                                            stageDependents As Action(Of String))
+                                            stageDependents As Action(Of String, StructuralShift))
             Dim editedSheet = FindSheet(sheetName)
             Dim editedPart = TryCast(WorkbookPart.GetPartById(editedSheet.Id.Value), WorksheetPart)
             If editedPart Is Nothing Then Throw New ArgumentException("The selected sheet is not a worksheet.", NameOf(sheetName))
@@ -386,11 +487,14 @@ Namespace ExcelOps
             End If
 
             ' Verify and stage all changes before modifying the open workbook.
-            ValidateWorkbookStructure(allowChartSheets:=True)
+            Dim allowSpills = HasSupportedSpillMetadata(WorkbookPart.CellMetadataPart)
+            ValidateWorkbookStructure(allowChartSheets:=True, allowSpillMetadata:=allowSpills)
             Dim tables = GetStructuralTables(sheets)
+            If shift IsNot Nothing Then shift = shift.RetainEmptyTableRow(editedPart, tables)
             Dim tableNames = GetStructuralTableNames(tables)
-            Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String))
-            Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills)
+            Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String, Header As String))
+            Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills,
+                                                 allowSpillReferences:=allowSpills)
             Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName)
             Dim filledCells As New HashSet(Of Cell)
             Dim formulaChanges As New List(Of (Part As WorksheetPart, Cell As Cell, Text As String))
@@ -403,9 +507,10 @@ Namespace ExcelOps
                 Dim part = TryCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
                 If part Is Nothing Then Continue For
                 Dim sheetShift = If(part Is editedPart, shift, Nothing)
-                ValidateWorksheetStructure(part, sheetShift)
+                ValidateWorksheetStructure(part, sheetShift, allowSpills)
                 Dim originalData = GetSheetData(part)
-                Dim data = ExpandSharedFormulas(originalData, sheet.Name.Value, tableNames)
+                Dim data = ExpandSharedFormulas(originalData, sheet.Name.Value, tableNames, allowSpills)
+                If allowSpills Then data = PrepareStructuralSpills(data, sheetShift)
                 If sheetShift IsNot Nothing Then
                     originalMerges = part.Worksheet.GetFirstChild(Of MergeCells)()
                     shiftedMerges = ShiftMergedCells(originalMerges, sheetShift)
@@ -416,7 +521,9 @@ Namespace ExcelOps
                 For Each cell In data.Descendants(Of Cell)()
                     Dim formula = cell.CellFormula
                     If formula Is Nothing OrElse filledCells.Contains(cell) Then Continue For
-                    Dim text = RewriteFormula(formula.Text, sheet.Name.Value, originalName, shift, newSheetName, isDefinedName:=False, tableNames:=tableNames)
+                    Dim text = RewriteFormula(formula.Text, sheet.Name.Value, originalName, shift, newSheetName, isDefinedName:=False,
+                                              tableNames:=tableNames, contextualTable:=shift?.TableForCell(sheet.Name.Value, cell.CellReference?.Value),
+                                              allowSpillReferences:=allowSpills)
                     If text <> formula.Text OrElse cell.CellValue IsNot Nothing Then
                         formulaChanges.Add((part, cell, text))
                     End If
@@ -433,12 +540,13 @@ Namespace ExcelOps
                         End If
                         scopeSheet = sheets(CInt(definition.LocalSheetId.Value)).Name.Value
                     End If
-                    Dim text = RewriteFormula(definition.Text, scopeSheet, originalName, shift, newSheetName, isDefinedName:=True, tableNames:=tableNames)
+                    Dim text = RewriteFormula(definition.Text, scopeSheet, originalName, shift, newSheetName, isDefinedName:=True,
+                                              tableNames:=tableNames, allowSpillReferences:=allowSpills)
                     If text <> definition.Text Then nameChanges.Add((definition, text))
                 Next
             End If
 
-            stageDependents(originalName)
+            stageDependents(originalName, shift)
             For Each revision In revisedSheetData
                 revision.Key.Worksheet.ReplaceChild(revision.Value, GetSheetData(revision.Key))
                 _formulaRanges.Remove(revision.Key)
@@ -522,7 +630,7 @@ Namespace ExcelOps
         End Function
 
         Private Shared Function ShiftSheetData(source As SheetData, shift As StructuralShift, merges As MergeCells,
-                                               tableFills As List(Of (Row As Integer, Column As Integer, Formula As String)),
+                                               tableFills As List(Of (Row As Integer, Column As Integer, Formula As String, Header As String)),
                                                filledCells As HashSet(Of Cell), ByRef dimension As String) As SheetData
             Dim rows As New SortedDictionary(Of Integer, Row)
             Dim cells As New Dictionary(Of Integer, List(Of (Column As Integer, Cell As Cell)))
@@ -564,7 +672,13 @@ Namespace ExcelOps
                     If Not shift.Vertical AndAlso shift.Includes(rowIndex) Then destinationColumn = shift.MoveIndex(columnIndex)
                     If destinationRow < 0 OrElse destinationColumn < 0 Then Continue For
 
-                    Dim cell = DirectCast(sourceCell.CloneNode(True), Cell)
+                    Dim cell As Cell
+                    If shift.ClearsTableCell(rowIndex, columnIndex) Then
+                        If Not shift.RetainsClearedCellStyles OrElse sourceCell.StyleIndex Is Nothing Then Continue For
+                        cell = New Cell With {.StyleIndex = sourceCell.StyleIndex.Value}
+                    Else
+                        cell = DirectCast(sourceCell.CloneNode(True), Cell)
+                    End If
                     cell.CellReference = ExcelCell.LocalCellAddress(destinationRow, destinationColumn)
                     Dim rowCells As List(Of (Column As Integer, Cell As Cell)) = Nothing
                     If Not cells.TryGetValue(destinationRow, rowCells) Then
@@ -580,14 +694,19 @@ Namespace ExcelOps
             Next
 
             For Each fill In tableFills
-                Dim cell As New Cell With {
-                    .CellReference = ExcelCell.LocalCellAddress(fill.Row, fill.Column),
-                    .CellFormula = New CellFormula(fill.Formula)
-                }
+                Dim cell As New Cell With {.CellReference = ExcelCell.LocalCellAddress(fill.Row, fill.Column)}
                 Dim rowCells As List(Of (Column As Integer, Cell As Cell)) = Nothing
                 If Not cells.TryGetValue(fill.Row, rowCells) Then
                     rowCells = New List(Of (Column As Integer, Cell As Cell))
                     cells.Add(fill.Row, rowCells)
+                End If
+                If fill.Header IsNot Nothing Then
+                    cell.DataType = CellValues.InlineString
+                    cell.InlineString = New InlineString(New Text(EncodeText(fill.Header)) With {.Space = SpaceProcessingModeValues.Preserve})
+                    Dim previous = rowCells.Find(Function(item) item.Column = fill.Column - 1).Cell
+                    If previous?.StyleIndex IsNot Nothing Then cell.StyleIndex = previous.StyleIndex.Value
+                Else
+                    cell.CellFormula = New CellFormula(fill.Formula)
                 End If
                 rowCells.Add((fill.Column, cell))
                 filledCells.Add(cell)

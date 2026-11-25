@@ -5,7 +5,8 @@ Namespace ExcelOps
 
     Partial Public Class OpenXmlExcelDataOperations
 
-        Private Function ExpandSharedFormulas(source As SheetData, sheetName As String, tableNames As HashSet(Of String)) As SheetData
+        Private Function ExpandSharedFormulas(source As SheetData, sheetName As String, tableNames As HashSet(Of String),
+                                              Optional allowSpillReferences As Boolean = False) As SheetData
             If Not source.Descendants(Of CellFormula)().Any(Function(formula) If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Shared) Then Return source
             Dim data = DirectCast(source.CloneNode(True), SheetData)
             Dim groups As New Dictionary(Of UInteger, (First As ReferenceEndpoint, Last As ReferenceEndpoint, Formula As String))
@@ -36,7 +37,8 @@ Namespace ExcelOps
                     Throw New InvalidDataException("A shared formula cell lies outside its group.")
                 End If
                 Dim text = RewriteFormula(group.Formula, sheetName, sheetName, Nothing, Nothing, False, tableNames,
-                                          copyRowOffset:=address.Row - group.First.Row, copyColumnOffset:=address.Column - group.First.Column)
+                                          copyRowOffset:=address.Row - group.First.Row, copyColumnOffset:=address.Column - group.First.Column,
+                                          allowSpillReferences:=allowSpillReferences)
                 MakeIndividualFormula(follower.Formula, text)
             Next
             Return data

@@ -179,6 +179,51 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub WorksheetTransfer_OpenXmlTransfersNamedRangesWithTheirDestinationScopes(move As Boolean)
+        Dim sourcePath = Path.Combine(_directory, "named-source.xlsx")
+        Dim targetPath = Path.Combine(_directory, "named-target.xlsx")
+        Dim output = Path.Combine(_directory, "named-result.xlsx")
+        CreateSimpleMoveWorkbook(sourcePath, withIncomingReference:=False)
+        CreateSimpleMoveWorkbook(targetPath, withIncomingReference:=False)
+        Using source = SpreadsheetDocument.Open(sourcePath, True), target = SpreadsheetDocument.Open(targetPath, True)
+            source.WorkbookPart.Workbook.DefinedNames = New DefinedNames(
+                New DefinedName("Data!$A$1") With {.Name = "ScopedInput", .LocalSheetId = 0UI},
+                New DefinedName("Data!$A$1") With {.Name = "SharedInput"},
+                New DefinedName("42") With {.Name = "UnusedInput"})
+            target.WorkbookPart.Workbook.DefinedNames = New DefinedNames(
+                New DefinedName("Remain!$A$1") With {.Name = "SharedInput"},
+                New DefinedName("Remain!$A$1") With {.Name = "OtherLocal", .LocalSheetId = 1UI})
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              target As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
+            source.WriteCellFormula("Data", 0, 1, "SharedInput+ScopedInput+Data!ScopedInput", False)
+            If move Then
+                source.WriteCellFormula("Remain", 0, 0, "Data!ScopedInput", False)
+                Assert.Throws(Of NotSupportedException)(Sub() source.MoveSheet("Data", target, 1))
+                Assert.That(source.SheetNames(), [Is].EqualTo({"Data", "Remain"}))
+                Assert.That(target.SheetNames(), [Is].EqualTo({"Data", "Remain"}))
+                source.WriteCellFormula("Remain", 0, 0, "SharedInput", False)
+            End If
+            Dim transferred = If(move, source.MoveSheet("Data", target, 1), source.CopySheet("Data", target, 1))
+            Assert.That(transferred.TargetSheetName, [Is].EqualTo("Data (2)"))
+            Assert.That(target.LookupCellFormula("Data (2)", 0, 1), [Is].EqualTo("SharedInput+ScopedInput+'Data (2)'!ScopedInput"))
+            target.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim names = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().ToArray()
+            Assert.That(names.Select(Function(item) (item.Name.Value, item.LocalSheetId?.Value, item.Text)),
+                        [Is].EquivalentTo({
+                            ("SharedInput", CType(Nothing, UInteger?), "Remain!$A$1"),
+                            ("OtherLocal", CType(2UI, UInteger?), "Remain!$A$1"),
+                            ("ScopedInput", CType(1UI, UInteger?), "'Data (2)'!$A$1"),
+                            ("SharedInput", CType(1UI, UInteger?), "'Data (2)'!$A$1")
+                        }))
+        End Using
+    End Sub
+
     Private Shared Function SavedLink(path As String) As Uri
         Using document = SpreadsheetDocument.Open(path, False)
             Return document.WorkbookPart.ExternalWorkbookParts.Single().ExternalRelationships.Single().Uri

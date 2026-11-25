@@ -387,6 +387,37 @@ Partial Public Class OpenXmlExcelOpsTest
         Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
     End Sub
 
+    <Test>
+    Public Sub DeletingASpillAnchorClearsItsRemainingGeneratedCells()
+        Dim source = Path.Combine(_directory, "dynamic-array.xlsx")
+        Dim anchor = FormulaCell("B2", "_xlfn.SEQUENCE(3)")
+        anchor.CellFormula.FormulaType = CellFormulaValues.Array
+        anchor.CellFormula.Reference = "B2:B4"
+        anchor.CellMetaIndex = 1UI
+        CreateStructuralWorkbook(source, {anchor, ValueCell("B3", 2), ValueCell("B4", 3), ValueCell("B5", 7)},
+            {FormulaCell("A1", "SUM(_xlfn.ANCHORARRAY(" & DataQualifier & "B2))")})
+        Using document = SpreadsheetDocument.Open(source, True)
+            Dim part = document.WorkbookPart.AddNewPart(Of CellMetadataPart)()
+            Using output As New StreamWriter(part.GetStream(FileMode.Create, FileAccess.Write))
+                output.Write(<metadata xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+                                      xmlns:xda="http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray">
+                                 <metadataTypes count="1"><metadataType name="XLDAPR" cellMeta="1"/></metadataTypes>
+                                 <futureMetadata name="XLDAPR" count="1"><bk><extLst><ext uri="{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}">
+                                     <xda:dynamicArrayProperties fDynamic="1" fCollapsed="0"/>
+                                 </ext></extLst></bk></futureMetadata>
+                                 <cellMetadata count="1"><bk><rc t="1" v="0"/></bk></cellMetadata>
+                             </metadata>.ToString())
+            End Using
+        End Using
+        Using workbook = OpenStructuralWorkbook(source)
+            workbook.RemoveRows(DataSheet, 1, 1, True)
+            Assert.That(workbook.IsEmptyCell(DataSheet, 1, 1), [Is].True)
+            Assert.That(workbook.IsEmptyCell(DataSheet, 2, 1), [Is].True)
+            Assert.That(workbook.LookupCellValue(Of Integer)(DataSheet, 3, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(7))
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(_xlfn.ANCHORARRAY(" & DataQualifier & "#REF!))"))
+        End Using
+    End Sub
+
     Private Shared Function FormulaCell(address As String, formula As String) As Cell
         Return New Cell With {.CellReference = address, .CellFormula = New CellFormula(formula), .CellValue = New CellValue("42")}
     End Function
