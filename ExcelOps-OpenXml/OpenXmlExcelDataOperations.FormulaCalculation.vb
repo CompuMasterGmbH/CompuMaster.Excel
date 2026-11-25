@@ -33,9 +33,11 @@ Namespace ExcelOps
                     Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
                     If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
                     Dim calculation As New FormulaCalculation(Me)
-                    Dim result = calculation.ReadCell(sheetName, rowIndex, columnIndex)
+                    calculation.ReadCell(sheetName, rowIndex, columnIndex)
                     calculation.Commit()
-                    If throwExceptionOnCalculationError Then ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+                    If throwExceptionOnCalculationError Then
+                        ThrowIfFormulaError(sheetName, rowIndex, columnIndex, calculation.ReadCell(sheetName, rowIndex, columnIndex))
+                    End If
             End SyncLock
         End Sub
 
@@ -85,7 +87,7 @@ Namespace ExcelOps
         Private NotInheritable Partial Class FormulaCalculation
             Private ReadOnly _owner As OpenXmlExcelDataOperations
             Private ReadOnly _worksheets As New Dictionary(Of String, WorksheetSnapshot)(StringComparer.OrdinalIgnoreCase)
-            Private ReadOnly _results As New Dictionary(Of Cell, (Part As WorksheetPart, Result As Object))
+            Private ReadOnly _results As New Dictionary(Of Cell, (Part As WorksheetPart, Location As FormulaLocation, Result As Object))
             Private ReadOnly _run As CalculationRun
 
             Friend Sub New(owner As OpenXmlExcelDataOperations)
@@ -123,7 +125,9 @@ Namespace ExcelOps
 
             Friend Function EvaluateReplacement(sheetName As String, rowIndex As Integer, columnIndex As Integer, replacement As Cell) As Object
                 _worksheets(sheetName).Cells((rowIndex, columnIndex)) = replacement
-                Dim result = ReadCell(sheetName, rowIndex, columnIndex)
+                ReadCell(sheetName, rowIndex, columnIndex)
+                CompleteIterations()
+                Dim result = _results(replacement).Result
                 _results.Remove(replacement)
                 WriteCachedResult(replacement, result)
                 Return result
@@ -149,20 +153,23 @@ Namespace ExcelOps
                 End If
 
                 _owner.EnsureCalculationEnabled()
-                Dim cached As (Part As WorksheetPart, Result As Object) = Nothing
-                If _results.TryGetValue(cell, cached) Then Return cached.Result
+                Dim cached As (Part As WorksheetPart, Location As FormulaLocation, Result As Object) = Nothing
+                If _results.TryGetValue(cell, cached) Then
+                    If _run.IterationCells.Contains(cell) Then MarkIterationDependents()
+                    Return cached.Result
+                End If
                 Dim formula = cell.CellFormula.Text
                 Dim address As New ExcelCell(worksheet.Name, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
-                If _run.Active.Contains(cell) Then Throw New CircularReferenceException(address, formula)
+                If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
                 If _run.Active.Count >= 256 Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
-                _run.Active.Add(cell)
+                _run.Active.Push(cell)
                 If _run.TrackDependencies Then _run.Frames.Push(New FormulaDependencies(location))
                 Try
                     Dim expression = FormulaParser.Parse(formula)
                     Dim result = If(Scalar(EvaluateExpression(expression, address)), 0.0)
-                    _results.Add(cell, (worksheet.Part, result))
+                    _results.Add(cell, (worksheet.Part, location, result))
                     If _run.TrackDependencies Then _run.Dependencies(location) = _run.Frames.Peek()
                     Return result
                 Catch ex As NotSupportedException When Not TypeOf ex Is FormulaComplexityNotSupportedException
@@ -171,7 +178,7 @@ Namespace ExcelOps
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula refers to a cell outside the XLSX grid.", ex)
                 Finally
                     If _run.TrackDependencies Then _run.Frames.Pop()
-                    _run.Active.Remove(cell)
+                    _run.Active.Pop()
                 End Try
             End Function
 
@@ -186,6 +193,7 @@ Namespace ExcelOps
             End Function
 
             Friend Sub Commit()
+                CompleteIterations()
                 For Each evaluatedWorkbook In _run.Workbooks.Values
                     If _run.CopyWorkbook IsNot Nothing AndAlso evaluatedWorkbook._owner IsNot _run.CopyWorkbook Then Continue For
                     For Each item In evaluatedWorkbook._results
@@ -259,7 +267,11 @@ Namespace ExcelOps
 
             Private NotInheritable Class CalculationRun
                 Friend ReadOnly Workbooks As New Dictionary(Of OpenXmlExcelDataOperations, FormulaCalculation)
-                Friend ReadOnly Active As New HashSet(Of Cell)
+                Friend ReadOnly Active As New Stack(Of Cell)
+                Friend ReadOnly IterationCells As New HashSet(Of Cell)
+                Friend ReadOnly IterationSeeds As New Dictionary(Of Cell, Object)
+                Friend IterationWorkbook As OpenXmlExcelDataOperations
+                Friend IterationsApplied As Boolean
                 Friend ReadOnly Session As ExcelFormulaSessionSnapshot
                 Friend ReadOnly CopyWorkbook As OpenXmlExcelDataOperations
                 Friend ReadOnly CopySourcePath As String

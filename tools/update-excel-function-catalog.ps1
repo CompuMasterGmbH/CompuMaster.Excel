@@ -57,7 +57,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $sampleCounts = @{}
 $observedTokens = @{}
 $fixtureDirectory = Join-Path $root 'ExcelOpsTest/test_data/FormulaConformance'
-foreach ($file in Get-ChildItem -LiteralPath $fixtureDirectory -Filter '*.xlsx') {
+foreach ($file in Get-ChildItem -LiteralPath $fixtureDirectory -Filter '*.xlsx' | Sort-Object Name) {
     $package = [IO.Compression.ZipFile]::OpenRead($file.FullName)
     try {
         foreach ($sheet in $package.Entries.Where({ $_.FullName -match '^xl/worksheets/sheet\d+\.xml$' })) {
@@ -111,7 +111,9 @@ foreach ($row in [regex]::Matches($table.Value, '(?is)<tr\b[^>]*>(.*?)</tr>')) {
 }
 if ($index.PSBase.Count -lt 480) { throw "Only $($index.PSBase.Count) worksheet functions could be read from the Microsoft index." }
 
-$rows = @($index.PSBase.Values | Sort-Object Function)
+[string[]] $functionNames = $index.PSBase.Keys
+[Array]::Sort($functionNames, [StringComparer]::Ordinal)
+$rows = @($functionNames | ForEach-Object { $index[$_] })
 $csv = $rows | ConvertTo-Csv -NoTypeInformation
 [IO.File]::WriteAllText([IO.Path]::GetFullPath($OutputPath), (($csv -join [Environment]::NewLine) + [Environment]::NewLine), [Text.UTF8Encoding]::new($true))
 Write-Output "Catalogued $($rows.Count) worksheet functions. $(@($rows.Where({$_.OpenXmlEvaluator})).Count) evaluator entries and $(@($rows.Where({$_.ReferenceFormulaCells -gt 0})).Count) functions present in reference formula cells."

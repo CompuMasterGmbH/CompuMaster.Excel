@@ -83,7 +83,7 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaDependencies
             Friend ReadOnly Cell As FormulaLocation
-            Friend ReadOnly Precedents As New List(Of FormulaPrecedent)
+            Friend ReadOnly Precedents As New HashSet(Of FormulaPrecedent)
             Friend IsVolatile As Boolean
 
             Friend Sub New(cell As FormulaLocation)
