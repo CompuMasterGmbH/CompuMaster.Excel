@@ -211,6 +211,11 @@ Namespace ExcelOps
             End Sub
 
             Private Function Scalar(value As Object) As Object
+                Dim matrix = TryCast(value, FormulaMatrix)
+                If matrix IsNot Nothing Then
+                    If matrix.Values.Length <> 1 Then Throw New NotSupportedException("A multi-cell array result requires spill calculation.")
+                    Return matrix.Values(0)
+                End If
                 Dim area = TryCast(value, FormulaArea)
                 If area Is Nothing Then Return value
                 If area.FirstRow <> area.LastRow OrElse area.FirstColumn <> area.LastColumn Then

@@ -7,6 +7,11 @@ Namespace ExcelOps
         Partial Private NotInheritable Class FormulaCalculation
 
             Friend Function EvaluateUnary(operation As String, operand As Object) As Object
+                If IsMultiValue(operand) Then
+                    Dim matrix = AsMatrix(operand)
+                    Return New FormulaMatrix(matrix.Rows, matrix.Columns,
+                        matrix.Values.Select(Function(item) EvaluateUnary(operation, item)).ToArray())
+                End If
                 Dim value = NumberValue(Scalar(operand))
                 If TypeOf value Is FormulaError Then Return value
                 Dim number = DirectCast(value, Double)
@@ -19,6 +24,7 @@ Namespace ExcelOps
             End Function
 
             Friend Function EvaluateBinary(operation As String, first As Object, second As Object) As Object
+                If IsMultiValue(first) OrElse IsMultiValue(second) Then Return EvaluateArrayBinary(operation, AsMatrix(first), AsMatrix(second))
                 first = Scalar(first)
                 second = Scalar(second)
                 If TypeOf first Is FormulaError Then Return first
@@ -81,6 +87,8 @@ Namespace ExcelOps
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "SEQUENCE", "_XLFN.SEQUENCE", "TRANSPOSE", "FILTER", "_XLFN.FILTER", "_XLFN._XLWS.FILTER"
+                        Return EvaluateArrayFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "COUNTA", "COUNTBLANK"
                         Return CountValues(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"
@@ -102,7 +110,9 @@ Namespace ExcelOps
                 If TypeOf argument Is FormulaError Then Return argument
                 Dim area = TryCast(argument, FormulaArea)
                 If area Is Nothing Then
-                    If name = "ROWS" OrElse name = "COLUMNS" Then Return 1.0
+                    Dim matrix = TryCast(argument, FormulaMatrix)
+                    If name = "ROWS" Then Return If(matrix Is Nothing, 1.0, CDbl(matrix.Rows))
+                    If name = "COLUMNS" Then Return If(matrix Is Nothing, 1.0, CDbl(matrix.Columns))
                     Return New FormulaError("#VALUE!")
                 End If
                 If Not ResolveReference(area)._worksheets.ContainsKey(area.Sheet) Then Return New FormulaError("#REF!")
@@ -126,9 +136,18 @@ Namespace ExcelOps
                 For Each argument In arguments
                     Dim value = EvaluateExpression(argument, formulaCell)
                     Dim area = TryCast(value, FormulaArea)
-                    Dim values = If(area Is Nothing, CType(New Object() {value}, IEnumerable(Of Object)), RangeValues(area))
+                    Dim matrix = TryCast(value, FormulaMatrix)
+                    Dim values As IEnumerable(Of Object)
+                    If area IsNot Nothing Then
+                        values = RangeValues(area)
+                    ElseIf matrix IsNot Nothing Then
+                        values = matrix.Values
+                    Else
+                        values = {value}
+                    End If
                     For Each item In values
-                        If area IsNot Nothing AndAlso Not TypeOf item Is Double AndAlso Not TypeOf item Is FormulaError Then Continue For
+                        If (area IsNot Nothing OrElse matrix IsNot Nothing) AndAlso
+                            Not TypeOf item Is Double AndAlso Not TypeOf item Is FormulaError Then Continue For
                         If item Is Nothing Then Continue For
                         Dim number = NumberValue(item)
                         If TypeOf number Is FormulaError Then

@@ -23,7 +23,10 @@
                 Dim input = EvaluateExpression(arguments(0), formulaCell)
                 If TypeOf input Is FormulaError Then Return input
                 Dim area = TryCast(input, FormulaArea)
-                If area Is Nothing Then Return New FormulaError("#VALUE!")
+                Dim matrix = TryCast(input, FormulaMatrix)
+                If area Is Nothing AndAlso matrix Is Nothing Then Return New FormulaError("#VALUE!")
+                Dim rows = If(area Is Nothing, matrix.Rows, area.LastRow - area.FirstRow + 1)
+                Dim columns = If(area Is Nothing, matrix.Columns, area.LastColumn - area.FirstColumn + 1)
 
                 Dim row = ReadIndex(arguments(1), formulaCell)
                 If TypeOf row Is FormulaError Then Return row
@@ -33,18 +36,30 @@
                     Dim column = ReadIndex(arguments(2), formulaCell)
                     If TypeOf column Is FormulaError Then Return column
                     columnNumber = DirectCast(column, Double)
-                ElseIf area.FirstRow = area.LastRow Then
+                ElseIf rows = 1 Then
                     columnNumber = rowNumber
                     rowNumber = 1.0
-                ElseIf area.FirstColumn <> area.LastColumn Then
+                ElseIf columns <> 1 Then
                     columnNumber = 0.0
                 End If
 
-                Dim rows = area.LastRow - area.FirstRow + 1
-                Dim columns = area.LastColumn - area.FirstColumn + 1
                 If rowNumber < 0 OrElse rowNumber > rows OrElse columnNumber < 0 OrElse columnNumber > columns Then Return New FormulaError("#REF!")
-                Return SliceArea(area, CInt(Math.Max(0.0, rowNumber - 1.0)), CInt(Math.Max(0.0, columnNumber - 1.0)),
-                    CInt(If(rowNumber = 0, rows - 1.0, rowNumber - 1.0)), CInt(If(columnNumber = 0, columns - 1.0, columnNumber - 1.0)))
+                Dim firstRow = CInt(Math.Max(0.0, rowNumber - 1.0))
+                Dim firstColumn = CInt(Math.Max(0.0, columnNumber - 1.0))
+                Dim lastRow = If(rowNumber = 0, rows - 1, firstRow)
+                Dim lastColumn = If(columnNumber = 0, columns - 1, firstColumn)
+                If area IsNot Nothing Then Return SliceArea(area, firstRow, firstColumn, lastRow, lastColumn)
+                If firstRow = lastRow AndAlso firstColumn = lastColumn Then Return matrix.At(firstRow, firstColumn)
+
+                Dim selectedRows = lastRow - firstRow + 1
+                Dim selectedColumns = lastColumn - firstColumn + 1
+                Dim values = AllocateMatrixValues(selectedRows, selectedColumns)
+                For rowIndex = 0 To selectedRows - 1
+                    For columnIndex = 0 To selectedColumns - 1
+                        values(rowIndex * selectedColumns + columnIndex) = matrix.At(firstRow + rowIndex, firstColumn + columnIndex)
+                    Next
+                Next
+                Return New FormulaMatrix(selectedRows, selectedColumns, values)
             End Function
 
             Private Function EvaluateMatch(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
