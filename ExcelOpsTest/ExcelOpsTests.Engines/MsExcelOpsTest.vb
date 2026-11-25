@@ -41,6 +41,7 @@ Namespace ExcelOpsTests.Engines
 
         <TearDown>
         Public Sub TearDown()
+            If MsExcelInstance Is Nothing Then Return
             Dim WbCount As Integer = MsExcelInstance.Workbooks.Count
             Dim AssertionMessageWbCount As String = Nothing
             For MyCounter As Integer = 0 To WbCount - 1
@@ -60,9 +61,10 @@ Namespace ExcelOpsTests.Engines
 
         <OneTimeTearDown>
         Public Sub OneTimeTearDown()
+            If MsExcelInstance Is Nothing Then Return
             MsExcelInstance.Workbooks.CloseAllWorkbooks()
             MsExcelInstance.Close()
-            If MsExcelInstance IsNot Nothing Then MsExcelInstance.Dispose()
+            MsExcelInstance.Dispose()
             CompuMaster.ComInterop.ComTools.GarbageCollectAndWaitForPendingFinalizers()
         End Sub
 
