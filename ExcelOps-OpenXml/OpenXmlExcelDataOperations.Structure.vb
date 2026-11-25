@@ -360,7 +360,8 @@ Namespace ExcelOps
             ApplyWorkbookSessionEdit(sheetName, shift, newSheetName)
         End Sub
 
-        Private Sub ApplyStructuralEditCore(sheetName As String, shift As StructuralShift, newSheetName As String)
+        Private Sub ApplyStructuralEditCore(sheetName As String, shift As StructuralShift, newSheetName As String,
+                                            stageDependents As Action(Of String))
             Dim editedSheet = FindSheet(sheetName)
             Dim editedPart = TryCast(WorkbookPart.GetPartById(editedSheet.Id.Value), WorksheetPart)
             If editedPart Is Nothing Then Throw New ArgumentException("The selected sheet is not a worksheet.", NameOf(sheetName))
@@ -378,11 +379,7 @@ Namespace ExcelOps
             ' Verify and stage all changes before modifying the open workbook.
             ValidateWorkbookStructure(allowChartSheets:=True)
             Dim tables = GetStructuralTables(sheets)
-            Dim tableNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
-            For Each table In tables
-                If table.Source.Name IsNot Nothing Then tableNames.Add(table.Source.Name.Value)
-                If table.Source.DisplayName IsNot Nothing Then tableNames.Add(table.Source.DisplayName.Value)
-            Next
+            Dim tableNames = GetStructuralTableNames(tables)
             Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String))
             Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills)
             Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName)
@@ -432,6 +429,7 @@ Namespace ExcelOps
                 Next
             End If
 
+            stageDependents(originalName)
             For Each revision In revisedSheetData
                 revision.Key.Worksheet.ReplaceChild(revision.Value, GetSheetData(revision.Key))
                 _formulaRanges.Remove(revision.Key)

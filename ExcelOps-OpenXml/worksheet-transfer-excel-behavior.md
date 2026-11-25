@@ -33,6 +33,6 @@ Excel and Open XML implement `MoveSheet` and `MoveSheets` for supported groups c
 
 `OpenXmlWorkbookSession` connects participating workbook instances. It stages supported incoming reference changes before applying a structural edit and redirects references in additional attached workbooks after a move. It uses saved paths and temporary names to establish workbook identity. When the linked workbook receives a path, the session resolves the temporary name to that path. An attached dependent writes the resolved link on its next save. Microsoft Excel reopened the output and calculated the linked formulas in a move that was saved in both possible orders.
 
-Defined-name collisions, 3-D formulas and table transfers remain outside the supported scope. Incoming structural updates in dependents with charts or tables raise an exception before the source changes. The session writes resolved external link paths as absolute paths.
+Defined-name collisions, 3-D formulas and table transfers remain outside the supported scope. Incoming structural updates cover direct links from cells, supported tables and classic charts. The session writes resolved external link paths as absolute paths.
 
 The native reference tests are in [MsExcelOpsWorksheetTransferTest.vb](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsWorksheetTransferTest.vb). Microsoft describes the distinction between workbook-link display and storage in its [workbook link documentation](https://support.microsoft.com/en-us/excel/description-of-workbook-link-management-and-storage-in-excel).

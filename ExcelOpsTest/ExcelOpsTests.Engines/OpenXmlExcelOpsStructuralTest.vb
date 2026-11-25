@@ -246,6 +246,45 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
     <Test>
+    Public Sub WorkbookSession_UpdatesAnExternalReferenceInACalculatedTableColumn()
+        Dim sourcePath = Path.Combine(_directory, WorkbookReferenceCoverage.SourceName)
+        Dim targetPath = Path.Combine(_directory, "linked-table.xlsx")
+        Dim output = Path.Combine(_directory, "saved-table.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", WorkbookReferenceCoverage.SourceName), sourcePath)
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName), targetPath)
+        Using document = SpreadsheetDocument.Open(targetPath, True)
+            Dim book = document.WorkbookPart
+            book.Workbook.ExternalReferences = New ExternalReferences()
+            AddMoveTestLink(book, sourcePath, WorkbookReferenceCoverage.RemoteSheet)
+            Dim sheet = StructuralReferenceCoverage.WorksheetFor(book, "PlainTable")
+            Dim table = sheet.TableDefinitionParts.Single().Table
+            Dim column = table.GetFirstChild(Of TableColumns)().Elements(Of TableColumn)().Last()
+            column.CalculatedColumnFormula.Text = "C4*'[1]Remote Data'!$B$2"
+            For row = 4 To 6
+                Dim address = "D" & row
+                Dim cell = sheet.Worksheet.Descendants(Of Cell)().Single(Function(item) item.CellReference.Value = address)
+                cell.CellFormula = New CellFormula("C" & row & "*'[1]Remote Data'!$B$2")
+            Next
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using session As New OpenXmlWorkbookSession(),
+              source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              dependent As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
+            session.Attach(source)
+            session.Attach(dependent)
+            source.AddRow(WorkbookReferenceCoverage.RemoteSheet, 1, 1, True)
+            Assert.That(dependent.LookupCellFormula("PlainTable", 3, 3), [Is].EqualTo("C4*'[1]Remote Data'!$B$3"))
+            dependent.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim table = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "PlainTable").TableDefinitionParts.Single().Table
+            Dim column = table.GetFirstChild(Of TableColumns)().Elements(Of TableColumn)().Last()
+            Assert.That(table.Reference.Value, [Is].EqualTo("B3:D6"))
+            Assert.That(column.CalculatedColumnFormula.Text, [Is].EqualTo("C4*'[1]Remote Data'!$B$3"))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub WorkbookSession_RejectsAnUnsupportedDependentBeforeChangingAnyWorkbook()
         WorkbookReferenceCoverage.CopyPair(_directory)
         Dim sourcePath = Path.Combine(_directory, WorkbookReferenceCoverage.SourceName)

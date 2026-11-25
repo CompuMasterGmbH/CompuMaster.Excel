@@ -1,5 +1,4 @@
 ﻿Imports System.Collections.Concurrent
-Imports System.IO
 
 Namespace ExcelOps
 
@@ -78,7 +77,7 @@ Namespace ExcelOps
         Friend Sub BindTemporaryLink(name As String, destination As String)
             Dim previous As Uri = Nothing
             If _temporaryLinks.TryGetValue(name, previous) Then
-                _temporaryLinks.TryUpdate(name, New Uri(Path.GetFullPath(destination)), previous)
+                _temporaryLinks.TryUpdate(name, OpenXmlExcelDataOperations.WorkbookFileUri(destination), previous)
             End If
         End Sub
 

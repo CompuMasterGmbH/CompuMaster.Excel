@@ -5,22 +5,26 @@ Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 Imports ChartXml = DocumentFormat.OpenXml.Drawing.Charts
 Imports DrawingXml = DocumentFormat.OpenXml.Drawing.Spreadsheet
+Imports ExtendedChartXml = DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing
 
 Namespace ExcelOps
 
     Partial Public Class OpenXmlExcelDataOperations
 
+        Private Const ExtendedChartNamespace As String = "http://schemas.microsoft.com/office/drawing/2014/chartex"
         Private ReadOnly _changedCharts As New Dictionary(Of ChartPart, ChartXml.ChartSpace)
         Private ReadOnly _changedDrawings As New Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing)
 
         Private Function StageChartChanges(sheets As IEnumerable(Of Sheet), editedPart As WorksheetPart, editedSheet As String,
-                                           shift As StructuralShift, newSheetName As String) As (
+                                           shift As StructuralShift, newSheetName As String,
+                                           Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing) As (
                                            Charts As Dictionary(Of ChartPart, ChartXml.ChartSpace),
                                            Drawings As Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing))
             Dim charts As New Dictionary(Of ChartPart, ChartXml.ChartSpace)
             Dim drawings As New Dictionary(Of DrawingsPart, DrawingXml.WorksheetDrawing)
+            book = If(book, WorkbookPart)
             For Each sheet In sheets
-                Dim owner = WorkbookPart.GetPartById(sheet.Id.Value)
+                Dim owner = book.GetPartById(sheet.Id.Value)
                 Dim worksheet = TryCast(owner, WorksheetPart)
                 Dim chartSheet = TryCast(owner, ChartsheetPart)
                 Dim drawing = If(worksheet IsNot Nothing, worksheet?.DrawingsPart, chartSheet?.DrawingsPart)
@@ -30,27 +34,54 @@ Namespace ExcelOps
                     Throw UnsupportedOperation("Updating references on an unsupported chart sheet")
                 End If
                 If drawing Is Nothing Then Continue For
+                Dim extendedCharts = drawing.Parts.Select(Function(item) item.OpenXmlPart).OfType(Of ExtendedChartPart)().ToArray()
+                Dim allowExtendedCharts = extendedCharts.Length > 0 AndAlso shift Is Nothing
                 If drawing.WorksheetDrawing Is Nothing OrElse drawing.GetParentParts().Count() <> 1 OrElse drawing.Parts.Any(
-                    Function(part) Not TypeOf part.OpenXmlPart Is ChartPart AndAlso Not TypeOf part.OpenXmlPart Is ImagePart) Then
+                    Function(part) Not TypeOf part.OpenXmlPart Is ChartPart AndAlso Not TypeOf part.OpenXmlPart Is ImagePart AndAlso
+                        Not (allowExtendedCharts AndAlso TypeOf part.OpenXmlPart Is ExtendedChartPart)) Then
                     Throw UnsupportedOperation("Updating references in unsupported drawing parts")
                 End If
+                If allowExtendedCharts Then ValidateExtendedChartNames(extendedCharts, book)
                 Dim placement As DrawingXml.WorksheetDrawing = Nothing
                 If Not _changedDrawings.TryGetValue(drawing, placement) Then placement = drawing.WorksheetDrawing
-                Dim changedPlacement = StageChartAnchors(placement, If(worksheet Is editedPart, shift, Nothing))
+                Dim changedPlacement = StageChartAnchors(placement, If(worksheet IsNot Nothing AndAlso worksheet Is editedPart, shift, Nothing),
+                                                         allowExtendedCharts)
                 If changedPlacement IsNot Nothing Then drawings.Add(drawing, changedPlacement)
 
                 For Each chart In drawing.ChartParts
                     Dim chartSpace As ChartXml.ChartSpace = Nothing
                     If Not _changedCharts.TryGetValue(chart, chartSpace) Then chartSpace = chart.ChartSpace
-                    Dim changedChart = StageChartReferences(chart, chartSpace, editedSheet, shift, newSheetName)
+                    Dim changedChart = StageChartReferences(chart, chartSpace, editedSheet, shift, newSheetName, book, links)
                     If changedChart IsNot Nothing Then charts.Add(chart, changedChart)
                 Next
             Next
             Return (charts, drawings)
         End Function
 
+        Private Sub ValidateExtendedChartNames(charts As ExtendedChartPart(), book As WorkbookPart)
+            Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+            If book.Workbook.DefinedNames IsNot Nothing Then
+                For Each definition In book.Workbook.DefinedNames.Elements(Of DefinedName)()
+                    If definition.LocalSheetId Is Nothing AndAlso definition.Name.Value.StartsWith("_xlchart", StringComparison.OrdinalIgnoreCase) Then
+                        names.Add(definition.Name.Value)
+                    End If
+                Next
+            End If
+            ' A rename can update the workbook definitions while leaving the chart, caches and layout intact.
+            For Each chart In charts
+                Dim source = chart.ChartSpace
+                If source Is Nothing OrElse chart.EmbeddedPackagePart IsNot Nothing OrElse chart.ExternalRelationships.Any() OrElse
+                   source.Descendants().Any(Function(element) element.LocalName = "externalData" OrElse
+                       (element.LocalName = "f" AndAlso Not TypeOf element Is ExtendedChartXml.Formula)) OrElse
+                   source.Descendants(Of ExtendedChartXml.Formula)().Any(Function(formula) Not names.Contains(formula.Text)) Then
+                    Throw UnsupportedOperation("Renaming a worksheet used by a ChartEx chart with unsupported sources")
+                End If
+            Next
+        End Sub
+
         Private Function StageChartReferences(chart As ChartPart, source As ChartXml.ChartSpace, editedSheet As String,
-                                              shift As StructuralShift, newSheetName As String) As ChartXml.ChartSpace
+                                              shift As StructuralShift, newSheetName As String, book As WorkbookPart,
+                                              links As HashSet(Of Integer)) As ChartXml.ChartSpace
             If source Is Nothing OrElse chart.GetParentParts().Count() <> 1 OrElse source.Descendants(Of ChartXml.ExternalData)().Any() OrElse
                source.Descendants(Of ChartXml.PivotSource)().Any() OrElse chart.Parts.Any(
                     Function(part) Not TypeOf part.OpenXmlPart Is ChartStylePart AndAlso
@@ -69,12 +100,19 @@ Namespace ExcelOps
                 Dim qualifier = FormulaSheet.Match(formula.Text, 0)
                 If Not qualifier.Success Then Throw UnsupportedOperation("Updating a chart source without an explicit sheet")
                 Dim external As Boolean
-                Dim sheet = SheetNameFromToken(WorkbookPart, qualifier, external)
-                If external OrElse Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
+                Dim sheet = SheetNameFromToken(book, qualifier, external)
+                Dim externalPrefix As String = Nothing
+                If external <> (links IsNot Nothing) Then Continue For
+                If external Then sheet = LinkedStructuralSheet(sheet, links, externalPrefix)
+                If Not String.Equals(sheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then Continue For
+                Dim newQualifier = qualifier.Value
+                If newSheetName IsNot Nothing Then
+                    newQualifier = If(external, FormatLinkedSheetName(externalPrefix, newSheetName), FormatSheetName(newSheetName))
+                End If
                 Dim address = formula.Text.Substring(qualifier.Length)
                 If address = "#REF!" Then
                     If newSheetName IsNot Nothing Then
-                        formula.Text = FormatSheetName(newSheetName) & address
+                        formula.Text = newQualifier & address
                         changed = True
                     End If
                     Continue For
@@ -97,7 +135,7 @@ Namespace ExcelOps
                 End If
 
                 changed = True
-                formula.Text = If(newSheetName Is Nothing, qualifier.Value, FormatSheetName(newSheetName)) & rewritten
+                formula.Text = newQualifier & rewritten
                 If rewritten = "#REF!" AndAlso (TypeOf role Is ChartXml.CategoryAxisData OrElse TypeOf role Is ChartXml.SeriesText) Then
                     role.Remove()
                 ElseIf shift IsNot Nothing AndAlso rewritten <> address Then
@@ -180,10 +218,13 @@ Namespace ExcelOps
             Next
         End Sub
 
-        Private Function StageChartAnchors(source As DrawingXml.WorksheetDrawing, shift As StructuralShift) As DrawingXml.WorksheetDrawing
+        Private Function StageChartAnchors(source As DrawingXml.WorksheetDrawing, shift As StructuralShift,
+                                           Optional allowExtendedCharts As Boolean = False) As DrawingXml.WorksheetDrawing
             Dim revised = DirectCast(source.CloneNode(True), DrawingXml.WorksheetDrawing)
             Dim changed = False
             For Each anchor In revised.ChildElements
+                If allowExtendedCharts AndAlso anchor.Descendants().Any(
+                    Function(element) element.LocalName = "chart" AndAlso element.NamespaceUri = ExtendedChartNamespace) Then Continue For
                 Dim picture = anchor.GetFirstChild(Of DrawingXml.Picture)()
                 Dim frame = anchor.GetFirstChild(Of DrawingXml.GraphicFrame)()
                 If picture Is Nothing AndAlso (frame Is Nothing OrElse Not frame.Descendants(Of ChartXml.ChartReference)().Any()) Then

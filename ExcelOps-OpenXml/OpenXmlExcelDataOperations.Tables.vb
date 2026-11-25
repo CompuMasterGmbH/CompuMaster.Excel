@@ -64,10 +64,11 @@ Namespace ExcelOps
             End Function
         End Class
 
-        Private Function GetStructuralTables(sheets As List(Of Sheet)) As List(Of StructuralTable)
+        Private Function GetStructuralTables(sheets As IEnumerable(Of Sheet), Optional book As WorkbookPart = Nothing) As List(Of StructuralTable)
             Dim result As New List(Of StructuralTable)
+            book = If(book, WorkbookPart)
             For Each sheet In sheets
-                Dim worksheet = TryCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
+                Dim worksheet = TryCast(book.GetPartById(sheet.Id.Value), WorksheetPart)
                 If worksheet Is Nothing Then Continue For
                 For Each part In worksheet.TableDefinitionParts
                     Dim source As Table = Nothing
@@ -83,9 +84,19 @@ Namespace ExcelOps
             Return result
         End Function
 
+        Private Shared Function GetStructuralTableNames(tables As IEnumerable(Of StructuralTable)) As HashSet(Of String)
+            Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+            For Each table In tables
+                If table.Source.Name IsNot Nothing Then names.Add(table.Source.Name.Value)
+                If table.Source.DisplayName IsNot Nothing Then names.Add(table.Source.DisplayName.Value)
+            Next
+            Return names
+        End Function
+
         Private Function StageTableChanges(tables As List(Of StructuralTable), editedPart As WorksheetPart, editedName As String,
                                            shift As StructuralShift, newSheetName As String, tableNames As HashSet(Of String),
-                                           fills As List(Of (Row As Integer, Column As Integer, Formula As String))) As Dictionary(Of TableDefinitionPart, Table)
+                                           fills As List(Of (Row As Integer, Column As Integer, Formula As String)),
+                                           Optional book As WorkbookPart = Nothing, Optional links As HashSet(Of Integer) = Nothing) As Dictionary(Of TableDefinitionPart, Table)
             If shift IsNot Nothing Then
                 For Each table In tables
                     If table.Worksheet Is editedPart Then shift.PlanTableShift(table)
@@ -117,7 +128,8 @@ Namespace ExcelOps
                     Dim calculation = column.CalculatedColumnFormula
                     If calculation IsNot Nothing Then
                         Dim original = calculation.Text
-                        Dim rewritten = RewriteFormula(original, table.SheetName, editedName, shift, newSheetName, False, tableNames)
+                        Dim rewritten = RewriteFormula(original, table.SheetName, editedName, shift, newSheetName, False, tableNames,
+                                                       formulaWorkbook:=book, structuralExternalLinks:=links)
                         If table.AddsDataRows Then
                             If calculation.GetAttributes().Any(Function(attribute) attribute.LocalName = "array" AndAlso
                                                                (attribute.Value = "1" OrElse attribute.Value = "true")) Then
@@ -140,7 +152,8 @@ Namespace ExcelOps
 
                     Dim totals = column.TotalsRowFormula
                     If totals IsNot Nothing Then
-                        Dim text = RewriteFormula(totals.Text, table.SheetName, editedName, shift, newSheetName, False, tableNames)
+                        Dim text = RewriteFormula(totals.Text, table.SheetName, editedName, shift, newSheetName, False, tableNames,
+                                                  formulaWorkbook:=book, structuralExternalLinks:=links)
                         If text <> totals.Text Then
                             totals.Text = text
                             changed = True

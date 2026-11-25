@@ -363,6 +363,58 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <Test>
+        Public Sub ChartReferences_TrackEditsInTheLinkedWorkbook()
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim source As MsExcelDataOperations = Nothing
+            Dim target As MsExcelDataOperations = Nothing
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(False)
+                Dim targetCheck = TransferSheet(target.Workbook, "Target Check")
+                Dim embedded = AddEmbeddedReferenceChart(targetCheck).Chart
+                Dim chartSheet = AddReferenceChartSheet(target.Workbook, targetCheck)
+                Dim qualifier = OpenWorkbookQualifier(source.Workbook, "Transfer")
+                targetCheck.Range("A1").Formula = "=" & qualifier & "$A$1"
+                SetTransferChartSeries(embedded, qualifier)
+                SetTransferChartSeries(chartSheet, qualifier)
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                source.AddRow("Transfer", 0, 1, True)
+                qualifier = OpenWorkbookQualifier(source.Workbook, "Transfer")
+                AssertChartTransferSeries(embedded, qualifier, 10, "$A$2")
+                AssertChartTransferSeries(chartSheet, qualifier, 10, "$A$2")
+                source.Close()
+                target.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                Using session As New OpenXmlWorkbookSession(),
+                      origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      dependent As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    session.Attach(origin)
+                    session.Attach(dependent)
+                    origin.AddRow("Transfer", 0, 1, True)
+                    origin.Save()
+                    dependent.Save()
+                End Using
+
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                qualifier = OpenWorkbookQualifier(source.Workbook, "Transfer")
+                targetCheck = TransferSheet(target.Workbook, "Target Check")
+                embedded = DirectCast(targetCheck.ChartObjects(1), NativeExcel.ChartObject).Chart
+                chartSheet = DirectCast(target.Workbook.Charts.Item(ChartViewSheet), NativeExcel.Chart)
+                AssertChartTransferSeries(embedded, qualifier, 10, "$A$2")
+                AssertChartTransferSeries(chartSheet, qualifier, 10, "$A$2")
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
         Private Shared Sub SetTransferChartSeries(chart As NativeExcel.Chart, qualifier As String)
             chart.ChartType = NativeExcel.XlChartType.xlColumnClustered
             Dim collection = DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection)
@@ -373,10 +425,11 @@ Namespace ExcelOpsTests.Engines
             series.Formula = "=SERIES(,," & qualifier & "$A$1,1)"
         End Sub
 
-        Private Shared Sub AssertChartTransferSeries(chart As NativeExcel.Chart, qualifier As String, expected As Integer)
+        Private Shared Sub AssertChartTransferSeries(chart As NativeExcel.Chart, qualifier As String, expected As Integer,
+                                                       Optional address As String = "$A$1")
             chart.Refresh()
             Dim series = DirectCast(chart.SeriesCollection(1), NativeExcel.Series)
-            Assert.That(series.Formula.Replace("'", ""), Does.Contain(qualifier.Replace("'", "") & "$A$1"))
+            Assert.That(series.Formula.Replace("'", ""), Does.Contain(qualifier.Replace("'", "") & address))
             Dim points = DirectCast(series.Values, Array)
             Assert.That(CDbl(points.GetValue(points.GetLowerBound(0))), [Is].EqualTo(expected))
         End Sub

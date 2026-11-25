@@ -248,14 +248,19 @@ Namespace ExcelOps
                 If allowUnsaved Then Return New Uri(TemporaryWorkbookName, UriKind.Relative)
                 Throw UnsupportedOperation("Creating a workbook link to a workbook that has not been saved")
             End If
-            Return New Uri(System.IO.Path.GetFullPath(path))
+            Return WorkbookFileUri(path)
+        End Function
+
+        Friend Shared Function WorkbookFileUri(path As String) As Uri
+            ' An explicit file URI survives package serialization on Windows and Unix.
+            Return New Uri(New Uri(System.IO.Path.GetFullPath(path)).AbsoluteUri, UriKind.Absolute)
         End Function
 
         Private Function MatchesTransferPath(path As Uri) As Boolean
             If Not path.IsAbsoluteUri Then Return path.OriginalString = TemporaryWorkbookName
             Dim savedPath = WorkbookFilePath
             Return Not String.IsNullOrEmpty(savedPath) AndAlso
-                SameTransferPath(New Uri(System.IO.Path.GetFullPath(savedPath)), path)
+                SameTransferPath(WorkbookFileUri(savedPath), path)
         End Function
 
         Private Shared Function SameTransferPath(first As Uri, second As Uri) As Boolean
@@ -299,9 +304,7 @@ Namespace ExcelOps
             Dim resolved = WorkbookSession?.ResolveTemporaryLink(relationship.Uri)
             If resolved IsNot Nothing Then Return resolved
             If String.IsNullOrEmpty(FilePath) Then Return Nothing
-            Dim workbookUri As New Uri(Path.GetFullPath(FilePath))
-            ' An explicit file URI prevents encoded path segments from being escaped twice.
-            Return New Uri(New Uri(workbookUri.AbsoluteUri), relationship.Uri)
+            Return New Uri(WorkbookFileUri(FilePath), relationship.Uri)
         End Function
 
         ' Collects required links without modifying the open workbook or changing existing link indexes.

@@ -55,22 +55,22 @@ Namespace ExcelOps
 
         Private Sub ApplyEditToSession(workbooks As OpenXmlExcelDataOperations(), sheetName As String,
                                        shift As StructuralShift, newSheetName As String)
-            Dim name = FindSheet(sheetName).Name.Value
-            If newSheetName IsNot Nothing AndAlso name = newSheetName Then Return
-            Dim savedPath = WorkbookFilePath
             Using changes As New StagedWorkbookChanges()
-                For Each dependent In workbooks
-                    If dependent Is Me OrElse dependent.IsClosed Then Continue For
-                    If Not String.IsNullOrEmpty(savedPath) AndAlso dependent.MatchesTransferPath(New Uri(Path.GetFullPath(savedPath))) Then
-                        Throw UnsupportedOperation("Updating a session containing the same saved workbook twice")
-                    End If
-                    Dim links = New HashSet(Of Integer)(dependent.FindLinksTo(Me))
-                    If links.Count = 0 Then Continue For
-                    changes.Add(dependent,
-                        Sub(book) dependent.RewriteIncomingSessionLinks(book, links, name, shift, newSheetName))
-                Next
-
-                ApplyStructuralEditCore(name, shift, newSheetName)
+                ApplyStructuralEditCore(sheetName, shift, newSheetName,
+                    Sub(name)
+                        Dim savedPath = WorkbookFilePath
+                        Dim sourceUri = If(String.IsNullOrEmpty(savedPath), Nothing, WorkbookFileUri(savedPath))
+                        For Each dependent In workbooks
+                            If dependent Is Me OrElse dependent.IsClosed Then Continue For
+                            If sourceUri IsNot Nothing AndAlso dependent.MatchesTransferPath(sourceUri) Then
+                                Throw UnsupportedOperation("Updating a session containing the same saved workbook twice")
+                            End If
+                            Dim links = New HashSet(Of Integer)(dependent.FindLinksTo(Me))
+                            If links.Count = 0 Then Continue For
+                            changes.Add(dependent,
+                                Sub(book) dependent.RewriteIncomingSessionLinks(book, links, name, shift, newSheetName))
+                        Next
+                    End Sub)
                 changes.Apply()
             End Using
         End Sub
@@ -93,19 +93,22 @@ Namespace ExcelOps
 
         Private Sub RewriteIncomingSessionLinks(book As WorkbookPart, links As HashSet(Of Integer), editedSheet As String,
                                                 shift As StructuralShift, newSheetName As String)
-            ValidateWorkbookStructure()
-            For Each sheet In book.Workbook.Sheets.Elements(Of Sheet)()
-                Dim part = DirectCast(book.GetPartById(sheet.Id.Value), WorksheetPart)
-                If part.TableDefinitionParts.Any() OrElse If(part.DrawingsPart?.ChartParts.Any(), False) Then
-                    Throw UnsupportedOperation("Updating incoming workbook links in a workbook with tables or charts")
-                End If
+            ValidateWorkbookStructure(allowChartSheets:=True)
+            Dim sheets = book.Workbook.Sheets.Elements(Of Sheet)().ToArray()
+            Dim tables = GetStructuralTables(sheets, book)
+            Dim tableNames = GetStructuralTableNames(tables)
+            Dim changedTables = StageTableChanges(tables, Nothing, editedSheet, shift, newSheetName, tableNames, Nothing, book, links)
+            Dim charts = StageChartChanges(sheets, Nothing, editedSheet, shift, newSheetName, book, links)
+            For Each sheet In sheets
+                Dim part = TryCast(book.GetPartById(sheet.Id.Value), WorksheetPart)
+                If part Is Nothing Then Continue For
                 ValidateWorksheetStructure(part, Nothing)
                 Dim original = GetSheetData(part)
-                Dim data = ExpandSharedFormulas(original, sheet.Name.Value, Nothing)
+                Dim data = ExpandSharedFormulas(original, sheet.Name.Value, tableNames)
                 Dim changed = data IsNot original
                 If changed Then part.Worksheet.ReplaceChild(data, original)
                 For Each formula In data.Descendants(Of CellFormula)()
-                    Dim updated = RewriteFormula(formula.Text, Nothing, editedSheet, shift, newSheetName, False,
+                    Dim updated = RewriteFormula(formula.Text, Nothing, editedSheet, shift, newSheetName, False, tableNames,
                                                  formulaWorkbook:=book, structuralExternalLinks:=links)
                     If updated = formula.Text Then Continue For
                     formula.Text = updated
@@ -117,10 +120,19 @@ Namespace ExcelOps
             If book.Workbook.DefinedNames IsNot Nothing Then
                 For Each definition In book.Workbook.DefinedNames.Elements(Of DefinedName)()
                     ' An incoming update must never bind unqualified references to the source worksheet.
-                    definition.Text = RewriteFormula(definition.Text, Nothing, editedSheet, shift, newSheetName, False,
+                    definition.Text = RewriteFormula(definition.Text, Nothing, editedSheet, shift, newSheetName, False, tableNames,
                                                      formulaWorkbook:=book, structuralExternalLinks:=links)
                 Next
             End If
+
+            For Each change In changedTables
+                change.Key.Table = change.Value
+                change.Key.Table.Save()
+            Next
+            For Each change In charts.Charts
+                change.Key.ChartSpace = change.Value
+                change.Key.ChartSpace.Save()
+            Next
 
             For Each index In links
                 Dim external = TransferExternalBook(book, index)

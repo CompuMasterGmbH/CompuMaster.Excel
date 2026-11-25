@@ -120,7 +120,7 @@ Partial Public Class OpenXmlExcelOpsTest
     <TestCase(True)>
     Public Sub WorksheetTransfer_OpenXmlSessionResolvesNewWorkbookLinksOnFirstSave(targetFirst As Boolean)
         Dim input = Path.Combine(_directory, "template.xlsx")
-        Dim sourcePath = Path.Combine(_directory, "source.xlsx")
+        Dim sourcePath = Path.Combine(_directory, "source #%.xlsx")
         Dim targetPath = Path.Combine(_directory, "target.xlsx")
         CreateSimpleMoveWorkbook(input, withIncomingReference:=True)
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.DefaultBehaviourOnCreateFile)
@@ -161,7 +161,7 @@ Partial Public Class OpenXmlExcelOpsTest
     Private Shared Sub AddMoveTestLink(book As WorkbookPart, path As String, sheet As String)
         Dim part = book.AddNewPart(Of ExternalWorkbookPart)()
         Dim link = part.AddExternalRelationship(
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath", New Uri(path))
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath", New Uri(New Uri(path).AbsoluteUri))
         part.ExternalLink = New ExternalLink(New ExternalBook(New SheetNames(New SheetName With {.Val = sheet})) With {.Id = link.Id})
         book.Workbook.ExternalReferences.Append(New ExternalReference With {.Id = book.GetIdOfPart(part)})
     End Sub

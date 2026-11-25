@@ -147,6 +147,18 @@ Namespace ExcelOps
             Return "'" & name.Replace("'", "''") & "'!"
         End Function
 
+        Private Shared Function LinkedStructuralSheet(qualifier As String, links As HashSet(Of Integer), ByRef prefix As String) As String
+            Dim bracket = qualifier.IndexOf("]"c)
+            Dim link = Integer.Parse(qualifier.Substring(1, bracket - 1), CultureInfo.InvariantCulture)
+            If Not links.Contains(link) Then Return Nothing
+            prefix = qualifier.Substring(0, bracket + 1)
+            Return qualifier.Substring(bracket + 1)
+        End Function
+
+        Private Shared Function FormatLinkedSheetName(prefix As String, name As String) As String
+            Return "'" & prefix & name.Replace("'", "''") & "'!"
+        End Function
+
         Private Shared Function UnsupportedReferenceSyntax() As NotSupportedException
             Return New NotSupportedException("This structural edit requires formula references supported by the Open XML SDK engine. Unsupported external references, 3-D references, spill references, references to unknown tables, and some compound ranges cannot be rewritten.")
         End Function
@@ -229,18 +241,13 @@ Namespace ExcelOps
                 If sheetToken.Success Then
                     explicitSheet = SheetNameFromToken(If(formulaWorkbook, WorkbookPart), sheetToken, externalBook)
                     If externalBook AndAlso structuralExternalLinks IsNot Nothing Then
-                        Dim bracket = explicitSheet.IndexOf("]"c)
-                        Dim link = Integer.Parse(explicitSheet.Substring(1, bracket - 1), CultureInfo.InvariantCulture)
-                        If structuralExternalLinks.Contains(link) Then
-                            linkedSheet = explicitSheet.Substring(bracket + 1)
-                            linkedPrefix = explicitSheet.Substring(0, bracket + 1)
-                        End If
+                        linkedSheet = LinkedStructuralSheet(explicitSheet, structuralExternalLinks, linkedPrefix)
                     End If
                     If rewriteSheetQualifier IsNot Nothing Then
                         qualifier = rewriteSheetQualifier(explicitSheet, sheetToken.Value)
                     ElseIf linkedSheet IsNot Nothing AndAlso renamedSheet IsNot Nothing AndAlso
                            String.Equals(linkedSheet, editedSheet, StringComparison.OrdinalIgnoreCase) Then
-                        qualifier = "'" & linkedPrefix & renamedSheet.Replace("'", "''") & "'!"
+                        qualifier = FormatLinkedSheetName(linkedPrefix, renamedSheet)
                     Else
                         qualifier = If(Not externalBook AndAlso structuralExternalLinks Is Nothing AndAlso
                                        renamedSheet IsNot Nothing AndAlso String.Equals(explicitSheet, editedSheet, StringComparison.OrdinalIgnoreCase),
