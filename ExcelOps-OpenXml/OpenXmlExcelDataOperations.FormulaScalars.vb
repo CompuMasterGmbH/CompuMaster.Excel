@@ -120,7 +120,11 @@ Namespace ExcelOps
             Private Function EvaluateLogicalFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                                      formulaCell As ExcelCell) As Object
                 If name = "NA" Then Return New FormulaError(If(arguments.Count = 0, "#N/A", "#VALUE!"))
-                If name = "AND" OrElse name = "OR" Then Return CombineLogical(name, arguments, formulaCell)
+                If name = "TRUE" OrElse name = "FALSE" Then
+                    If arguments.Count <> 0 Then Return New FormulaError("#VALUE!")
+                    Return name = "TRUE"
+                End If
+                If name = "AND" OrElse name = "OR" OrElse name = "XOR" Then Return CombineLogical(name, arguments, formulaCell)
                 Dim expectsFallback = name = "IFERROR" OrElse name = "IFNA"
                 If arguments.Count <> If(expectsFallback, 2, 1) Then Return New FormulaError("#VALUE!")
                 Dim value = Scalar(EvaluateExpression(arguments(0), formulaCell))
@@ -158,21 +162,41 @@ Namespace ExcelOps
             Private Function CombineLogical(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                             formulaCell As ExcelCell) As Object
                 Dim result = name = "AND"
+                Dim exclusive = name = "XOR"
                 Dim found = False
                 Dim firstError As FormulaError = Nothing
                 For Each argument In arguments
                     Dim value = EvaluateExpression(argument, formulaCell)
                     Dim area = TryCast(value, FormulaArea)
-                    Dim values = If(area Is Nothing, CType(New Object() {value}, IEnumerable(Of Object)), RangeValues(area))
+                    Dim matrix = If(exclusive, TryCast(value, FormulaMatrix), Nothing)
+                    Dim values As IEnumerable(Of Object)
+                    If area IsNot Nothing Then
+                        values = RangeValues(area)
+                    ElseIf matrix IsNot Nothing Then
+                        values = matrix.Values
+                    Else
+                        values = {value}
+                    End If
                     For Each item In values
-                        If area IsNot Nothing AndAlso (item Is Nothing OrElse TypeOf item Is String) Then Continue For
-                        Dim truth = If(TypeOf item Is String, New FormulaError("#VALUE!"), NumberValue(item))
+                        If (area IsNot Nothing OrElse matrix IsNot Nothing) AndAlso (item Is Nothing OrElse TypeOf item Is String) Then Continue For
+                        Dim truth As Object
+                        If exclusive Then
+                            truth = LogicalOptionValue(item)
+                            If TypeOf item Is String AndAlso TypeOf truth Is FormulaError Then Continue For
+                        Else
+                            Dim number = If(TypeOf item Is String, New FormulaError("#VALUE!"), NumberValue(item))
+                            truth = If(TypeOf number Is FormulaError, number, DirectCast(number, Double) <> 0.0)
+                        End If
                         If TypeOf truth Is FormulaError Then
                             firstError = If(firstError, DirectCast(truth, FormulaError))
                             Continue For
                         End If
-                        Dim isTrue = DirectCast(truth, Double) <> 0.0
-                        result = If(name = "AND", result AndAlso isTrue, result OrElse isTrue)
+                        Dim isTrue = DirectCast(truth, Boolean)
+                        Select Case name
+                            Case "AND" : result = result AndAlso isTrue
+                            Case "OR" : result = result OrElse isTrue
+                            Case Else : result = result Xor isTrue
+                        End Select
                         found = True
                     Next
                 Next

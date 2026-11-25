@@ -31,6 +31,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceDateDifference1904.xlsx", "Date differences", 399)>
     <TestCase("FormulaReferenceYearFraction1900.xlsx", "Year fractions", 323)>
     <TestCase("FormulaReferenceYearFraction1904.xlsx", "Year fractions", 323)>
+    <TestCase("FormulaReferenceLogical1900.xlsx", "Logical functions", 91)>
+    <TestCase("FormulaReferenceLogical1900.xlsx", "Logical arrays", 13)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -94,6 +96,21 @@ Public Class FormulaConformanceFixtureTest
             calculated.ResetCellValueFromFormulaCell(name)
             calculated.RecalculateSheet(name)
             For Each address In {"B2", "C2", "D2", "B3", "C3", "D3", "B4", "C4"}
+                Dim cell As New ExcelCell(name, address, ExcelCell.ValueTypes.All)
+                Assert.That(calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly),
+                    [Is].EqualTo(expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)), address)
+            Next
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub RecalculatesTheSpilledExcelConditionalResults()
+        Const name As String = "Logical arrays"
+        Dim path = FixturePath("FormulaReferenceLogical1900.xlsx")
+        Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
+            calculated.ResetCellValueFromFormulaCell(name)
+            calculated.RecalculateSheet(name)
+            For Each address In {"E2", "E6", "D7", "E7", "E10", "E18", "D19", "E19", "E22", "E26", "E30", "D31", "E31", "E34", "D43", "E46", "F46", "D47", "E47", "F47"}
                 Dim cell As New ExcelCell(name, address, ExcelCell.ValueTypes.All)
                 Assert.That(calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly),
                     [Is].EqualTo(expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)), address)

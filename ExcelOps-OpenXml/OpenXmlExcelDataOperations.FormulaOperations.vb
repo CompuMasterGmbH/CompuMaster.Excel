@@ -103,8 +103,11 @@ Namespace ExcelOps
                         Return EvaluateTextTransform(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "TRIM", "UPPER", "LOWER", "LEN", "LEFT", "RIGHT", "MID", "CONCATENATE"
                         Return EvaluateTextFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "IFERROR", "IFNA", "_XLFN.IFNA", "NOT", "AND", "OR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
-                        Return EvaluateLogicalFunction(If(name.Equals("_xlfn.IFNA", StringComparison.OrdinalIgnoreCase), "IFNA", name.ToUpperInvariant()), arguments, formulaCell)
+                    Case "IFS", "_XLFN.IFS", "SWITCH", "_XLFN.SWITCH"
+                        Return EvaluateConditionalChoice(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "TRUE", "FALSE", "IFERROR", "IFNA", "_XLFN.IFNA", "NOT", "AND", "OR", "XOR", "_XLFN.XOR",
+                         "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISERROR", "ISNA", "NA"
+                        Return EvaluateLogicalFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS", "AVERAGEIF", "AVERAGEIFS", "MINIFS", "MAXIFS", "_XLFN.MINIFS", "_XLFN.MAXIFS"
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "SUMPRODUCT"
