@@ -94,6 +94,11 @@ Namespace ExcelOps
                     Dim prepared = PrepareWorksheetCopy(worksheet, name, formulaMode, resolveQualifier, move,
                                                         Sub(identifier, qualifier) names.Observe(name, identifier, qualifier))
                     Dim drawing = worksheet.DrawingsPart
+                    Dim placement As DocumentFormat.OpenXml.Drawing.Spreadsheet.WorksheetDrawing = Nothing
+                    If drawing IsNot Nothing AndAlso _changedDrawings.TryGetValue(drawing, placement) AndAlso Not placement.HasChildren Then
+                        prepared.GetFirstChild(Of Drawing)().Remove()
+                        drawing = Nothing
+                    End If
                     Dim charts = If(drawing Is Nothing, Nothing, PrepareDrawingChartCopy(drawing, name, formulaMode, resolveQualifier, move, chartNames:=chartNames))
                     copiedSheets.Add((assigned(name), source.State?.Value, prepared, Nothing, drawing, charts))
                 ElseIf chartSheet IsNot Nothing Then
@@ -148,6 +153,7 @@ Namespace ExcelOps
                                         drawing.WorksheetDrawing.Save()
                                     End If
                                     SaveTransferredCharts(drawing, copied.Charts)
+                                    If placement IsNot Nothing Then RemoveDetachedChartParts(drawing, placement)
                                 End If
                                 worksheetPart.Worksheet.Save()
                                 part = worksheetPart
@@ -266,7 +272,9 @@ Namespace ExcelOps
             ValidateChartCopyRelationships(drawings)
             Dim placement As DocumentFormat.OpenXml.Drawing.Spreadsheet.WorksheetDrawing = Nothing
             If Not _changedDrawings.TryGetValue(drawings, placement) Then placement = drawings.WorksheetDrawing
-            Dim extended = drawings.Parts.Select(Function(item) item.OpenXmlPart).OfType(Of ExtendedChartPart)().ToArray()
+            Dim chartIds = ReadDrawingRelationshipIds(placement)
+            Dim extended = drawings.Parts.Where(Function(item) chartIds.Contains(item.RelationshipId)).
+                Select(Function(item) item.OpenXmlPart).OfType(Of ExtendedChartPart)().ToArray()
             StageChartAnchors(placement, Nothing, allowExtendedCharts:=extended.Length > 0)
 
             Dim result As New Dictionary(Of String, OpenXmlPartRootElement)(StringComparer.Ordinal)
@@ -274,7 +282,9 @@ Namespace ExcelOps
                 StageTransferredExtendedCharts(drawings, extended, name, formulaMode, resolveQualifier, move, retained, formulaWorkbook, chartNames, result)
             End If
             For Each chart In drawings.ChartParts
-                If extended.Length > 0 AndAlso IsExtendedChartFallback(placement, drawings.GetIdOfPart(chart)) Then
+                Dim chartId = drawings.GetIdOfPart(chart)
+                If Not chartIds.Contains(chartId) Then Continue For
+                If extended.Length > 0 AndAlso IsExtendedChartFallback(placement, chartId) Then
                     ValidateExtendedChartFallback(chart)
                     Continue For
                 End If

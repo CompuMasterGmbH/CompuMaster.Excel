@@ -405,6 +405,9 @@ Namespace ExcelOps
         Private Sub ValidateStructuralReferenceCompatibility(sheet As Worksheet, start As Integer, shiftsRows As Boolean,
                                                              Optional stripStart As Integer = 0, Optional stripCount As Integer? = Nothing)
             If Me.LoadOptions.AllowKnownStructuralReferenceDifferences Then Return
+            If Not stripCount.HasValue AndAlso sheet.Charts.Count > 0 Then
+                RejectStructuralReferenceDifference("embedded chart placement may differ from Microsoft Excel after a row or column edit")
+            End If
             If Me.Workbook.ExternalLinks.Count > 0 Then
                 RejectStructuralReferenceDifference("the engine can shift the addresses of references to an external workbook during edits in this workbook")
             End If

@@ -19,6 +19,28 @@ The reference tests use desktop Excel on Windows to edit a data worksheet and sa
 
 The embedded chart on the edited worksheet was configured to move and resize with cells. Its anchor followed whole-row and whole-column edits before it, including insertion immediately after the source range. The chart on the dashboard stayed anchored on that sheet. In the tested partial shift, the source chart's anchor also stayed in place.
 
+## Embedded chart placement
+
+The placement tests put chart data on an unaffected worksheet and edit only the worksheet hosting the chart. They compare Excel's chart presence, position and dimensions in points for whole rows and whole columns. The cases include default dimensions and explicit column widths and row heights. The standard three placement modes are defined by Excel's chart object API. [Excel placement modes](https://learn.microsoft.com/en-us/office/vba/api/excel.xlplacement)
+
+| Edit relative to the chart | Move and size with cells | Move without sizing | Free floating |
+| --- | --- | --- | --- |
+| Insert or delete before the chart | Moves with the cells and retains its size. | Moves with the cells and retains its size. | Retains its position and size. |
+| Insert or delete after the chart | Retains its position and size. | Retains its position and size. | Retains its position and size. |
+| Delete some of the covered rows or columns | Shrinks along the edited axis. If the first anchor cell is removed, its edge moves to the deletion boundary. | Retains its size. If its first anchor cell is removed, its edge moves to the deletion boundary. | Retains its position and size. |
+| Delete all covered rows or all covered columns | Removes the chart or retains it with zero height or width, depending on the original used range. | Retains the chart and its size, with its starting edge at the deletion boundary. | Retains the chart, its position and its size. |
+| Insert within the chart's extent | Expands along the edited axis. | Retains its position and size. | Retains its position and size. |
+
+Insertion at the first anchor cell moves the chart with that cell when the placement is cell-dependent. Insertion before the last covered cell counts as insertion inside the chart. If the chart ends exactly on a cell boundary, an edit starting at that boundary is outside its extent.
+
+When the chart collapses, Excel compares the original used range with the start of the chart on the other axis. For a chart starting at B3, deleting its entire row span retains a zero-height chart if the original used range includes column C or later. Deleting its entire column span retains a zero-width chart if the original used range includes row 4 or later. A formatted cell counts. A cell removed by the same edit still counts.
+
+Excel removes all eight tested types of ChartEx chart when deleting their full column span, even when the used range would retain a zero-width classic chart. The same ChartEx types can remain with zero height after deleting their full row span.
+
+Open XML applies the placement rules to supported embedded classic and ChartEx charts. It removes detached chart relationships along with a deleted drawing. The cross-engine fixture in `test_data/EmbeddedChartPlacement.xlsx` uses all three placement modes on one dashboard. The Excel Interop tests also verify the rendered positions and sizes after reopening the Open XML output.
+
+Both EPPlus adapters and both Spire adapters produced placement differences on the cross-engine fixture. They reject whole-row and whole-column edits on a worksheet with embedded charts by default. `AllowKnownStructuralReferenceDifferences` permits the adapter's existing behavior for callers that accept those differences.
+
 ## Survey by chart type
 
 The survey enumerates all 103 values in Microsoft's `XlChartType` list and records the chart parts before editing, after inserting a row inside the data, and after deleting a source column. It uses embedded charts and inputs appropriate for stock, scatter, bubble, and map charts. The dedicated reference tests above also cover chart sheets and drawing placement. [XlChartType enumeration](https://learn.microsoft.com/en-us/office/vba/api/excel.xlcharttype) · [Survey CSV](chart-type-reference-survey.csv) · [Survey script](../tools/compare-excel-chart-references.ps1)

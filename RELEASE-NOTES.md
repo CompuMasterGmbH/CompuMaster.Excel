@@ -4,7 +4,8 @@
 
 ### Breaking Changes
 
-- BREAKING CHANGE: `CompuMaster.Excel.ExcelOps` adds a strict default for known structural formula and reference update differences in `CompuMaster.Excel.EpplusFreeFixCalcsEdition`, `CompuMaster.Excel.EpplusPolyformEdition`, `CompuMaster.Excel.FreeSpireXls`, and `CompuMaster.Excel.SpireXls`. Affected edits now throw `StructuralReferenceCompatibilityException` before changing the workbook. To retain the previous behavior, set `ExcelDataOperationsOptions.AllowKnownStructuralReferenceDifferences = True` before constructing the engine.
+- BREAKING CHANGE: `CompuMaster.Excel.ExcelOps` adds a strict default for known structural formula and reference update differences in `CompuMaster.Excel.EpplusFreeFixCalcsEdition`, `CompuMaster.Excel.EpplusPolyformEdition`, `CompuMaster.Excel.FreeSpireXls`, and `CompuMaster.Excel.SpireXls`, including whole-row and whole-column edits on worksheets with embedded charts. Affected edits now throw `StructuralReferenceCompatibilityException` before changing the workbook. To retain the previous behavior, set `ExcelDataOperationsOptions.AllowKnownStructuralReferenceDifferences = True` before constructing the engine.
+- BREAKING CHANGE: `CompuMaster.Excel.OpenXml` rejects column edits when retaining a chart's physical dimensions requires width metrics for an unverified Normal font. Set `AllowKnownStructuralReferenceDifferences = True` to permit the width estimate, or use a supported font.
 
 ### Changes
 
@@ -15,6 +16,7 @@
 - `CompuMaster.Excel.OpenXml` supports deleting selected rows in an Excel table's data body, including the first data row, deleting the totals row, and moving a table through whole-column edits before it.
 - `CompuMaster.Excel.OpenXml` supports clearing an entire supported table data body with Excel's retained insertion row. Whole-column edits update table columns, structured references and supported table filters, including tables with hidden headers. After deleting a filtered column, the engine reapplies supported numeric filters to the remaining cells.
 - `CompuMaster.Excel.OpenXml` updates supported classic charts and uncached ChartEx sources when an entire table data body is cleared. Classic chart caches discard the values of cleared cells and retain the reference to the blank insertion row.
+- `CompuMaster.Excel.OpenXml` follows Excel's three embedded chart placement modes during supported whole-row and whole-column edits. A fully covered resizable chart is removed or reduced to zero size on the edited axis according to the worksheet's original used range.
 - `CompuMaster.Excel.OpenXml` preserves widths and visibility during whole-column edits. It rejects deleting only hidden columns while a table filter is active, as Excel does. Set `AllowKnownStructuralReferenceDifferences` to allow supported deletions in this case.
 - `CompuMaster.Excel.OpenXml` transfers supported workbook and worksheet-local defined names, including constants, absolute ranges and calculated names. It preserves their bindings during name collisions and retains relative and mixed references to the transferred worksheet using the name, including explicitly qualified references in workbook names.
 - `CompuMaster.Excel.OpenXml` updates absolute coordinates in relative and mixed defined names during supported structural edits and preserves the offsets used by formulas that refer to those names.
