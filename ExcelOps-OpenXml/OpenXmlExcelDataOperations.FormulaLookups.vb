@@ -156,8 +156,7 @@
                 Dim rawMode = If(arguments.Count > firstOption, ReadIndex(arguments(firstOption), formulaCell), 0.0)
                 If TypeOf rawMode Is FormulaError Then Return DirectCast(rawMode, FormulaError)
                 Dim matchNumber = DirectCast(rawMode, Double)
-                If matchNumber = 3.0 Then Throw New NotSupportedException("Regular expression matching is outside the supported calculation scope.")
-                If matchNumber < -1.0 OrElse matchNumber > 2.0 Then Return New FormulaError("#VALUE!")
+                If matchNumber < -1.0 OrElse matchNumber > 3.0 Then Return New FormulaError("#VALUE!")
                 mode = CInt(matchNumber)
 
                 Dim searchNumber = 1.0
@@ -170,7 +169,7 @@
                     End If
                 End If
                 If Math.Abs(searchNumber) < 1.0 OrElse Math.Abs(searchNumber) > 2.0 Then Return New FormulaError("#VALUE!")
-                If mode = 2 AndAlso Math.Abs(searchNumber) = 2.0 Then Return New FormulaError("#VALUE!")
+                If mode >= 2 AndAlso Math.Abs(searchNumber) = 2.0 Then Return New FormulaError("#VALUE!")
                 search = CInt(searchNumber)
                 Return Nothing
             End Function
@@ -193,10 +192,11 @@
                 Return New FormulaMatrix(matrix.Rows, matrix.Columns, results)
             End Function
 
-            Private Shared Function SelectLookupValue(needle As Object, keys As Object(), mode As Integer, search As Integer,
+            Private Function SelectLookupValue(needle As Object, keys As Object(), mode As Integer, search As Integer,
                                                        selectValue As Func(Of Integer, Object),
                                                        binaryPositions As Dictionary(Of Type, Integer())) As Object
                 If TypeOf needle Is FormulaError Then Return needle
+                If mode = 3 Then Return SelectRegexLookupValue(needle, keys, reverse:=search < 0, selectValue)
                 If binaryPositions Is Nothing Then
                     Return selectValue(FindLookupIndex(needle, keys, mode, reverse:=search < 0, preferLastEqual:=False, matchBlank:=True))
                 End If

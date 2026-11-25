@@ -60,7 +60,7 @@ Namespace ExcelOpsTests.Engines
                 Dim part = package.WorkbookPart
                 For Each sheet In part.Workbook.Sheets.Elements(Of Sheet)()
                     Dim name = sheet.Name.Value
-                    If name = "External cases" OrElse name = "Regex" Then Continue For
+                    If name = "External cases" Then Continue For
                     Dim worksheet = DirectCast(part.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
                     Dim cells = worksheet.Descendants(Of Cell)().ToArray()
                     Dim spillRanges = cells.Where(Function(cell) cell.CellMetaIndex IsNot Nothing AndAlso

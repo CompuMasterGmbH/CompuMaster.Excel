@@ -22,6 +22,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReference1900.xlsx", "Dates", 15)>
     <TestCase("FormulaReference1904.xlsx", "Dates", 5)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
+    <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
+    <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
     <TestCase("FormulaReferenceCriteria.xlsx", "Criteria", 89)>
     <TestCase("FormulaReferenceArrayVariants.xlsx", "Array variants", 65)>
     <TestCase("FormulaReferenceTextVariants.xlsx", "Text variants", 97)>
@@ -79,20 +81,6 @@ Public Class FormulaConformanceFixtureTest
             Function(path, options) New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options),
             Function(workbook, address) workbook.LookupCellValueAsObject(address, FormulaCalculationMode.CalculateIfMissing))
         Assert.That(result.Matched, [Is].EqualTo(result.Total))
-    End Sub
-
-    <Test>
-    Public Sub RetainsTheExcelRegexLookupResultUntilRecalculationIsRequested()
-        Dim fixture = FixturePath("FormulaReferenceLookupVariants.xlsx")
-        Dim expected = ReadFormulaCaches(fixture, "Regex")
-        Assert.That(expected("S2").Value, [Is].EqualTo(1.0))
-        Using workbook = OpenForCalculation(fixture)
-            Dim cell As New ExcelCell("Regex", "S2", ExcelCell.ValueTypes.All)
-            Assert.That(workbook.LookupCellValue(Of Double)(cell, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(1.0))
-            workbook.ResetCellValueFromFormulaCell(cell)
-            Dim failure = Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateCell(cell))
-            Assert.That(failure.Message, Does.Contain("Regular expression matching"))
-        End Using
     End Sub
 
     ' External results retain their Excel caches, and the companion link is relative to the fixture.
