@@ -49,6 +49,7 @@ Namespace ExcelOps
         Private Sub MarkFormulaResultsCleared(part As WorksheetPart)
             _changedSheets.Add(part)
             _calculationChainInvalid = True
+            _completeDependencyRevision = Nothing
             RecalculationRequired = True
             Dim workbook = WorkbookPart.Workbook
             If workbook.CalculationProperties Is Nothing Then workbook.CalculationProperties = New CalculationProperties()

@@ -223,6 +223,9 @@ Namespace ExcelOps
                 _source?.Dispose()
                 _source = Nothing
                 _changedSheets.Clear()
+                _formulaDependencies.Clear()
+                _pendingCellEdits.Clear()
+                _completeDependencyRevision = Nothing
                 _formulaRanges.Clear()
                 _workbookChanged = False
                 _calculationChainInvalid = False
@@ -243,7 +246,7 @@ Namespace ExcelOps
         End Sub
 
         ''' <inheritdoc/>
-        ''' <remarks>Controls the saved workbook's calculation mode.</remarks>
+        ''' <remarks>Controls the workbook calculation mode. Set CalculateOnCellEdit to opt in to in-process automatic calculation after value writes.</remarks>
         Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
                 Return If(_automaticCalculation, Not IsClosed AndAlso If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto) <> CalculateModeValues.Manual)
@@ -251,6 +254,7 @@ Namespace ExcelOps
             Set(value As Boolean)
                 ' The base constructor calls this setter before a package is open.
                 If IsClosed Then Return
+                If AutoCalculationEnabledWorkbookSetting <> value Then _completeDependencyRevision = Nothing
                 Dim originalMode = If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto)
                 _automaticCalculation = If(value = (originalMode <> CalculateModeValues.Manual), CType(Nothing, Boolean?), value)
             End Set

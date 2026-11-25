@@ -71,7 +71,7 @@ Namespace ExcelOps
             Return data
         End Function
 
-        Private Sub EditCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, payload As Cell)
+        Private Sub EditCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, payload As Cell, Optional calculateOnEdit As Boolean = True)
             ValidateCoordinates(rowIndex, columnIndex)
             Dim part = GetWorksheetPart(sheetName)
             Dim data = GetSheetData(part)
@@ -98,6 +98,7 @@ Namespace ExcelOps
             target.DataType = payload.DataType
             _changedSheets.Add(part)
             RecalculationRequired = True
+            RecordCellEdit(sheetName, rowIndex, columnIndex, calculateOnEdit)
         End Sub
 
         Private Function IsGroupedFormulaCell(part As WorksheetPart, sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As CellFormula) As Boolean
@@ -291,7 +292,7 @@ Namespace ExcelOps
             If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
             Dim replacement As New Cell With {.CellFormula = New CellFormula(expression)}
             If Not immediatelyCalculateCellValue Then
-                EditCell(sheetName, rowIndex, columnIndex, replacement)
+                EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
                 Return
             End If
 
@@ -301,7 +302,7 @@ Namespace ExcelOps
             End If
             Dim calculation As New FormulaCalculation(Me)
             Dim result = calculation.EvaluateReplacement(sheetName, rowIndex, columnIndex, replacement)
-            EditCell(sheetName, rowIndex, columnIndex, replacement)
+            EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
             calculation.Commit()
             ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
         End Sub

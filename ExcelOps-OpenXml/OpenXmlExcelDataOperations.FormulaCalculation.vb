@@ -10,9 +10,7 @@ Namespace ExcelOps
         Protected Overrides Sub RecalculateAllInternal()
             EnsureCalculationEnabled()
             Dim calculation As New FormulaCalculation(Me)
-            For Each sheetName In WorkSheetNames()
-                calculation.RecalculateSheet(sheetName)
-            Next
+            calculation.RecalculateWorkbook()
             calculation.Commit()
         End Sub
 
@@ -87,7 +85,7 @@ Namespace ExcelOps
             Private ReadOnly _run As CalculationRun
 
             Friend Sub New(owner As OpenXmlExcelDataOperations)
-                Me.New(owner, New CalculationRun(owner._formulaSession?.Snapshot(), owner.LoadOptions.FormulaLocalClock))
+                Me.New(owner, New CalculationRun(owner, owner._formulaSession?.Snapshot()))
             End Sub
 
             Private Sub New(owner As OpenXmlExcelDataOperations, run As CalculationRun)
@@ -98,6 +96,13 @@ Namespace ExcelOps
                     Dim part = TryCast(owner.WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
                     If part IsNot Nothing Then _worksheets.Add(sheet.Name.Value, New WorksheetSnapshot(sheet.Name.Value, part))
                 Next
+            End Sub
+
+            Friend Sub RecalculateWorkbook()
+                For Each worksheet In _worksheets.Keys
+                    RecalculateSheet(worksheet)
+                Next
+                If _run.TrackDependencies Then _run.FullyCalculated.Add(_owner)
             End Sub
 
             Friend Sub RecalculateSheet(sheetName As String)
@@ -116,9 +121,11 @@ Namespace ExcelOps
                 Return result
             End Function
 
-            Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
+            Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, Optional trackRead As Boolean = True) As Object
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not _worksheets.TryGetValue(sheetName, worksheet) Then Return New FormulaError("#REF!")
+                Dim location As New FormulaLocation(_owner, worksheet.Name, rowIndex, columnIndex)
+                If trackRead Then RecordPrecedent(New FormulaPrecedent(location, rowIndex, columnIndex))
                 Dim cell As Cell = Nothing
                 worksheet.Cells.TryGetValue((rowIndex, columnIndex), cell)
                 If _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) Then
@@ -142,16 +149,19 @@ Namespace ExcelOps
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
                 _run.Active.Add(cell)
+                If _run.TrackDependencies Then _run.Frames.Push(New FormulaDependencies(location))
                 Try
                     Dim expression = FormulaParser.Parse(formula)
                     Dim result = If(Scalar(EvaluateExpression(expression, address)), 0.0)
                     _results.Add(cell, (worksheet.Part, result))
+                    If _run.TrackDependencies Then _run.Dependencies(location) = _run.Frames.Peek()
                     Return result
                 Catch ex As NotSupportedException When Not TypeOf ex Is FormulaComplexityNotSupportedException
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, ex.Message, ex)
                 Catch ex As ArgumentOutOfRangeException
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula refers to a cell outside the XLSX grid.", ex)
                 Finally
+                    If _run.TrackDependencies Then _run.Frames.Pop()
                     _run.Active.Remove(cell)
                 End Try
             End Function
@@ -173,6 +183,7 @@ Namespace ExcelOps
                         evaluatedWorkbook._owner._changedSheets.Add(item.Value.Part)
                     Next
                 Next
+                PublishDependencies()
             End Sub
 
             Private Shared Function UnsupportedFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String,
@@ -210,6 +221,7 @@ Namespace ExcelOps
 
             Private Iterator Function RangeValues(area As FormulaArea) As IEnumerable(Of Object)
                 Dim source = ResolveReference(area)
+                RecordPrecedent(New FormulaPrecedent(New FormulaLocation(source._owner, area.Sheet, area.FirstRow, area.FirstColumn), area.LastRow, area.LastColumn))
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not source._worksheets.TryGetValue(area.Sheet, worksheet) Then
                     Yield New FormulaError("#REF!")
@@ -218,7 +230,7 @@ Namespace ExcelOps
                 For Each address In worksheet.Cells.Keys
                     If address.RowIndex >= area.FirstRow AndAlso address.RowIndex <= area.LastRow AndAlso
                         address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn Then
-                        Yield source.ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex)
+                        Yield source.ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex, trackRead:=False)
                     End If
                 Next
             End Function
@@ -236,9 +248,17 @@ Namespace ExcelOps
                 Friend ExpressionDepth As Integer
                 Friend ReadOnly LocalTime As Lazy(Of DateTime)
 
-                Friend Sub New(session As ExcelFormulaSessionSnapshot, clock As Func(Of DateTime))
+                Friend ReadOnly TrackDependencies As Boolean
+                Friend ReadOnly Frames As New Stack(Of FormulaDependencies)
+                Friend ReadOnly Dependencies As New Dictionary(Of FormulaLocation, FormulaDependencies)
+                Friend ReadOnly FullyCalculated As New HashSet(Of OpenXmlExcelDataOperations)
+
+                Friend Sub New(owner As OpenXmlExcelDataOperations, session As ExcelFormulaSessionSnapshot)
                     Me.Session = session
-                    LocalTime = New Lazy(Of DateTime)(If(clock, Function() DateTime.Now))
+                    LocalTime = New Lazy(Of DateTime)(If(owner.LoadOptions.FormulaLocalClock, Function() DateTime.Now))
+                    TrackDependencies = owner.LoadOptions.CalculateOnCellEdit OrElse
+                        (session IsNot Nothing AndAlso session.Workbooks.Values.OfType(Of OpenXmlExcelDataOperations)().
+                            Any(Function(workbook) workbook.LoadOptions.CalculateOnCellEdit))
                 End Sub
             End Class
 

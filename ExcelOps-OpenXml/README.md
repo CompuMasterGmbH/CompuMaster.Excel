@@ -38,6 +38,12 @@ Additional functions cover rounding and arithmetic (`ROUND`, `ROUNDUP`, `ROUNDDO
 
 An unsupported formula raises `FormulaComplexityNotSupportedException`. A direct or indirect dependency on a formula's own calculated value raises `CircularReferenceException`. In either case, the calculation preserves the original caches. Iterative calculation of circular references is outside the supported scope. Shared, array and data-table formulas, defined names, structured references and VBA execution are outside the supported scope. Full-column references and implicit intersection are outside the supported scope. The evaluator limits expressions to 512 tokens and dependency chains to 256 formulas. It also limits nested expression evaluation.
 
+### Automatic calculation after value edits
+
+Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.
+
+The first automatic pass builds dependencies by evaluating the workbook. Later value edits recalculate the affected formulas and the dependents of volatile functions. This includes registered open workbooks in the same session. The dependency graph records value reads through custom function contexts and linked ranges, including cells that were empty. If recalculation fails, the input write remains applied, the previous formula caches remain intact, and the next edit retries the pending work.
+
 ### Application-defined functions
 
 Create an `ExcelFormulaSession`, explicitly register each .NET function, and set the session on the workbook's `ExcelDataOperationsOptions.FormulaSession`. Path-backed workbooks default to the file name as their session name. Set `FormulaWorkbookName` for a workbook opened from bytes or a stream, or to give a path-backed workbook an alias. Closing the workbook removes it from the session.
@@ -46,6 +52,6 @@ A registered function receives typed scalar arguments and an `ExcelFormulaContex
 
 Excel worksheet formulas can also read linked XLSX workbooks when the sources are explicitly opened in the same session. Path-backed sources are matched to the stored link target. A relative single-file link can use a matching session name when the source is opened from memory. Calculation reports an unavailable source and preserves existing caches. Opening or calculating a workbook never opens a source file or fetches a remote link.
 
-Registered functions are application code. XLSX stores the formula and its cached result. The caller supplies the registration again when it wants to recalculate. An unregistered function is reported as unsupported. This API supports scalar inputs and outputs. Excel itself needs a separately installed function provider to recalculate the custom formula.
+Registered functions are application code. XLSX stores the formula and its cached result. The caller supplies the registration again when it wants to recalculate. An unregistered function is reported as unsupported. Use the registration overload with `isVolatile: true` if the result depends on state outside the tracked workbook reads. This API supports scalar inputs and outputs. Excel itself needs a separately installed function provider to recalculate the custom formula.
 
 The engine is licensed under the MIT License.

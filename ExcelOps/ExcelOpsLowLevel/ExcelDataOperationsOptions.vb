@@ -105,6 +105,11 @@ Namespace ExcelOps
         ''' <remarks>Feature belongs to workbook and changes permanently the workbook's behaviour when saved</remarks>
         Public Property DisableAutoCalculationInWorkbook As Boolean?
 
+        ''' <summary>Gets or sets whether writing cell values triggers automatic formula calculation.</summary>
+        ''' <value>True to calculate after value edits when the workbook is in automatic mode.</value>
+        ''' <remarks>Supported by the Open XML engine. Formula writes use their explicit calculation argument.</remarks>
+        Public Property CalculateOnCellEdit As Boolean
+
         ''' <summary>Gets or sets the clock used for date and time formulas.</summary>
         ''' <value>A provider of local wall-clock time, or Nothing to use the system clock.</value>
         ''' <remarks>The Open XML engine samples the initiating workbook's clock once per calculation pass that uses it.</remarks>
@@ -133,6 +138,7 @@ Namespace ExcelOps
         Private Function Clone() As ExcelDataOperationsOptions
             Return New ExcelDataOperationsOptions(PasswordForOpening, DisableInitialCalculation, DisableAutoCalculationInWorkbook, DisableCalculationEngine) With {
                 .FileWriteProtection = Me.FileWriteProtection,
+                .CalculateOnCellEdit = Me.CalculateOnCellEdit,
                 .FormulaLocalClock = Me.FormulaLocalClock,
                 .FormulaSession = Me.FormulaSession,
                 .FormulaWorkbookName = Me.FormulaWorkbookName

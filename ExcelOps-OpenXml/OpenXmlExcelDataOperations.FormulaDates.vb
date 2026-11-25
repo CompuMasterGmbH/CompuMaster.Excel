@@ -25,6 +25,7 @@
                 Select Case name
                     Case "NOW", "TODAY"
                         If arguments.Count <> 0 Then Return New FormulaError("#VALUE!")
+                        MarkVolatile()
                         Dim localTime = _run.LocalTime.Value
                         Return ToExcelDateSerial(If(name = "TODAY", localTime.Date, localTime))
                     Case "DATE", "TIME"

@@ -7,11 +7,12 @@
             Private Function EvaluateRegisteredFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                                         formulaCell As ExcelCell) As Object
                 Dim session = _run.Session
-                Dim implementation As Func(Of ExcelFormulaContext, IReadOnlyList(Of ExcelFormulaValue), ExcelFormulaValue) = Nothing
-                If session Is Nothing OrElse Not session.Functions.TryGetValue(name, implementation) Then
+                Dim registration As ExcelFormulaRegistration = Nothing
+                If session Is Nothing OrElse Not session.Functions.TryGetValue(name, registration) Then
                     Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
                 End If
 
+                If registration.IsVolatile Then MarkVolatile()
                 Dim values = arguments.Select(Function(argument) ToFormulaValue(Scalar(EvaluateExpression(argument, formulaCell)))).ToArray()
                 Dim views As New Dictionary(Of String, ExcelFormulaWorkbookReference)(StringComparer.OrdinalIgnoreCase)
                 Dim inCall = True
@@ -28,7 +29,7 @@
                 Dim context As New ExcelFormulaContext(views(_owner._formulaWorkbookName), New ExcelFormulaWorkbookSession(views),
                                                        formulaCell, session.ActiveWorkbook, session.ActiveCell, nativeExcelApplication:=Nothing)
                 Try
-                    Dim result = implementation(context, Array.AsReadOnly(values))
+                    Dim result = registration.Implementation(context, Array.AsReadOnly(values))
                     If result.Kind = ExcelFormulaValueKind.Error Then Return New FormulaError(DirectCast(result.Value, String))
                     Return result.Value
                 Catch ex As Exception When Not TypeOf ex Is CircularReferenceException AndAlso
