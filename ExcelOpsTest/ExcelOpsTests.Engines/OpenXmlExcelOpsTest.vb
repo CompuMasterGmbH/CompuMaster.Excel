@@ -14,7 +14,7 @@ Imports Drawing = DocumentFormat.OpenXml.Drawing
 Imports SpreadsheetDrawing = DocumentFormat.OpenXml.Drawing.Spreadsheet
 
 <TestFixture>
-Public Class OpenXmlExcelOpsTest
+Partial Public Class OpenXmlExcelOpsTest
 
     Private _directory As String
 

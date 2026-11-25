@@ -12,42 +12,6 @@
         End Sub
 
         ''' <inheritdoc/>
-        Public Overrides Sub AddColumn(sheetName As String, columnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
-            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            Throw UnsupportedOperation("Inserting columns")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub AddRow(sheetName As String, rowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
-            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            Throw UnsupportedOperation("Inserting rows")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub AddCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellInsertShiftDirection, updateFormulasAndReferences As Boolean)
-            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            Throw UnsupportedOperation("Inserting cells")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RemoveColumns(sheetName As String, startColumnIndex As Integer, columns As Integer, updateFormulasAndReferences As Boolean)
-            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            Throw UnsupportedOperation("Removing columns")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RemoveRows(sheetName As String, startRowIndex As Integer, rows As Integer, updateFormulasAndReferences As Boolean)
-            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            Throw UnsupportedOperation("Removing rows")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
-            ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            Throw UnsupportedOperation("Removing cells")
-        End Sub
-
-        ''' <inheritdoc/>
         Public Overrides Sub RemoveSheet(sheetName As String)
             Throw UnsupportedOperation("Removing sheets")
         End Sub

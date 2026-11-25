@@ -26,6 +26,8 @@ Namespace ExcelOps
             End Get
         End Property
 
+        Private Const UsesLegacyStructuralReferenceRewriter As Boolean = True
+
         ''' <inheritdoc/>
         Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
             Get

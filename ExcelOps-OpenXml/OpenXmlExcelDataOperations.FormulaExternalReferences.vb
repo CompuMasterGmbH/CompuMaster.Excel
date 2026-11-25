@@ -38,7 +38,9 @@ Namespace ExcelOps
             End Function
 
             Private Function FindExternalWorkbook(uri As Uri) As OpenXmlExcelDataOperations
-                If uri Is Nothing OrElse _run.Session Is Nothing OrElse (uri.IsAbsoluteUri AndAlso Not uri.IsFile) Then Return Nothing
+                If uri Is Nothing OrElse _run.Session Is Nothing Then Return Nothing
+                uri = If(_owner.WorkbookSession?.ResolveTemporaryLink(uri), uri)
+                If uri.IsAbsoluteUri AndAlso Not uri.IsFile Then Return Nothing
                 Dim relativePath As String = Nothing
                 Dim linkedPath As String = Nothing
                 If uri.IsAbsoluteUri Then
@@ -60,6 +62,9 @@ Namespace ExcelOps
                 End If
 
                 If relativePath Is Nothing OrElse Path.GetFileName(relativePath) <> relativePath Then Return Nothing
+                Dim temporaryMatch = _run.Session.Workbooks.Values.OfType(Of OpenXmlExcelDataOperations)().FirstOrDefault(
+                    Function(workbook) Not workbook.IsClosed AndAlso String.Equals(workbook.TemporaryWorkbookName, relativePath, StringComparison.Ordinal))
+                If temporaryMatch IsNot Nothing Then Return temporaryMatch
                 Dim workbookEntry As ExcelDataOperationsBase = Nothing
                 If Not _run.Session.Workbooks.TryGetValue(relativePath, workbookEntry) OrElse
                    workbookEntry.IsClosed Then Return Nothing

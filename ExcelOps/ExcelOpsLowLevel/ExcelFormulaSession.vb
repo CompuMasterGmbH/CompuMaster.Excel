@@ -85,6 +85,12 @@
             End SyncLock
         End Sub
 
+        Friend Sub InvalidateWorkbookDependencies()
+            SyncLock WorkbookSyncRoot
+                _revision += 1
+            End SyncLock
+        End Sub
+
         Friend Function Snapshot() As ExcelFormulaSessionSnapshot
             SyncLock WorkbookSyncRoot
                 Return New ExcelFormulaSessionSnapshot(

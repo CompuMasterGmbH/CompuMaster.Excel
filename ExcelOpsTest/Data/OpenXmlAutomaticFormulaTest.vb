@@ -121,6 +121,32 @@ Public Class OpenXmlAutomaticFormulaTest
     End Sub
 
     <Test>
+    Public Sub RebuildsDependenciesAfterAReferencedWorksheetIsRenamedAndShifted()
+        Dim formulas As New ExcelFormulaSession()
+        Dim targetPath = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookReferenceTarget.xlsx")
+        Dim sourcePath = TestEnvironment.FullPathOfExistingTestFile("test_data", "WorkbookReferenceSource.xlsx")
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, MakeOptions(formulas)),
+              target As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, MakeOptions(formulas)),
+              references As New OpenXmlWorkbookSession()
+            references.Attach(source)
+            references.Attach(target)
+            Dim result As Func(Of Double) =
+                Function() target.LookupCellValue(Of Double)("Checks", 0, 0, FormulaCalculationMode.UseCachedValueOnly)
+
+            source.WriteCellValue("Remote Data", 1, 1, 45.0)
+            Assert.That(result(), [Is].EqualTo(45.0))
+
+            source.RenameWorksheet("Remote Data", "Renamed source", True)
+            source.AddRow("Renamed source", 1, 1, True)
+            source.WriteCellValue("Renamed source", 2, 1, 47.0)
+            Assert.That(result(), [Is].EqualTo(47.0))
+
+            source.WriteCellValue("Renamed source", 1, 1, 99.0)
+            Assert.That(result(), [Is].EqualTo(47.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub SerializesConcurrentEditsWithinTheSameFormulaSession()
         Dim session As New ExcelFormulaSession()
         Dim targetPath = TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", "FormulaReference.xlsx")

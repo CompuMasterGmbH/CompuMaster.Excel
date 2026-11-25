@@ -45,6 +45,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Microsoft.Office.Interop.Excel">
+      <HintPath>../ExcelOps-MicrosoftExcel/libs-NonWindowsPlatforms/Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CM.Data.EpplusPolyformEdition\CM.Data.EpplusPolyformEdition.vbproj" />
     <ProjectReference Include="..\CM.Data.EpplusFixCalcsEdition\CM.Data.EpplusFreeFixCalcsEdition.vbproj" />
     <ProjectReference Include="..\Epplus-FixCalcsEdition\EPPlus\EPPlus45-FixCalcsEdition.MultiTarget.csproj" />

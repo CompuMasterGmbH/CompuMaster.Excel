@@ -21,6 +21,13 @@ Namespace ExcelOps
             End If
         End Sub
 
+        Private Sub ResetCalculationDependencies()
+            _formulaDependencies.Clear()
+            _pendingCellEdits.Clear()
+            _completeDependencyRevision = Nothing
+            _formulaSession?.InvalidateWorkbookDependencies()
+        End Sub
+
         Private Function UsesAutomaticValueCalculation() As Boolean
             Return LoadOptions.CalculateOnCellEdit AndAlso Not CalculationModuleDisabled AndAlso AutoCalculationEnabledWorkbookSetting
         End Function

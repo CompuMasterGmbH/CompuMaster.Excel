@@ -730,47 +730,35 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption">Option for handling cached formula results while saving.</param>
         Protected MustOverride Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
-        ''' <summary>
-        ''' Gets all available sheet names (worksheets + chart sheets).
-        ''' </summary>
-        ''' <returns>The chart-sheet names.</returns>
+        ''' <summary>Lists worksheet and chart sheet names together in workbook tab order.</summary>
+        ''' <returns>The combined list of tab names. Use the list's Count property for the total.</returns>
         Public MustOverride Function SheetNames() As List(Of String)
 
-        ''' <summary>
-        ''' Looks up the (zero-based) index number of a sheet.
-        ''' </summary>
-        ''' <param name="sheetName">A sheet name (worksheet or chart sheet)</param>
-        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
+        ''' <summary>Finds the zero-based index in the combined worksheet and chart sheet tab order.</summary>
+        ''' <param name="sheetName">The worksheet or chart sheet name.</param>
+        ''' <returns>The index in <see cref="SheetNames"/>, or -1 if the name is absent.</returns>
         Public Overridable Function SheetIndex(ByVal sheetName As String) As Integer
             Return Me.SheetNames.IndexOf(sheetName)
         End Function
 
-        ''' <summary>
-        ''' Gets all available worksheet names.
-        ''' </summary>
-        ''' <returns>The worksheet names.</returns>
+        ''' <summary>Lists the worksheet names in workbook order.</summary>
+        ''' <returns>The worksheet names. Use the list's Count property for the number of worksheets.</returns>
         Public MustOverride Function WorkSheetNames() As List(Of String)
 
-        ''' <summary>
-        ''' Looks up the (zero-based) index number of a worksheet.
-        ''' </summary>
-        ''' <param name="workSheetName">A worksheet name</param>
-        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
+        ''' <summary>Finds the zero-based index among worksheets.</summary>
+        ''' <param name="workSheetName">The worksheet name.</param>
+        ''' <returns>The index in <see cref="WorkSheetNames"/>, or -1 if the name is absent.</returns>
         Public Function WorkSheetIndex(ByVal workSheetName As String) As Integer
             Return Me.WorkSheetNames.IndexOf(workSheetName)
         End Function
 
-        ''' <summary>
-        ''' Gets all available chart sheet names.
-        ''' </summary>
-        ''' <returns>The worksheet names.</returns>
+        ''' <summary>Lists the chart sheet names in workbook order.</summary>
+        ''' <returns>The chart sheet names. Use the list's Count property for the number of chart sheets.</returns>
         Public MustOverride Function ChartSheetNames() As List(Of String)
 
-        ''' <summary>
-        ''' Looks up the (zero-based) index number of a chart sheet.
-        ''' </summary>
-        ''' <param name="chartName">A worksheet name</param>
-        ''' <returns>-1 if the sheet name doesn't exist, otherwise its index value</returns>
+        ''' <summary>Finds the zero-based index among chart sheets.</summary>
+        ''' <param name="chartName">The chart sheet name.</param>
+        ''' <returns>The index in <see cref="ChartSheetNames"/>, or -1 if the name is absent.</returns>
         Public Function ChartSheetIndex(ByVal chartName As String) As Integer
             Return Me.ChartSheetNames.IndexOf(chartName)
         End Function
@@ -1286,6 +1274,15 @@ Namespace ExcelOps
         ''' <param name="shiftDirection">Direction from which remaining cells shall be shifted into the removed range</param>
         ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
         Public MustOverride Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
+
+        ''' <summary>Renames a worksheet.</summary>
+        ''' <param name="sheetName">Current name of the worksheet.</param>
+        ''' <param name="newSheetName">New name of the worksheet.</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula and reference updates. False to require existing formulas and references to remain unchanged.</param>
+        ''' <exception cref="NotSupportedException">The engine does not support renaming worksheets with the requested formula and reference behavior.</exception>
+        Public Overridable Sub RenameWorksheet(sheetName As String, newSheetName As String, updateFormulasAndReferences As Boolean)
+            Throw New NotSupportedException(Me.EngineName & " doesn't support renaming worksheets.")
+        End Sub
 
         ''' <summary>
         ''' Removes a sheet.
@@ -1838,6 +1835,180 @@ Namespace ExcelOps
         ''' <param name="targetWorkbook">Target workbook receiving the worksheet content.</param>
         ''' <param name="targetSheetName">Name of the target worksheet.</param>
         Public MustOverride Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
+
+        ''' <summary>Specifies how formula references are handled when copying sheets between workbooks.</summary>
+        ''' <remarks>
+        ''' This option applies to cell formulas and to formula-based chart references on supported copied sheets.
+        ''' The engine must reject an unsupported mode before copying.
+        ''' </remarks>
+        Public Enum CopyWorksheetFormulaMode
+            ''' <summary>Preserves the identities of referenced sheets by adapting formulas as Microsoft Excel does.</summary>
+            ''' <remarks>
+            ''' This is the default. A reference to a sheet in the copied group points to that copy, using the name
+            ''' assigned in the destination. For example, if the copied Data sheet is named Data (2) in the
+            ''' destination, a reference to Data!$A$1 in another sheet of the group becomes 'Data (2)'!$A$1.
+            ''' A reference to a sheet left in the source becomes an external workbook link, even if the
+            ''' destination already contains a sheet with that name. The Open XML engine requires an existing
+            ''' source file when it needs to create that link. Microsoft Excel uses its native copy behavior.
+            ''' </remarks>
+            ExcelCompatible = 0
+            ''' <summary>Preserves the original text of formulas on the copied sheets.</summary>
+            ''' <remarks>
+            ''' Formulas resolve in the destination workbook. For example, Data!$A$1 keeps its text and can
+            ''' resolve to an existing destination sheet named Data, even if the copied Data sheet was named
+            ''' Data (2). A missing sheet or name can cause a reference error. The Open XML engine supports
+            ''' this mode for compatible worksheets and charts and invalidates copied formula result caches.
+            ''' The Microsoft Excel engine rejects this mode before creating any copies.
+            ''' </remarks>
+            PreserveFormulas = 1
+        End Enum
+
+        ''' <summary>Appends a copy of a sheet to another workbook and reports its destination name and position.</summary>
+        ''' <param name="sheetName">The source sheet name.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="formulaMode">Controls whether formulas are adapted or copied verbatim.</param>
+        ''' <returns>The assigned sheet name and actual zero-based position in the destination workbook.</returns>
+        ''' <exception cref="NotSupportedException">The engine does not support the sheet or the requested formula mode.</exception>
+        Public Function CopySheet(sheetName As String, targetWorkbook As ExcelDataOperationsBase,
+                                  Optional formulaMode As CopyWorksheetFormulaMode = CopyWorksheetFormulaMode.ExcelCompatible) As SheetTransferResult
+            Return CopySheets({sheetName}, targetWorkbook, formulaMode).Single()
+        End Function
+
+        ''' <summary>Copies a sheet into another workbook at the specified position.</summary>
+        ''' <param name="sheetName">The source sheet name.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="targetSheetIndex">The zero-based insertion index in the full destination tab order. The sheet count appends the copy.</param>
+        ''' <param name="formulaMode">Controls whether formulas are adapted or copied verbatim.</param>
+        ''' <returns>The assigned sheet name and actual zero-based position in the destination workbook.</returns>
+        ''' <exception cref="ArgumentOutOfRangeException">The destination index is outside the range from zero through the sheet count.</exception>
+        ''' <exception cref="NotSupportedException">The engine does not support the sheet or the requested formula mode.</exception>
+        Public Function CopySheet(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetIndex As Integer,
+                                  Optional formulaMode As CopyWorksheetFormulaMode = CopyWorksheetFormulaMode.ExcelCompatible) As SheetTransferResult
+            Return CopySheets({sheetName}, targetWorkbook, targetSheetIndex, formulaMode).Single()
+        End Function
+
+        ''' <summary>Appends a group of copied sheets to another workbook in one operation.</summary>
+        ''' <param name="sheetNames">The source sheet names. A group may include worksheets and chart sheets if the engine supports them.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="formulaMode">Controls whether formulas are adapted or copied verbatim.</param>
+        ''' <returns>The assigned sheet names and positions, in destination tab order.</returns>
+        ''' <exception cref="NotSupportedException">The engine does not support the group or the requested formula mode.</exception>
+        Public Function CopySheets(sheetNames As IEnumerable(Of String), targetWorkbook As ExcelDataOperationsBase,
+                                   Optional formulaMode As CopyWorksheetFormulaMode = CopyWorksheetFormulaMode.ExcelCompatible) As IReadOnlyList(Of SheetTransferResult)
+            Return TransferSheetsAt(sheetNames, targetWorkbook, Nothing, move:=False, formulaMode:=formulaMode)
+        End Function
+
+        ''' <summary>Copies a group of sheets into another workbook at the specified position.</summary>
+        ''' <param name="sheetNames">The source sheet names. A group may include worksheets and chart sheets if the engine supports them.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="targetSheetIndex">The zero-based insertion index in the full destination tab order. The sheet count appends the group.</param>
+        ''' <param name="formulaMode">Controls whether formulas are adapted or copied verbatim.</param>
+        ''' <returns>The assigned sheet names and positions, in destination tab order.</returns>
+        ''' <remarks>The sheets are inserted as one contiguous group in source workbook order, regardless of the order in <paramref name="sheetNames"/>.</remarks>
+        ''' <exception cref="ArgumentOutOfRangeException">The destination index is outside the range from zero through the sheet count.</exception>
+        ''' <exception cref="NotSupportedException">The engine does not support the group or the requested formula mode.</exception>
+        Public Function CopySheets(sheetNames As IEnumerable(Of String), targetWorkbook As ExcelDataOperationsBase, targetSheetIndex As Integer,
+                                   Optional formulaMode As CopyWorksheetFormulaMode = CopyWorksheetFormulaMode.ExcelCompatible) As IReadOnlyList(Of SheetTransferResult)
+            Return TransferSheetsAt(sheetNames, targetWorkbook, targetSheetIndex, move:=False, formulaMode:=formulaMode)
+        End Function
+
+        ''' <summary>Appends a sheet to another workbook and reports its destination name and position.</summary>
+        ''' <param name="sheetName">The source sheet name.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <returns>The assigned sheet name and actual zero-based position in the destination workbook.</returns>
+        ''' <exception cref="NotSupportedException">The engine does not support moving this sheet.</exception>
+        Public Function MoveSheet(sheetName As String, targetWorkbook As ExcelDataOperationsBase) As SheetTransferResult
+            Return MoveSheets({sheetName}, targetWorkbook).Single()
+        End Function
+
+        ''' <summary>Moves a sheet into another workbook at the specified position.</summary>
+        ''' <param name="sheetName">The source sheet name.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="targetSheetIndex">The zero-based insertion index in the full destination tab order. The sheet count appends the sheet.</param>
+        ''' <returns>The assigned sheet name and actual zero-based position in the destination workbook.</returns>
+        ''' <exception cref="ArgumentOutOfRangeException">The destination index is outside the range from zero through the sheet count.</exception>
+        ''' <exception cref="NotSupportedException">The engine does not support moving this sheet.</exception>
+        Public Function MoveSheet(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetIndex As Integer) As SheetTransferResult
+            Return MoveSheets({sheetName}, targetWorkbook, targetSheetIndex).Single()
+        End Function
+
+        ''' <summary>Appends a group of sheets to another workbook in one move operation.</summary>
+        ''' <param name="sheetNames">The source sheet names. A group may include worksheets and chart sheets if the engine supports them.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <returns>The assigned sheet names and positions, in destination tab order.</returns>
+        ''' <exception cref="NotSupportedException">The engine does not support moving this group.</exception>
+        Public Function MoveSheets(sheetNames As IEnumerable(Of String), targetWorkbook As ExcelDataOperationsBase) As IReadOnlyList(Of SheetTransferResult)
+            Return TransferSheetsAt(sheetNames, targetWorkbook, Nothing, move:=True, formulaMode:=CopyWorksheetFormulaMode.ExcelCompatible)
+        End Function
+
+        ''' <summary>Moves a group of sheets into another workbook at the specified position.</summary>
+        ''' <param name="sheetNames">The source sheet names. A group may include worksheets and chart sheets if the engine supports them.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="targetSheetIndex">The zero-based insertion index in the full destination tab order. The sheet count appends the group.</param>
+        ''' <returns>The assigned sheet names and positions, in destination tab order.</returns>
+        ''' <remarks>The sheets are inserted as one contiguous group in source workbook order, regardless of the order in <paramref name="sheetNames"/>.</remarks>
+        ''' <exception cref="ArgumentOutOfRangeException">The destination index is outside the range from zero through the sheet count.</exception>
+        ''' <exception cref="NotSupportedException">The engine does not support moving this group.</exception>
+        Public Function MoveSheets(sheetNames As IEnumerable(Of String), targetWorkbook As ExcelDataOperationsBase,
+                                   targetSheetIndex As Integer) As IReadOnlyList(Of SheetTransferResult)
+            Return TransferSheetsAt(sheetNames, targetWorkbook, targetSheetIndex, move:=True, formulaMode:=CopyWorksheetFormulaMode.ExcelCompatible)
+        End Function
+
+        Private Function TransferSheetsAt(sheetNames As IEnumerable(Of String), targetWorkbook As ExcelDataOperationsBase,
+                                          targetSheetIndex As Integer?, move As Boolean, formulaMode As CopyWorksheetFormulaMode) As IReadOnlyList(Of SheetTransferResult)
+            If Not [Enum].IsDefined(GetType(CopyWorksheetFormulaMode), formulaMode) Then Throw New ArgumentOutOfRangeException(NameOf(formulaMode))
+            Dim ordered = ValidateSheetTransfer(sheetNames, targetWorkbook)
+            Dim count = targetWorkbook.SheetNames().Count
+            Dim index = targetSheetIndex.GetValueOrDefault(count)
+            If index < 0 OrElse index > count Then Throw New ArgumentOutOfRangeException(NameOf(targetSheetIndex))
+            Dim assigned = TransferSheetsCore(ordered, targetWorkbook, index, move, formulaMode)
+            Dim destinationNames = targetWorkbook.SheetNames()
+            Return assigned.Select(Function(name) New SheetTransferResult(name, destinationNames.IndexOf(name))).
+                OrderBy(Function(result) result.TargetSheetIndex).ToArray()
+        End Function
+
+        Private Function ValidateSheetTransfer(sheetNames As IEnumerable(Of String), targetWorkbook As ExcelDataOperationsBase) As String()
+            If sheetNames Is Nothing Then Throw New ArgumentNullException(NameOf(sheetNames))
+            If targetWorkbook Is Nothing Then Throw New ArgumentNullException(NameOf(targetWorkbook))
+            If targetWorkbook Is Me Then Throw New ArgumentException("The destination must be another workbook.", NameOf(targetWorkbook))
+            If IsClosed OrElse targetWorkbook.IsClosed Then Throw New InvalidOperationException("Both workbooks must be open.")
+            Dim requested = sheetNames.ToArray()
+            If requested.Length = 0 OrElse requested.Any(AddressOf String.IsNullOrEmpty) OrElse
+               requested.Distinct(StringComparer.OrdinalIgnoreCase).Count() <> requested.Length Then
+                Throw New ArgumentException("Supply at least one non-empty sheet name with no duplicates.", NameOf(sheetNames))
+            End If
+            Dim requestedNames As New HashSet(Of String)(requested, StringComparer.OrdinalIgnoreCase)
+            Dim ordered = Me.SheetNames().Where(Function(name) requestedNames.Contains(name)).ToArray()
+            If ordered.Length <> requested.Length Then Throw New ArgumentException("A requested source sheet does not exist.", NameOf(sheetNames))
+            Return ordered
+        End Function
+
+        ''' <summary>Transfers sheets using the engine's sheet transfer implementation.</summary>
+        ''' <param name="sheetNames">The source sheet names in workbook order.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="move">True to move the sheets. False to copy them.</param>
+        ''' <param name="formulaMode">The requested formula handling mode.</param>
+        ''' <returns>The assigned names in destination sheet order.</returns>
+        Protected Overridable Function TransferSheetsCore(sheetNames As IReadOnlyList(Of String), targetWorkbook As ExcelDataOperationsBase,
+                                                          move As Boolean, formulaMode As CopyWorksheetFormulaMode) As IReadOnlyList(Of String)
+            Throw New NotSupportedException(EngineName & " does not support transferring whole sheets.")
+        End Function
+
+        ''' <summary>Transfers sheets to an index in the destination tab order.</summary>
+        ''' <param name="sheetNames">The source sheet names in workbook order.</param>
+        ''' <param name="targetWorkbook">The open destination workbook.</param>
+        ''' <param name="targetSheetIndex">The validated zero-based insertion index in the full destination tab order.</param>
+        ''' <param name="move">True to move the sheets. False to copy them.</param>
+        ''' <param name="formulaMode">The requested formula handling mode.</param>
+        ''' <returns>The assigned names in destination sheet order.</returns>
+        Protected Overridable Function TransferSheetsCore(sheetNames As IReadOnlyList(Of String), targetWorkbook As ExcelDataOperationsBase,
+                                                          targetSheetIndex As Integer, move As Boolean,
+                                                          formulaMode As CopyWorksheetFormulaMode) As IReadOnlyList(Of String)
+            If targetSheetIndex <> targetWorkbook.SheetNames().Count Then
+                Throw New NotSupportedException(EngineName & " does not support inserting transferred sheets at a specified position.")
+            End If
+            Return TransferSheetsCore(sheetNames, targetWorkbook, move, formulaMode)
+        End Function
 
         ''' <summary>
         ''' Copies worksheet content to another workbook.
