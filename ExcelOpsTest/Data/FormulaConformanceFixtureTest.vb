@@ -21,6 +21,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReference1900.xlsx", "Lookup", 34)>
     <TestCase("FormulaReference1900.xlsx", "Dates", 15)>
     <TestCase("FormulaReference1904.xlsx", "Dates", 5)>
+    <TestCase("FormulaReferenceModern.xlsx", "Arrays", 25)>
+    <TestCase("FormulaReferenceModern.xlsx", "Local names", 16)>
     Public Sub RecalculatesTheExcelReferenceFixture(fileName As String, sheetName As String, caseCount As Integer)
         Dim fixture = FixturePath(fileName)
         Dim expected = ReadFormulaCaches(fixture, sheetName)
@@ -51,6 +53,15 @@ Public Class FormulaConformanceFixtureTest
             Next
             If fileName = ReferenceWorkbook Then
                 Assert.That(ReadFormulaCaches(output, "External cases"), [Is].EqualTo(ReadFormulaCaches(fixture, "External cases")))
+            End If
+            If fileName = "FormulaReferenceModern.xlsx" AndAlso sheetName = "Arrays" Then
+                Using original = OpenForCalculation(fixture), recalculated = OpenForCalculation(output)
+                    For Each address In {"I4", "I5", "I21", "I24"}
+                        Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
+                        Assert.That(original.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("#CALC!"), address)
+                        Assert.That(recalculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("#CALC!"), address)
+                    Next
+                End Using
             End If
         Finally
             If File.Exists(output) Then File.Delete(output)
