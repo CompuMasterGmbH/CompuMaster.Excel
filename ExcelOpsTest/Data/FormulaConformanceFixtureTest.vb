@@ -27,6 +27,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceWorkdays1904.xlsx", "Workdays", 204)>
     <TestCase("FormulaReferenceDateText1900.xlsx", "Date text", 111)>
     <TestCase("FormulaReferenceDateText1904.xlsx", "Date text", 111)>
+    <TestCase("FormulaReferenceDateDifference1900.xlsx", "Date differences", 399)>
+    <TestCase("FormulaReferenceDateDifference1904.xlsx", "Date differences", 399)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
