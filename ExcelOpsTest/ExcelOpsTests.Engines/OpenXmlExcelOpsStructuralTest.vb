@@ -54,6 +54,32 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub EmbeddedChartPlacementRequiresOptInForAnUnverifiedColumnWidth()
+        Dim source = Path.Combine(_directory, "unverified-chart-font.xlsx")
+        Dim output = Path.Combine(_directory, "unverified-chart-font-edited.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            document.WorkbookPart.WorkbookStylesPart.Stylesheet.Fonts.Elements(Of Font)().First().FontName.Val = "Arial"
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() workbook.AddColumn("Dashboard", 3, 1, True))
+            Assert.That(failure.Message, Does.Contain("Normal font"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+        options.AllowKnownStructuralReferenceDifferences = True
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Assert.DoesNotThrow(Sub() workbook.AddColumn("Dashboard", 3, 1, True))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Assert.That(StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart.ChartParts.Count(),
+                        [Is].EqualTo(3))
+        End Using
+    End Sub
+
     ' The reference strings cover whole-row and whole-column insertions and deletions as Excel stores them.
     <Test>
     Public Sub ShiftsRowsAndColumnsAndUpdatesReferencesAcrossSheets()
