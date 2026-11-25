@@ -143,6 +143,18 @@ Namespace ExcelOps
                 End Select
             End Function
 
+            Private Function LogicalOptionValue(value As Object) As Object
+                If TypeOf value Is String Then
+                    Dim text = DirectCast(value, String)
+                    If text.Equals(TextValue(True), StringComparison.OrdinalIgnoreCase) Then Return True
+                    If text.Equals(TextValue(False), StringComparison.OrdinalIgnoreCase) Then Return False
+                    Return New FormulaError("#VALUE!")
+                End If
+                Dim number = NumberValue(value)
+                If TypeOf number Is FormulaError Then Return number
+                Return DirectCast(number, Double) <> 0.0
+            End Function
+
             Private Function CombineLogical(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                             formulaCell As ExcelCell) As Object
                 Dim result = name = "AND"

@@ -22,19 +22,9 @@ Namespace ExcelOps
                     If failure IsNot Nothing Then Return failure
                     separators = delimiters.Select(Function(item) TextValue(item)).ToArray()
 
-                    Dim optionValue = Scalar(EvaluateExpression(arguments(1), formulaCell))
-                    If TypeOf optionValue Is String Then
-                        Dim text = DirectCast(optionValue, String)
-                        If text.Equals(TextValue(True), StringComparison.OrdinalIgnoreCase) Then
-                            skipEmpty = True
-                        ElseIf Not text.Equals(TextValue(False), StringComparison.OrdinalIgnoreCase) Then
-                            Return New FormulaError("#VALUE!")
-                        End If
-                    Else
-                        Dim number = NumberValue(optionValue)
-                        If TypeOf number Is FormulaError Then Return number
-                        skipEmpty = DirectCast(number, Double) <> 0.0
-                    End If
+                    Dim optionValue = LogicalOptionValue(Scalar(EvaluateExpression(arguments(1), formulaCell)))
+                    If TypeOf optionValue Is FormulaError Then Return optionValue
+                    skipEmpty = DirectCast(optionValue, Boolean)
                 End If
 
                 Dim separatorIndex As Integer
@@ -47,7 +37,7 @@ Namespace ExcelOps
                         Dim text = TextValue(value)
                         If skipEmpty AndAlso text.Length = 0 Then Continue For
                         Dim separator = If(hasValue, separators(separatorIndex), String.Empty)
-                        If result.Length + separator.Length + text.Length > MaximumTextLength Then Return New FormulaError("#CALC!")
+                        If result.Length + separator.Length + text.Length > MaximumTextLength Then Return New FormulaError(CalcErrorCode)
                         If hasValue Then separatorIndex = (separatorIndex + 1) Mod separators.Length
                         result.Append(separator).Append(text)
                         hasValue = True

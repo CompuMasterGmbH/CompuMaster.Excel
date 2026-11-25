@@ -25,6 +25,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceCriteria.xlsx", "Criteria", 89)>
     <TestCase("FormulaReferenceArrayVariants.xlsx", "Array variants", 65)>
     <TestCase("FormulaReferenceTextVariants.xlsx", "Text variants", 97)>
+    <TestCase("FormulaReferenceSortVariants.xlsx", "Sort and unique", 89)>
     <TestCase("FormulaReferenceModern.xlsx", "Arrays", 25)>
     <TestCase("FormulaReferenceModern.xlsx", "Local names", 16)>
     Public Sub RecalculatesTheExcelReferenceFixture(fileName As String, sheetName As String, caseCount As Integer)
@@ -64,6 +65,8 @@ Public Class FormulaConformanceFixtureTest
                 AssertSameCalcErrors(fixture, output, sheetName, {"S22", "S23", "S31", "S32"})
             ElseIf fileName = "FormulaReferenceTextVariants.xlsx" Then
                 AssertSameCalcErrors(fixture, output, sheetName, {"S9", "S37"})
+            ElseIf fileName = "FormulaReferenceSortVariants.xlsx" Then
+                AssertSameCalcErrors(fixture, output, sheetName, {"S63"})
             End If
         Finally
             If File.Exists(output) Then File.Delete(output)

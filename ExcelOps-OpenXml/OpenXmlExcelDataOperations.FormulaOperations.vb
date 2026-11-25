@@ -97,6 +97,8 @@ Namespace ExcelOps
                         Return EvaluateSumProduct(arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"
+                        Return EvaluateSortFunction(name.ToUpperInvariant().Replace("_XLFN.", "").Replace("_XLWS.", ""), arguments, formulaCell)
                     Case "SEQUENCE", "_XLFN.SEQUENCE", "TRANSPOSE", "FILTER", "_XLFN.FILTER", "_XLFN._XLWS.FILTER",
                          "TAKE", "_XLFN.TAKE", "DROP", "_XLFN.DROP", "CHOOSECOLS", "_XLFN.CHOOSECOLS",
                          "CHOOSEROWS", "_XLFN.CHOOSEROWS", "HSTACK", "_XLFN.HSTACK", "VSTACK", "_XLFN.VSTACK"

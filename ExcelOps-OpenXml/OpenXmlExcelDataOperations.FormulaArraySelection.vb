@@ -54,6 +54,11 @@
                     Next
                 Next
 
+                Return SelectMatrixSlices(matrix, selected, byRow)
+            End Function
+
+            Private Shared Function SelectMatrixSlices(matrix As FormulaMatrix, selected As IReadOnlyList(Of Integer),
+                                                       byRow As Boolean) As FormulaMatrix
                 Dim rows = If(byRow, selected.Count, matrix.Rows)
                 Dim columns = If(byRow, matrix.Columns, selected.Count)
                 Dim values = AllocateMatrixValues(rows, columns)
