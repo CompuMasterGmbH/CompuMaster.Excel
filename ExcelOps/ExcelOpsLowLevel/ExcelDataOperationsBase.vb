@@ -1257,6 +1257,15 @@ Namespace ExcelOps
         ''' <param name="updateFormulasAndReferences">True to require automatic formula/reference updates; false to require formulas/references to remain unchanged. Engines must throw <see cref="NotSupportedException"/> when they cannot provide the requested behavior.</param>
         Public MustOverride Sub RemoveCells(sheetName As String, rowIndex As Integer, columnIndex As Integer, rows As Integer, columns As Integer, shiftDirection As CellRemoveShiftDirection, updateFormulasAndReferences As Boolean)
 
+        ''' <summary>Renames a worksheet.</summary>
+        ''' <param name="sheetName">Current name of the worksheet.</param>
+        ''' <param name="newSheetName">New name of the worksheet.</param>
+        ''' <param name="updateFormulasAndReferences">True to require automatic formula and reference updates. False to require existing formulas and references to remain unchanged.</param>
+        ''' <exception cref="NotSupportedException">The engine does not support renaming worksheets with the requested formula and reference behavior.</exception>
+        Public Overridable Sub RenameWorksheet(sheetName As String, newSheetName As String, updateFormulasAndReferences As Boolean)
+            Throw New NotSupportedException(Me.EngineName & " doesn't support renaming worksheets.")
+        End Sub
+
         ''' <summary>
         ''' Removes a sheet.
         ''' </summary>

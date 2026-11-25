@@ -7,7 +7,7 @@ Imports DocumentFormat.OpenXml.Spreadsheet
 Namespace ExcelOps
 
     ''' <summary>Edits XLSX workbooks using the Open XML SDK.</summary>
-    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and does not evaluate formulas or perform structural edits.</remarks>
+    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports structural reference updates on compatible workbooks. Formula evaluation is unavailable.</remarks>
     Public NotInheritable Partial Class OpenXmlExcelDataOperations
         Inherits ExcelDataOperationsBase
         Implements IDisposable
@@ -74,7 +74,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Protected Overrides ReadOnly Property AutomaticallyUpdatesFormulasAndReferencesForStructuralChanges As Boolean
             Get
-                Return False
+                Return True
             End Get
         End Property
 

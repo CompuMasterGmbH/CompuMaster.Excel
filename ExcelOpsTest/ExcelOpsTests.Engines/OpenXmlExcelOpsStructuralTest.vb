@@ -1,0 +1,271 @@
+﻿Imports System.IO
+Imports System.IO.Compression
+Imports CompuMaster.Excel.ExcelOps
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
+Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
+Imports DocumentFormat.OpenXml
+Imports DocumentFormat.OpenXml.Packaging
+Imports DocumentFormat.OpenXml.Spreadsheet
+Imports DocumentFormat.OpenXml.Validation
+Imports NUnit.Framework
+
+Partial Public Class OpenXmlExcelOpsTest
+
+    Private Const DataSheet As String = "O'Brien Data"
+    Private Const DataQualifier As String = "'O''Brien Data'!"
+
+    ' The reference strings cover whole-row and whole-column insertions and deletions as Excel stores them.
+    <Test>
+    Public Sub ShiftsRowsAndColumnsAndUpdatesReferencesAcrossSheets()
+        Dim source = Path.Combine(_directory, "structure.xlsx")
+        Dim output = Path.Combine(_directory, "structure-edited.xlsx")
+        CreateStructuralWorkbook(source,
+            {ValueCell("A1", 5), ValueCell("B2", 2), ValueCell("C3", 3), FormulaCell("E4", "SUM($B2:C$3)+A1"), ValueCell("A6", 9)},
+            {FormulaCell("A1", "SUM(" & DataQualifier & "$B$2:$C$3)"),
+             FormulaCell("A2", DataQualifier & "A1+" & DataQualifier & "$C$3"),
+             FormulaCell("A3", "A1+SUM(" & DataQualifier & "$B:$C," & DataQualifier & "$2:$3)"),
+             FormulaCell("A4", "LOG10 (100)+1E3+" & DataQualifier & "A1+N(""" & DataQualifier & "C3 """"literal"""""")")},
+            New DefinedName(DataQualifier & "$B$2:$C$3") With {.Name = "DataBlock"},
+            New DefinedName("$B$2") With {.Name = "LocalInput", .LocalSheetId = 0UI})
+
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            workbook.AddRow(DataSheet, 2, 2, True)
+            workbook.AddColumn(DataSheet, 2, 1, True)
+            Assert.That(workbook.LookupCellFormula(DataSheet, 5, 5), [Is].EqualTo("SUM($B2:D$5)+A1"))
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(" & DataQualifier & "$B$2:$D$5)"))
+            Assert.That(workbook.LookupCellFormula("Check", 2, 0), [Is].EqualTo("A1+SUM(" & DataQualifier & "$B:$D," & DataQualifier & "$2:$5)"))
+
+            workbook.RemoveRows(DataSheet, 0, 1, True)
+            workbook.RemoveColumns(DataSheet, 3, 1, True)
+            Assert.That(workbook.LookupCellFormula(DataSheet, 4, 4), [Is].EqualTo("SUM($B1:C$4)+#REF!"))
+            Assert.That(workbook.LookupCellFormula("Check", 1, 0), [Is].EqualTo(DataQualifier & "#REF!+" & DataQualifier & "#REF!"))
+            Assert.That(workbook.LookupCellFormula("Check", 2, 0), [Is].EqualTo("A1+SUM(" & DataQualifier & "$B:$C," & DataQualifier & "$1:$4)"))
+            Assert.That(workbook.LookupCellFormula("Check", 3, 0), [Is].EqualTo(
+                "LOG10 (100)+1E3+" & DataQualifier & "#REF!+N(""" & DataQualifier & "C3 """"literal"""""")"))
+            Assert.That(workbook.LookupCellValue(Of Integer)(DataSheet, 0, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(2))
+            Assert.That(workbook.LookupCellValue(Of Integer)(DataSheet, 6, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(9))
+            Assert.Throws(Of MissingCalculatedCellValueException)(Sub() workbook.LookupCellValueAsObject("Check", 0, 0, FormulaCalculationMode.UseCachedValueOnly))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim workbook = document.WorkbookPart.Workbook
+            Assert.That(workbook.DefinedNames.Elements(Of DefinedName)().Select(Function(item) item.Text),
+                        [Is].EqualTo({DataQualifier & "$B$1:$C$4", "$B$1"}))
+            Assert.That(workbook.CalculationProperties.CalculationMode.Value, [Is].EqualTo(CalculateModeValues.Manual))
+            Assert.That(workbook.CalculationProperties.FullCalculationOnLoad.Value, [Is].True)
+            Assert.That(document.WorkbookPart.CalculationChainPart, [Is].Null)
+            Dim dataPart = DirectCast(document.WorkbookPart.GetPartById("rIdData"), WorksheetPart)
+            Assert.That(dataPart.Worksheet.SheetDimension.Reference.Value, [Is].EqualTo("A1:E7"))
+            Assert.That(dataPart.Worksheet.Descendants(Of Cell)().Where(Function(cell) cell.CellFormula IsNot Nothing).
+                        Select(Function(cell) cell.CellValue), [Is].All.Null)
+            Assert.That(New OpenXmlValidator().Validate(document).Select(Function(item) item.Description), [Is].Empty)
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(workbook.LookupCellFormula(DataSheet, 4, 4), [Is].EqualTo("SUM($B1:C$4)+#REF!"))
+            Assert.Throws(Of MissingCalculatedCellValueException)(Sub() workbook.LookupCellValueAsObject("Check", 2, 0, FormulaCalculationMode.UseCachedValueOnly))
+        End Using
+        Using before = ZipFile.OpenRead(source), after = ZipFile.OpenRead(output)
+            For Each entry In before.Entries.Where(Function(item) item.FullName.Contains("sheet3") OrElse item.FullName.StartsWith("docProps/", StringComparison.Ordinal) OrElse item.FullName.StartsWith("xl/drawings/", StringComparison.Ordinal) OrElse item.FullName.StartsWith("xl/media/", StringComparison.Ordinal))
+                Assert.That(ReadBytes(after.GetEntry(entry.FullName).Open()), [Is].EqualTo(ReadBytes(entry.Open())), entry.FullName)
+            Next
+        End Using
+    End Sub
+
+    ' Excel accepts leading zeros in row references and clips ranges that cross the grid edge.
+    <Test>
+    Public Sub HandlesReferenceSpellingAndTheWorksheetBoundary()
+        Dim source = Path.Combine(_directory, "reference-boundary.xlsx")
+        CreateStructuralWorkbook(source, {ValueCell("A1", 5)},
+            {FormulaCell("A1", DataQualifier & "$A$0000001"),
+             FormulaCell("A2", DataQualifier & "B1048576"),
+             FormulaCell("A3", "SUM(" & DataQualifier & "B1048575:B1048576)"),
+             FormulaCell("A4", "SUM(" & DataQualifier & "B1048574:B1048576)")})
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            workbook.AddRow(DataSheet, 0, 1, True)
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo(DataQualifier & "$A$2"))
+            Assert.That(workbook.LookupCellFormula("Check", 1, 0), [Is].EqualTo(DataQualifier & "#REF!"))
+            Assert.That(workbook.LookupCellFormula("Check", 2, 0), [Is].EqualTo("SUM(" & DataQualifier & "B1048576:B1048576)"))
+            Assert.That(workbook.LookupCellFormula("Check", 3, 0), [Is].EqualTo("SUM(" & DataQualifier & "B1048575:B1048576)"))
+        End Using
+    End Sub
+
+    ' Excel leaves references spanning outside a partial shift's strip intact.
+    <TestCase(True)>
+    <TestCase(False)>
+    Public Sub UpdatesOnlyRangesEntirelyInsideTheShiftedStrip(vertical As Boolean)
+        Dim source = Path.Combine(_directory, "cell-shift.xlsx")
+        Dim output = Path.Combine(_directory, "cell-shift-edited.xlsx")
+        Dim range = If(vertical, "$B2:B$4", "B$2:$D2")
+        Dim movedRange = If(vertical, "$B3:B$5", "C$2:$E2")
+        Dim shortenedRange = If(vertical, "$B3:B$4", "C$2:$D2")
+        Dim firstMovedAddress = If(vertical, "$B3", "C$2")
+        Dim removedAddress = If(vertical, "$B2", "B$2")
+        Dim initialFormulaAddress = If(vertical, "B4", "D2")
+        Dim movedFormulaAddress = If(vertical, "B5", "E2")
+        Dim unaffectedAddress = If(vertical, "C2", "B3")
+        CreateStructuralWorkbook(source, {ValueCell("B2", 2), FormulaCell(initialFormulaAddress, removedAddress & "+A1"), ValueCell(unaffectedAddress, 19)},
+            {FormulaCell("A1", "SUM(" & DataQualifier & range & ")"),
+             FormulaCell("A2", "SUM(" & DataQualifier & "A1:C3)"),
+             FormulaCell("A3", DataQualifier & removedAddress),
+             FormulaCell("A4", "SUM(" & DataQualifier & "B:B," & DataQualifier & "2:2)")})
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            workbook.AddCells(DataSheet, 1, 1, 1, 1,
+                If(vertical, CellInsertShiftDirection.ShiftCellsDown, CellInsertShiftDirection.ShiftCellsRight), True)
+            Assert.That(workbook.LookupCellFormula(DataSheet, New ExcelCell(DataSheet, movedFormulaAddress, ExcelCell.ValueTypes.All).RowIndex,
+                                                  New ExcelCell(DataSheet, movedFormulaAddress, ExcelCell.ValueTypes.All).ColumnIndex),
+                        [Is].EqualTo(firstMovedAddress & "+A1"))
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(" & DataQualifier & movedRange & ")"))
+            Assert.That(workbook.LookupCellFormula("Check", 1, 0), [Is].EqualTo("SUM(" & DataQualifier & "A1:C3)"))
+            Assert.That(workbook.LookupCellFormula("Check", 3, 0), [Is].EqualTo("SUM(" & DataQualifier & "B:B," & DataQualifier & "2:2)"))
+            workbook.RemoveCells(DataSheet, If(vertical, 2, 1), If(vertical, 1, 2), 1, 1,
+                If(vertical, CellRemoveShiftDirection.ShiftCellsUp, CellRemoveShiftDirection.ShiftCellsLeft), True)
+            Assert.That(workbook.LookupCellFormula(DataSheet, If(vertical, 3, 1), If(vertical, 1, 3)), [Is].EqualTo("#REF!+A1"))
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(" & DataQualifier & shortenedRange & ")"))
+            Assert.That(workbook.LookupCellFormula("Check", 2, 0), [Is].EqualTo(DataQualifier & "#REF!"))
+            Assert.That(workbook.LookupCellValue(Of Integer)(New ExcelCell(DataSheet, unaffectedAddress, ExcelCell.ValueTypes.All), FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(19))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(" & DataQualifier & shortenedRange & ")"))
+        End Using
+    End Sub
+
+    ' Sheet names can appear in references, error operands, defined names and string literals.
+    <TestCase("NewData", "NewData!")>
+    <TestCase("O'Brien's Numbers", "'O''Brien''s Numbers'!")>
+    <TestCase("XFD1", "'XFD1'!")>
+    <TestCase("A01", "'A01'!")>
+    <TestCase(" ", "' '!")>
+    Public Sub RenamesAWorksheetAndItsExplicitQualifiers(newName As String, newQualifier As String)
+        Dim source = Path.Combine(_directory, "rename.xlsx")
+        Dim output = Path.Combine(_directory, "renamed.xlsx")
+        Dim reference = "SUM(" & DataQualifier & "B1:" & DataQualifier & "B2)+" & DataQualifier & "#REF!"
+        Dim literal = "+N(""" & DataQualifier & "B1"")"
+        CreateStructuralWorkbook(source, {FormulaCell("B2", "B1+Check!A2")},
+            {FormulaCell("A1", reference & literal)},
+            New DefinedName(DataQualifier & "$B1") With {.Name = "RelativeInput"},
+            New DefinedName("$B$1") With {.Name = "LocalInput", .LocalSheetId = 0UI})
+
+        Using engine As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Dim workbook As ExcelDataOperationsBase = engine
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.RenameWorksheet(DataSheet, newName, False))
+            Assert.Throws(Of ArgumentException)(Sub() workbook.RenameWorksheet(DataSheet, "CHECK", True))
+            Assert.Throws(Of ArgumentException)(Sub() workbook.RenameWorksheet(DataSheet, "Bad?Name", True))
+            workbook.RenameWorksheet("o'brien data", newName, True)
+            Assert.That(workbook.LookupCellFormula(newName, 1, 1), [Is].EqualTo("B1+Check!A2"))
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo(
+                "SUM(" & newQualifier & "B1:" & newQualifier & "B2)+" & newQualifier & "#REF!" & literal))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim workbook = document.WorkbookPart.Workbook
+            Assert.That(workbook.Sheets.Elements(Of Sheet)().Select(Function(item) item.Name.Value), [Is].EqualTo({newName, "Check", "Unrelated"}))
+            Assert.That(workbook.DefinedNames.Elements(Of DefinedName)().Select(Function(item) item.Text),
+                        [Is].EqualTo({newQualifier & "$B1", "$B$1"}))
+        End Using
+    End Sub
+
+    <TestCase("SUM('O''Brien Data:Check'!B2)")>
+    <TestCase("SUM(Check:Unrelated!B2)")>
+    <TestCase("'C:\Temp\[External.xlsx]Data'!B2")>
+    <TestCase("SUM(Table1[Amount])")>
+    <TestCase(DataQualifier & "B2#")>
+    <TestCase("_xlfn.ANCHORARRAY(" & DataQualifier & "B2)")>
+    Public Sub UnsupportedFormulaReferencesLeaveTheWorkbookByteIdentical(formula As String)
+        Dim source = Path.Combine(_directory, "unsupported.xlsx")
+        Dim output = Path.Combine(_directory, "unchanged.xlsx")
+        CreateStructuralWorkbook(source, {FormulaCell("B2", "A1")}, {FormulaCell("A1", formula)})
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.AddRow(DataSheet, 0, 1, True))
+            Assert.Throws(Of NotSupportedException)(Sub() workbook.RenameWorksheet(DataSheet, "Data", True))
+            Assert.That(workbook.LookupCellFormula(DataSheet, 1, 1), [Is].EqualTo("A1"))
+            Assert.That(workbook.LookupCellValue(Of Integer)(DataSheet, 1, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(42))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+    End Sub
+
+    <TestCase("DefinedName")>
+    <TestCase("MergedCells")>
+    <TestCase("ConditionalFormatting")>
+    <TestCase("GroupedFormula")>
+    <TestCase("RowExtension")>
+    <TestCase("GridOverflow")>
+    Public Sub UnsupportedStructureLeavesPreviouslyStagedChangesUnapplied(feature As String)
+        Dim source = Path.Combine(_directory, "unsupported-structure.xlsx")
+        Dim output = Path.Combine(_directory, "unchanged-structure.xlsx")
+        Dim address = If(feature = "GridOverflow", "B1048576", "B2")
+        CreateStructuralWorkbook(source, {FormulaCell(address, "A1")}, {FormulaCell("A1", DataQualifier & address)})
+        Using document = SpreadsheetDocument.Open(source, True)
+            Dim part = document.WorkbookPart
+            Dim worksheet = DirectCast(part.GetPartById("rIdData"), WorksheetPart).Worksheet
+            Select Case feature
+                Case "DefinedName"
+                    part.Workbook.DefinedNames = New DefinedNames(New DefinedName(DataQualifier & "B2") With {.Name = "RelativeInput"})
+                Case "MergedCells"
+                    worksheet.AddChild(New MergeCells(New MergeCell With {.Reference = "C2:D2"}))
+                Case "ConditionalFormatting"
+                    Dim other = DirectCast(part.GetPartById("rIdCheck"), WorksheetPart).Worksheet
+                    other.AddChild(New ConditionalFormatting())
+                Case "RowExtension"
+                    Dim other = DirectCast(part.GetPartById("rIdCheck"), WorksheetPart).Worksheet
+                    other.GetFirstChild(Of SheetData)().GetFirstChild(Of Row)().Append(New ExtensionList())
+                Case "GroupedFormula"
+                    Dim formula = worksheet.Descendants(Of CellFormula)().Single()
+                    formula.FormulaType = CellFormulaValues.Array
+                    formula.Reference = "B2:B3"
+            End Select
+        End Using
+
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            If feature = "GridOverflow" Then
+                Assert.Throws(Of InvalidOperationException)(Sub() workbook.AddRow(DataSheet, 0, 1, True))
+            Else
+                Assert.Throws(Of NotSupportedException)(Sub() workbook.AddRow(DataSheet, 0, 1, True))
+            End If
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo(DataQualifier & address))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Check", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(42))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+    End Sub
+
+    Private Shared Function FormulaCell(address As String, formula As String) As Cell
+        Return New Cell With {.CellReference = address, .CellFormula = New CellFormula(formula), .CellValue = New CellValue("42")}
+    End Function
+
+    Private Shared Function ValueCell(address As String, value As Integer) As Cell
+        Return New Cell With {.CellReference = address, .CellValue = New CellValue(value)}
+    End Function
+
+    Private Shared Function StructuralSheet(cells As IEnumerable(Of Cell)) As Worksheet
+        Dim data As New SheetData()
+        For Each group In cells.GroupBy(Function(cell) New ExcelCell(Nothing, cell.CellReference.Value, ExcelCell.ValueTypes.All).RowNumber).OrderBy(Function(item) item.Key)
+            data.Append(New Row(group.OrderBy(Function(cell) New ExcelCell(Nothing, cell.CellReference.Value, ExcelCell.ValueTypes.All).ColumnIndex)) With {.RowIndex = CUInt(group.Key)})
+        Next
+        Return New Worksheet(New SheetDimension With {.Reference = "A1"}, data)
+    End Function
+
+    Private Shared Sub CreateStructuralWorkbook(path As String, data As Cell(), check As Cell(), ParamArray names As DefinedName())
+        Using document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
+            Dim workbookPart = document.AddWorkbookPart()
+            workbookPart.AddNewPart(Of WorksheetPart)("rIdData").Worksheet = StructuralSheet(data)
+            workbookPart.AddNewPart(Of WorksheetPart)("rIdCheck").Worksheet = StructuralSheet(check)
+            Dim unrelatedPart = workbookPart.AddNewPart(Of WorksheetPart)("rIdUnrelated")
+            unrelatedPart.Worksheet = StructuralSheet({ValueCell("A1", 17)})
+            AddImage(unrelatedPart)
+            document.PackageProperties.Title = "Synthetic structural edit"
+            workbookPart.Workbook = New Workbook(
+                New Sheets(New Sheet With {.Id = "rIdData", .SheetId = 1UI, .Name = DataSheet},
+                           New Sheet With {.Id = "rIdCheck", .SheetId = 2UI, .Name = "Check"},
+                           New Sheet With {.Id = "rIdUnrelated", .SheetId = 3UI, .Name = "Unrelated"}),
+                New CalculationProperties With {.CalculationId = 191029UI, .CalculationMode = CalculateModeValues.Manual})
+            If names.Length > 0 Then workbookPart.Workbook.DefinedNames = New DefinedNames(names)
+            workbookPart.AddNewPart(Of CalculationChainPart)().CalculationChain =
+                New CalculationChain(New CalculationCell With {.CellReference = "A1", .SheetId = 2})
+        End Using
+    End Sub
+
+End Class
