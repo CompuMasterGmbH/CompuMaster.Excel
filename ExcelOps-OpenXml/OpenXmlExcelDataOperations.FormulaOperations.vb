@@ -99,6 +99,9 @@ Namespace ExcelOps
                          "ASIN", "ACOS", "ATAN", "ATAN2", "ACOT", "_XLFN.ACOT",
                          "ASINH", "ACOSH", "ATANH", "ACOTH", "_XLFN.ACOTH"
                         Return EvaluateTranscendental(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "FACT", "FACTDOUBLE", "COMBIN", "COMBINA", "_XLFN.COMBINA", "PERMUT", "PERMUTATIONA", "_XLFN.PERMUTATIONA",
+                         "MULTINOMIAL", "GCD", "LCM", "SUMSQ"
+                        Return EvaluateCombinatorialFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "BITAND", "_XLFN.BITAND", "BITOR", "_XLFN.BITOR", "BITXOR", "_XLFN.BITXOR",
                          "BITLSHIFT", "_XLFN.BITLSHIFT", "BITRSHIFT", "_XLFN.BITRSHIFT",
                          "FLOOR", "FLOOR.MATH", "_XLFN.FLOOR.MATH", "FLOOR.PRECISE", "_XLFN.FLOOR.PRECISE",
