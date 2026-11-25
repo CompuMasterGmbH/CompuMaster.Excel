@@ -514,7 +514,7 @@ Namespace ExcelOps
                     originalMerges = part.Worksheet.GetFirstChild(Of MergeCells)()
                     shiftedMerges = ShiftMergedCells(originalMerges, sheetShift)
                     shiftedData = ShiftSheetData(data, sheetShift, shiftedMerges, tableFills, filledCells, dimension)
-                    RestoreTableRowVisibility(shiftedData, tables)
+                    ApplyTableFilterVisibility(shiftedData, tables)
                     data = shiftedData
                 End If
                 If data IsNot originalData Then revisedSheetData.Add(part, data)

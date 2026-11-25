@@ -246,15 +246,27 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
     ' The second edit sees the moved filter in the current unsaved table definition.
-    <Test>
-    Public Sub StructuralReference_UpdatesTableFiltersAcrossSuccessiveColumnEdits()
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub StructuralReference_UpdatesTableFiltersAcrossSuccessiveColumnEdits(keepsNumericFilter As Boolean)
         Dim source = Path.Combine(_directory, "filtered-table.xlsx")
         Dim output = Path.Combine(_directory, "filtered-table-edited.xlsx")
         File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName), source)
         Using document = SpreadsheetDocument.Open(source, True)
             Dim data = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Data")
             Dim table = data.TableDefinitionParts.Single().Table
-            table.GetFirstChild(Of AutoFilter)().Append(New FilterColumn(New Filters(New Filter With {.Val = "2"})) With {.ColumnId = 1UI})
+            Dim filter = table.GetFirstChild(Of AutoFilter)()
+            filter.Append(New FilterColumn(New Filters(New Filter With {.Val = "2"})) With {.ColumnId = 1UI})
+            If keepsNumericFilter Then
+                Dim comparison As New CustomFilter With {.Operator = FilterOperatorValues.GreaterThan, .Val = "3"}
+                filter.Append(New FilterColumn(New CustomFilters(comparison)) With {.ColumnId = 2UI})
+                For Each cell In data.Worksheet.Descendants(Of Cell)().Where(
+                    Function(item) {"D4", "D5", "D6"}.Contains(item.CellReference.Value))
+                    cell.CellFormula = Nothing
+                    cell.CellValue = New CellValue(If(cell.CellReference.Value = "D5", "2", "8"))
+                    cell.StyleIndex = Nothing
+                Next
+            End If
             For Each row In data.Worksheet.GetFirstChild(Of SheetData)().Elements(Of Row)().Where(
                 Function(item) item.RowIndex.Value = 4UI OrElse item.RowIndex.Value = 7UI)
                 row.Hidden = True
@@ -271,10 +283,11 @@ Partial Public Class OpenXmlExcelOpsTest
             Dim table = data.TableDefinitionParts.Single().Table
             Dim filter = table.GetFirstChild(Of AutoFilter)()
             Assert.That(filter.Reference.Value, [Is].EqualTo("B3:D6"))
-            Assert.That(filter.Elements(Of FilterColumn)(), [Is].Empty)
+            Dim filterColumns = filter.Elements(Of FilterColumn)().Select(Function(item) item.ColumnId.Value).ToArray()
+            Assert.That(filterColumns, [Is].EqualTo(If(keepsNumericFilter, {2UI}, Array.Empty(Of UInteger)())))
             Dim hidden = data.Worksheet.GetFirstChild(Of SheetData)().Elements(Of Row)().
                 Where(Function(row) If(row.Hidden?.Value, False)).Select(Function(row) row.RowIndex.Value)
-            Assert.That(hidden, [Is].EqualTo({7UI}))
+            Assert.That(hidden, [Is].EqualTo(If(keepsNumericFilter, {5UI, 7UI}, {7UI})))
         End Using
     End Sub
 
