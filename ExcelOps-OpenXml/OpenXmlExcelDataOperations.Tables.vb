@@ -24,6 +24,8 @@ Namespace ExcelOps
             Friend TargetFirstColumn As Integer
             Friend TargetLastColumn As Integer
             Friend AddsDataRows As Boolean
+            Friend RemovesFirstDataRow As Boolean
+            Friend RemovesTotalsRow As Boolean
 
             Friend Sub New(worksheet As WorksheetPart, sheetName As String, part As TableDefinitionPart, source As Table)
                 Me.Worksheet = worksheet
@@ -110,12 +112,16 @@ Namespace ExcelOps
                               table.TargetFirstColumn <> table.First.Column OrElse table.TargetLastColumn <> table.Last.Column
                 If changed Then
                     replacement.Reference = table.FormatRange(table.TargetLastRow)
+                    If table.RemovesTotalsRow Then
+                        replacement.TotalsRowShown = False
+                        replacement.TotalsRowCount = Nothing
+                    End If
                     Dim filter = replacement.GetFirstChild(Of AutoFilter)()
                     If replacement.GetFirstChild(Of SortState)() IsNot Nothing OrElse filter?.GetFirstChild(Of SortState)() IsNot Nothing Then
                         Throw UnsupportedOperation("Shifting a table with a saved sort state")
                     End If
                     If filter IsNot Nothing Then
-                        filter.Reference = table.FormatRange(table.TargetLastRow - table.TotalsCount)
+                        filter.Reference = table.FormatRange(table.TargetLastRow - If(table.RemovesTotalsRow, 0, table.TotalsCount))
                     End If
                 End If
 
@@ -126,7 +132,8 @@ Namespace ExcelOps
                 For columnIndex = 0 To columns.Length - 1
                     Dim column = columns(columnIndex)
                     Dim calculation = column.CalculatedColumnFormula
-                    If calculation IsNot Nothing Then
+                    ' Excel keeps the template when deleting its first data row. The remaining cell formulas still move.
+                    If calculation IsNot Nothing AndAlso Not table.RemovesFirstDataRow Then
                         Dim original = calculation.Text
                         Dim rewritten = RewriteFormula(original, table.SheetName, editedName, shift, newSheetName, False, tableNames,
                                                        formulaWorkbook:=book, structuralExternalLinks:=links)
@@ -151,7 +158,11 @@ Namespace ExcelOps
                     End If
 
                     Dim totals = column.TotalsRowFormula
-                    If totals IsNot Nothing Then
+                    If table.RemovesTotalsRow Then
+                        column.TotalsRowLabel = Nothing
+                        column.TotalsRowFunction = Nothing
+                        column.TotalsRowFormula = Nothing
+                    ElseIf totals IsNot Nothing Then
                         Dim text = RewriteFormula(totals.Text, table.SheetName, editedName, shift, newSheetName, False, tableNames,
                                                   formulaWorkbook:=book, structuralExternalLinks:=links)
                         If text <> totals.Text Then
