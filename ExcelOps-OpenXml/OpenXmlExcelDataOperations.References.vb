@@ -366,8 +366,8 @@ Namespace ExcelOps
                     Dim unchanged = value.Substring(index, referenceEnd - index)
                     If validateTransferredNameOperands OrElse (shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook) Then
                         Dim relative = Not first.IsAbsolute OrElse (second IsNot Nothing AndAlso Not second.IsAbsolute)
-                        Dim ownSheet = validateTransferredNameOperands AndAlso scopeSheet IsNot Nothing AndAlso Not externalBook AndAlso
-                            String.Equals(If(explicitSheet, scopeSheet), scopeSheet, StringComparison.OrdinalIgnoreCase)
+                        Dim ownSheet = validateTransferredNameOperands AndAlso Not externalBook AndAlso
+                            String.Equals(If(explicitSheet, scopeSheet), If(scopeSheet, editedSheet), StringComparison.OrdinalIgnoreCase)
                         If (Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing) OrElse (relative AndAlso Not ownSheet) Then
                             Throw New NotSupportedException("A defined name contains a reference without a sheet or an unsupported relative reference.")
                         End If
