@@ -73,6 +73,14 @@ Public Class FormulaConformanceFixtureTest
         End Try
     End Sub
 
+    <Test, Explicit("Reports Excel formula coverage for Open XML.")>
+    Public Sub ReportsFormulaReferenceCoverageAgainstExcel()
+        Dim result = ExcelOpsTests.Engines.FormulaReferenceCoverage.Report("Open XML",
+            Function(path, options) New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options),
+            Function(workbook, address) workbook.LookupCellValueAsObject(address, FormulaCalculationMode.CalculateIfMissing))
+        Assert.That(result.Matched, [Is].EqualTo(result.Total))
+    End Sub
+
     <Test>
     Public Sub RetainsTheExcelRegexLookupResultUntilRecalculationIsRequested()
         Dim fixture = FixturePath("FormulaReferenceLookupVariants.xlsx")

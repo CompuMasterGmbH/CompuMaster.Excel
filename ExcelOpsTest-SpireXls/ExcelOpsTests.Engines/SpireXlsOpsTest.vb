@@ -56,6 +56,12 @@ Namespace ExcelOpsTests.Engines
             Return New ExcelOps.SpireXlsDataOperations(data, options)
         End Function
 
+        ''' <inheritdoc/>
+        Protected Overrides Function ReadFormulaReferenceResult(workbook As ExcelDataOperationsBase, address As ExcelCell) As Object
+            Return DirectCast(workbook, SpireXlsDataOperations).Workbook.Worksheets(address.SheetName).
+                Range(address.RowIndex + 1, address.ColumnIndex + 1).FormulaValue
+        End Function
+
         Protected Overrides Function _CreateInstance(data As IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.SpireXlsDataOperations
             Return New ExcelOps.SpireXlsDataOperations(data, options)
         End Function

@@ -152,6 +152,29 @@ Namespace ExcelOpsTests.Engines
             MsExcelInstance.SetCultureContext(System.Threading.Thread.CurrentThread.CurrentCulture)
         End Sub
 
+        ''' <inheritdoc/>
+        Protected Overrides Function ReadFormulaReferenceResult(workbook As ExcelDataOperationsBase, address As ExcelCell) As Object
+            ' Read native values after worksheet calculation, including empty text and typed Excel errors.
+            Dim native = DirectCast(workbook, MsExcelDataOperations).Workbook
+            Dim sheet = DirectCast(native.Worksheets.Item(address.SheetName), Microsoft.Office.Interop.Excel.Worksheet)
+            Dim cell = sheet.Range(address.Address)
+            Try
+                Dim value As Object = cell.Value2
+                If value Is Nothing OrElse (TypeOf value Is String AndAlso DirectCast(value, String).Length = 0) Then
+                    ' Excel may leave an unloaded dynamic array anchor clean after the worksheet pass.
+                    cell.Dirty()
+                    cell.Calculate()
+                    value = cell.Value2
+                End If
+                If Not TypeOf value Is Integer Then Return value
+                If (DirectCast(value, Integer) And &HFFFF) = 2050 Then Return "#CALC!"
+                Return workbook.LookupCellErrorValue(address.SheetName, address.RowIndex, address.ColumnIndex)
+            Finally
+                Runtime.InteropServices.Marshal.ReleaseComObject(cell)
+                Runtime.InteropServices.Marshal.ReleaseComObject(sheet)
+            End Try
+        End Function
+
         Protected Overrides Function _CreateInstance(data() As Byte, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.MsExcelDataOperations
             Throw New NotSupportedException
         End Function
