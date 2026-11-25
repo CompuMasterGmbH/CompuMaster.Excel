@@ -80,7 +80,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub ValidateLoadOptions(options As ExcelDataOperationsOptions)
-            If Not options.DisableCalculationEngine.Value OrElse Not options.DisableInitialCalculation.Value Then
+            If options.DisableCalculationEngine.Value AndAlso Not options.DisableInitialCalculation.Value Then
                 Throw CalculationFeatureDisabled()
             End If
             If Not String.IsNullOrEmpty(options.PasswordForOpening) Then
@@ -315,32 +315,9 @@ Namespace ExcelOps
             End If
         End Sub
 
-        Private Const CalculationUnavailableMessage As String =
-            "The Open XML SDK engine cannot evaluate formulas. Use RequestRecalculationOnOpen to have Excel recalculate the saved workbook."
-
         Private Shared Function CalculationFeatureDisabled() As FeatureDisabledException
-            Return New FeatureDisabledException("Calculation engine", CalculationUnavailableMessage)
+            Return New FeatureDisabledException("Calculation engine", "Initial formula evaluation requires the Open XML calculation module to be enabled.")
         End Function
-
-        ''' <inheritdoc/>
-        Protected Overrides Sub CalculateMissingFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer)
-            Throw New NotSupportedException(CalculationUnavailableMessage)
-        End Sub
-
-        ''' <inheritdoc/>
-        Protected Overrides Sub RecalculateAllInternal()
-            Throw CalculationFeatureDisabled()
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RecalculateSheet(sheetName As String)
-            Throw CalculationFeatureDisabled()
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub RecalculateCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, throwExceptionOnCalculationError As Boolean)
-            Throw CalculationFeatureDisabled()
-        End Sub
 
         ''' <inheritdoc/>
         Public Overrides ReadOnly Property HasVbaProject As Boolean
