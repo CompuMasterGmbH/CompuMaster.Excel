@@ -110,6 +110,8 @@ Namespace ExcelOps
                         Return EvaluateIntegerMath(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "TEXTBEFORE", "_XLFN.TEXTBEFORE", "TEXTAFTER", "_XLFN.TEXTAFTER", "TEXTSPLIT", "_XLFN.TEXTSPLIT"
+                        Return EvaluateTextDelimiterFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "CONCAT", "_XLFN.CONCAT", "TEXTJOIN", "_XLFN.TEXTJOIN"
                         Return EvaluateTextJoin(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "REGEXTEST", "_XLFN.REGEXTEST", "REGEXEXTRACT", "_XLFN.REGEXEXTRACT", "REGEXREPLACE", "_XLFN.REGEXREPLACE"

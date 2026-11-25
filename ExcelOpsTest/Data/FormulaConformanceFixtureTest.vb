@@ -45,6 +45,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceInteger1900.xlsx", "Integer arrays", 49)>
     <TestCase("FormulaReferenceCounting1900.xlsx", "Counting functions", 687)>
     <TestCase("FormulaReferenceCounting1900.xlsx", "Counting arrays", 13)>
+    <TestCase("FormulaReferenceDelimiters1900.xlsx", "Delimiters functions", 211)>
+    <TestCase("FormulaReferenceDelimiters1900.xlsx", "Delimiters arrays", 66)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -142,7 +144,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceMath1900.xlsx", "Math arrays", 144)>
     <TestCase("FormulaReferenceInteger1900.xlsx", "Integer arrays", 121)>
     <TestCase("FormulaReferenceCounting1900.xlsx", "Counting arrays", 56)>
-    Public Sub RecalculatesTheSpilledExcelMathResults(fileName As String, sheetName As String, expectedChildren As Integer)
+    <TestCase("FormulaReferenceDelimiters1900.xlsx", "Delimiters arrays", 125)>
+    Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
             Dim workbook = package.WorkbookPart
