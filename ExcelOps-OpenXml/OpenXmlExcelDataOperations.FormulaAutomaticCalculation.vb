@@ -118,9 +118,22 @@ Namespace ExcelOps
                 Dim automatic = New HashSet(Of OpenXmlExcelDataOperations)(available.Where(Function(workbook) workbook.UsesAutomaticValueCalculation()))
                 If automatic.Count = 0 Then Return
 
+                ' A resized spill can populate a cell that was blank when dependencies were recorded.
+                Dim hasSpills = automatic.Select(Function(workbook) ForWorkbook(workbook)).
+                    SelectMany(Function(calculator) calculator._worksheets.Values).
+                    Any(Function(sheet) sheet.SpillAnchors.Count > 0)
+                If hasSpills Then
+                    For Each workbook In automatic
+                        Dim calculator = ForWorkbook(workbook)
+                        For Each sheet In calculator._worksheets.Values
+                            calculator.RecalculateSpillAnchors(sheet)
+                        Next
+                    Next
+                End If
+
                 Dim revision = If(_run.Session?.Revision, 0L)
                 For Each workbook In automatic
-                    If Not workbook._completeDependencyRevision.HasValue OrElse workbook._completeDependencyRevision.Value <> revision Then
+                    If hasSpills OrElse Not workbook._completeDependencyRevision.HasValue OrElse workbook._completeDependencyRevision.Value <> revision Then
                         ForWorkbook(workbook).RecalculateWorkbook()
                     End If
                 Next

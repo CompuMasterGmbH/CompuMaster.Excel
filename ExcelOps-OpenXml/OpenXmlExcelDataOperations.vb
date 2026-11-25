@@ -447,21 +447,21 @@ Namespace ExcelOps
                     source.Workbook.Save(output)
                 End Using
             End If
-            Dim calcErrorMetadataIndex As UInteger?
+            Dim richErrorMetadataIndices As New Dictionary(Of String, UInteger)(StringComparer.Ordinal)
             For Each sourceSheet In _changedSheets
                 Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
                 Using output = targetSheet.GetStream(FileMode.Create, FileAccess.Write)
                     sourceSheet.Worksheet.Save(output)
                 End Using
-                If Not clearCache AndAlso GetSheetData(sourceSheet).Descendants(Of Cell)().Any(AddressOf IsUnencodedCalcError) Then
-                    SaveRichFormulaErrors(target, targetSheet, calcErrorMetadataIndex)
+                If Not clearCache AndAlso GetSheetData(sourceSheet).Descendants(Of Cell)().Any(AddressOf IsUnencodedRichError) Then
+                    SaveRichFormulaErrors(target, targetSheet, richErrorMetadataIndices)
                 End If
             Next
             SaveChangedTables(source, target)
             SaveChangedCharts(source, target)
             If clearCache Then
                 For Each sheetPart In target.WorksheetParts
-                    If ClearFormulaResults(GetSheetData(sheetPart)) Then sheetPart.Worksheet.Save()
+                    If ClearFormulaResults(target, sheetPart) Then sheetPart.Worksheet.Save()
                 Next
             End If
             If (_calculationChainInvalid OrElse clearCache) AndAlso target.CalculationChainPart IsNot Nothing Then

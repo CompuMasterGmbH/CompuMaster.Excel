@@ -128,7 +128,11 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Function HasMissingCachedFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
-            Return IsMissingFormulaResult(GetCell(sheetName, rowIndex, columnIndex))
+            Dim cell = GetCell(sheetName, rowIndex, columnIndex)
+            If cell?.CellFormula IsNot Nothing Then Return IsMissingFormulaResult(cell)
+            If cell?.CellValue IsNot Nothing OrElse cell?.InlineString IsNot Nothing OrElse WorkbookPart.CellMetadataPart Is Nothing Then Return False
+            Dim cells = GetSheetData(GetWorksheetPart(sheetName)).Descendants(Of Cell)().Where(AddressOf IsMissingFormulaResult)
+            Return ReadDynamicSpills(WorkbookPart, cells).Any(Function(spill) spill.Contains(rowIndex, columnIndex))
         End Function
 
         Private Shared Function IsMissingFormulaResult(cell As Cell) As Boolean

@@ -77,6 +77,8 @@ Namespace ExcelOps
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
                         Dim reference = TryCast(EvaluateExpression(arguments(0), formulaCell), FormulaArea)
                         Return reference IsNot Nothing AndAlso ResolveReference(reference)._worksheets.ContainsKey(reference.Sheet)
+                    Case "_XLFN.ANCHORARRAY"
+                        Return EvaluateSpillReference(arguments, formulaCell)
                     Case "ROW", "COLUMN", "ROWS", "COLUMNS"
                         Return EvaluateReferenceFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "DATE", "TIME", "YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND", "TODAY", "NOW"

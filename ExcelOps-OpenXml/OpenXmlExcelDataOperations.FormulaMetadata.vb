@@ -16,19 +16,16 @@ Namespace ExcelOps
         Private Const DynamicArrayNamespace As String = "http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray"
         Private Const RichDataNamespace As String = "http://schemas.microsoft.com/office/spreadsheetml/2017/richdata"
 
-        Private Function IsSingleCellDynamicFormula(cell As Cell) As Boolean
+        Private Shared Function IsDynamicFormulaAnchor(workbook As WorkbookPart, cell As Cell) As Boolean
             If cell?.CellFormula?.FormulaType Is Nothing OrElse cell.CellFormula.FormulaType.Value <> CellFormulaValues.Array OrElse
-                cell.CellMetaIndex Is Nothing OrElse cell.CellReference Is Nothing Then Return False
-            Dim reference = cell.CellFormula.Reference?.Value
-            Dim address = cell.CellReference.Value
-            If Not String.Equals(reference, address, StringComparison.OrdinalIgnoreCase) AndAlso
-                Not String.Equals(reference, address & ":" & address, StringComparison.OrdinalIgnoreCase) Then Return False
+               cell.CellMetaIndex Is Nothing OrElse cell.CellReference Is Nothing OrElse cell.CellFormula.Reference Is Nothing Then Return False
 
-            Dim metadata = WorkbookPart.CellMetadataPart?.Metadata
+            Dim metadata = workbook.CellMetadataPart?.Metadata
             Dim blocks = metadata?.GetFirstChild(Of CellMetadata)()
             Dim block = FindFutureMetadataBlock(metadata, blocks, cell.CellMetaIndex.Value, DynamicArrayMetadataName)
             Dim isDynamic = MetadataExtensionAttribute(block, DynamicArrayNamespace, "dynamicArrayProperties", "fDynamic")
-            Return isDynamic = "1" OrElse isDynamic = "true"
+            Dim collapsed = MetadataExtensionAttribute(block, DynamicArrayNamespace, "dynamicArrayProperties", "fCollapsed")
+            Return (isDynamic = "1" OrElse isDynamic = "true") AndAlso (collapsed Is Nothing OrElse collapsed = "0" OrElse collapsed = "false")
         End Function
 
         Private Function ReadStoredFormulaError(cell As Cell) As String
@@ -49,7 +46,12 @@ Namespace ExcelOps
 
             Dim keys = errorStructure.Elements(Of Rich.Key)().ToList()
             Dim index = keys.FindIndex(Function(key) key.N?.Value = "errorType")
-            If index >= 0 AndAlso value.Elements(Of Rich.Value)().ElementAtOrDefault(index)?.Text = "13" Then Return CalcErrorCode
+            If index >= 0 Then
+                Select Case value.Elements(Of Rich.Value)().ElementAtOrDefault(index)?.Text
+                    Case "8" : Return SpillErrorCode
+                    Case "13" : Return CalcErrorCode
+                End Select
+            End If
             Return fallback
         End Function
 
@@ -78,7 +80,7 @@ Namespace ExcelOps
                 Elements(Of FutureMetadataBlock)().ElementAtOrDefault(CInt(record.Val.Value))
         End Function
 
-        Private Shared Function AddCalcErrorValueMetadata(workbook As WorkbookPart) As UInteger
+        Private Shared Function AddRichErrorValueMetadata(workbook As WorkbookPart, code As String) As UInteger
             Dim metadataPart = If(workbook.CellMetadataPart, workbook.AddNewPart(Of CellMetadataPart)())
             Dim metadata = metadataPart.Metadata
             If metadata Is Nothing Then
@@ -139,8 +141,10 @@ Namespace ExcelOps
                 valuesPart.RichValueData = values
             End If
             Dim valueIndex = CUInt(values.Elements(Of Rich.RichValue)().Count())
-            ' Excel uses error type 13 and subtype 3 for an empty-array calculation error.
-            values.AppendChild(New Rich.RichValue(New Rich.Value("13"), New Rich.Value("3")) With {.S = CUInt(structureIndex)})
+            ' Excel uses type 8 for spill errors and type 13 for calculation errors.
+            Dim errorType = If(code = SpillErrorCode, "8", "13")
+            Dim subType = If(code = SpillErrorCode, "0", "3")
+            values.AppendChild(New Rich.RichValue(New Rich.Value(errorType), New Rich.Value(subType)) With {.S = CUInt(structureIndex)})
             values.Count = valueIndex + 1UI
             values.Save()
 
@@ -215,18 +219,23 @@ Namespace ExcelOps
             workbook.Save()
         End Sub
 
-        Private Shared Function IsUnencodedCalcError(cell As Cell) As Boolean
-            Return cell.CellFormula IsNot Nothing AndAlso If(cell.DataType?.Value, CellValues.Number) = CellValues.Error AndAlso
-                cell.ValueMetaIndex Is Nothing AndAlso cell.CellValue?.Text = CalcErrorCode
+        Private Shared Function IsUnencodedRichError(cell As Cell) As Boolean
+            Return If(cell.DataType?.Value, CellValues.Number) = CellValues.Error AndAlso cell.ValueMetaIndex Is Nothing AndAlso
+                (cell.CellValue?.Text = CalcErrorCode OrElse cell.CellValue?.Text = SpillErrorCode)
         End Function
 
-        Private Shared Sub SaveRichFormulaErrors(workbook As WorkbookPart, worksheet As WorksheetPart, ByRef calcErrorMetadataIndex As UInteger?)
-            Dim calcErrors = GetSheetData(worksheet).Descendants(Of Cell)().Where(AddressOf IsUnencodedCalcError).ToList()
-            If calcErrors.Count = 0 Then Return
-            If Not calcErrorMetadataIndex.HasValue Then calcErrorMetadataIndex = AddCalcErrorValueMetadata(workbook)
-            For Each cell In calcErrors
+        Private Shared Sub SaveRichFormulaErrors(workbook As WorkbookPart, worksheet As WorksheetPart, indices As Dictionary(Of String, UInteger))
+            Dim errors = GetSheetData(worksheet).Descendants(Of Cell)().Where(AddressOf IsUnencodedRichError).ToList()
+            If errors.Count = 0 Then Return
+            For Each cell In errors
+                Dim code = cell.CellValue.Text
+                Dim index As UInteger
+                If Not indices.TryGetValue(code, index) Then
+                    index = AddRichErrorValueMetadata(workbook, code)
+                    indices.Add(code, index)
+                End If
                 cell.CellValue.Text = "#VALUE!"
-                cell.ValueMetaIndex = calcErrorMetadataIndex.Value
+                cell.ValueMetaIndex = index
             Next
             worksheet.Worksheet.Save()
         End Sub

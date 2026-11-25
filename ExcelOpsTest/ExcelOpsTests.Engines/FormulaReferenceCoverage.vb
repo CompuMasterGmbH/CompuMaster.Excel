@@ -62,7 +62,22 @@ Namespace ExcelOpsTests.Engines
                     Dim name = sheet.Name.Value
                     If name = "External cases" OrElse name = "Regex" Then Continue For
                     Dim worksheet = DirectCast(part.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
-                    For Each cell In worksheet.Descendants(Of Cell)().Where(Function(item) item.CellFormula IsNot Nothing)
+                    Dim cells = worksheet.Descendants(Of Cell)().ToArray()
+                    Dim spillRanges = cells.Where(Function(cell) cell.CellMetaIndex IsNot Nothing AndAlso
+                        If(cell.CellFormula?.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Array AndAlso cell.CellFormula.Reference IsNot Nothing).
+                        Select(Function(cell) New ExcelRange(name, cell.CellFormula.Reference.Value)).ToArray()
+                    For Each cell In cells
+                        If cell.CellFormula Is Nothing Then
+                            If spillRanges.Length = 0 Then Continue For
+                            Dim position As New ExcelCell(name, cell.CellReference.Value, ExcelCell.ValueTypes.All)
+                            If Not spillRanges.Any(Function(range) position.RowIndex >= range.AddressStart.RowIndex AndAlso
+                                position.RowIndex <= range.AddressEnd.RowIndex AndAlso position.ColumnIndex >= range.AddressStart.ColumnIndex AndAlso
+                                position.ColumnIndex <= range.AddressEnd.ColumnIndex) Then Continue For
+                            cell.CellValue = Nothing
+                            cell.DataType = Nothing
+                            cell.ValueMetaIndex = Nothing
+                            Continue For
+                        End If
                         Dim address As New ExcelCell(name, cell.CellReference.Value, ExcelCell.ValueTypes.All)
                         Assert.That(cell.CellValue, [Is].Not.Null, address.Address(True))
                         Dim value = reference.LookupCellValueAsObject(address, FormulaCalculationMode.UseCachedValueOnly)
@@ -77,6 +92,7 @@ Namespace ExcelOpsTests.Engines
             Dim matched As Integer
             Dim workbook = openWorkbook(working)
             Try
+                If TypeOf workbook Is MsExcelDataOperations Then workbook.RecalculateAll()
                 For Each sheet In cases.GroupBy(Function(item) item.Address.SheetName)
                     Try
                         workbook.RecalculateSheet(sheet.Key)

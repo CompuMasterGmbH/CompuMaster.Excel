@@ -104,11 +104,14 @@ Namespace ExcelOps
                 run.Workbooks.Add(owner, Me)
                 For Each sheet In owner.WorkbookSheets()
                     Dim part = TryCast(owner.WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
-                    If part IsNot Nothing Then _worksheets.Add(sheet.Name.Value, New WorksheetSnapshot(sheet.Name.Value, part))
+                    If part IsNot Nothing Then _worksheets.Add(sheet.Name.Value, New WorksheetSnapshot(owner.WorkbookPart, sheet.Name.Value, part))
                 Next
             End Sub
 
             Friend Sub RecalculateWorkbook()
+                For Each worksheet In _worksheets.Values
+                    RecalculateSpillAnchors(worksheet)
+                Next
                 For Each worksheet In _worksheets.Keys
                     RecalculateSheet(worksheet)
                 Next
@@ -118,6 +121,7 @@ Namespace ExcelOps
             Friend Sub RecalculateSheet(sheetName As String)
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not _worksheets.TryGetValue(sheetName, worksheet) Then Throw New ArgumentException("The selected sheet is not a worksheet.", NameOf(sheetName))
+                RecalculateSpillAnchors(worksheet)
                 For Each item In worksheet.Cells
                     If item.Value.CellFormula IsNot Nothing Then ReadCell(worksheet.Name, item.Key.RowIndex, item.Key.ColumnIndex)
                 Next
@@ -140,8 +144,13 @@ Namespace ExcelOps
                 If trackRead Then RecordPrecedent(New FormulaPrecedent(location, rowIndex, columnIndex))
                 Dim cell As Cell = Nothing
                 worksheet.Cells.TryGetValue((rowIndex, columnIndex), cell)
-                If _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) AndAlso
-                    Not _owner.IsSingleCellDynamicFormula(cell) Then
+                If cell?.CellFormula Is Nothing Then
+                    Dim spillValue As Object = Nothing
+                    If ReadSpillCell(worksheet, rowIndex, columnIndex, spillValue) Then Return spillValue
+                End If
+                Dim spill As SpillArea = Nothing
+                If Not worksheet.SpillAnchors.TryGetValue((rowIndex, columnIndex), spill) AndAlso
+                   _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, cell?.CellFormula?.Text, "Grouped, array and data-table formulas are outside the supported calculation scope.")
                 End If
                 If cell?.CellFormula Is Nothing Then
@@ -168,7 +177,8 @@ Namespace ExcelOps
                 If _run.TrackDependencies Then _run.Frames.Push(New FormulaDependencies(location))
                 Try
                     Dim expression = FormulaParser.Parse(formula)
-                    Dim result = If(Scalar(EvaluateExpression(expression, address)), 0.0)
+                    Dim value = EvaluateExpression(expression, address)
+                    Dim result = If(spill Is Nothing, If(Scalar(value), 0.0), StageSpill(worksheet, spill, value))
                     _results.Add(cell, (worksheet.Part, location, result))
                     If _run.TrackDependencies Then _run.Dependencies(location) = _run.Frames.Peek()
                     Return result
@@ -196,6 +206,7 @@ Namespace ExcelOps
                 CompleteIterations()
                 For Each evaluatedWorkbook In _run.Workbooks.Values
                     If _run.CopyWorkbook IsNot Nothing AndAlso evaluatedWorkbook._owner IsNot _run.CopyWorkbook Then Continue For
+                    evaluatedWorkbook.CommitSpillResults()
                     For Each item In evaluatedWorkbook._results
                         WriteCachedResult(item.Key, item.Value.Result)
                         evaluatedWorkbook._owner._changedSheets.Add(item.Value.Part)
@@ -251,7 +262,16 @@ Namespace ExcelOps
                     Yield New FormulaError("#REF!")
                     Return
                 End If
-                For Each address In worksheet.Cells.Keys
+                For Each spill In worksheet.SpillAnchors.Values
+                    If spill.First.Row <= area.LastRow AndAlso spill.Last.Row >= area.FirstRow AndAlso
+                       spill.First.Column <= area.LastColumn AndAlso spill.Last.Column >= area.FirstColumn AndAlso
+                       Not source._run.Active.Contains(worksheet.Cells((spill.First.Row, spill.First.Column))) Then
+                        source.ReadCell(worksheet.Name, spill.First.Row, spill.First.Column, trackRead:=False)
+                    End If
+                Next
+                Dim addresses = worksheet.Cells.Keys.AsEnumerable()
+                If worksheet.SpillChildren.Count > 0 Then addresses = addresses.Concat(worksheet.SpillChildren.Keys).Distinct().ToArray()
+                For Each address In addresses
                     If address.RowIndex >= area.FirstRow AndAlso address.RowIndex <= area.LastRow AndAlso
                         address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn Then
                         Yield source.ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex, trackRead:=False)
@@ -299,14 +319,25 @@ Namespace ExcelOps
                 Private ReadOnly _cells As Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))
                 Friend ReadOnly Name As String
                 Friend ReadOnly Part As WorksheetPart
+                Private ReadOnly _spillAnchors As Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))
+                Friend ReadOnly SpillResults As New Dictionary(Of SpillArea, FormulaMatrix)
+                Friend ReadOnly SpillChildren As New Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
 
-                Friend Sub New(name As String, part As WorksheetPart)
+                Friend Sub New(workbook As WorkbookPart, name As String, part As WorksheetPart)
                     Me.Name = name
                     Me.Part = part
                     _cells = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))(
                         Function() EnumerateWorksheetCells(GetSheetData(part)).ToDictionary(
                             Function(item) (item.RowIndex, item.ColumnIndex), Function(item) item.Value))
+                    _spillAnchors = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))(
+                        Function() ReadDynamicSpills(workbook, Cells.Values).ToDictionary(Function(item) (item.First.Row, item.First.Column)))
                 End Sub
+
+                Friend ReadOnly Property SpillAnchors As Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
+                    Get
+                        Return _spillAnchors.Value
+                    End Get
+                End Property
 
                 Friend ReadOnly Property Cells As Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell)
                     Get

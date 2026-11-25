@@ -167,7 +167,10 @@ Namespace ExcelOpsTests.Engines
                     value = cell.Value2
                 End If
                 If Not TypeOf value Is Integer Then Return value
-                If (DirectCast(value, Integer) And &HFFFF) = 2050 Then Return "#CALC!"
+                Select Case DirectCast(value, Integer) And &HFFFF
+                    Case 2045 : Return "#SPILL!"
+                    Case 2050 : Return "#CALC!"
+                End Select
                 Return workbook.LookupCellErrorValue(address.SheetName, address.RowIndex, address.ColumnIndex)
             Finally
                 Runtime.InteropServices.Marshal.ReleaseComObject(cell)
