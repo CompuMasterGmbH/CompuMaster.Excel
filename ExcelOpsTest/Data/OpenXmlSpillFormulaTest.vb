@@ -25,6 +25,24 @@ Public Class OpenXmlSpillFormulaTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub WritesPivotFormulasAndReportsUnsupportedMultiValueColumnSubtotals()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Const source As String = "PIVOTBY({""a"";""b"";""a""},{""x"";""y"";""x""},{2;3;4},SUM,0,0,,0)"
+            workbook.WriteDynamicArrayFormula("Sheet1", 0, 0, source, immediatelyCalculateCellValue:=True)
+            Dim stored = workbook.LookupCellFormula("Sheet1", 0, 0)
+            Assert.That(stored, Does.StartWith("_xlfn.PIVOTBY("))
+            Assert.That(stored, Does.Contain("_xleta.SUM"))
+            Assert.That(Value(workbook, "Sheet1", "A2"), [Is].EqualTo("a"))
+            Assert.That(Number(workbook, "Sheet1", "B2"), [Is].EqualTo(6.0))
+            Assert.That(Number(workbook, "Sheet1", "C3"), [Is].EqualTo(3.0))
+            Const subtotals As String = "PIVOTBY({""a"";""b"";""a""},{""x"",1;""y"",2;""x"",2},{2,8;3,9;4,7},SUM,0,0,,2)"
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.WriteDynamicArrayFormula("Sheet1", 0, 5, subtotals, immediatelyCalculateCellValue:=True))
+        End Using
+    End Sub
+
     <TestCase(False)>
     <TestCase(True)>
     Public Sub ExpandsAndShrinksAnExcelSpillWithDependentFormulas(automatic As Boolean)

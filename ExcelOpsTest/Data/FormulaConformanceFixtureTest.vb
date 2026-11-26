@@ -142,6 +142,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 3031)>
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy probes", 54)>
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 51)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 75)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 38)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
@@ -314,6 +316,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 6)>
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy probes", 396)>
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 873)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 1982)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 4732)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>
@@ -339,16 +343,18 @@ Public Class FormulaConformanceFixtureTest
         Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
             calculated.ResetCellValueFromFormulaCell(sheetName)
             calculated.RecalculateSheet(sheetName)
-            For Each address In addresses
-                Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
-                Dim actual = calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
-                Dim reference = expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
-                If TypeOf actual Is Double AndAlso TypeOf reference Is Double Then
-                    Assert.That(actual, [Is].EqualTo(reference).Within(ExcelOpsTests.Engines.FormulaReferenceCoverage.ReferenceNumberTolerance(DirectCast(reference, Double), fileName, sheetName)), address)
-                Else
-                    Assert.That(actual, [Is].EqualTo(reference), address)
-                End If
-            Next
+            Using assertions = Assert.EnterMultipleScope()
+                For Each address In addresses
+                    Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
+                    Dim actual = calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
+                    Dim reference = expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
+                    If TypeOf actual Is Double AndAlso TypeOf reference Is Double Then
+                        Assert.That(actual, [Is].EqualTo(reference).Within(ExcelOpsTests.Engines.FormulaReferenceCoverage.ReferenceNumberTolerance(DirectCast(reference, Double), fileName, sheetName)), address)
+                    Else
+                        Assert.That(actual, [Is].EqualTo(reference), address)
+                    End If
+                Next
+            End Using
         End Using
     End Sub
 

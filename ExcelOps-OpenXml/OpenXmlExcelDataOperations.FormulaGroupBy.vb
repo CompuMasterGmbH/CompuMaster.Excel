@@ -93,8 +93,8 @@ Namespace ExcelOps
                 End If
                 Dim levels = If(relationship.Value = 1, 1, fields.Columns)
                 Dim totalLabel = If(Math.Abs(depth.Value) <= 1, If(german, "Gesamt", "Total"), If(german, "Gesamtergebnis", "Grand Total"))
-                EmitWorksheetGroup(root, fields, New Object(fields.Columns - 1) {}, 0, levels, depth.Value,
-                                   totalLabel, vertical, labels, rowsOut)
+                ForEachGroupingAxisMember(root, root, fields, New Object(fields.Columns - 1) {}, 0, levels, depth.Value,
+                    Sub(node, parent, prefix, level) AddGroupedRow(node, prefix, level, totalLabel, vertical, labels, rowsOut))
                 Dim columns = fields.Columns + If(vertical, 2, outputValues)
                 Dim flattened = AllocateMatrixValues(rowsOut.Count, columns)
                 For row = 0 To rowsOut.Count - 1
@@ -157,15 +157,16 @@ Namespace ExcelOps
             End Function
 
             Private Sub BuildGroupHierarchy(parent As WorksheetGroup, fields As FormulaMatrix, column As Integer, keys As UniqueSliceComparer,
-                                            comparer As StringComparer, sort As Integer(), aggregate As Func(Of Integer(), Object()))
+                                            comparer As StringComparer, sort As Integer(), aggregate As Func(Of Integer(), Object()),
+                                            Optional valueSortFromLevel As Integer = 0)
                 If column >= fields.Columns Then Return
                 If Not HasFormulaStackSpace() Then Throw New NotSupportedException("The GROUPBY hierarchy exceeds the supported evaluation depth.")
                 Dim groups = parent.Rows.GroupBy(Function(index) {GroupingEqualityKey(fields.At(index, column))}, keys)
                 parent.Children.AddRange(groups.Select(Function(group) New WorksheetGroup(group.ToArray(), aggregate)))
                 For Each child In parent.Children
-                    BuildGroupHierarchy(child, fields, column + 1, keys, comparer, sort, aggregate)
+                    BuildGroupHierarchy(child, fields, column + 1, keys, comparer, sort, aggregate, valueSortFromLevel)
                 Next
-                Dim valueSort = sort.Length = 1 AndAlso Math.Abs(sort(0)) > fields.Columns
+                Dim valueSort = column >= valueSortFromLevel AndAlso sort.Length = 1 AndAlso Math.Abs(sort(0)) > fields.Columns
                 Dim fieldSort = sort.FirstOrDefault(Function(key) Math.Abs(key) = column + 1)
                 Dim keyOrder = If(valueSort, sort(0), If(fieldSort = 0, column + 1, fieldSort))
                 If valueSort Then
@@ -204,14 +205,17 @@ Namespace ExcelOps
                     Dim column = If(values.Columns = 1, 0, index)
                     Dim lambda = functions(If(functions.Length = 1, 0, index))
                     Dim subset = GroupValueArray(values, rows, column)
-                    Dim requiresTotal = If(lambda.NativeFunction Is Nothing, lambda.Parameters.Count = 2,
-                                           lambda.NativeFunction.Equals("PERCENTOF", StringComparison.OrdinalIgnoreCase))
-                    Dim args = If(requiresTotal, {CObj(subset), all(column)}, {CObj(subset)})
+                    Dim args = If(GroupLambdaNeedsTotal(lambda), {CObj(subset), all(column)}, {CObj(subset)})
                     Dim value = CallFormulaLambda(lambda, args, formulaCell)
                     result(index) = If(IsMultiValue(value) OrElse TypeOf value Is FormulaLambda,
                         CObj(New FormulaError("#VALUE!")), If(Scalar(value), 0.0))
                 Next
                 Return result
+            End Function
+
+            Private Shared Function GroupLambdaNeedsTotal(lambda As FormulaLambda) As Boolean
+                Return If(lambda.NativeFunction Is Nothing, lambda.Parameters.Count = 2,
+                    lambda.NativeFunction.Equals("PERCENTOF", StringComparison.OrdinalIgnoreCase))
             End Function
 
             Private Function GroupingLambdaLabel(lambda As FormulaLambda, index As Integer) As String
@@ -224,29 +228,32 @@ Namespace ExcelOps
                     (index + 1).ToString(CultureInfo.InvariantCulture)
             End Function
 
-            Private Sub EmitWorksheetGroup(node As WorksheetGroup, fields As FormulaMatrix, prefix As Object(), level As Integer,
-                                           levels As Integer, depth As Integer, totalLabel As String, vertical As Boolean,
-                                           labels As String(), output As List(Of Object()))
-                Dim emit = level = levels OrElse level < Math.Abs(depth)
-                If emit AndAlso (depth < 0 OrElse level = levels) Then
-                    AddGroupedRow(node, prefix, level, totalLabel, vertical, labels, output)
-                End If
+            Private Sub ForEachGroupingAxisMember(node As WorksheetGroup, parent As WorksheetGroup, fields As FormulaMatrix,
+                                                  prefix As Object(), level As Integer, levels As Integer, depth As Integer,
+                                                  emit As Action(Of WorksheetGroup, WorksheetGroup, Object(), Integer))
+                Dim include = level = levels OrElse level < Math.Abs(depth)
+                If include AndAlso (depth < 0 OrElse level = levels) Then emit(node, parent, prefix, level)
                 For Each child In node.Children
                     Dim keys = DirectCast(prefix.Clone(), Object())
                     For i = level To If(levels = 1, fields.Columns - 1, level)
                         keys(i) = If(fields.At(child.DisplayRow, i), 0.0)
                     Next
-                    EmitWorksheetGroup(child, fields, keys, level + 1, levels, depth, totalLabel, vertical, labels, output)
+                    ForEachGroupingAxisMember(child, node, fields, keys, level + 1, levels, depth, emit)
                 Next
-                If emit AndAlso depth > 0 AndAlso level < levels Then
-                    AddGroupedRow(node, prefix, level, totalLabel, vertical, labels, output)
-                End If
+                If include AndAlso depth > 0 AndAlso level < levels Then emit(node, parent, prefix, level)
             End Sub
+
+            Private Shared Function GroupingLabels(prefix As Object(), level As Integer, totalLabel As String) As Object()
+                Dim fields = prefix.Select(Function(item) If(item, String.Empty)).ToArray()
+                If level = 0 Then fields(0) = totalLabel
+                Return fields
+            End Function
+
+
 
             Private Shared Sub AddGroupedRow(node As WorksheetGroup, prefix As Object(), level As Integer, totalLabel As String, vertical As Boolean,
                                              labels As String(), output As List(Of Object()))
-                Dim fields = prefix.Select(Function(item) If(item, String.Empty)).ToArray()
-                If level = 0 Then fields(0) = totalLabel
+                Dim fields = GroupingLabels(prefix, level, totalLabel)
                 If vertical Then
                     For i = 0 To labels.Length - 1
                         output.Add(fields.Concat({CObj(labels(i)), node.Results.Value(i)}).ToArray())

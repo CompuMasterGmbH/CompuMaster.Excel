@@ -67,6 +67,10 @@ directory, and open workbooks. Its environment-dependent results vary from deskt
 Excel returns inconsistent values for `AMORDEGRC` periods strictly between zero and one. Open XML reports that
 case as unsupported.
 
+`GROUPBY` and `PIVOTBY` summarize worksheet arrays with hierarchical grouping, sorting, filtering, totals, and
+aggregation using built-in functions or LAMBDAs. `PIVOTBY` reports column subtotals with several data columns
+and a single aggregation as unsupported.
+
 Open XML evaluates shared worksheet formulas using the anchor's relative and absolute references. Saving results retains the original shared formula groups. Existing limits for legacy array and data-table formulas continue to apply.
 
 Worksheet formulas can refer to whole rows or columns. Criteria aggregates inspect stored cells and account for missing cells without allocating the entire referenced range. Other array operations remain subject to their materialization limit.

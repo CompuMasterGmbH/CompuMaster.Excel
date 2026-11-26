@@ -368,8 +368,12 @@ Namespace ExcelOps
 
             Private Function ParseFunction(name As String) As FormulaExpression
                 Dim nameIndex = _position - 2
-                Dim isGrouping = name.Equals("GROUPBY", StringComparison.OrdinalIgnoreCase) OrElse name.Equals("_xlfn.GROUPBY", StringComparison.OrdinalIgnoreCase)
-                Dim arguments = ParseArguments(allowNativeCallback:=IsLambdaArrayFunctionName(name), groupingPosition:=If(isGrouping, 2, -1))
+                Dim groupingPosition = -1
+                Select Case name.ToUpperInvariant()
+                    Case "GROUPBY", "_XLFN.GROUPBY" : groupingPosition = 2
+                    Case "PIVOTBY", "_XLFN.PIVOTBY" : groupingPosition = 3
+                End Select
+                Dim arguments = ParseArguments(allowNativeCallback:=IsLambdaArrayFunctionName(name), groupingPosition:=groupingPosition)
                 Dim binding As Object = Nothing
                 If _localNames IsNot Nothing AndAlso _localNames.TryGetValue(LocalName(name), binding) AndAlso
                     _storagePrefixes IsNot Nothing AndAlso Not CatalogFunctionNames.Value.Contains(name) Then
