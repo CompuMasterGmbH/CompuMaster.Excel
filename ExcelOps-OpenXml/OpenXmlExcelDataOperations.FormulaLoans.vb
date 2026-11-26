@@ -28,14 +28,7 @@
                         Dim failure As FormulaError = Nothing
                         For index = 0 To inputs.Length - 1
                             Dim value = inputs(index).BroadcastAt(row, column)
-                            Dim number As Object
-                            If TypeOf value Is String Then
-                                number = ConvertWorksheetText("VALUE", value)
-                            ElseIf cumulative AndAlso TypeOf value Is Boolean Then
-                                number = New FormulaError("#VALUE!")
-                            Else
-                                number = NumberValue(value)
-                            End If
+                            Dim number = If(cumulative AndAlso TypeOf value Is Boolean, New FormulaError("#VALUE!"), ReadFinancialNumber(value))
                             If TypeOf number Is FormulaError Then
                                 failure = DirectCast(number, FormulaError)
                                 Exit For
