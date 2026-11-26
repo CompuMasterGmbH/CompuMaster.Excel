@@ -124,6 +124,11 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceFormats1900.xlsx", "Links and XML", 87)>
     <TestCase("FormulaReferenceFormats1900.xlsx", "Byte text", 95)>
     <TestCase("FormulaReferenceFormats1900.xlsx", "Random rules", 29)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel values", 228)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel J values", 76)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 38)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 43)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit catalog", 144)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -152,16 +157,19 @@ Public Class FormulaConformanceFixtureTest
 
             Dim actual = ReadFormulaCaches(output, sheetName)
             Assert.That(actual.Keys, [Is].EquivalentTo(expected.Keys), sheetName)
-            For Each item In expected
-                Dim address = sheetName & "!" & item.Key
-                Dim result = actual(item.Key)
-                Assert.That(result.Kind, [Is].EqualTo(item.Value.Kind), address)
-                If result.Kind = CellValues.Number Then
-                    Assert.That(result.Value, [Is].EqualTo(item.Value.Value).Within(1.0E-12), address)
-                Else
-                    Assert.That(result.Value, [Is].EqualTo(item.Value.Value), address)
-                End If
-            Next
+            Using assertions = Assert.EnterMultipleScope()
+                For Each item In expected
+                    Dim address = sheetName & "!" & item.Key
+                    Dim result = actual(item.Key)
+                    Assert.That(result.Kind, [Is].EqualTo(item.Value.Kind), address)
+                    If result.Kind <> item.Value.Kind Then Continue For
+                    If result.Kind = CellValues.Number Then
+                        Assert.That(result.Value, [Is].EqualTo(item.Value.Value).Within(ExcelOpsTests.Engines.FormulaReferenceCoverage.ReferenceNumberTolerance(DirectCast(item.Value.Value, Double), fileName, sheetName)), address)
+                    Else
+                        Assert.That(result.Value, [Is].EqualTo(item.Value.Value), address)
+                    End If
+                Next
+            End Using
             If fileName = ReferenceWorkbook Then
                 Assert.That(ReadFormulaCaches(output, "External cases"), [Is].EqualTo(ReadFormulaCaches(fixture, "External cases")))
             End If
@@ -262,6 +270,10 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceFormats1900.xlsx", "Array display", 52)>
     <TestCase("FormulaReferenceFormats1900.xlsx", "Links and XML", 24)>
     <TestCase("FormulaReferenceFormats1900.xlsx", "Random rules", 10)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel values", 15)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel J values", 5)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 3)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 1)>
     Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
@@ -288,7 +300,7 @@ Public Class FormulaConformanceFixtureTest
                 Dim actual = calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
                 Dim reference = expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
                 If TypeOf actual Is Double AndAlso TypeOf reference Is Double Then
-                    Assert.That(actual, [Is].EqualTo(reference).Within(1.0E-12), address)
+                    Assert.That(actual, [Is].EqualTo(reference).Within(ExcelOpsTests.Engines.FormulaReferenceCoverage.ReferenceNumberTolerance(DirectCast(reference, Double), fileName, sheetName)), address)
                 Else
                     Assert.That(actual, [Is].EqualTo(reference), address)
                 End If
@@ -422,6 +434,22 @@ Public Class FormulaConformanceFixtureTest
     Private Shared Function FixturePath(fileName As String) As String
         Return TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", fileName)
     End Function
+
+    <TestCase("EUROCONVERT(1.2,""DEM"",""EUR"")", 0.61)>
+    <TestCase("EUROCONVERT(1,""FRF"",""EUR"",TRUE,3)", 0.152)>
+    <TestCase("EUROCONVERT(1,""FRF"",""EUR"",FALSE,3)", 0.15)>
+    <TestCase("EUROCONVERT(1,""FRF"",""DEM"",TRUE,3)", 0.29728616)>
+    <TestCase("EUROCONVERT(123.456,""EUR"",""EUR"")", 123.456)>
+    <TestCase("EUROCONVERT(1,""EUR"",""ATS"",TRUE)", 13.7603)>
+    Public Sub CalculatesDocumentedEuroConversions(formula As String, expected As Double)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteCellFormula(sheet, 0, 0, formula, immediatelyCalculateCellValue:=True)
+            Assert.That(workbook.LookupCellValue(Of Double)(sheet, 0, 0, FormulaCalculationMode.UseCachedValueOnly),
+                        [Is].EqualTo(expected).Within(1.0E-12))
+        End Using
+    End Sub
 
     Private Shared Function IsFormulaAnchor(cell As Cell) As Boolean
         Dim formula = cell.CellFormula

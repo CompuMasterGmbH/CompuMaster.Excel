@@ -58,6 +58,8 @@ Rectangular array constants can contain numbers, text, logical values and Excel 
 
 `RAND`, `RANDBETWEEN` and `RANDARRAY` are volatile and generate new draws during recalculation. `TEXT`, `DOLLAR`, `FIXED`, `ARRAYTOTEXT` and `VALUETOTEXT` use the formula culture for display. The legacy byte text functions use the configured Windows code page for East Asian formula cultures. `PHONETIC` reads stored phonetic text from the referenced cell. `HYPERLINK` calculates its displayed value, and Excel can follow the stored formula link when the workbook opens. `FILTERXML` evaluates XPath against the supplied XML text without resolving external entities.
 
+`CONVERT` supports the case-sensitive unit symbols and decimal or binary prefixes defined by Excel. The Bessel functions use the measured Excel approximation for modified Bessel I and K in their usual input range. Ordinary Bessel J and Y use Math.NET Numerics and can differ from Excel at its approximation boundaries. `EUROCONVERT` implements the fixed rates and triangulation rules documented for the Excel Euro Currency Tools add-in. `BAHTTEXT` writes the amount in Thai baht and satang.
+
 ### Automatic calculation after value edits
 
 Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.

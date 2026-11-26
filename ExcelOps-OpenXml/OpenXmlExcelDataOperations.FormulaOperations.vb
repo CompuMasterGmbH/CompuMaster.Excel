@@ -142,6 +142,12 @@ Namespace ExcelOps
                         Return EvaluateWidthFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "LENB", "LEFTB", "RIGHTB", "MIDB", "REPLACEB"
                         Return EvaluateByteFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "BESSELI", "BESSELJ", "BESSELK", "BESSELY", "CONVERT"
+                        Return EvaluateEngineeringFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "BAHTTEXT"
+                        Return EvaluateBahtText(arguments, formulaCell)
+                    Case "EUROCONVERT", "_XLFN.EUROCONVERT"
+                        Return EvaluateEuroConvert(arguments, formulaCell)
                     Case "FREQUENCY"
                         Return EvaluateFrequency(arguments, formulaCell)
                     Case "PROB"
