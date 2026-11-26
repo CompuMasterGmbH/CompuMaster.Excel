@@ -153,7 +153,8 @@ Namespace ExcelOps
             End Function
 
             Private Function BroadcastReferenceArguments(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
-                                                         calculate As Func(Of Object(), Object)) As Object
+                                                         calculate As Func(Of Object(), Object),
+                                                         Optional checkErrors As Boolean = True) As Object
                 Dim matrices = arguments.Select(Function(argument) AsMatrix(EvaluateExpression(argument, formulaCell))).ToArray()
                 Dim rows = matrices.Max(Function(matrix) matrix.Rows)
                 Dim columns = matrices.Max(Function(matrix) matrix.Columns)
@@ -164,7 +165,7 @@ Namespace ExcelOps
                         For index = 0 To matrices.Length - 1
                             values(index) = matrices(index).BroadcastAt(row, column)
                         Next
-                        Dim failure = values.OfType(Of FormulaError)().FirstOrDefault()
+                        Dim failure = If(checkErrors, values.OfType(Of FormulaError)().FirstOrDefault(), Nothing)
                         results(row * columns + column) = If(failure, calculate(values))
                     Next
                 Next

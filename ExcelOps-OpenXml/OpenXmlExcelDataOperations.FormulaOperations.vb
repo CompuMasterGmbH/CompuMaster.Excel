@@ -205,6 +205,8 @@ Namespace ExcelOps
                     Case "CHISQ.TEST", "_XLFN.CHISQ.TEST", "CHITEST", "F.TEST", "_XLFN.F.TEST", "FTEST",
                          "T.TEST", "_XLFN.T.TEST", "TTEST", "Z.TEST", "_XLFN.Z.TEST", "ZTEST"
                         Return EvaluateHypothesisTest(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DISC", "INTRATE", "RECEIVED", "PRICEDISC", "YIELDDISC", "TBILLEQ", "TBILLPRICE", "TBILLYIELD"
+                        Return EvaluateDiscountedSecurity(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"

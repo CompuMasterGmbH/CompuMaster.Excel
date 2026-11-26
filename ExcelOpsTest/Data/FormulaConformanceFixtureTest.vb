@@ -103,6 +103,10 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGermanText1900.xlsx", "German formula text", 34)>
     <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis functions", 1657)>
     <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis arrays", 159)>
+    <TestCase("FormulaReferenceSecurities1900.xlsx", "Securities functions", 1367)>
+    <TestCase("FormulaReferenceSecurities1900.xlsx", "Securities arrays", 2)>
+    <TestCase("FormulaReferenceSecurities1904.xlsx", "Securities functions", 1306)>
+    <TestCase("FormulaReferenceSecurities1904.xlsx", "Securities arrays", 2)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -229,6 +233,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 1120)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits arrays", 46)>
     <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis arrays", 325)>
+    <TestCase("FormulaReferenceSecurities1900.xlsx", "Securities arrays", 4)>
+    <TestCase("FormulaReferenceSecurities1904.xlsx", "Securities arrays", 4)>
     Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
