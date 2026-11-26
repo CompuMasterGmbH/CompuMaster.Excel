@@ -8,9 +8,14 @@
                                                         formulaCell As ExcelCell) As Object
                 Dim session = _run.Session
                 Dim registration As ExcelFormulaRegistration = Nothing
-                If session Is Nothing OrElse Not session.Functions.TryGetValue(name, registration) Then
-                    Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
+                If session IsNot Nothing AndAlso Not session.Functions.TryGetValue(name, registration) Then
+                    Dim registeredName = name
+                    For Each prefix In {"_xlfn.", "_xlws.", "_xll."}
+                        If registeredName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) Then registeredName = registeredName.Substring(prefix.Length)
+                    Next
+                    If registeredName <> name Then session.Functions.TryGetValue(registeredName, registration)
                 End If
+                If registration Is Nothing Then Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
 
                 If registration.IsVolatile Then MarkVolatile()
                 Dim values = arguments.Select(Function(argument) ToFormulaValue(Scalar(EvaluateExpression(argument, formulaCell)))).ToArray()

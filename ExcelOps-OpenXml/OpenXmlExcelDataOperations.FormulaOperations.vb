@@ -57,7 +57,8 @@ Namespace ExcelOps
                 End Select
             End Function
 
-            Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+            Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
+                                             Optional localBinding As Object = Nothing) As Object
                 Select Case name.ToUpperInvariant()
                     Case "IF"
                         Return EvaluateIf(arguments, formulaCell)
@@ -135,6 +136,12 @@ Namespace ExcelOps
                         Return EvaluateDiscreteProbability(arguments, formulaCell)
                     Case "PERCENTRANK", "PERCENTRANK.INC", "_XLFN.PERCENTRANK.INC", "PERCENTRANK.EXC", "_XLFN.PERCENTRANK.EXC"
                         Return EvaluatePercentRank(name.EndsWith(".EXC", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "BYROW", "_XLFN.BYROW", "BYCOL", "_XLFN.BYCOL", "MAP", "_XLFN.MAP",
+                         "MAKEARRAY", "_XLFN.MAKEARRAY", "REDUCE", "_XLFN.REDUCE", "SCAN", "_XLFN.SCAN"
+                        Return EvaluateLambdaArray(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "ISOMITTED", "_XLFN.ISOMITTED"
+                        If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
+                        Return EvaluateExpression(arguments(0), formulaCell) Is MissingLambdaArgument
                     Case "ISERR", "ISNONTEXT", "ISEVEN", "ISODD", "N", "T", "TYPE", "ERROR.TYPE"
                         Return EvaluateInformationFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "IFS", "_XLFN.IFS", "SWITCH", "_XLFN.SWITCH"
@@ -234,6 +241,9 @@ Namespace ExcelOps
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"
                         Return Aggregate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case Else
+                        If localBinding IsNot Nothing Then Return InvokeFormulaLambda(ReadLocalName(localBinding), arguments, formulaCell)
+                        Dim definedResult As Object = Nothing
+                        If TryInvokeDefinedLambda(name, arguments, formulaCell, definedResult) Then Return definedResult
                         Return EvaluateRegisteredFunction(name, arguments, formulaCell)
                 End Select
             End Function
@@ -323,7 +333,7 @@ Namespace ExcelOps
             End Property
 
             Private Function NumberValue(value As Object) As Object
-                If value Is Nothing Then Return 0.0
+                If value Is Nothing OrElse value Is MissingLambdaArgument Then Return 0.0
                 If TypeOf value Is FormulaError OrElse TypeOf value Is Double Then Return value
                 If TypeOf value Is Boolean Then Return If(DirectCast(value, Boolean), 1.0, 0.0)
                 If TypeOf value Is String Then
@@ -335,7 +345,7 @@ Namespace ExcelOps
             End Function
 
             Private Function TextValue(value As Object) As String
-                If value Is Nothing Then Return String.Empty
+                If value Is Nothing OrElse value Is MissingLambdaArgument Then Return String.Empty
                 If TypeOf value Is Boolean Then
                     If ConversionCulture.TwoLetterISOLanguageName = "de" Then Return If(DirectCast(value, Boolean), "WAHR", "FALSCH")
                     Return If(DirectCast(value, Boolean), "TRUE", "FALSE")

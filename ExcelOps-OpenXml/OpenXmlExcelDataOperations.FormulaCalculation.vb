@@ -219,6 +219,8 @@ Namespace ExcelOps
                 Try
                     Dim expression = FormulaParser.Parse(formula)
                     Dim value = EvaluateExpression(expression, address)
+                    If TypeOf value Is FormulaLambda Then value = New FormulaError(CalcErrorCode)
+                    If value Is MissingLambdaArgument Then value = Nothing
                     Dim result = If(spill Is Nothing, If(Scalar(value), 0.0), StageSpill(worksheet, spill, value))
                     _results.Add(cell, (worksheet.Part, location, result))
                     If _run.TrackDependencies Then _run.Dependencies(location) = _run.Frames.Peek()
@@ -282,6 +284,7 @@ Namespace ExcelOps
             End Sub
 
             Private Function Scalar(value As Object) As Object
+                If value Is MissingLambdaArgument Then Return Nothing
                 If TypeOf value Is FormulaReferenceUnion Then Return New FormulaError("#VALUE!")
                 Dim matrix = TryCast(value, FormulaMatrix)
                 If matrix IsNot Nothing Then

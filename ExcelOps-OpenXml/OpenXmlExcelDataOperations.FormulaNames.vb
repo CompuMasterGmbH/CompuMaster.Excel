@@ -6,7 +6,7 @@ Namespace ExcelOps
 
         Private NotInheritable Partial Class FormulaCalculation
             Private ReadOnly _activeNames As New HashSet(Of DefinedName)
-            Private ReadOnly _localValues As New Dictionary(Of Object, Lazy(Of Object))
+            Private _localValues As New Dictionary(Of Object, Lazy(Of Object))
 
             Friend Function EvaluateLet(bindings As IReadOnlyList(Of (Key As Object, Value As FormulaExpression)),
                                         result As FormulaExpression, formulaCell As ExcelCell) As Object
@@ -30,23 +30,43 @@ Namespace ExcelOps
             Friend Function EvaluateDefinedName(name As String, sheetName As String, formulaCell As ExcelCell) As Object
                 If Not IsValidDefinedNameToken(name) Then Throw New NotSupportedException("Unsupported worksheet reference or name " & name & ".")
                 Dim lookupSheet = If(sheetName, formulaCell.SheetName)
-                Dim sheetIndex = _owner.WorkbookSheets().FindIndex(
-                    Function(sheet) String.Equals(sheet.Name.Value, lookupSheet, StringComparison.OrdinalIgnoreCase))
+                Dim sheetIndex = DefinedNameSheetIndex(lookupSheet)
                 If sheetIndex < 0 Then Return New FormulaError("#REF!")
+                Dim definition = FindDefinedName(name, sheetIndex)
+                If definition Is Nothing Then Return New FormulaError("#NAME?")
+                Dim context = If(sheetName Is Nothing, formulaCell,
+                    New ExcelCell(lookupSheet, formulaCell.RowIndex, formulaCell.ColumnIndex, ExcelCell.ValueTypes.All))
+                Return EvaluateDefinedNameValue(definition, context)
+            End Function
 
+            Private Function TryInvokeDefinedLambda(name As String, arguments As IReadOnlyList(Of FormulaExpression),
+                                                   formulaCell As ExcelCell, ByRef result As Object) As Boolean
+                If Not IsValidDefinedNameToken(name) OrElse _owner.WorkbookPart.Workbook.DefinedNames Is Nothing Then Return False
+                Dim definition = FindDefinedName(name, DefinedNameSheetIndex(formulaCell.SheetName))
+                If definition Is Nothing Then Return False
+                result = InvokeFormulaLambda(EvaluateDefinedNameValue(definition, formulaCell), arguments, formulaCell)
+                Return True
+            End Function
+
+            Private Function DefinedNameSheetIndex(sheetName As String) As Integer
+                Return _owner.WorkbookSheets().FindIndex(Function(sheet) String.Equals(sheet.Name.Value, sheetName, StringComparison.OrdinalIgnoreCase))
+            End Function
+
+            Private Function FindDefinedName(name As String, sheetIndex As Integer) As DefinedName
                 Dim definitions = _owner.WorkbookPart.Workbook.DefinedNames
-                If definitions Is Nothing Then Return New FormulaError("#NAME?")
+                If definitions Is Nothing Then Return Nothing
                 Dim candidates = definitions.Elements(Of DefinedName)().Where(
                     Function(item) String.Equals(item.Name?.Value, name, StringComparison.OrdinalIgnoreCase))
-                Dim definition = candidates.FirstOrDefault(Function(item) item.LocalSheetId IsNot Nothing AndAlso item.LocalSheetId.Value = CUInt(sheetIndex))
-                If definition Is Nothing Then definition = candidates.FirstOrDefault(Function(item) item.LocalSheetId Is Nothing)
-                If definition Is Nothing Then Return New FormulaError("#NAME?")
+                Dim local = If(sheetIndex < 0, Nothing, candidates.FirstOrDefault(
+                    Function(item) item.LocalSheetId IsNot Nothing AndAlso item.LocalSheetId.Value = CUInt(sheetIndex)))
+                Return If(local, candidates.FirstOrDefault(Function(item) item.LocalSheetId Is Nothing))
+            End Function
+
+            Private Function EvaluateDefinedNameValue(definition As DefinedName, formulaCell As ExcelCell) As Object
                 If Not _activeNames.Add(definition) Then Throw New CircularReferenceException(formulaCell, definition.Text)
                 Try
                     Dim expression = FormulaParser.Parse(definition.Text, requireAbsoluteReferences:=True)
-                    Dim context = If(sheetName Is Nothing, formulaCell,
-                        New ExcelCell(lookupSheet, formulaCell.RowIndex, formulaCell.ColumnIndex, ExcelCell.ValueTypes.All))
-                    Return EvaluateExpression(expression, context)
+                    Return EvaluateExpression(expression, formulaCell)
                 Finally
                     _activeNames.Remove(definition)
                 End Try

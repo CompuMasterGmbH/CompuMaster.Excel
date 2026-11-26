@@ -191,6 +191,22 @@ Public Class OpenXmlSpillFormulaTest
     End Sub
 
     <Test>
+    Public Sub AuthorsExcelCompatibleLambdaArraysAndShorthand()
+        Using workbook = CreateBlankWorkbook()
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 0, "MAP({1;2},LAMBDA(item,item+3))", True)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 2, "BYROW({1,2;3,4},SUM)", True)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 4, "LET(fn,LAMBDA(item,item+5),MAP({1;2},fn))", True)
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 0), [Is].EqualTo("_xlfn.MAP({1;2},_xlfn.LAMBDA(_xlpm.item,_xlpm.item+3))"))
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 2), [Is].EqualTo("_xlfn.BYROW({1,2;3,4},_xleta.SUM)"))
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 4), [Is].EqualTo("_xlfn.LET(_xlpm.fn,_xlfn.LAMBDA(_xlpm.item,_xlpm.item+5),_xlfn.MAP({1;2},_xlpm.fn))"))
+            Assert.That(Number(workbook, sheet, "A2"), [Is].EqualTo(5.0))
+            Assert.That(Number(workbook, sheet, "C2"), [Is].EqualTo(7.0))
+            Assert.That(Number(workbook, sheet, "E2"), [Is].EqualTo(7.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub MovesANewDynamicAnchorBeforeTheFirstSave()
         Using workbook = CreateBlankWorkbook()
             Dim sheet = workbook.SheetNames()(0)

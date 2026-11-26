@@ -91,6 +91,22 @@ Public Class OpenXmlCustomFormulaTest
         End Using
     End Sub
 
+    <TestCase("_xlfn.TRANSLATE", "TRANSLATE")>
+    <TestCase("_xlfn._xlws.APP.LOOKUP", "APP.LOOKUP")>
+    <TestCase("_xll.APP.RATE", "APP.RATE")>
+    Public Sub ResolvesAnExplicitRegistrationForAnExcelStoredFunctionName(storedName As String, registrationName As String)
+        Dim session As New ExcelFormulaSession()
+        Using workbook = CreateWorkbook(session, "Target")
+            Dim formula = storedName & "(""test"")"
+            workbook.WriteCellFormula("Sheet1", 0, 0, formula, False)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateCell(Cell("A1")))
+            session.RegisterFunction(registrationName, Function(context, arguments) ExcelFormulaValue.FromText(CStr(arguments(0).Value) & " result"))
+            workbook.RecalculateCell(Cell("A1"))
+            Assert.That(Cached(workbook, "A1"), [Is].EqualTo("test result"))
+            Assert.That(workbook.LookupCellFormula("Sheet1", 0, 0), [Is].EqualTo(formula))
+        End Using
+    End Sub
+
     <Test>
     Public Sub RejectsDuplicateWorkbookNamesAndReleasesClosedWorkbooks()
         Dim session As New ExcelFormulaSession()

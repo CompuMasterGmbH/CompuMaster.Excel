@@ -39,6 +39,7 @@ Namespace ExcelOps
                     Case "ISERR" : Return failure IsNot Nothing AndAlso failure.Code <> "#N/A"
                     Case "ISNONTEXT" : Return Not TypeOf value Is String
                     Case "TYPE"
+                        If TypeOf value Is FormulaLambda Then Return 128.0
                         If TypeOf value Is String Then Return 2.0
                         If TypeOf value Is Boolean Then Return 4.0
                         If failure IsNot Nothing Then Return 16.0
