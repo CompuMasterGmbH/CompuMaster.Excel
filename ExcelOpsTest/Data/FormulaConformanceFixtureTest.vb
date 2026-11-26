@@ -129,6 +129,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 38)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 43)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit catalog", 144)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Other worksheet", 8)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 210)>
@@ -286,6 +288,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel J values", 5)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 3)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 1)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Forecast values", 248)>
     Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
@@ -442,6 +446,9 @@ Public Class FormulaConformanceFixtureTest
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
             .DisableCalculationEngine = False, .FormulaCulture = CultureInfo.GetCultureInfo("de-DE")
         }
+        If IO.Path.GetFileName(path) = "FormulaReferenceMetadata1900.xlsx" Then
+            Return New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
+        End If
         Return New OpenXmlExcelDataOperations(File.ReadAllBytes(path), options)
     End Function
 

@@ -57,6 +57,9 @@ Rectangular array constants can contain numbers, text, logical values and Excel 
 `SUBTOTAL` supports selectors 1 through 11 and 101 through 111. It skips nested `SUBTOTAL` and `AGGREGATE` results. It skips saved hidden rows when a worksheet or table filter is active, and the selectors 101 through 111 also skip them on worksheets with no active filter. `AGGREGATE` supports selectors 1 through 19 and all eight combinations of its hidden-row, error and nested-result options. Hidden-row and nested-result options use the metadata of direct references. Computed arrays carry values only.
 
 `RAND`, `RANDBETWEEN` and `RANDARRAY` are volatile and generate new draws during recalculation. `TEXT`, `DOLLAR`, `FIXED`, `ARRAYTOTEXT` and `VALUETOTEXT` use the formula culture for display. The legacy byte text functions use the configured Windows code page for East Asian formula cultures. `PHONETIC` reads stored phonetic text from the referenced cell. `HYPERLINK` calculates its displayed value, and Excel can follow the stored formula link when the workbook opens. `FILTERXML` evaluates XPath against the supplied XML text without resolving external entities.
+`CELL` reads stored worksheet metadata and uses the session selection when its reference is omitted. Column widths
+are estimated from the saved width and the workbook's Normal font. `INFO` reports the current runtime, application
+directory, and open workbooks. Its environment-dependent results vary from desktop Excel.
 
 `CONVERT` supports the case-sensitive unit symbols and decimal or binary prefixes defined by Excel. The Bessel functions use the measured Excel approximation for modified Bessel I and K in their usual input range. Ordinary Bessel J and Y use Math.NET Numerics and can differ from Excel at its approximation boundaries. `EUROCONVERT` implements the fixed rates and triangulation rules documented for the Excel Euro Currency Tools add-in. `BAHTTEXT` writes the amount in Thai baht and satang.
 

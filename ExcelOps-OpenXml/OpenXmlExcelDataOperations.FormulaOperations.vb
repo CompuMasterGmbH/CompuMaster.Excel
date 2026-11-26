@@ -136,6 +136,8 @@ Namespace ExcelOps
                         Return EvaluateRandomFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "DOLLAR", "FIXED", "TEXT", "ARRAYTOTEXT", "_XLFN.ARRAYTOTEXT", "VALUETOTEXT", "_XLFN.VALUETOTEXT"
                         Return EvaluateDisplayFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "CELL", "INFO"
+                        Return EvaluateMetadataFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "HYPERLINK", "FILTERXML", "_XLFN.FILTERXML"
                         Return EvaluateLinkOrXml(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ASC", "DBCS", "_XLFN.DBCS", "JIS", "PHONETIC"
