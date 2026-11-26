@@ -60,14 +60,7 @@ Namespace ExcelOps
             Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
                 Select Case name.ToUpperInvariant()
                     Case "IF"
-                        If arguments.Count < 2 OrElse arguments.Count > 3 Then Return New FormulaError("#VALUE!")
-                        Dim condition = Scalar(EvaluateExpression(arguments(0), formulaCell))
-                        If TypeOf condition Is String Then Return New FormulaError("#VALUE!")
-                        Dim truth = NumberValue(condition)
-                        If TypeOf truth Is FormulaError Then Return truth
-                        If DirectCast(truth, Double) <> 0.0 Then Return EvaluateExpression(arguments(1), formulaCell)
-                        If arguments.Count = 3 Then Return EvaluateExpression(arguments(2), formulaCell)
-                        Return False
+                        Return EvaluateIf(arguments, formulaCell)
                     Case "ABS"
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
                         Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), formulaCell)))

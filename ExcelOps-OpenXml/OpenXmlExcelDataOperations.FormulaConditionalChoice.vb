@@ -6,6 +6,38 @@ Namespace ExcelOps
 
         Private NotInheritable Partial Class FormulaCalculation
 
+            Private Function EvaluateIf(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+                If arguments.Count < 2 OrElse arguments.Count > 3 Then Return New FormulaError("#VALUE!")
+                Dim condition = EvaluateExpression(arguments(0), formulaCell)
+                If Not TypeOf condition Is FormulaMatrix AndAlso Not IsMultiValue(condition) Then
+                    Dim truth = LogicalOptionValue(Scalar(condition))
+                    If TypeOf truth Is FormulaError Then Return truth
+                    If DirectCast(truth, Boolean) Then Return If(EvaluateExpression(arguments(1), formulaCell), 0.0)
+                    If arguments.Count = 3 Then Return If(EvaluateExpression(arguments(2), formulaCell), 0.0)
+                    Return False
+                End If
+
+                ' For an array condition, both branches participate in the output dimensions.
+                Dim conditions = AsMatrix(condition)
+                Dim whenTrue = AsMatrix(If(EvaluateExpression(arguments(1), formulaCell), 0.0))
+                Dim whenFalse = AsMatrix(If(arguments.Count = 3, If(EvaluateExpression(arguments(2), formulaCell), 0.0), False))
+                Dim rows = Math.Max(conditions.Rows, Math.Max(whenTrue.Rows, whenFalse.Rows))
+                Dim columns = Math.Max(conditions.Columns, Math.Max(whenTrue.Columns, whenFalse.Columns))
+                Dim values = AllocateMatrixValues(rows, columns)
+                For row = 0 To rows - 1
+                    For column = 0 To columns - 1
+                        Dim truth = LogicalOptionValue(conditions.BroadcastAt(row, column))
+                        Dim result = truth
+                        If Not TypeOf truth Is FormulaError Then
+                            Dim selected = If(DirectCast(truth, Boolean), whenTrue, whenFalse)
+                            result = If(selected.BroadcastAt(row, column), 0.0)
+                        End If
+                        values(row * columns + column) = result
+                    Next
+                Next
+                Return New FormulaMatrix(rows, columns, values)
+            End Function
+
             Private Function EvaluateConditionalChoice(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                                        formulaCell As ExcelCell) As Object
                 Dim isSwitch = name = "SWITCH"

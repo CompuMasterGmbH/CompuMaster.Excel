@@ -168,6 +168,29 @@ Public Class OpenXmlSpillFormulaTest
     End Sub
 
     <Test>
+    Public Sub DetectsAReferenceInEitherArrayIfBranchAndKeepsScalarIfLazy()
+        Using workbook = CreateBlankWorkbook()
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteCellFormula(sheet, 0, 0, "IF(TRUE,1,A1)", True)
+            Assert.That(Number(workbook, sheet, "A1"), [Is].EqualTo(1.0))
+            Assert.Throws(Of CircularReferenceException)(
+                Sub() workbook.WriteDynamicArrayFormula(sheet, 0, 0, "IF({TRUE,TRUE},2,A1)", True))
+            Assert.That(Number(workbook, sheet, "A1"), [Is].EqualTo(1.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub AuthorsExcelCompatibleIdentityMatrixFormula()
+        Using workbook = CreateBlankWorkbook()
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 0, "MUNIT(2)", True)
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 0), [Is].EqualTo("_xlfn.MUNIT(2)"))
+            Assert.That(Number(workbook, sheet, "A2"), [Is].EqualTo(0.0))
+            Assert.That(Number(workbook, sheet, "B2"), [Is].EqualTo(1.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub MovesANewDynamicAnchorBeforeTheFirstSave()
         Using workbook = CreateBlankWorkbook()
             Dim sheet = workbook.SheetNames()(0)
