@@ -29,6 +29,12 @@ Namespace ExcelOpsTests.Engines
             Return New ExcelOps.FreeSpireXlsDataOperations(data, options)
         End Function
 
+        ''' <inheritdoc/>
+        Protected Overrides Function ReadFormulaReferenceResult(workbook As ExcelDataOperationsBase, address As ExcelCell) As Object
+            Return DirectCast(workbook, FreeSpireXlsDataOperations).Workbook.Worksheets(address.SheetName).
+                Range(address.RowIndex + 1, address.ColumnIndex + 1).FormulaValue
+        End Function
+
         Protected Overrides Function _CreateInstance(data As IO.Stream, options As ExcelOps.ExcelDataOperationsOptions) As ExcelOps.FreeSpireXlsDataOperations
             Return New ExcelOps.FreeSpireXlsDataOperations(data, options)
         End Function

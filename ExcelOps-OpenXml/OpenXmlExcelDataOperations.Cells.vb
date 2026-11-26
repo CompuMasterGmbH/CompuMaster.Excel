@@ -9,7 +9,8 @@ Namespace ExcelOps
     Partial Public Class OpenXmlExcelDataOperations
 
         Private Shared ReadOnly EscapedText As New Regex("_x([0-9a-f]{4})_", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
-        Private Shared ReadOnly TextToEscape As New Regex("_(?=[xX][0-9A-Fa-f]{4}_)|[\u0000-\u0008\u000B-\u001F\uFFFE\uFFFF]")
+        Private Shared ReadOnly TextToEscape As New Regex(
+            "_(?=[xX][0-9A-Fa-f]{4}_)|[\u0000-\u0008\u000B-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]")
         Private ReadOnly _formulaRanges As New Dictionary(Of WorksheetPart, List(Of ExcelRange))
 
         Private Shared Sub ValidateCoordinates(rowIndex As Integer, columnIndex As Integer)
@@ -71,14 +72,15 @@ Namespace ExcelOps
             Return data
         End Function
 
-        Private Sub EditCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, payload As Cell)
+        Private Sub EditCell(sheetName As String, rowIndex As Integer, columnIndex As Integer, payload As Cell,
+                             Optional calculateOnEdit As Boolean = True, Optional replaceSpillAnchor As Boolean = False)
             ValidateCoordinates(rowIndex, columnIndex)
             Dim part = GetWorksheetPart(sheetName)
             Dim data = GetSheetData(part)
             Dim row = FindRow(data, rowIndex, False)
             Dim existing = FindCell(row, rowIndex, columnIndex, False)
             If existing Is Nothing AndAlso Not payload.HasChildren Then Return
-            If IsGroupedFormulaCell(part, sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
+            If Not replaceSpillAnchor AndAlso IsGroupedFormulaCell(part, sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
                 Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
             End If
             Dim target = existing
@@ -96,8 +98,14 @@ Namespace ExcelOps
                 target.AddChild(child)
             Next
             target.DataType = payload.DataType
+            target.ValueMetaIndex = payload.ValueMetaIndex
+            If payload.CellMetaIndex IsNot Nothing Then
+                target.CellMetaIndex = payload.CellMetaIndex
+                _formulaRanges.Remove(part)
+            End If
             _changedSheets.Add(part)
             RecalculationRequired = True
+            RecordCellEdit(sheetName, rowIndex, columnIndex, calculateOnEdit)
         End Sub
 
         Private Function IsGroupedFormulaCell(part As WorksheetPart, sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As CellFormula) As Boolean
@@ -126,7 +134,11 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Function HasMissingCachedFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Boolean
-            Return IsMissingFormulaResult(GetCell(sheetName, rowIndex, columnIndex))
+            Dim cell = GetCell(sheetName, rowIndex, columnIndex)
+            If cell?.CellFormula IsNot Nothing Then Return IsMissingFormulaResult(cell)
+            If cell?.CellValue IsNot Nothing OrElse cell?.InlineString IsNot Nothing OrElse FormulaCellMetadata Is Nothing Then Return False
+            Dim cells = GetSheetData(GetWorksheetPart(sheetName)).Descendants(Of Cell)().Where(AddressOf IsMissingFormulaResult)
+            Return ReadDynamicSpills(FormulaCellMetadata, cells).Any(Function(spill) spill.Contains(rowIndex, columnIndex))
         End Function
 
         Private Shared Function IsMissingFormulaResult(cell As Cell) As Boolean
@@ -160,6 +172,7 @@ Namespace ExcelOps
             If dataType = CellValues.Boolean Then Return Xml.XmlConvert.ToBoolean(value)
             If dataType = CellValues.Number Then Return If(value.Length = 0, Nothing, CType(Double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture), Object))
             If dataType = CellValues.Date Then Return Xml.XmlConvert.ToDateTime(value, Xml.XmlDateTimeSerializationMode.RoundtripKind)
+            If dataType = CellValues.Error Then Return ReadStoredFormulaError(cell)
             Return DecodeText(value)
         End Function
 
@@ -288,25 +301,25 @@ Namespace ExcelOps
         ''' <remarks>Evaluates the formula before editing the cell when immediate calculation is requested.</remarks>
         Public Overrides Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
             SyncLock WorkbookSaveLock
-                    If immediatelyCalculateCellValue Then EnsureCalculationEnabled()
-                    If String.IsNullOrWhiteSpace(formula) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
-                    Dim expression = If(formula(0) = "="c, formula.Substring(1), formula)
-                    If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
-                    Dim replacement As New Cell With {.CellFormula = New CellFormula(expression)}
-                    If Not immediatelyCalculateCellValue Then
-                        EditCell(sheetName, rowIndex, columnIndex, replacement)
-                        Return
-                    End If
+                If immediatelyCalculateCellValue Then EnsureCalculationEnabled()
+                If String.IsNullOrWhiteSpace(formula) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
+                Dim expression = If(formula(0) = "="c, formula.Substring(1), formula)
+                If String.IsNullOrWhiteSpace(expression) Then Throw New ArgumentException("A formula is required.", NameOf(formula))
+                Dim replacement As New Cell With {.CellFormula = New CellFormula(expression)}
+                If Not immediatelyCalculateCellValue Then
+                    EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
+                    Return
+                End If
 
-                    Dim existing = GetCell(sheetName, rowIndex, columnIndex)
-                    If IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
-                        Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
-                    End If
-                    Dim calculation As New FormulaCalculation(Me)
-                    Dim result = calculation.EvaluateReplacement(sheetName, rowIndex, columnIndex, replacement)
-                    EditCell(sheetName, rowIndex, columnIndex, replacement)
-                    calculation.Commit()
-                    ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
+                Dim existing = GetCell(sheetName, rowIndex, columnIndex)
+                If IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, existing?.CellFormula) Then
+                    Throw UnsupportedOperation("Editing cells in shared, array or data-table formula ranges")
+                End If
+                Dim calculation As New FormulaCalculation(Me)
+                Dim result = calculation.EvaluateReplacement(sheetName, rowIndex, columnIndex, replacement)
+                EditCell(sheetName, rowIndex, columnIndex, replacement, calculateOnEdit:=False)
+                calculation.Commit()
+                ThrowIfFormulaError(sheetName, rowIndex, columnIndex, result)
             End SyncLock
         End Sub
 

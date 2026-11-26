@@ -1027,6 +1027,18 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        ' Reports recalculated values from each installed engine against the same saved Excel formula caches.
+        <Test, Explicit("Reports Excel formula coverage for the selected engine.")>
+        Public Sub ReportsFormulaReferenceCoverageAgainstExcel()
+            FormulaReferenceCoverage.Report(ExpectedEngineName,
+                Function(path, options) CreateInstance(path, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options), AddressOf ReadFormulaReferenceResult)
+        End Sub
+
+        ''' <summary>Reads a recalculated result for the Excel reference coverage report.</summary>
+        Protected Overridable Function ReadFormulaReferenceResult(workbook As ExcelDataOperationsBase, address As ExcelCell) As Object
+            Return workbook.LookupCellValueAsObject(address, FormulaCalculationMode.CalculateIfMissing)
+        End Function
+
         ' Reports which Excel structural behaviors each installed engine reproduces on the same XLSX.
         <TestCaseSource(GetType(StructuralReferenceCoverage), NameOf(StructuralReferenceCoverage.Cases))>
         Public Sub StructuralReferenceCoverageAgainstExcel(scenario As String)

@@ -24,7 +24,9 @@
   <ItemGroup>
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
     <PackageReference Include="ExcelNumberFormat" Version="1.1.0" />
+    <PackageReference Include="PCRE.NET" Version="1.6.0" />
     <ProjectReference Include="..\ExcelOps\ExcelOps.vbproj" />
+    <EmbeddedResource Include="GermanFormulaNames.tsv" LogicalName="CompuMaster.Excel.OpenXml.GermanFormulaNames.tsv" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="LICENSE.txt" Pack="true" PackagePath="\" />
     <None Include="..\logo_64x64.png" Pack="true" PackagePath="\" />

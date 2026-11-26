@@ -146,6 +146,7 @@ Namespace ExcelOps
             Dim ValidatedOptionsClone As ExcelDataOperationsOptions = options.ApplyDefaultsFromEngineAndValidate(Me.DefaultCalculationOptions)
             Me.ValidateLoadOptions(ValidatedOptionsClone)
             Me.LoadOptions = ValidatedOptionsClone
+            If ValidatedOptionsClone.FormulaSession IsNot Nothing Then WorkbookSaveLock = ValidatedOptionsClone.FormulaSession.WorkbookSyncRoot
             Me.CalculationModuleDisabled = ValidatedOptionsClone.DisableCalculationEngine.Value
             Me.AutoCalculationOnLoad = Not ValidatedOptionsClone.DisableInitialCalculation.Value
             If ValidatedOptionsClone.DisableAutoCalculationInWorkbook.HasValue Then

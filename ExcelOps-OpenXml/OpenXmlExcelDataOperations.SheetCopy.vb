@@ -443,6 +443,7 @@ Namespace ExcelOps
             _changedExtendedCharts.Clear()
             _changedDrawings.Clear()
             _formulaRanges.Clear()
+            ResetCalculationDependencies()
             _workbookChanged = False
             _calculationChainInvalid = False
             RecalculationRequired = True

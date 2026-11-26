@@ -44,12 +44,16 @@ Namespace ExcelOps
                     If cell?.CellFormula Is Nothing Then
                         Throw New ArgumentException("Cell " & New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All).Address(True) & " doesn't contain a formula.")
                     End If
-                    If ClearFormulaResult(cell) Then MarkFormulaResultsCleared(part)
+                    Dim changed = ClearFormulaResult(cell)
+                    If IsDynamicFormulaAnchor(FormulaCellMetadata, cell) Then
+                        changed = ClearSpillChildResults(GetSheetData(part).Descendants(Of Cell)(), {New SpillArea(cell, Nothing)}) OrElse changed
+                    End If
+                    If changed Then MarkFormulaResultsCleared(part)
             End SyncLock
         End Sub
 
         Private Sub ClearWorksheetFormulaResults(part As WorksheetPart)
-            If ClearFormulaResults(GetSheetData(part)) Then MarkFormulaResultsCleared(part)
+            If ClearFormulaResults(GetSheetData(part), FormulaCellMetadata) Then MarkFormulaResultsCleared(part)
         End Sub
 
         Private Sub MarkFormulaResultsCleared(part As WorksheetPart)
@@ -59,6 +63,7 @@ Namespace ExcelOps
 
         Private Sub InvalidateWorkbookFormulaResults()
             _calculationChainInvalid = True
+            ResetCalculationDependencies()
             RecalculationRequired = True
             Dim workbook = WorkbookPart.Workbook
             If workbook.CalculationProperties Is Nothing Then workbook.CalculationProperties = New CalculationProperties()
@@ -66,18 +71,39 @@ Namespace ExcelOps
             _workbookChanged = True
         End Sub
 
-        Private Shared Function ClearFormulaResults(data As SheetData) As Boolean
-            Dim changed As Boolean
-            For Each cell In data.Descendants(Of Cell)()
+        Private Shared Function ClearFormulaResults(data As SheetData, Optional metadata As Metadata = Nothing) As Boolean
+            Dim cells = data.Descendants(Of Cell)()
+            Dim changed = metadata IsNot Nothing AndAlso ClearSpillChildResults(cells, ReadDynamicSpills(metadata, cells).ToArray())
+            For Each cell In cells
                 If ClearFormulaResult(cell) Then changed = True
             Next
             Return changed
         End Function
 
+        Private Shared Function ClearSpillChildResults(cells As IEnumerable(Of Cell), spills As IReadOnlyList(Of SpillArea)) As Boolean
+            If spills.Count = 0 Then Return False
+            Dim changed As Boolean
+            For Each cell In cells
+                If cell.CellReference Is Nothing OrElse cell.CellMetaIndex IsNot Nothing OrElse
+                    (cell.CellFormula IsNot Nothing AndAlso Not IsSpillPlaceholder(cell)) Then Continue For
+                Dim address = ReadSharedCellAddress(cell)
+                If spills.Any(Function(spill) spill.Contains(address.Row, address.Column)) Then
+                    changed = ClearStoredCellResult(cell) OrElse changed
+                End If
+            Next
+            Return changed
+        End Function
+
         Private Shared Function ClearFormulaResult(cell As Cell) As Boolean
-            If cell.CellFormula Is Nothing OrElse cell.CellValue Is Nothing Then Return False
+            Return cell.CellFormula IsNot Nothing AndAlso ClearStoredCellResult(cell)
+        End Function
+
+        Private Shared Function ClearStoredCellResult(cell As Cell) As Boolean
+            If cell.CellValue Is Nothing AndAlso cell.InlineString Is Nothing Then Return False
             cell.CellValue = Nothing
+            cell.InlineString = Nothing
             cell.DataType = Nothing
+            cell.ValueMetaIndex = Nothing
             Return True
         End Function
 

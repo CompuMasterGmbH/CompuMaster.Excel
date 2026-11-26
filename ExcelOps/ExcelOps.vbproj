@@ -19,6 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="CompuMaster.Excel.OpenXml" />
     <PackageReference Include="CompuMaster.Data" Version="3.0.2026.119" />
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
     <None Include="README.md">

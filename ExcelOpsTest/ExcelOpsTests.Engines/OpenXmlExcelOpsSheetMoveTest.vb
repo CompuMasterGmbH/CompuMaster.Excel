@@ -152,6 +152,33 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub WorksheetTransfer_FormulaSessionReadsMovedSheetsBeforeAndAfterTheFirstSave()
+        Dim input = Path.Combine(_directory, "template.xlsx")
+        Dim targetPath = Path.Combine(_directory, "saved.xlsx")
+        CreateSimpleMoveWorkbook(input, withIncomingReference:=True)
+        Dim calculations As New ExcelFormulaSession()
+        Dim sourceOptions As New ExcelDataOperationsOptions(WriteProtectionMode.ReadWrite) With {
+            .DisableCalculationEngine = False, .FormulaSession = calculations, .FormulaWorkbookName = "Source"
+        }
+        Dim targetOptions As New ExcelDataOperationsOptions(WriteProtectionMode.ReadWrite) With {
+            .DisableCalculationEngine = False, .FormulaSession = calculations, .FormulaWorkbookName = "Destination"
+        }
+        Using references As New OpenXmlWorkbookSession(),
+              source As New OpenXmlExcelDataOperations(File.ReadAllBytes(input), sourceOptions),
+              target As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, targetOptions)
+            references.Attach(source)
+            references.Attach(target)
+            source.MoveSheet("Data", target, 0)
+            Assert.That(source.LookupCellValue(Of Double)("Remain", 0, 0, FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(12.0))
+
+            target.SaveAs(targetPath, recalculateWorkbook:=False, SaveOptionsForDisabledCalculationEngines.NoReset)
+            target.WriteCellValue("Data", 0, 0, 18.0)
+            source.RecalculateCell("Remain", 0, 0)
+            Assert.That(source.LookupCellValue(Of Double)("Remain", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(18.0))
+        End Using
+    End Sub
+
     <TestCase(False)>
     <TestCase(True)>
     Public Sub WorksheetTransfer_OpenXmlTransfersNamedRangesWithTheirDestinationScopes(move As Boolean)

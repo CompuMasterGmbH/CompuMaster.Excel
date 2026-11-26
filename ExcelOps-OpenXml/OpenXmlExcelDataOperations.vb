@@ -23,6 +23,9 @@ Namespace ExcelOps
         Private _automaticCalculation As Boolean?
         Private _openedFromFile As Boolean
         Private _vbaProjectRemoved As Boolean
+        Private ReadOnly _formulaSession As ExcelFormulaSession
+        Private ReadOnly _configuredFormulaName As String
+        Private _formulaWorkbookName As String
 
         ''' <summary>Opens or creates an Open XML workbook or template.</summary>
         ''' <param name="file">Source path or intended path for a new workbook.</param>
@@ -30,7 +33,12 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options.</param>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
             Me.New(options)
-            ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
+            Try
+                ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
+            Catch
+                Close()
+                Throw
+            End Try
         End Sub
 
         ''' <summary>Opens an Open XML workbook or template from bytes.</summary>
@@ -38,7 +46,12 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
             Me.New(options)
-            LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Try
+                LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Catch
+                Close()
+                Throw
+            End Try
         End Sub
 
         ''' <summary>Opens an Open XML workbook or template from a stream.</summary>
@@ -46,11 +59,18 @@ Namespace ExcelOps
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Stream, options As ExcelDataOperationsOptions)
             Me.New(options)
-            LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Try
+                LoadAndInitializeWorkbookFile(data, LoadOptions)
+            Catch
+                Close()
+                Throw
+            End Try
         End Sub
 
         Private Sub New(options As ExcelDataOperationsOptions)
             MyBase.New(options)
+            _formulaSession = LoadOptions.FormulaSession
+            _configuredFormulaName = LoadOptions.FormulaWorkbookName
             If options.DisableAutoCalculationInWorkbook.HasValue Then
                 _initialAutomaticCalculation = Not options.DisableAutoCalculationInWorkbook.Value
                 ' Apply the option to the package after it has been opened.
@@ -136,12 +156,20 @@ Namespace ExcelOps
                 If document.WorkbookPart?.Workbook?.Sheets Is Nothing Then
                     Throw New InvalidDataException("The package does not contain a workbook with sheets.")
                 End If
-                BeginWorkbookIdentity()
-                _source = snapshot
-                _document = document
-                _currentDocumentType = document.DocumentType
-                _automaticCalculation = _initialAutomaticCalculation
-                RecalculationRequired = False
+                SyncLock WorkbookSaveLock
+                    BeginWorkbookIdentity()
+                    If _formulaSession IsNot Nothing Then
+                        Dim name = If(_configuredFormulaName, Path.GetFileName(FilePath))
+                        If String.IsNullOrWhiteSpace(name) Then Throw New ArgumentException("A workbook name is required to attach to a formula session.", NameOf(ExcelDataOperationsOptions.FormulaWorkbookName))
+                        _formulaSession.AttachWorkbook(name, Me)
+                        _formulaWorkbookName = name
+                    End If
+                    _source = snapshot
+                    _document = document
+                    _currentDocumentType = document.DocumentType
+                    _automaticCalculation = _initialAutomaticCalculation
+                    RecalculationRequired = False
+                End SyncLock
             Catch ex As Exception
                 document?.Dispose()
                 If TypeOf ex Is OpenXmlPackageException OrElse TypeOf ex Is FileFormatException OrElse
@@ -199,6 +227,8 @@ Namespace ExcelOps
                 Try
                     _document?.Dispose()
                 Finally
+                    If _formulaWorkbookName IsNot Nothing Then _formulaSession.DetachWorkbook(_formulaWorkbookName, Me)
+                    _formulaWorkbookName = Nothing
                     _document = Nothing
                     _source?.Dispose()
                     _source = Nothing
@@ -207,7 +237,11 @@ Namespace ExcelOps
                     _changedCharts.Clear()
                     _changedExtendedCharts.Clear()
                     _changedDrawings.Clear()
+                    _formulaDependencies.Clear()
+                    _pendingCellEdits.Clear()
+                    _completeDependencyRevision = Nothing
                     _formulaRanges.Clear()
+                    _authoredDynamicMetadata = Nothing
                     _workbookChanged = False
                     _calculationChainInvalid = False
                     _recalculateOnOpen = False
@@ -229,17 +263,18 @@ Namespace ExcelOps
         End Sub
 
         ''' <inheritdoc/>
-        ''' <remarks>Controls the saved workbook's calculation mode. The engine itself cannot evaluate formulas.</remarks>
+        ''' <remarks>Controls the workbook calculation mode. Set CalculateOnCellEdit to opt in to in-process automatic calculation after value writes.</remarks>
         Public Overrides Property AutoCalculationEnabledWorkbookSetting As Boolean
             Get
                 Return If(_automaticCalculation, Not IsClosed AndAlso If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto) <> CalculateModeValues.Manual)
             End Get
             Set(value As Boolean)
                 SyncLock WorkbookSaveLock
-                        ' The base constructor calls this setter before a package is open.
-                        If IsClosed Then Return
-                        Dim originalMode = If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto)
-                        _automaticCalculation = If(value = (originalMode <> CalculateModeValues.Manual), CType(Nothing, Boolean?), value)
+                    ' The base constructor calls this setter before a package is open.
+                    If IsClosed Then Return
+                    If AutoCalculationEnabledWorkbookSetting <> value Then _completeDependencyRevision = Nothing
+                    Dim originalMode = If(WorkbookPart.Workbook.CalculationProperties?.CalculationMode?.Value, CalculateModeValues.Auto)
+                    _automaticCalculation = If(value = (originalMode <> CalculateModeValues.Manual), CType(Nothing, Boolean?), value)
                 End SyncLock
             End Set
         End Property
@@ -291,7 +326,20 @@ Namespace ExcelOps
             End If
 
             Using copy = Clone()
-                copy.SaveAs(destination, recalculateWorkbook, cachedCalculationsOption)
+                If _formulaSession Is Nothing Then
+                    copy.RecalculateAll()
+                Else
+                    Dim session = _formulaSession.Snapshot()
+                    Dim workbooks = session.Workbooks.ToDictionary(Function(item) item.Key,
+                        Function(item) If(item.Value Is Me, copy, item.Value), StringComparer.OrdinalIgnoreCase)
+                    Dim copySession As New ExcelFormulaSessionSnapshot(workbooks, session.Functions, session.ActiveWorkbook,
+                        session.ActiveCell, session.Revision)
+                    Dim calculation As New FormulaCalculation(copy, copySession, Me.FilePath)
+                    calculation.RecalculateWorkbook()
+                    calculation.Commit()
+                    copy.RecalculationRequired = False
+                End If
+                copy.SaveAs(destination, recalculateWorkbook:=False, cachedCalculationsOption)
             End Using
         End Sub
 
@@ -337,7 +385,11 @@ Namespace ExcelOps
         Public Function Clone() As OpenXmlExcelDataOperations
             SyncLock WorkbookSaveLock
                 Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite,
-                    Nothing, disableInitialCalculation:=True, disableAutoCalculation:=Nothing, disableCalculationEngine:=CalculationModuleDisabled)
+                    Nothing, disableInitialCalculation:=True, disableAutoCalculation:=Nothing, disableCalculationEngine:=CalculationModuleDisabled) With {
+                        .FormulaCulture = LoadOptions.FormulaCulture, .FormulaLocalClock = LoadOptions.FormulaLocalClock,
+                        .CalculateOnCellEdit = LoadOptions.CalculateOnCellEdit,
+                        .AllowKnownStructuralReferenceDifferences = LoadOptions.AllowKnownStructuralReferenceDifferences
+                    }
                 Dim copy As New OpenXmlExcelDataOperations(options)
                 Dim snapshot As New MemoryStream()
                 Try
@@ -392,22 +444,32 @@ Namespace ExcelOps
         End Function
 
         Private Sub SaveChangedParts(source As WorkbookPart, target As WorkbookPart, clearCache As Boolean)
-            For Each sourceSheet In _changedSheets
-                Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
-                Using output = targetSheet.GetStream(FileMode.Create, FileAccess.Write)
-                    sourceSheet.Worksheet.Save(output)
-                End Using
-            Next
-            SaveChangedTables(source, target)
-            SaveChangedCharts(source, target)
             If _workbookChanged Then
                 Using output = target.GetStream(FileMode.Create, FileAccess.Write)
                     source.Workbook.Save(output)
                 End Using
             End If
+            If _authoredDynamicMetadata IsNot Nothing Then
+                Dim metadataPart = If(target.CellMetadataPart, target.AddNewPart(Of CellMetadataPart)())
+                metadataPart.Metadata = DirectCast(_authoredDynamicMetadata.CloneNode(True), Metadata)
+                metadataPart.Metadata.Save()
+                EnsureWorkbookCalculationFeature(target.Workbook, "microsoft.com:Single")
+            End If
+            Dim richErrorMetadataIndices As New Dictionary(Of String, UInteger)(StringComparer.Ordinal)
+            For Each sourceSheet In _changedSheets
+                Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
+                Using output = targetSheet.GetStream(FileMode.Create, FileAccess.Write)
+                    sourceSheet.Worksheet.Save(output)
+                End Using
+                If Not clearCache AndAlso GetSheetData(sourceSheet).Descendants(Of Cell)().Any(AddressOf IsUnencodedRichError) Then
+                    SaveRichFormulaErrors(target, targetSheet, richErrorMetadataIndices)
+                End If
+            Next
+            SaveChangedTables(source, target)
+            SaveChangedCharts(source, target)
             If clearCache Then
                 For Each sheetPart In target.WorksheetParts
-                    If ClearFormulaResults(GetSheetData(sheetPart)) Then sheetPart.Worksheet.Save()
+                    If ClearFormulaResults(GetSheetData(sheetPart), target.CellMetadataPart?.Metadata) Then sheetPart.Worksheet.Save()
                 Next
             End If
             If (_calculationChainInvalid OrElse clearCache) AndAlso target.CalculationChainPart IsNot Nothing Then

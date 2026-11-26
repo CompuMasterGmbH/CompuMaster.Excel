@@ -9,15 +9,18 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaParser
             Private Shared ReadOnly TokenPattern As New Regex(
-                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!])",
+                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!{};])",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly CellAddressPattern As New Regex("^\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly UnsupportedSheetCharacters As Char() = {"["c, "]"c, ":"c}
             Private ReadOnly _tokens As New List(Of String)
             Private _position As Integer
+            Private ReadOnly _requireAbsoluteReferences As Boolean
+            Private _localNames As Dictionary(Of String, Object)
 
-            Private Sub New(formula As String)
+            Private Sub New(formula As String, requireAbsoluteReferences As Boolean)
+                _requireAbsoluteReferences = requireAbsoluteReferences
                 formula = formula.Trim()
                 If formula.Length > 0 AndAlso formula(0) = "="c Then formula = formula.Substring(1).Trim()
                 Dim offset = 0
@@ -30,8 +33,8 @@ Namespace ExcelOps
                 End While
             End Sub
 
-            Friend Shared Function Parse(formula As String) As FormulaExpression
-                Dim parser As New FormulaParser(formula)
+            Friend Shared Function Parse(formula As String, Optional requireAbsoluteReferences As Boolean = False) As FormulaExpression
+                Dim parser As New FormulaParser(formula, requireAbsoluteReferences)
                 Dim expression = parser.ParseExpression(1)
                 If parser.Current IsNot Nothing Then Throw New NotSupportedException("Unexpected formula token " & parser.Current & ".")
                 Return expression
@@ -82,52 +85,179 @@ Namespace ExcelOps
                 If token = "+" OrElse token = "-" Then Return UnaryExpression(token, ParseExpression(7))
                 If token = "(" Then
                     Dim inner = ParseExpression(1)
+                    If Not Match(",") Then
+                        Expect(")")
+                        Return inner
+                    End If
+                    Dim areas As New List(Of FormulaExpression) From {inner}
+                    Do
+                        areas.Add(ParseExpression(1))
+                    Loop While Match(",")
                     Expect(")")
-                    Return inner
+                    Return Function(calculation, formulaCell) calculation.EvaluateReferenceUnion(areas, formulaCell)
                 End If
+                If token = "{" Then Return ParseArrayConstant()
                 If token(0) = """"c Then
-                    Dim contents = token.Substring(1, token.Length - 2).Replace("""""", """")
+                    Dim contents = ReadTextLiteral(token)
                     Return Function(calculation, formulaCell) contents
                 End If
                 If token(0) = "#"c Then
-                    Dim code = token.ToUpperInvariant()
-                    Select Case code
-                        Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"
-                            Dim excelError = New FormulaError(code)
-                            Return Function(calculation, formulaCell) excelError
-                        Case Else
-                            Throw New NotSupportedException("Unsupported Excel error literal " & token & ".")
-                    End Select
+                    Dim excelError = ReadErrorLiteral(token)
+                    Return Function(calculation, formulaCell) excelError
                 End If
                 If Match("!") Then
                     Dim sheetName = token
                     If token(0) = "'"c Then
                         sheetName = token.Substring(1, token.Length - 2).Replace("''", "'")
                     End If
-                    If sheetName.IndexOfAny(UnsupportedSheetCharacters) >= 0 Then Throw New NotSupportedException("External workbook and 3-D references are outside the supported calculation scope.")
-                    Return ParseReference(sheetName, Consume())
+                    Dim workbookIndex As Integer? = Nothing
+                    If sheetName.StartsWith("[", StringComparison.Ordinal) Then
+                        Dim close = sheetName.IndexOf("]"c)
+                        Dim index As Integer
+                        If close < 2 OrElse Not Integer.TryParse(sheetName.Substring(1, close - 1), NumberStyles.None, CultureInfo.InvariantCulture, index) OrElse index < 1 Then
+                            Throw New NotSupportedException("The external reference must use a workbook index from the XLSX package.")
+                        End If
+                        workbookIndex = index
+                        sheetName = sheetName.Substring(close + 1)
+                    End If
+                    If sheetName.Length = 0 OrElse sheetName.IndexOfAny(UnsupportedSheetCharacters) >= 0 Then
+                        Throw New NotSupportedException("Unsupported worksheet name or 3-D reference.")
+                    End If
+                    Return ParseReferenceOrName(sheetName, Consume(), workbookIndex)
                 End If
-                If Match("(") Then Return ParseFunction(token)
+                If Match("(") Then
+                    If token.Equals("LET", StringComparison.OrdinalIgnoreCase) OrElse
+                        token.Equals("_xlfn.LET", StringComparison.OrdinalIgnoreCase) Then Return ParseLet()
+                    Return ParseFunction(token)
+                End If
 
                 If Char.IsDigit(token(0)) OrElse token(0) = "."c Then
-                    Dim number As Double
-                    Dim value = If(Double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, number),
-                        FormulaCalculation.FiniteNumber(number), New FormulaError("#NUM!"))
+                    Dim value = ReadNumberLiteral(token)
                     Return Function(calculation, formulaCell) value
                 End If
                 If String.Equals(token, "TRUE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) True
                 If String.Equals(token, "FALSE", StringComparison.OrdinalIgnoreCase) Then Return Function(calculation, formulaCell) False
-                Return ParseReference(Nothing, token)
+                Dim binding As Object = Nothing
+                If _localNames IsNot Nothing AndAlso _localNames.TryGetValue(LocalName(token), binding) Then
+                    Return Function(calculation, formulaCell) calculation.ReadLocalName(binding)
+                End If
+                Return ParseReferenceOrName(Nothing, token, Nothing)
             End Function
 
-            Private Function ParseReference(sheetName As String, first As String) As FormulaExpression
+            Private Function ParseArrayConstant() As FormulaExpression
+                Dim values As New List(Of Object)
+                Dim rows = 0
+                Dim columns = 0
+                Do
+                    Dim rowLength = 0
+                    Do
+                        values.Add(ReadArrayConstantElement())
+                        rowLength += 1
+                    Loop While Match(",")
+                    If rows = 0 Then columns = rowLength
+                    If rowLength <> columns Then Throw New NotSupportedException("Array constant rows must have the same number of elements.")
+                    rows += 1
+                Loop While Match(";")
+                Expect("}")
+                Dim matrix As New FormulaMatrix(rows, columns, values.ToArray())
+                Return Function(calculation, formulaCell) matrix
+            End Function
+
+            Private Function ReadArrayConstantElement() As Object
+                Dim token = Consume()
+                If token = "+" OrElse token = "-" Then
+                    Dim number = Consume()
+                    If Not Char.IsDigit(number(0)) AndAlso number(0) <> "."c Then
+                        Throw New NotSupportedException("A signed array constant element must be a number.")
+                    End If
+                    Return ReadNumberLiteral(token & number)
+                End If
+                If Char.IsDigit(token(0)) OrElse token(0) = "."c Then Return ReadNumberLiteral(token)
+                If token(0) = """"c Then Return ReadTextLiteral(token)
+                If token(0) = "#"c Then Return ReadErrorLiteral(token)
+                If token.Equals("TRUE", StringComparison.OrdinalIgnoreCase) Then Return True
+                If token.Equals("FALSE", StringComparison.OrdinalIgnoreCase) Then Return False
+                Throw New NotSupportedException("An array constant must contain literal numbers, text, logical values or Excel errors.")
+            End Function
+
+            Private Shared Function ReadTextLiteral(token As String) As String
+                Return token.Substring(1, token.Length - 2).Replace("""""", """")
+            End Function
+
+            Private Shared Function ReadNumberLiteral(token As String) As Object
+                Dim number As Double
+                Return If(Double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, number),
+                    FormulaCalculation.FiniteNumber(number), New FormulaError("#NUM!"))
+            End Function
+
+            Private Shared Function ReadErrorLiteral(token As String) As FormulaError
+                Dim code = token.ToUpperInvariant()
+                Select Case code
+                    Case "#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A", "#GETTING_DATA"
+                        Return New FormulaError(code)
+                    Case Else
+                        Throw New NotSupportedException("Unsupported Excel error literal " & token & ".")
+                End Select
+            End Function
+
+            Private Function ParseLet() As FormulaExpression
+                Dim outerNames = _localNames
+                _localNames = If(outerNames Is Nothing,
+                    New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase),
+                    New Dictionary(Of String, Object)(outerNames, StringComparer.OrdinalIgnoreCase))
+                Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+                Dim bindings As New List(Of (Key As Object, Value As FormulaExpression))
+                Try
+                    Do
+                        Dim name = LocalName(Consume())
+                        If Not IsValidDefinedNameToken(name) OrElse CellAddressPattern.IsMatch(name) OrElse
+                            name.Equals("TRUE", StringComparison.OrdinalIgnoreCase) OrElse
+                            name.Equals("FALSE", StringComparison.OrdinalIgnoreCase) OrElse Not names.Add(name) Then
+                            Throw New NotSupportedException("Unsupported or repeated LET name " & name & ".")
+                        End If
+                        Expect(",")
+                        Dim value As FormulaExpression
+                        If Current = "," Then
+                            value = Function(calculation, formulaCell) Nothing
+                        Else
+                            value = ParseExpression(1)
+                        End If
+                        Expect(",")
+                        Dim key As New Object()
+                        bindings.Add((key, value))
+                        _localNames(name) = key
+                    Loop While _position + 1 < _tokens.Count AndAlso _tokens(_position + 1) = ","
+
+                    Dim result = ParseExpression(1)
+                    Expect(")")
+                    Return Function(calculation, formulaCell) calculation.EvaluateLet(bindings, result, formulaCell)
+                Finally
+                    _localNames = outerNames
+                End Try
+            End Function
+
+            Private Shared Function LocalName(token As String) As String
+                Const localPrefix As String = "_xlpm."
+                Return If(token.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase), token.Substring(localPrefix.Length), token)
+            End Function
+
+            Private Function ParseReferenceOrName(sheetName As String, token As String, workbookIndex As Integer?) As FormulaExpression
+                If CellAddressPattern.IsMatch(token) Then Return ParseReference(sheetName, token, workbookIndex)
+                If workbookIndex.HasValue Then Throw New NotSupportedException("External defined names are outside the supported calculation scope.")
+                Return Function(calculation, formulaCell) calculation.EvaluateDefinedName(token, sheetName, formulaCell)
+            End Function
+
+            Private Function ParseReference(sheetName As String, first As String, workbookIndex As Integer?) As FormulaExpression
                 Dim start = ParseAddress(first)
                 Dim finish = If(Match(":"), ParseAddress(Consume()), start)
-                Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish)
+                Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish, workbookIndex)
             End Function
 
-            Private Shared Function ParseAddress(token As String) As ExcelCell
+            Private Function ParseAddress(token As String) As ExcelCell
                 If Not CellAddressPattern.IsMatch(token) Then Throw New NotSupportedException("Unsupported worksheet reference or name " & token & ".")
+                If _requireAbsoluteReferences AndAlso token.Count(Function(character) character = "$"c) <> 2 Then
+                    Throw New NotSupportedException("Relative references inside a defined name are outside the supported calculation scope.")
+                End If
                 Dim cell = New ExcelCell(Nothing, token.Replace("$", ""), ExcelCell.ValueTypes.All)
                 ValidateCoordinates(cell.RowIndex, cell.ColumnIndex)
                 Return cell
