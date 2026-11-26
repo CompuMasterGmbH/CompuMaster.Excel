@@ -26,7 +26,13 @@
                         minimum = 1
                 End Select
                 If arguments.Count < minimum OrElse arguments.Count > If(name = "ERF", 2, minimum) Then Return New FormulaError("#VALUE!")
+                Return EvaluateProbabilityArguments(arguments, formulaCell, engineering, cumulativeIndex,
+                    Function(numbers, cumulative) NormalFunctionValue(name, numbers, arguments.Count, cumulative))
+            End Function
 
+            Private Function EvaluateProbabilityArguments(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
+                                                          engineering As Boolean, cumulativeIndex As Integer,
+                                                          calculate As Func(Of Double(), Boolean, Object)) As Object
                 Dim evaluated = arguments.Select(Function(argument) EvaluateExpression(argument, formulaCell)).ToArray()
                 If engineering Then
                     If evaluated.Any(Function(value) TypeOf value Is FormulaArea AndAlso IsMultiValue(value)) Then Return New FormulaError("#VALUE!")
@@ -61,7 +67,7 @@
                                 numbers(index) = DirectCast(number, Double)
                             End If
                         Next
-                        results(row * columns + column) = If(failure, NormalFunctionValue(name, numbers, inputs.Length, cumulative))
+                        results(row * columns + column) = If(failure, calculate(numbers, cumulative))
                     Next
                 Next
                 If results.Length = 1 Then Return results(0)

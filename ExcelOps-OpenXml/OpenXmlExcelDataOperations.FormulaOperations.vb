@@ -168,6 +168,12 @@ Namespace ExcelOps
                          "NORM.S.INV", "_XLFN.NORM.S.INV", "NORMSINV", "NORM.INV", "_XLFN.NORM.INV", "NORMINV",
                          "LOGNORM.INV", "_XLFN.LOGNORM.INV", "LOGINV", "CONFIDENCE", "CONFIDENCE.NORM", "_XLFN.CONFIDENCE.NORM"
                         Return EvaluateNormalFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "GAMMA", "_XLFN.GAMMA", "GAMMALN", "GAMMALN.PRECISE", "_XLFN.GAMMALN.PRECISE",
+                         "GAMMA.DIST", "_XLFN.GAMMA.DIST", "GAMMADIST", "GAMMA.INV", "_XLFN.GAMMA.INV", "GAMMAINV",
+                         "CHISQ.DIST", "_XLFN.CHISQ.DIST", "CHISQ.DIST.RT", "_XLFN.CHISQ.DIST.RT", "CHIDIST",
+                         "CHISQ.INV", "_XLFN.CHISQ.INV", "CHISQ.INV.RT", "_XLFN.CHISQ.INV.RT", "CHIINV",
+                         "EXPON.DIST", "_XLFN.EXPON.DIST", "EXPONDIST", "WEIBULL.DIST", "_XLFN.WEIBULL.DIST", "WEIBULL"
+                        Return EvaluateGammaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
