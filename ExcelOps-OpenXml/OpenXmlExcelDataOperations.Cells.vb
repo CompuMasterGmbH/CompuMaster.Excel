@@ -167,7 +167,10 @@ Namespace ExcelOps
 
         Private Function ReadApiCellValue(sheetName As String, rowIndex As Integer, columnIndex As Integer, targetType As Type) As Object
             Dim value = ReadCellValue(sheetName, rowIndex, columnIndex, GetCell(sheetName, rowIndex, columnIndex))
-            If TypeOf value Is String AndAlso Trim(DirectCast(value, String)) = Nothing Then Return Nothing
+            If TypeOf value Is String Then
+                Dim text = DirectCast(value, String)
+                If text.Length > 0 AndAlso Trim(text) = Nothing Then Return Nothing
+            End If
             If Not TypeOf value Is Double OrElse (targetType IsNot GetType(Object) AndAlso targetType IsNot GetType(DateTime)) Then Return value
 
             Dim format = LookupCellFormat(sheetName, rowIndex, columnIndex)
