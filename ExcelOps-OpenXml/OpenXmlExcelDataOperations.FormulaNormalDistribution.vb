@@ -48,7 +48,7 @@
                 Dim rows = inputs.Max(Function(input) input.Rows)
                 Dim columns = inputs.Max(Function(input) input.Columns)
                 Dim results = AllocateMatrixValues(rows, columns)
-                Dim numbers = If(defaults Is Nothing, New Double(2) {}, DirectCast(defaults.Clone(), Double()))
+                Dim numbers = If(defaults Is Nothing, New Double(Math.Max(3, evaluated.Length) - 1) {}, DirectCast(defaults.Clone(), Double()))
                 For row = 0 To rows - 1
                     For column = 0 To columns - 1
                         Dim cumulative = True

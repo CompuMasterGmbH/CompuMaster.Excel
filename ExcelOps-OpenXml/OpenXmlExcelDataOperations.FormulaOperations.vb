@@ -180,6 +180,10 @@ Namespace ExcelOps
                          "F.DIST", "_XLFN.F.DIST", "F.DIST.RT", "_XLFN.F.DIST.RT", "FDIST",
                          "F.INV", "_XLFN.F.INV", "F.INV.RT", "_XLFN.F.INV.RT", "FINV"
                         Return EvaluateBetaFamily(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "BINOM.DIST", "_XLFN.BINOM.DIST", "BINOMDIST", "BINOM.INV", "_XLFN.BINOM.INV", "CRITBINOM",
+                         "BINOM.DIST.RANGE", "_XLFN.BINOM.DIST.RANGE", "NEGBINOM.DIST", "_XLFN.NEGBINOM.DIST", "NEGBINOMDIST",
+                         "HYPGEOM.DIST", "_XLFN.HYPGEOM.DIST", "HYPGEOMDIST", "POISSON.DIST", "_XLFN.POISSON.DIST", "POISSON"
+                        Return EvaluateDiscreteDistribution(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
