@@ -129,6 +129,10 @@ Namespace ExcelOps
                          "PERCENTILE", "PERCENTILE.INC", "_XLFN.PERCENTILE.INC", "PERCENTILE.EXC", "_XLFN.PERCENTILE.EXC",
                          "QUARTILE", "QUARTILE.INC", "_XLFN.QUARTILE.INC", "QUARTILE.EXC", "_XLFN.QUARTILE.EXC"
                         Return EvaluateOrderStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "FREQUENCY"
+                        Return EvaluateFrequency(arguments, formulaCell)
+                    Case "PROB"
+                        Return EvaluateDiscreteProbability(arguments, formulaCell)
                     Case "PERCENTRANK", "PERCENTRANK.INC", "_XLFN.PERCENTRANK.INC", "PERCENTRANK.EXC", "_XLFN.PERCENTRANK.EXC"
                         Return EvaluatePercentRank(name.EndsWith(".EXC", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
                     Case "ISERR", "ISNONTEXT", "ISEVEN", "ISODD", "N", "T", "TYPE", "ERROR.TYPE"
