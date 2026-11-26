@@ -119,6 +119,11 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceLambda1900.xlsx", "Lambda arrays", 161)>
     <TestCase("FormulaReferenceRowAggregates1900.xlsx", "Row visibility", 84)>
     <TestCase("FormulaReferenceRowAggregates1900.xlsx", "Filter modes", 524)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Formats", 146)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Array display", 98)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Links and XML", 87)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Byte text", 95)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Random rules", 29)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -253,6 +258,10 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceDatabase1900.xlsx", "Database arrays", 63)>
     <TestCase("FormulaReferenceLambda1900.xlsx", "Lambda arrays", 409)>
     <TestCase("FormulaReferenceRowAggregates1900.xlsx", "Filter modes", 25)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Formats", 2)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Array display", 52)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Links and XML", 24)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Random rules", 10)>
     Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
@@ -260,7 +269,7 @@ Public Class FormulaConformanceFixtureTest
             Dim sheet = workbook.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = sheetName)
             Dim worksheet = DirectCast(workbook.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
             For Each cell In worksheet.Descendants(Of Cell)()
-                If cell.CellFormula IsNot Nothing OrElse cell.CellValue Is Nothing Then Continue For
+                If IsFormulaAnchor(cell) OrElse cell.CellValue Is Nothing Then Continue For
                 Dim address As New ExcelCell(sheetName, cell.CellReference.Value, ExcelCell.ValueTypes.All)
                 If address.RowIndex > 0 AndAlso address.ColumnIndex >= 3 Then addresses.Add(cell.CellReference.Value)
             Next
@@ -414,13 +423,19 @@ Public Class FormulaConformanceFixtureTest
         Return TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", fileName)
     End Function
 
+    Private Shared Function IsFormulaAnchor(cell As Cell) As Boolean
+        Dim formula = cell.CellFormula
+        Return formula IsNot Nothing AndAlso Not (String.IsNullOrEmpty(formula.Text) AndAlso
+            If(formula.CalculateCell?.Value, False) AndAlso If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Normal)
+    End Function
+
     Private Shared Function ReadFormulaCaches(fileName As String, sheetName As String) As Dictionary(Of String, (Kind As CellValues, Value As Object))
         Dim caches As New Dictionary(Of String, (Kind As CellValues, Value As Object))(StringComparer.Ordinal)
         Using package = SpreadsheetDocument.Open(fileName, False)
             Dim workbook = package.WorkbookPart
             Dim sheet = workbook.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = sheetName)
             Dim worksheet = DirectCast(workbook.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
-            For Each cell In worksheet.Descendants(Of Cell)().Where(Function(item) item.CellFormula IsNot Nothing)
+            For Each cell In worksheet.Descendants(Of Cell)().Where(AddressOf IsFormulaAnchor)
                 Dim address = cell.CellReference.Value
                 Assert.That(cell.CellValue, [Is].Not.Null, sheetName & "!" & address)
                 Dim text = If(cell.CellValue.Text, String.Empty)

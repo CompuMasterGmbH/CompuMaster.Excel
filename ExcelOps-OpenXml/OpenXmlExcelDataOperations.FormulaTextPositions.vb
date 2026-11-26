@@ -64,11 +64,24 @@ Namespace ExcelOps
 
             Private Function FindTextPosition(name As String, pattern As String, subject As String, start As Double) As Object
                 Dim position = Math.Truncate(start)
-                Dim last = TextCharacterCount(subject, _unicodeTextPositions)
-                Dim literal = name = "FIND"
+                Dim legacy = name.EndsWith("B", StringComparison.Ordinal)
+                Dim encoding = If(legacy AndAlso UsesDoubleByteText, WorksheetCodePage(), Nothing)
+                Dim unicodePositions = Not legacy AndAlso _unicodeTextPositions
+                Dim last = If(encoding Is Nothing, TextCharacterCount(subject, unicodePositions), encoding.GetByteCount(subject))
+                Dim literal = name = "FIND" OrElse name = "FINDB"
                 If literal AndAlso pattern.Length = 0 Then last += 1
                 If position < 1.0 OrElse position > last Then Return New FormulaError("#VALUE!")
-                Dim offset = Utf16CharacterOffset(subject, position - 1.0, _unicodeTextPositions)
+                Dim offset As Integer
+                If encoding Is Nothing Then
+                    offset = Utf16CharacterOffset(subject, position - 1.0, unicodePositions)
+                Else
+                    Dim consumed = 0
+                    While offset < subject.Length AndAlso consumed < position - 1.0
+                        Dim size = If(Char.IsSurrogatePair(subject, offset), 2, 1)
+                        consumed += encoding.GetByteCount(subject.Substring(offset, size))
+                        offset += size
+                    End While
+                End If
                 Dim index As Integer
                 If literal Then
                     index = subject.IndexOf(pattern, offset, StringComparison.Ordinal)
@@ -78,7 +91,7 @@ Namespace ExcelOps
                     Try
                         Dim found = wildcard.Match(searchable, offset)
                         ' Excel matches wildcard units as UTF-16 even in version 2. Only the reported positions must start at a full character.
-                        While found.Success AndAlso _unicodeTextPositions AndAlso found.Index > 0 AndAlso
+                        While found.Success AndAlso unicodePositions AndAlso found.Index > 0 AndAlso
                             Char.IsSurrogatePair(subject, found.Index - 1)
                             found = wildcard.Match(searchable, found.Index + 1)
                         End While
@@ -88,7 +101,7 @@ Namespace ExcelOps
                     End Try
                 End If
                 If index < 0 Then Return New FormulaError("#VALUE!")
-                Return CDbl(TextCharacterCount(subject, _unicodeTextPositions, index) + 1)
+                Return CDbl(If(encoding Is Nothing, TextCharacterCount(subject, unicodePositions, index), encoding.GetByteCount(subject.Substring(0, index))) + 1)
             End Function
 
             Private Shared Function FoldSearchCase(text As String) As String

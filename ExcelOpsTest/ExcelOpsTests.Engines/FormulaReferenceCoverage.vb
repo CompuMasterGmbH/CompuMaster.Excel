@@ -67,7 +67,9 @@ Namespace ExcelOpsTests.Engines
                         If(cell.CellFormula?.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Array AndAlso cell.CellFormula.Reference IsNot Nothing).
                         Select(Function(cell) New ExcelRange(name, cell.CellFormula.Reference.Value)).ToArray()
                     For Each cell In cells
-                        If cell.CellFormula Is Nothing Then
+                        Dim formula = cell.CellFormula
+                        If formula Is Nothing OrElse (String.IsNullOrEmpty(formula.Text) AndAlso
+                            If(formula.CalculateCell?.Value, False) AndAlso If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Normal) Then
                             If spillRanges.Length = 0 Then Continue For
                             Dim position As New ExcelCell(name, cell.CellReference.Value, ExcelCell.ValueTypes.All)
                             If Not spillRanges.Any(Function(range) position.RowIndex >= range.AddressStart.RowIndex AndAlso

@@ -56,6 +56,8 @@ Rectangular array constants can contain numbers, text, logical values and Excel 
 
 `SUBTOTAL` supports selectors 1 through 11 and 101 through 111. It skips nested `SUBTOTAL` and `AGGREGATE` results. It skips saved hidden rows when a worksheet or table filter is active, and the selectors 101 through 111 also skip them on worksheets with no active filter. `AGGREGATE` supports selectors 1 through 19 and all eight combinations of its hidden-row, error and nested-result options. Hidden-row and nested-result options use the metadata of direct references. Computed arrays carry values only.
 
+`RAND`, `RANDBETWEEN` and `RANDARRAY` are volatile and generate new draws during recalculation. `TEXT`, `DOLLAR`, `FIXED`, `ARRAYTOTEXT` and `VALUETOTEXT` use the formula culture for display. The legacy byte text functions use the configured Windows code page for East Asian formula cultures. `PHONETIC` reads stored phonetic text from the referenced cell. `HYPERLINK` calculates its displayed value, and Excel can follow the stored formula link when the workbook opens. `FILTERXML` evaluates XPath against the supplied XML text without resolving external entities.
+
 ### Automatic calculation after value edits
 
 Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.

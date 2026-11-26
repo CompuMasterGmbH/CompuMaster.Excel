@@ -106,7 +106,7 @@ Namespace ExcelOps
                         Return EvaluateNumericThreshold(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "FIND", "SEARCH"
+                    Case "FIND", "SEARCH", "FINDB", "SEARCHB"
                         Return EvaluateTextSearch(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "VALUE", "NUMBERVALUE", "_XLFN.NUMBERVALUE", "CHAR", "CODE", "UNICHAR", "_XLFN.UNICHAR",
                          "UNICODE", "_XLFN.UNICODE", "CLEAN", "PROPER", "ENCODEURL", "_XLFN.ENCODEURL"
@@ -132,6 +132,16 @@ Namespace ExcelOps
                         Return EvaluateOrderStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "SUBTOTAL", "AGGREGATE", "_XLFN.AGGREGATE"
                         Return EvaluateRowAggregate(name.Equals("SUBTOTAL", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "RAND", "RANDBETWEEN", "RANDARRAY", "_XLFN.RANDARRAY"
+                        Return EvaluateRandomFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DOLLAR", "FIXED", "TEXT", "ARRAYTOTEXT", "_XLFN.ARRAYTOTEXT", "VALUETOTEXT", "_XLFN.VALUETOTEXT"
+                        Return EvaluateDisplayFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "HYPERLINK", "FILTERXML", "_XLFN.FILTERXML"
+                        Return EvaluateLinkOrXml(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "ASC", "DBCS", "_XLFN.DBCS", "JIS", "PHONETIC"
+                        Return EvaluateWidthFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "LENB", "LEFTB", "RIGHTB", "MIDB", "REPLACEB"
+                        Return EvaluateByteFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "FREQUENCY"
                         Return EvaluateFrequency(arguments, formulaCell)
                     Case "PROB"
