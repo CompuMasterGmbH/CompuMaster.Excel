@@ -68,6 +68,27 @@ Public Class OpenXmlCustomFormulaTest
     End Sub
 
     <Test>
+    Public Sub DoesNotReplayApplicationCallbacksWhenADeepPrecedentIsEncountered()
+        Dim session As New ExcelFormulaSession()
+        Dim calls = 0
+        session.RegisterFunction("APP.CHECK",
+            Function(context, arguments)
+                calls += 1
+                Return ExcelFormulaValue.FromBoolean(True)
+            End Function)
+        Using workbook = CreateWorkbook(session, "Target")
+            workbook.WriteCellFormula("Sheet1", 0, 0, "IF(APP.CHECK(),A2,0)", False)
+            For row = 1 To 599
+                workbook.WriteCellFormula("Sheet1", row, 0, String.Concat("A", row + 2, "+1"), False)
+            Next
+            workbook.WriteCellValue(Cell("A601"), 1)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateCell(Cell("A1")))
+            Assert.That(calls, [Is].EqualTo(1))
+            Assert.That(workbook.HasMissingCachedFormulaResult(Cell("A1")), [Is].True)
+        End Using
+    End Sub
+
+    <Test>
     Public Sub PreservesTypedArgumentsAndDoesNotSerializeCallbacks()
         Dim session As New ExcelFormulaSession()
         session.RegisterFunction("PROFILE",

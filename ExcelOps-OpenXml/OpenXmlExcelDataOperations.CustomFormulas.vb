@@ -36,6 +36,7 @@
                 Dim context As New ExcelFormulaContext(views(workbookName), New ExcelFormulaWorkbookSession(views),
                                                        formulaCell, session.ActiveWorkbook, session.ActiveCell, nativeExcelApplication:=Nothing)
                 Try
+                    _run.CalledUserCode = True
                     Dim result = registration.Implementation(context, Array.AsReadOnly(values))
                     If result.Kind = ExcelFormulaValueKind.Error Then Return New FormulaError(DirectCast(result.Value, String))
                     Return result.Value

@@ -112,6 +112,19 @@ Namespace ExcelOps
             End Sub
         End Class
 
+
+        Private NotInheritable Class DeferredFormulaPrecedent
+            Inherits Exception
+
+            Friend ReadOnly Location As FormulaLocation
+            Friend ReadOnly Formula As String
+
+            Friend Sub New(location As FormulaLocation, formula As String)
+                Me.Location = location
+                Me.Formula = formula
+            End Sub
+        End Class
+
         Private NotInheritable Partial Class FormulaCalculation
             Private ReadOnly _owner As OpenXmlExcelDataOperations
             Private ReadOnly _unicodeTextPositions As Boolean
@@ -177,8 +190,61 @@ Namespace ExcelOps
                 _worksheets(sheetName).Cells((rowIndex, columnIndex)) = cell
             End Sub
 
+
             Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer,
                                      Optional trackRead As Boolean = True, Optional calculateIterationMember As Boolean = False) As Object
+                If _run.ResolvingRoot OrElse _run.InOrderedIterationPass OrElse calculateIterationMember Then
+                    Return ReadCellCore(sheetName, rowIndex, columnIndex, trackRead, calculateIterationMember)
+                End If
+                _run.ResolvingRoot = True
+                _run.CalledUserCode = False
+                Try
+                    Return ReadCellCore(sheetName, rowIndex, columnIndex, trackRead, calculateIterationMember)
+                Catch deferred As DeferredFormulaPrecedent
+                    Dim root As New FormulaLocation(_owner, sheetName, rowIndex, columnIndex)
+                    Return ReadAfterDeferredPrecedent(root, deferred)
+                Finally
+                    _run.ResolvingRoot = False
+                End Try
+            End Function
+
+            Private Function ReadAfterDeferredPrecedent(root As FormulaLocation, deferred As DeferredFormulaPrecedent) As Object
+                Dim pending As New Stack(Of FormulaLocation)
+                Dim scheduled As New HashSet(Of FormulaLocation)
+                pending.Push(root)
+                scheduled.Add(root)
+                While pending.Count > 0
+                    If deferred IsNot Nothing Then
+                        If Not scheduled.Add(deferred.Location) Then
+                            Dim address As New ExcelCell(deferred.Location.Sheet, deferred.Location.Row, deferred.Location.Column, ExcelCell.ValueTypes.All)
+                            Throw New CircularReferenceException(address, deferred.Formula)
+                        End If
+                        pending.Push(deferred.Location)
+                        deferred = Nothing
+                    End If
+                    Dim location = pending.Peek()
+                    Try
+                        _run.CalledUserCode = False
+                        Dim result = ForWorkbook(location.Workbook).ReadCellCore(location.Sheet, location.Row, location.Column,
+                                                                                 trackRead:=False, calculateIterationMember:=False)
+                        pending.Pop()
+                        scheduled.Remove(location)
+                        If pending.Count = 0 Then Return result
+                    Catch nextPrecedent As DeferredFormulaPrecedent
+                        deferred = nextPrecedent
+                    End Try
+                End While
+                Throw New InvalidOperationException("The deferred formula calculation did not return a result.")
+            End Function
+
+            Private Function CanDeferFormulaPrecedent() As Boolean
+                ' Resuming an incomplete formula can repeat its early arguments. Application code must never be called twice.
+                Return _run.ResolvingRoot AndAlso Not _run.CalledUserCode AndAlso _run.IterationWorkbook Is Nothing AndAlso
+                    Not IterationSettings(_owner).Enabled AndAlso _run.Active.Count > 1
+            End Function
+
+            Private Function ReadCellCore(sheetName As String, rowIndex As Integer, columnIndex As Integer,
+                                          trackRead As Boolean, calculateIterationMember As Boolean) As Object
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not _worksheets.TryGetValue(sheetName, worksheet) Then Return New FormulaError("#REF!")
                 Dim location As New FormulaLocation(_owner, worksheet.Name, rowIndex, columnIndex)
@@ -222,9 +288,12 @@ Namespace ExcelOps
                 End If
                 If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
                 If _run.Active.Count >= 256 OrElse Not HasFormulaStackSpace() Then
+                    If CanDeferFormulaPrecedent() Then Throw New DeferredFormulaPrecedent(location, formula)
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
                 _run.Active.Push(cell)
+                Dim previousLocation = _run.ActiveLocation
+                _run.ActiveLocation = location
                 If _run.TrackDependencies Then _run.Frames.Push(New FormulaDependencies(location))
                 Try
                     If If(cell.CellFormula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Shared Then
@@ -245,12 +314,18 @@ Namespace ExcelOps
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula refers to a cell outside the XLSX grid.", ex)
                 Finally
                     If _run.TrackDependencies Then _run.Frames.Pop()
+                    _run.ActiveLocation = previousLocation
                     _run.Active.Pop()
                 End Try
             End Function
 
             Friend Function EvaluateExpression(expression As FormulaExpression, formulaCell As ExcelCell) As Object
-                If _run.ExpressionDepth >= 512 OrElse Not HasFormulaStackSpace() Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
+                If _run.ExpressionDepth >= 512 OrElse Not HasFormulaStackSpace() Then
+                    If CanDeferFormulaPrecedent() Then
+                        Throw New DeferredFormulaPrecedent(_run.ActiveLocation, _run.Active.Peek().CellFormula?.Text)
+                    End If
+                    Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
+                End If
                 _run.ExpressionDepth += 1
                 Try
                     Return expression(Me, formulaCell)
@@ -365,6 +440,9 @@ Namespace ExcelOps
                 Friend ReadOnly CopyWorkbook As OpenXmlExcelDataOperations
                 Friend ReadOnly CopySourcePath As String
                 Friend ExpressionDepth As Integer
+                Friend ActiveLocation As FormulaLocation
+                Friend ResolvingRoot As Boolean
+                Friend CalledUserCode As Boolean
                 Friend ReadOnly LocalTime As Lazy(Of DateTime)
 
                 Friend ReadOnly TrackDependencies As Boolean

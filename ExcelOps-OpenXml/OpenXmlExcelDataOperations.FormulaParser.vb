@@ -145,6 +145,7 @@ Namespace ExcelOps
                     Return Function(calculation, formulaCell) contents
                 End If
                 If token(0) = "#"c Then
+                    If IsBrokenReference(token) Then Return BrokenReferenceExpression()
                     Dim excelError = ReadErrorLiteral(token)
                     Return Function(calculation, formulaCell) excelError
                 End If
@@ -292,6 +293,7 @@ Namespace ExcelOps
             End Function
 
             Private Function ParseReferenceOrName(sheetName As String, token As String, workbookIndex As Integer?) As FormulaExpression
+                If IsBrokenReference(token) Then Return BrokenReferenceExpression()
                 If CellAddressPattern.IsMatch(token) Then Return ParseReference(sheetName, token, workbookIndex)
                 Dim wholeAxis = TryParseWholeAxis(sheetName, token, workbookIndex)
                 If wholeAxis IsNot Nothing Then Return wholeAxis
@@ -305,6 +307,7 @@ Namespace ExcelOps
                 If Not columns AndAlso Not WholeRowAddress.IsMatch(first) Then Return Nothing
                 Expect(":")
                 Dim last = Consume()
+                If columns AndAlso IsBrokenReference(last) Then Return Function(calculation, formulaCell) New FormulaError("#NAME?")
                 Dim pattern = If(columns, WholeColumnAddress, WholeRowAddress)
                 If Not pattern.IsMatch(last) Then Throw New NotSupportedException("Invalid whole-row or whole-column reference.")
                 If _requireAbsoluteReferences AndAlso (first(0) <> "$"c OrElse last(0) <> "$"c) Then
@@ -322,8 +325,27 @@ Namespace ExcelOps
 
             Private Function ParseReference(sheetName As String, first As String, workbookIndex As Integer?) As FormulaExpression
                 Dim start = ParseAddress(first)
-                Dim finish = If(Match(":"), ParseAddress(Consume()), start)
+                Dim finish = start
+                If Match(":") Then
+                    Dim last = Consume()
+                    If IsBrokenReference(last) Then Return Function(calculation, formulaCell) New FormulaError("#REF!")
+                    finish = ParseAddress(last)
+                End If
                 Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), start, finish, workbookIndex)
+            End Function
+
+            Private Shared Function IsBrokenReference(token As String) As Boolean
+                Return String.Equals(token, "#REF!", StringComparison.OrdinalIgnoreCase)
+            End Function
+
+            Private Function BrokenReferenceExpression() As FormulaExpression
+                If Match(":") Then
+                    Dim last = Consume()
+                    If Not IsBrokenReference(last) AndAlso Not CellAddressPattern.IsMatch(last) AndAlso Not WholeColumnAddress.IsMatch(last) Then
+                        Throw New NotSupportedException("Unsupported end of a broken worksheet reference.")
+                    End If
+                End If
+                Return Function(calculation, formulaCell) New FormulaError("#REF!")
             End Function
 
             Private Function ParseAddress(token As String) As ExcelCell
