@@ -138,6 +138,10 @@ Namespace ExcelOps
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "SUMPRODUCT"
                         Return EvaluateSumProduct(arguments, formulaCell)
+                    Case "SERIESSUM"
+                        Return EvaluateSeriesSum(arguments, formulaCell)
+                    Case "SUMXMY2", "SUMX2MY2", "SUMX2PY2"
+                        Return EvaluatePairwiseSquares(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "MDETERM", "MINVERSE", "MMULT", "MUNIT", "_XLFN.MUNIT"
                         Return EvaluateMatrixAlgebra(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "BASE", "_XLFN.BASE", "DECIMAL", "_XLFN.DECIMAL",

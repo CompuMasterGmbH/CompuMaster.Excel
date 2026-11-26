@@ -155,7 +155,7 @@ Public Class OpenXmlSpillFormulaTest
             Dim sheet = workbook.SheetNames()(0)
             workbook.WriteCellValue(sheet, 0, 0, 17.0)
             Assert.Throws(Of FormulaComplexityNotSupportedException)(
-                Sub() workbook.WriteDynamicArrayFormula(sheet, 0, 0, "SERIESSUM(A1,0,1,B1:B2)", True))
+                Sub() workbook.WriteDynamicArrayFormula(sheet, 0, 0, "UNREGISTERED(A1, B1:B2)", True))
             Assert.That(Number(workbook, sheet, "A1"), [Is].EqualTo(17.0))
             workbook.WriteCellValue(sheet, 1, 2, 123.0)
             workbook.WriteDynamicArrayFormula(sheet, 0, 2, "SEQUENCE(2)", True)
