@@ -155,6 +155,8 @@ Namespace ExcelOps
                         Return EvaluateLoanFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "XNPV", "XIRR"
+                        Return EvaluateDatedCashFlow(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "HLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"
