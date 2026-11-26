@@ -203,6 +203,8 @@ Namespace ExcelOps
                         Return EvaluateLoanFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "FVSCHEDULE"
                         Return EvaluateGrowthSchedule(arguments, formulaCell)
+                    Case "AMORLINC", "AMORDEGRC"
+                        Return EvaluateFrenchDepreciation(name.Equals("AMORDEGRC", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
                     Case "SLN", "SYD", "DB", "DDB", "EFFECT", "NOMINAL", "DOLLARDE", "DOLLARFR"
                         Return EvaluateDepreciationOrRate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ERF", "ERFC", "ERF.PRECISE", "_XLFN.ERF.PRECISE", "ERFC.PRECISE", "_XLFN.ERFC.PRECISE",

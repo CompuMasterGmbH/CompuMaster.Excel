@@ -52,6 +52,15 @@ Public Class OpenXmlStandardFormulaTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub ReportsUnstableSubperiodOfDecliningFrenchDepreciation()
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())
+            workbook.WriteCellFormula("Sheet1", 0, 0, "AMORDEGRC(1200,DATE(2008,7,1),DATE(2008,12,31),150,0.25,0.15)", False)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.LookupCellValueAsObject("Sheet1", 0, 0, FormulaCalculationMode.CalculateIfMissing))
+        End Using
+    End Sub
+
     <TestCase(False, "DATE(2011,7,5)", 40729.0)>
     <TestCase(True, "DATE(2011,7,5)", 39267.0)>
     <TestCase(False, "DATE(1900,2,29)", 60.0)>

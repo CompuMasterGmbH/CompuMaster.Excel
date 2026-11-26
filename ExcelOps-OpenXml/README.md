@@ -63,6 +63,10 @@ directory, and open workbooks. Its environment-dependent results vary from deskt
 
 `CONVERT` supports the case-sensitive unit symbols and decimal or binary prefixes defined by Excel. The Bessel functions use the measured Excel approximation for modified Bessel I and K in their usual input range. Ordinary Bessel J and Y use Math.NET Numerics and can differ from Excel at its approximation boundaries. `EUROCONVERT` implements the fixed rates and triangulation rules documented for the Excel Euro Currency Tools add-in. `BAHTTEXT` writes the amount in Thai baht and satang.
 
+`AMORLINC` and the legacy `AMORDEGRC` implement French accounting depreciation with either workbook date system.
+Excel returns inconsistent values for `AMORDEGRC` periods strictly between zero and one. Open XML reports that
+case as unsupported.
+
 Open XML evaluates shared worksheet formulas using the anchor's relative and absolute references. Saving results retains the original shared formula groups. Existing limits for legacy array and data-table formulas continue to apply.
 
 Worksheet formulas can refer to whole rows or columns. Criteria aggregates inspect stored cells and account for missing cells without allocating the entire referenced range. Other array operations remain subject to their materialization limit.
