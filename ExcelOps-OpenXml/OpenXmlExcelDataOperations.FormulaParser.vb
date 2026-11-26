@@ -23,6 +23,7 @@ Namespace ExcelOps
             Private ReadOnly _tokenStarts As List(Of Integer)
             Private ReadOnly _storagePrefixes As SortedDictionary(Of Integer, String)
             Private _position As Integer
+            Private _bareGroupingLambda As Boolean
             Private ReadOnly _requireAbsoluteReferences As Boolean
             Private _localNames As Dictionary(Of String, Object)
 
@@ -99,7 +100,7 @@ Namespace ExcelOps
             End Sub
 
             Private Function ParseExpression(minimumPrecedence As Integer) As FormulaExpression
-                If Not HasFormulaStackSpace() Then Throw New NotSupportedException("The nested formula expression exceeds the supported parsing depth.")
+                If Not HasFormulaStackSpace() Then Throw New NotSupportedException("The nested formula expression exceeds the supported parsing depth.", New InsufficientExecutionStackException())
                 Dim left = ParsePrimary()
                 While Match("(")
                     Dim callable = left
@@ -148,6 +149,13 @@ Namespace ExcelOps
                     If IsBrokenReference(token) Then Return BrokenReferenceExpression()
                     Dim excelError = ReadErrorLiteral(token)
                     Return Function(calculation, formulaCell) excelError
+                End If
+                If Current <> "(" AndAlso Current <> "!" AndAlso (_bareGroupingLambda OrElse token.StartsWith("_xleta.", StringComparison.OrdinalIgnoreCase)) AndAlso
+                    NativeLambdaFunctions.Contains(NativeLambdaName(token)) AndAlso
+                    (_localNames Is Nothing OrElse Not _localNames.ContainsKey(LocalName(token))) Then
+                    AddStoragePrefix(tokenIndex, "_xleta.")
+                    Dim callback As New FormulaLambda(NativeLambdaName(token))
+                    Return Function(calculation, formulaCell) callback
                 End If
                 If Match("!") Then
                     Dim sheetName = token
@@ -360,7 +368,8 @@ Namespace ExcelOps
 
             Private Function ParseFunction(name As String) As FormulaExpression
                 Dim nameIndex = _position - 2
-                Dim arguments = ParseArguments(allowNativeCallback:=IsLambdaArrayFunctionName(name))
+                Dim isGrouping = name.Equals("GROUPBY", StringComparison.OrdinalIgnoreCase) OrElse name.Equals("_xlfn.GROUPBY", StringComparison.OrdinalIgnoreCase)
+                Dim arguments = ParseArguments(allowNativeCallback:=IsLambdaArrayFunctionName(name), groupingPosition:=If(isGrouping, 2, -1))
                 Dim binding As Object = Nothing
                 If _localNames IsNot Nothing AndAlso _localNames.TryGetValue(LocalName(name), binding) AndAlso
                     _storagePrefixes IsNot Nothing AndAlso Not CatalogFunctionNames.Value.Contains(name) Then
@@ -384,7 +393,7 @@ Namespace ExcelOps
                 Return names
             End Function
 
-            Private Function ParseArguments(Optional allowNativeCallback As Boolean = False) As List(Of FormulaExpression)
+            Private Function ParseArguments(Optional allowNativeCallback As Boolean = False, Optional groupingPosition As Integer = -1) As List(Of FormulaExpression)
                 Dim arguments As New List(Of FormulaExpression)
                 If Not Match(")") Then
                     Do
@@ -397,7 +406,13 @@ Namespace ExcelOps
                             Dim callback As New FormulaLambda(NativeLambdaName(Consume()))
                             arguments.Add(Function(calculation, formulaCell) callback)
                         Else
-                            arguments.Add(ParseExpression(1))
+                            Dim before = _bareGroupingLambda
+                            _bareGroupingLambda = before OrElse arguments.Count = groupingPosition
+                            Try
+                                arguments.Add(ParseExpression(1))
+                            Finally
+                                _bareGroupingLambda = before
+                            End Try
                         End If
                     Loop While Match(",")
                     Expect(")")

@@ -309,6 +309,9 @@ Namespace ExcelOps
                     If _run.TrackDependencies Then _run.Dependencies(location) = _run.Frames.Peek()
                     Return result
                 Catch ex As NotSupportedException When Not TypeOf ex Is FormulaComplexityNotSupportedException
+                    If TypeOf ex.InnerException Is InsufficientExecutionStackException AndAlso CanDeferFormulaPrecedent() Then
+                        Throw New DeferredFormulaPrecedent(location, formula)
+                    End If
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, ex.Message, ex)
                 Catch ex As ArgumentOutOfRangeException
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula refers to a cell outside the XLSX grid.", ex)

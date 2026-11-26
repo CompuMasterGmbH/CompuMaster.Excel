@@ -5,7 +5,7 @@
         Private Shared ReadOnly OmittedFormulaArgument As FormulaExpression = Function(calculation, formulaCell) Nothing
         Private Shared ReadOnly MissingLambdaArgument As New Object()
         Private Shared ReadOnly NativeLambdaFunctions As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase) From {
-            "SUM", "AVERAGE", "COUNT", "COUNTA", "MIN", "MAX", "PRODUCT", "SUMSQ", "MEDIAN", "AND", "OR", "XOR", "ABS"
+            "SUM", "AVERAGE", "COUNT", "COUNTA", "MIN", "MAX", "PRODUCT", "SUMSQ", "MEDIAN", "PERCENTOF", "AND", "OR", "XOR", "ABS"
         }
 
         Private Shared Function IsLambdaArrayFunctionName(name As String) As Boolean

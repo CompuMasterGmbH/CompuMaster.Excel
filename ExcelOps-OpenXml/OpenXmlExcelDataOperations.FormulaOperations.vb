@@ -240,6 +240,8 @@ Namespace ExcelOps
                     Case "EXPAND", "_XLFN.EXPAND", "TOCOL", "_XLFN.TOCOL", "TOROW", "_XLFN.TOROW",
                          "WRAPCOLS", "_XLFN.WRAPCOLS", "WRAPROWS", "_XLFN.WRAPROWS", "TRIMRANGE", "_XLFN.TRIMRANGE"
                         Return EvaluateReshape(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "GROUPBY", "_XLFN.GROUPBY"
+                        Return EvaluateGroupBy(arguments, formulaCell)
                     Case "PERCENTOF", "_XLFN.PERCENTOF"
                         Return EvaluatePercentOf(arguments, formulaCell)
                     Case "LOOKUP"

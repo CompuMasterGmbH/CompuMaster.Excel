@@ -45,6 +45,7 @@ Public Class OpenXmlStandardFormulaTest
     <TestCase("ISERROR(1/0)", True)>
     <TestCase("ISNA(NA())", True)>
     <TestCase("COUNTA(1,,2)", 3.0)>
+    <TestCase("COUNTA({1;2;3})", 3.0)>
     <TestCase("COUNTBLANK(B1:C2)", 4.0)>
     Public Sub CalculatesStandardScalarFunctions(formula As String, expected As Object)
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())

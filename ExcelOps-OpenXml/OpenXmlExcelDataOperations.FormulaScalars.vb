@@ -243,7 +243,8 @@ Namespace ExcelOps
                     Dim area = TryCast(value, FormulaArea)
                     If area Is Nothing Then
                         If name = "COUNTBLANK" Then Return If(TypeOf value Is FormulaError, value, New FormulaError("#VALUE!"))
-                        count += 1.0
+                        Dim matrix = TryCast(value, FormulaMatrix)
+                        count += If(matrix Is Nothing, 1, matrix.Values.Count(Function(item) item IsNot Nothing))
                     Else
                         If Not ResolveReference(area)._worksheets.ContainsKey(area.Sheet) Then Return New FormulaError("#REF!")
                         Dim values = RangeValues(area)

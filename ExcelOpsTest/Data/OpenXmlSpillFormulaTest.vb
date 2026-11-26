@@ -10,6 +10,21 @@ Imports NUnit.Framework
 Public Class OpenXmlSpillFormulaTest
     Private Const SheetName As String = "Spills"
 
+    <Test>
+    Public Sub WritesGroupingFormulasWithExcelAggregationTokens()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Const source As String = "GROUPBY({""a"";""b"";""a""},{2;3;4},HSTACK(SUM,MAX),0,0)"
+            workbook.WriteDynamicArrayFormula("Sheet1", 0, 0, source, immediatelyCalculateCellValue:=True)
+            Dim stored = workbook.LookupCellFormula("Sheet1", 0, 0)
+            Assert.That(stored, Does.StartWith("_xlfn.GROUPBY("))
+            Assert.That(stored, Does.Contain("_xlfn.HSTACK(_xleta.SUM,_xleta.MAX)"))
+            Assert.That(Value(workbook, "Sheet1", "A2"), [Is].EqualTo("a"))
+            Assert.That(Number(workbook, "Sheet1", "B2"), [Is].EqualTo(6.0))
+            Assert.That(Number(workbook, "Sheet1", "C2"), [Is].EqualTo(4.0))
+        End Using
+    End Sub
+
     <TestCase(False)>
     <TestCase(True)>
     Public Sub ExpandsAndShrinksAnExcelSpillWithDependentFormulas(automatic As Boolean)

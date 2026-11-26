@@ -140,6 +140,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon yield", 1217)>
     <TestCase("FormulaReferenceAccrual1900.xlsx", "Accrued periodic interest", 3031)>
     <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 3031)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy probes", 54)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 51)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
@@ -310,6 +312,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon yield", 6)>
     <TestCase("FormulaReferenceAccrual1900.xlsx", "Accrued periodic interest", 6)>
     <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 6)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy probes", 396)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 873)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>
