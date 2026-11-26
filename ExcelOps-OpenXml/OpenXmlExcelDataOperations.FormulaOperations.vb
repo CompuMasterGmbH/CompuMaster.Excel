@@ -7,6 +7,7 @@ Namespace ExcelOps
         Partial Private NotInheritable Class FormulaCalculation
 
             Friend Function EvaluateUnary(operation As String, operand As Object) As Object
+                If operation = "+" Then Return If(IsMultiValue(operand), AsMatrix(operand), Scalar(operand))
                 If IsMultiValue(operand) Then
                     Dim matrix = AsMatrix(operand)
                     Return New FormulaMatrix(matrix.Rows, matrix.Columns,
@@ -16,7 +17,6 @@ Namespace ExcelOps
                 If TypeOf value Is FormulaError Then Return value
                 Dim number = DirectCast(value, Double)
                 Select Case operation
-                    Case "+" : Return number
                     Case "-" : Return -number
                     Case "%" : Return number / 100.0
                     Case Else : Throw New NotSupportedException("Unsupported unary operator " & operation & ".")
@@ -317,7 +317,7 @@ Namespace ExcelOps
                     For Each item In ReferenceArgumentValues(value)
                         If collection AndAlso
                             Not TypeOf item Is Double AndAlso Not TypeOf item Is FormulaError Then Continue For
-                        If item Is Nothing Then Continue For
+                        If item Is Nothing AndAlso name <> "COUNT" Then Continue For
                         Dim number = NumberValue(item)
                         If TypeOf number Is FormulaError Then
                             If name <> "COUNT" AndAlso firstError Is Nothing Then firstError = DirectCast(number, FormulaError)

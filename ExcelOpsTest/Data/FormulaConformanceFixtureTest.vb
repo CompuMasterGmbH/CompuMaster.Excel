@@ -133,6 +133,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceFrench1900.xlsx", "Declining depreciation", 1425)>
     <TestCase("FormulaReferenceFrench1904.xlsx", "Straight-line depreciation", 1451)>
     <TestCase("FormulaReferenceFrench1904.xlsx", "Declining depreciation", 1425)>
+    <TestCase("FormulaReferenceUnary1900.xlsx", "Unary plus", 44)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
@@ -296,6 +297,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceFrench1900.xlsx", "Declining depreciation", 4)>
     <TestCase("FormulaReferenceFrench1904.xlsx", "Straight-line depreciation", 4)>
     <TestCase("FormulaReferenceFrench1904.xlsx", "Declining depreciation", 4)>
+    <TestCase("FormulaReferenceUnary1900.xlsx", "Unary plus", 14)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>
