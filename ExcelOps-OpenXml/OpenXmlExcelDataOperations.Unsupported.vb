@@ -32,16 +32,6 @@
         End Sub
 
         ''' <inheritdoc/>
-        Public Overrides Sub SelectSheet(sheetName As String)
-            Throw UnsupportedOperation("Selecting sheets")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub SelectSheet(sheetIndex As Integer)
-            Throw UnsupportedOperation("Selecting sheets")
-        End Sub
-
-        ''' <inheritdoc/>
         Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             Throw UnsupportedOperation("Copying sheet content")
         End Sub

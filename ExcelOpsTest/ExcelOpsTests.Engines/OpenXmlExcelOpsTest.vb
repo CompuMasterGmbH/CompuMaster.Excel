@@ -203,6 +203,95 @@ Partial Public Class OpenXmlExcelOpsTest
         Assert.That(ex.InnerException, [Is].Not.Null)
     End Sub
 
+    <TestCase(True)>
+    <TestCase(False)>
+    Public Sub SelectsVisibleWorksheetInSavedCopy(byName As Boolean)
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "selected.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            Dim part = document.WorkbookPart
+            Dim inputs = DirectCast(part.GetPartById("rId1"), WorksheetPart)
+            Dim notes = DirectCast(part.GetPartById("rId2"), WorksheetPart)
+            Dim chart = part.AddNewPart(Of ChartsheetPart)("rIdChart")
+            chart.Chartsheet = New Chartsheet(New ChartSheetViews(New ChartSheetView With {.WorkbookViewId = 0UI, .TabSelected = True}))
+            part.Workbook.Sheets.PrependChild(New Sheet With {.Id = "rIdChart", .Name = "Chart", .SheetId = 4UI})
+            Dim view = part.Workbook.BookViews.GetFirstChild(Of WorkbookView)()
+            view.ActiveTab = 2UI
+            view.FirstSheet = 2UI
+            Dim inputView = inputs.Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            inputView.TabSelected = Nothing
+            inputView.ZoomScale = 85UI
+            inputView.AppendChild(New Selection With {.ActiveCell = "B2"})
+            notes.Worksheet.SheetViews.GetFirstChild(Of SheetView)().TabSelected = True
+        End Using
+        Dim original = HashFile(template)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Notes"))
+            Assert.Throws(Of ArgumentNullException)(Sub() workbook.SelectSheet(DirectCast(Nothing, String)))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.SelectSheet("Missing"))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.SelectSheet(-1))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.SelectSheet(3))
+            Assert.Throws(Of ArgumentException)(Sub() workbook.SelectSheet("Chart"))
+            Assert.Throws(Of InvalidOperationException)(Sub() workbook.SelectSheet(2))
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Notes"))
+            If byName Then
+                workbook.SelectSheet("inputs")
+            Else
+                workbook.SelectSheet(0)
+            End If
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Inputs"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Inputs"))
+            Assert.That(workbook.IsHiddenSheet("Hidden"), [Is].True)
+        End Using
+        Using package = SpreadsheetDocument.Open(output, False)
+            Dim part = package.WorkbookPart
+            Dim view = part.Workbook.BookViews.GetFirstChild(Of WorkbookView)()
+            Dim inputView = DirectCast(part.GetPartById("rId1"), WorksheetPart).Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            Dim noteView = DirectCast(part.GetPartById("rId2"), WorksheetPart).Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            Dim chartView = DirectCast(part.GetPartById("rIdChart"), ChartsheetPart).Chartsheet.Descendants(Of ChartSheetView)().Single()
+            Assert.That(view.ActiveTab.Value, [Is].EqualTo(1UI))
+            Assert.That(view.FirstSheet.Value, [Is].EqualTo(1UI))
+            Assert.That(inputView.TabSelected.Value, [Is].True)
+            Assert.That(inputView.ZoomScale.Value, [Is].EqualTo(85UI))
+            Assert.That(inputView.ShowGridLines.Value, [Is].False)
+            Assert.That(inputView.GetFirstChild(Of Selection)().ActiveCell.Value, [Is].EqualTo("B2"))
+            Assert.That(noteView.TabSelected.Value, [Is].False)
+            Assert.That(chartView.TabSelected.Value, [Is].False)
+            Assert.That(part.CalculationChainPart, [Is].Not.Null)
+        End Using
+        Assert.That(HashFile(template), [Is].EqualTo(original))
+    End Sub
+
+    <Test>
+    Public Sub CreatesMissingViewsForNewWorksheetSelection()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "selected.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            document.WorkbookPart.Workbook.BookViews.Remove()
+            DirectCast(document.WorkbookPart.GetPartById("rId2"), WorksheetPart).Worksheet.SheetViews.Remove()
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            workbook.SelectSheet("Notes")
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim part = document.WorkbookPart
+            Assert.That(part.Workbook.BookViews.GetFirstChild(Of WorkbookView)().ActiveTab.Value, [Is].EqualTo(1UI))
+            Dim view = DirectCast(part.GetPartById("rId2"), WorksheetPart).Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            Assert.That(view.WorkbookViewId.Value, [Is].EqualTo(0UI))
+            Assert.That(view.TabSelected.Value, [Is].True)
+        End Using
+    End Sub
+
+
     <Test>
     Public Sub RecalculatesSharedFormulaFollowersWithoutChangingTheirStoredGroups()
         Dim template = Path.Combine(_directory, "shared.xlsx")

@@ -438,6 +438,7 @@ Namespace ExcelOps
             _source = snapshot
             _document = document
             _changedSheets.Clear()
+            _changedChartSheets.Clear()
             _changedTables.Clear()
             _changedCharts.Clear()
             _changedExtendedCharts.Clear()

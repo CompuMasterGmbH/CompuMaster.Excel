@@ -93,13 +93,83 @@ Namespace ExcelOps
             Next
         End Sub
 
+        ''' <inheritdoc/>
+        ''' <remarks>The name must identify a visible worksheet.</remarks>
+        Public Overrides Sub SelectSheet(sheetName As String)
+            SyncLock WorkbookSaveLock
+                Dim sheet = FindSheet(sheetName)
+                If Not TypeOf WorkbookPart.GetPartById(sheet.Id.Value) Is WorksheetPart Then
+                    Throw New ArgumentException("The selected sheet is not a worksheet.", NameOf(sheetName))
+                End If
+                SelectVisibleWorksheet(WorkbookSheets(), sheet)
+            End SyncLock
+        End Sub
+
+        ''' <inheritdoc/>
+        ''' <remarks>Hidden worksheets count toward the index. Chart sheets are skipped.</remarks>
+        Public Overrides Sub SelectSheet(sheetIndex As Integer)
+            SyncLock WorkbookSaveLock
+                Dim sheets = WorkbookSheets()
+                Dim sheet = If(sheetIndex < 0, Nothing, sheets.Where(
+                    Function(item) TypeOf WorkbookPart.GetPartById(item.Id.Value) Is WorksheetPart).ElementAtOrDefault(sheetIndex))
+                If sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetIndex))
+                SelectVisibleWorksheet(sheets, sheet)
+            End SyncLock
+        End Sub
+
+        Private Sub SelectVisibleWorksheet(sheets As List(Of Sheet), selected As Sheet)
+            If Not IsVisible(selected) Then Throw New InvalidOperationException("A hidden worksheet cannot be selected.")
+            Dim workbook = WorkbookPart.Workbook
+            Dim workbookViews = workbook.BookViews
+            If workbookViews Is Nothing Then
+                workbookViews = New BookViews()
+                workbook.AddChild(workbookViews)
+            End If
+            Dim view = workbookViews.GetFirstChild(Of WorkbookView)()
+            If view Is Nothing Then
+                view = workbookViews.AppendChild(New WorkbookView())
+                _workbookChanged = True
+            End If
+            Dim index = CUInt(sheets.IndexOf(selected))
+            If If(view.ActiveTab?.Value, 0UI) <> index Then
+                view.ActiveTab = index
+                _workbookChanged = True
+            End If
+            If If(view.FirstSheet?.Value, 0UI) > index Then
+                view.FirstSheet = index
+                _workbookChanged = True
+            End If
+            For Each sheet In sheets
+                SetTabSelected(sheet, 0UI, sheet Is selected)
+            Next
+        End Sub
+
         Private Sub SetTabSelected(sheet As Sheet, viewIndex As UInteger, selected As Boolean)
-            Dim part = TryCast(WorkbookPart.GetPartById(sheet.Id.Value), WorksheetPart)
-            Dim view = part?.Worksheet?.SheetViews?.Elements(Of SheetView)().FirstOrDefault(
-                Function(item) item.WorkbookViewId IsNot Nothing AndAlso item.WorkbookViewId.Value = viewIndex)
-            If view IsNot Nothing AndAlso If(view.TabSelected?.Value, False) <> selected Then
-                view.TabSelected = selected
-                _changedSheets.Add(part)
+            Dim part = WorkbookPart.GetPartById(sheet.Id.Value)
+            Dim worksheet = TryCast(part, WorksheetPart)
+            If worksheet IsNot Nothing Then
+                Dim views = worksheet.Worksheet.SheetViews
+                Dim view = views?.Elements(Of SheetView)().FirstOrDefault(Function(item) item.WorkbookViewId IsNot Nothing AndAlso item.WorkbookViewId.Value = viewIndex)
+                If view Is Nothing AndAlso selected Then
+                    If views Is Nothing Then
+                        views = New SheetViews()
+                        worksheet.Worksheet.AddChild(views)
+                    End If
+                    view = views.AppendChild(New SheetView With {.WorkbookViewId = viewIndex})
+                End If
+                If view IsNot Nothing AndAlso If(view.TabSelected?.Value, False) <> selected Then
+                    view.TabSelected = selected
+                    _changedSheets.Add(worksheet)
+                End If
+                Return
+            End If
+
+            Dim chart = TryCast(part, ChartsheetPart)
+            Dim chartView = chart?.Chartsheet?.GetFirstChild(Of ChartSheetViews)()?.Elements(Of ChartSheetView)().
+                FirstOrDefault(Function(item) item.WorkbookViewId IsNot Nothing AndAlso item.WorkbookViewId.Value = viewIndex)
+            If chartView IsNot Nothing AndAlso If(chartView.TabSelected?.Value, False) <> selected Then
+                chartView.TabSelected = selected
+                _changedChartSheets.Add(chart)
             End If
         End Sub
 

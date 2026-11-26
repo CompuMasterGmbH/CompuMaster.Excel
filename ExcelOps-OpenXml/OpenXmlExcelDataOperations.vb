@@ -16,6 +16,7 @@ Namespace ExcelOps
         Private _document As SpreadsheetDocument
         Private _currentDocumentType As SpreadsheetDocumentType
         Private ReadOnly _changedSheets As New HashSet(Of WorksheetPart)
+        Private ReadOnly _changedChartSheets As New HashSet(Of ChartsheetPart)
         Private _workbookChanged As Boolean
         Private _calculationChainInvalid As Boolean
         Private _recalculateOnOpen As Boolean
@@ -233,6 +234,7 @@ Namespace ExcelOps
                     _source?.Dispose()
                     _source = Nothing
                     _changedSheets.Clear()
+                    _changedChartSheets.Clear()
                     _changedTables.Clear()
                     _changedCharts.Clear()
                     _changedExtendedCharts.Clear()
@@ -414,7 +416,7 @@ Namespace ExcelOps
             Dim sourceWorkbook = WorkbookPart
             Dim linkedPaths = ResolvedSessionLinks(sourceWorkbook)
             _source.WriteTo(output)
-            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _calculationChainInvalid OrElse
+            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _changedChartSheets.Count > 0 OrElse _calculationChainInvalid OrElse
                     _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache OrElse
                     linkedPaths.Count > 0 OrElse
                     (removeVba AndAlso sourceWorkbook.VbaProjectPart IsNot Nothing) OrElse
@@ -462,6 +464,12 @@ Namespace ExcelOps
                 If Not clearCache AndAlso GetSheetData(sourceSheet).Descendants(Of Cell)().Any(AddressOf IsUnencodedRichError) Then
                     SaveRichFormulaErrors(target, targetSheet, richErrorMetadataIndices)
                 End If
+            Next
+            For Each sourceChartSheet In _changedChartSheets
+                Dim targetChartSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceChartSheet)), ChartsheetPart)
+                Using output = targetChartSheet.GetStream(FileMode.Create, FileAccess.Write)
+                    sourceChartSheet.Chartsheet.Save(output)
+                End Using
             Next
             SaveChangedTables(source, target)
             SaveChangedCharts(source, target)
