@@ -1128,7 +1128,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Looks up the last column index (zero-based index) (the last content cell equals to Excel's special cell xlLastCell).
+        ''' Looks up the zero-based column index of the last used cell.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
         ''' <returns>The zero-based column index.</returns>
@@ -1137,7 +1137,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Looks up the last row index (zero-based index) (the last content cell equals to Excel's special cell xlLastCell).
+        ''' Looks up the zero-based row index of the last used cell.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
         ''' <returns>The zero-based row index.</returns>
@@ -1146,10 +1146,11 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Looks up the last cell (the last content cell equals to Excel's special cell xlLastCell).
+        ''' Looks up the bottom-right corner of the worksheet's used range.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
-        ''' <returns>The located cell.</returns>
+        ''' <returns>The address at the greatest used row and column. The cell at that address can be empty.</returns>
+        ''' <remarks>Corresponds to Excel's <c>xlCellTypeLastCell</c>. When the result changes after an edit depends on the engine.</remarks>
         Public MustOverride Function LookupLastCell(sheetName As String) As ExcelCell
 
         ''' <summary>
@@ -1848,8 +1849,10 @@ Namespace ExcelOps
             ''' assigned in the destination. For example, if the copied Data sheet is named Data (2) in the
             ''' destination, a reference to Data!$A$1 in another sheet of the group becomes 'Data (2)'!$A$1.
             ''' A reference to a sheet left in the source becomes an external workbook link, even if the
-            ''' destination already contains a sheet with that name. The Open XML engine requires an existing
-            ''' source file when it needs to create that link. Microsoft Excel uses its native copy behavior.
+            ''' destination already contains a sheet with that name. Open XML can create the link when the source
+            ''' has a saved path or both workbooks are attached to the same <c>OpenXmlWorkbookSession</c>.
+            ''' In a session, saving an unsaved source resolves its link. Save the destination again to persist
+            ''' the resolved link. The Microsoft Excel engine uses Excel's native copy behavior.
             ''' </remarks>
             ExcelCompatible = 0
             ''' <summary>Preserves the original text of formulas on the copied sheets.</summary>
@@ -2152,7 +2155,7 @@ Namespace ExcelOps
             ''' </summary>
             LastContentCell = 2
             ''' <summary>
-            ''' The last worksheet cell known to the engine.
+            ''' The bottom-right corner of the worksheet's used range.
             ''' </summary>
             LastCell = 3
             ''' <summary>

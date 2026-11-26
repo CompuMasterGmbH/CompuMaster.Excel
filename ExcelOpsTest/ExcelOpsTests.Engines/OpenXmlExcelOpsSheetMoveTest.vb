@@ -191,6 +191,8 @@ Partial Public Class OpenXmlExcelOpsTest
             source.WorkbookPart.Workbook.DefinedNames = New DefinedNames(
                 New DefinedName("Data!$A$1") With {.Name = "ScopedInput", .LocalSheetId = 0UI},
                 New DefinedName("Data!$A$1") With {.Name = "SharedInput"},
+                New DefinedName("SUM(SharedInput,TransferRate)") With {.Name = "TransferTotal"},
+                New DefinedName("2") With {.Name = "TransferRate"},
                 New DefinedName("42") With {.Name = "UnusedInput"})
             target.WorkbookPart.Workbook.DefinedNames = New DefinedNames(
                 New DefinedName("Remain!$A$1") With {.Name = "SharedInput"},
@@ -199,7 +201,7 @@ Partial Public Class OpenXmlExcelOpsTest
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
         Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
               target As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
-            source.WriteCellFormula("Data", 0, 1, "SharedInput+ScopedInput+Data!ScopedInput", False)
+            source.WriteCellFormula("Data", 0, 1, "SharedInput+ScopedInput+Data!ScopedInput+TransferTotal", False)
             If move Then
                 source.WriteCellFormula("Remain", 0, 0, "Data!ScopedInput", False)
                 Assert.Throws(Of NotSupportedException)(Sub() source.MoveSheet("Data", target, 1))
@@ -209,7 +211,7 @@ Partial Public Class OpenXmlExcelOpsTest
             End If
             Dim transferred = If(move, source.MoveSheet("Data", target, 1), source.CopySheet("Data", target, 1))
             Assert.That(transferred.TargetSheetName, [Is].EqualTo("Data (2)"))
-            Assert.That(target.LookupCellFormula("Data (2)", 0, 1), [Is].EqualTo("SharedInput+ScopedInput+'Data (2)'!ScopedInput"))
+            Assert.That(target.LookupCellFormula("Data (2)", 0, 1), [Is].EqualTo("SharedInput+ScopedInput+'Data (2)'!ScopedInput+TransferTotal"))
             target.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
         End Using
         Using document = SpreadsheetDocument.Open(output, False)
@@ -219,8 +221,11 @@ Partial Public Class OpenXmlExcelOpsTest
                             ("SharedInput", CType(Nothing, UInteger?), "Remain!$A$1"),
                             ("OtherLocal", CType(2UI, UInteger?), "Remain!$A$1"),
                             ("ScopedInput", CType(1UI, UInteger?), "'Data (2)'!$A$1"),
-                            ("SharedInput", CType(1UI, UInteger?), "'Data (2)'!$A$1")
+                            ("SharedInput", CType(1UI, UInteger?), "'Data (2)'!$A$1"),
+                            ("TransferTotal", CType(Nothing, UInteger?), "SUM('Data (2)'!SharedInput,TransferRate)"),
+                            ("TransferRate", CType(Nothing, UInteger?), "2")
                         }))
+            Assert.That(names.First(Function(item) item.Name.Value = "SharedInput").LocalSheetId.Value, [Is].EqualTo(1UI))
         End Using
     End Sub
 

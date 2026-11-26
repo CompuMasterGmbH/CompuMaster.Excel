@@ -63,6 +63,13 @@ Namespace ExcelOps
                     column >= _emptiedTable.First.Column AndAlso column <= _emptiedTable.Last.Column
             End Function
 
+            Friend Function ClearsTableRange(first As ReferenceEndpoint, last As ReferenceEndpoint) As Boolean
+                If _emptiedTable Is Nothing Then Return False
+                Dim finalCell = If(last, first)
+                Return first.Row <= _emptiedTable.FirstDataRow AndAlso finalCell.Row >= _emptiedTable.FirstDataRow AndAlso
+                    first.Column <= _emptiedTable.Last.Column AndAlso finalCell.Column >= _emptiedTable.First.Column
+            End Function
+
             Friend ReadOnly Property RetainsClearedCellStyles As Boolean
                 Get
                     Return _emptiedTable.TotalsCount = 0
@@ -133,6 +140,24 @@ Namespace ExcelOps
                 Return text
             End Function
 
+            Friend Function RewriteDefinedNameReference(first As ReferenceEndpoint, second As ReferenceEndpoint,
+                                                         separator As String, unchanged As String) As String
+                ' A whole-axis edit can move absolute coordinates on that axis even if the other coordinate is relative.
+                ' A partial edit needs both coordinates fixed to identify the shifted cell.
+                Dim firstFixed = If(WholeAxis, first.IsAbsoluteOnAxis(Vertical), first.IsAbsolute)
+                Dim last = If(second, first)
+                Dim lastFixed = If(WholeAxis, last.IsAbsoluteOnAxis(Vertical), last.IsAbsolute)
+                If firstFixed AndAlso lastFixed Then Return RewriteReference(first, second, separator)
+                If Not firstFixed AndAlso Not lastFixed Then Return unchanged
+
+                ' Excel applies a shift to the fixed endpoint of a mixed range as if it were a single reference.
+                Dim fixedEndpoint = If(firstFixed, first, last)
+                Dim rewritten = RewriteReference(fixedEndpoint, Nothing, Nothing)
+                If rewritten = "#REF!" Then Return rewritten
+                If firstFixed Then Return rewritten & separator & last.ColumnText & last.RowText
+                Return first.ColumnText & first.RowText & separator & rewritten
+            End Function
+
             Friend Sub PlanTableShift(table As StructuralTable)
                 If table Is _emptiedTable Then
                     table.TargetLastRow -= Count
@@ -157,9 +182,8 @@ Namespace ExcelOps
                         table.TargetLastColumn = MoveIndex(high)
                         Return
                     End If
-                    If table.HeaderCount <> 1 OrElse If(table.Source.GetFirstChild(Of AutoFilter)()?.Elements(Of FilterColumn)().Any(), False) OrElse
-                       (Not Inserting AndAlso (Start < low OrElse Start + Count > high + 1 OrElse Count >= high - low + 1)) Then
-                        Throw New NotSupportedException("Changing the columns of a headerless, filtered or fully removed Excel table is unsupported.")
+                    If Not Inserting AndAlso (Start < low OrElse Start + Count > high + 1 OrElse Count >= high - low + 1) Then
+                        Throw New NotSupportedException("Removing Excel table columns together with adjoining columns or removing an entire table is unsupported.")
                     End If
                     table.ColumnEditOffset = Start - low
                     If Inserting Then
@@ -433,9 +457,6 @@ Namespace ExcelOps
                 If If(worksheet.GetFirstChild(Of SheetProtection)()?.Sheet?.Value, False) Then
                     Throw UnsupportedOperation("Shifting cells in a protected worksheet")
                 End If
-                If Not shift.Vertical AndAlso shift.WholeAxis AndAlso worksheet.GetFirstChild(Of Columns)() IsNot Nothing Then
-                    Throw UnsupportedOperation("Shifting whole columns with explicit column formatting")
-                End If
             End If
 
             For Each relationship In part.Parts
@@ -491,11 +512,22 @@ Namespace ExcelOps
             ValidateWorkbookStructure(allowChartSheets:=True, allowSpillMetadata:=allowSpills)
             Dim tables = GetStructuralTables(sheets)
             If shift IsNot Nothing Then shift = shift.RetainEmptyTableRow(editedPart, tables)
+            Dim originalColumns As Columns = Nothing
+            Dim shiftedColumns As Columns = Nothing
+            If shift IsNot Nothing AndAlso Not shift.Vertical AndAlso shift.WholeAxis Then
+                Dim layouts = editedPart.Worksheet.Elements(Of Columns)().ToArray()
+                If layouts.Length > 1 Then Throw UnsupportedOperation("Shifting whole columns with several column layout groups")
+                originalColumns = layouts.SingleOrDefault()
+                If originalColumns IsNot Nothing Then
+                    Dim hasFilter = tables.Any(Function(table) table.Worksheet Is editedPart AndAlso
+                        If(table.Source.GetFirstChild(Of AutoFilter)()?.Elements(Of FilterColumn)().Any(Function(field) field.HasChildren), False))
+                    shiftedColumns = ShiftColumnLayout(originalColumns, shift, hasFilter)
+                End If
+            End If
             Dim tableNames = GetStructuralTableNames(tables)
             Dim tableFills As New List(Of (Row As Integer, Column As Integer, Formula As String, Header As String))
             Dim tableChanges = StageTableChanges(tables, editedPart, originalName, shift, newSheetName, tableNames, tableFills,
                                                  allowSpillReferences:=allowSpills)
-            Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName)
             Dim filledCells As New HashSet(Of Cell)
             Dim formulaChanges As New List(Of (Part As WorksheetPart, Cell As Cell, Text As String))
             Dim revisedSheetData As New Dictionary(Of WorksheetPart, SheetData)
@@ -515,6 +547,7 @@ Namespace ExcelOps
                     originalMerges = part.Worksheet.GetFirstChild(Of MergeCells)()
                     shiftedMerges = ShiftMergedCells(originalMerges, sheetShift)
                     shiftedData = ShiftSheetData(data, sheetShift, shiftedMerges, tableFills, filledCells, dimension)
+                    ApplyTableFilterVisibility(shiftedData, tables)
                     data = shiftedData
                 End If
                 If data IsNot originalData Then revisedSheetData.Add(part, data)
@@ -546,6 +579,8 @@ Namespace ExcelOps
                 Next
             End If
 
+            Dim chartChanges = StageChartChanges(sheets, editedPart, originalName, shift, newSheetName,
+                                                 editedData:=shiftedData, editedColumns:=shiftedColumns)
             stageDependents(originalName, shift)
             For Each revision In revisedSheetData
                 revision.Key.Worksheet.ReplaceChild(revision.Value, GetSheetData(revision.Key))
@@ -553,6 +588,13 @@ Namespace ExcelOps
                 _changedSheets.Add(revision.Key)
             Next
             If shiftedData IsNot Nothing Then
+                If originalColumns IsNot Nothing Then
+                    If shiftedColumns.HasChildren Then
+                        editedPart.Worksheet.ReplaceChild(shiftedColumns, originalColumns)
+                    Else
+                        originalColumns.Remove()
+                    End If
+                End If
                 If originalMerges IsNot Nothing Then
                     If shiftedMerges Is Nothing Then
                         originalMerges.Remove()
@@ -576,6 +618,9 @@ Namespace ExcelOps
             For Each change In chartChanges.Charts
                 _changedCharts(change.Key) = change.Value
             Next
+            For Each change In chartChanges.ExtendedCharts
+                _changedExtendedCharts(change.Key) = change.Value
+            Next
             For Each change In chartChanges.Drawings
                 _changedDrawings(change.Key) = change.Value
             Next
@@ -583,6 +628,71 @@ Namespace ExcelOps
 
             InvalidateWorkbookFormulaResults()
         End Sub
+
+        Private Function ShiftColumnLayout(source As Columns, shift As StructuralShift, hasFilter As Boolean) As Columns
+            Dim widths(ColumnCount - 1) As Column
+            Dim supportedAttributes = {"min", "max", "width", "customWidth", "hidden"}
+            Dim lastColumn As UInteger = 0
+            For Each item In source.ChildElements
+                Dim column = TryCast(item, Column)
+                If column Is Nothing OrElse column.GetAttributes().Any(Function(attribute) attribute.NamespaceUri <> "" OrElse
+                    Not supportedAttributes.Contains(attribute.LocalName)) Then
+                    Throw UnsupportedOperation("Shifting whole columns with unsupported width, style or outline information")
+                End If
+                Dim first = column.Min?.Value
+                Dim last = column.Max?.Value
+                If Not first.HasValue OrElse Not last.HasValue OrElse first.Value <= lastColumn OrElse
+                   last.Value < first.Value OrElse last.Value > ColumnCount Then
+                    Throw New IO.InvalidDataException("The worksheet contains invalid or overlapping column layout ranges.")
+                End If
+                For index As Integer = CInt(first.Value) - 1 To CInt(last.Value) - 1
+                    widths(index) = column
+                Next
+                lastColumn = last.Value
+            Next
+
+            If Not shift.Inserting AndAlso hasFilter AndAlso Not LoadOptions.AllowKnownStructuralReferenceDifferences AndAlso
+               widths.Skip(shift.Start).Take(shift.Count).All(Function(column) If(column?.Hidden?.Value, False)) Then
+                Throw New StructuralReferenceCompatibilityException(EngineName,
+                    "Excel refuses to remove columns when every selected column is hidden and a table filter is active on the worksheet")
+            End If
+
+            Dim inserted = If(shift.Inserting AndAlso shift.Start > 0, widths(shift.Start - 1), Nothing)
+            If If(inserted?.Width?.Value, 0.0) > 0.0 Then
+                ' Excel inherits the width from the left while the new columns remain visible.
+                inserted = DirectCast(inserted.CloneNode(False), Column)
+                inserted.Hidden = Nothing
+            Else
+                inserted = Nothing
+            End If
+
+            Dim result = DirectCast(source.CloneNode(False), Columns)
+            Dim previous As Column = Nothing
+            Dim offset = If(shift.Inserting, -shift.Count, shift.Count)
+            For index = 0 To ColumnCount - 1
+                Dim layout As Column = Nothing
+                If index < shift.Start Then
+                    layout = widths(index)
+                ElseIf shift.Inserting AndAlso index < shift.Start + shift.Count Then
+                    layout = inserted
+                ElseIf index + offset < ColumnCount Then
+                    layout = widths(index + offset)
+                End If
+                If layout Is Nothing Then
+                    previous = Nothing
+                ElseIf previous IsNot Nothing AndAlso Nullable.Equals(previous.Width?.Value, layout.Width?.Value) AndAlso
+                    Nullable.Equals(previous.CustomWidth?.Value, layout.CustomWidth?.Value) AndAlso
+                    Nullable.Equals(previous.Hidden?.Value, layout.Hidden?.Value) Then
+                    previous.Max = CUInt(index + 1)
+                Else
+                    previous = DirectCast(layout.CloneNode(False), Column)
+                    previous.Min = CUInt(index + 1)
+                    previous.Max = previous.Min.Value
+                    result.Append(previous)
+                End If
+            Next
+            Return result
+        End Function
 
         Private Shared Function ReadStructuralRange(reference As String) As (First As ReferenceEndpoint, Last As ReferenceEndpoint)
             If String.IsNullOrEmpty(reference) OrElse reference.IndexOf("$"c) >= 0 Then
@@ -719,6 +829,19 @@ Namespace ExcelOps
             For Each index In cells.Keys
                 If Not rows.ContainsKey(index) Then rows.Add(index, New Row())
             Next
+            Dim precedingRow As Row = Nothing
+            If shift.Vertical AndAlso shift.WholeAxis AndAlso shift.Inserting AndAlso
+               rows.TryGetValue(shift.Start - 1, precedingRow) AndAlso If(precedingRow.Height?.Value, 0.0) > 0 Then
+                For index = shift.Start To shift.Start + shift.Count - 1
+                    Dim inserted As Row = Nothing
+                    If Not rows.TryGetValue(index, inserted) Then
+                        inserted = New Row()
+                        rows.Add(index, inserted)
+                    End If
+                    inserted.Height = precedingRow.Height.Value
+                    inserted.CustomHeight = True
+                Next
+            End If
             Dim result = DirectCast(source.CloneNode(False), SheetData)
             For Each entry In rows
                 Dim row = entry.Value

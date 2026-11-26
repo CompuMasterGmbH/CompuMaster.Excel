@@ -28,6 +28,8 @@ Namespace ExcelOps
             Friend RemovesFirstDataRow As Boolean
             Friend RemovesTotalsRow As Boolean
             Friend ClearsDataBody As Boolean
+            Friend ClearsFilterCriteria As Boolean
+            Friend ReadOnly ReappliedFilters As New List(Of (Column As Integer, Match As Func(Of Double, Boolean)))
             Friend ColumnEditOffset As Integer = -1
             Friend ReadOnly DeletedColumnNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
 
@@ -137,6 +139,7 @@ Namespace ExcelOps
                     Throw New InvalidDataException("The table's columns do not match its range.")
                 End If
                 If table.ColumnEditOffset >= 0 Then
+                    EditTableColumnFilters(replacement.GetFirstChild(Of AutoFilter)(), table, shift)
                     EditTableColumns(replacement.GetFirstChild(Of TableColumns)(), columns, table, shift, fills)
                     columns = replacement.GetFirstChild(Of TableColumns)().Elements(Of TableColumn)().ToArray()
                 End If
@@ -205,7 +208,7 @@ Namespace ExcelOps
                     Loop Until names.Add(name)
                     id += 1UI
                     definition.InsertBefore(New TableColumn With {.Id = id, .Name = name}, anchor)
-                    fills.Add((table.First.Row, shift.Start + index, Nothing, name))
+                    If table.HeaderCount > 0 Then fills.Add((table.First.Row, shift.Start + index, Nothing, name))
                 Next
             Else
                 For Each removed In columns.Skip(table.ColumnEditOffset).Take(shift.Count)
@@ -214,6 +217,113 @@ Namespace ExcelOps
             End If
             definition.Count = CUInt(definition.ChildElements.Count)
         End Sub
+
+        Private Sub EditTableColumnFilters(filter As AutoFilter, table As StructuralTable, shift As StructuralShift)
+            If filter Is Nothing Then Return
+            If filter.ChildElements.Any(Function(child) Not TypeOf child Is FilterColumn) Then
+                Throw UnsupportedOperation("Shifting Excel table columns with extended filter settings")
+            End If
+            Dim columns = filter.Elements(Of FilterColumn)().ToArray()
+            Dim deletedCriteria = False
+            For Each column In columns
+                If column.ColumnId Is Nothing OrElse column.ColumnId.Value > CUInt(table.Last.Column - table.First.Column) Then
+                    Throw New InvalidDataException("A table filter references an invalid column.")
+                End If
+                If column.ChildElements.Any(Function(child) TypeOf child Is ExtensionList OrElse TypeOf child Is OpenXmlUnknownElement) Then
+                    Throw UnsupportedOperation("Shifting Excel table columns with extended filter criteria")
+                End If
+                Dim offset = CInt(column.ColumnId.Value)
+                If offset < table.ColumnEditOffset Then Continue For
+                If shift.Inserting Then
+                    column.ColumnId = CUInt(offset + shift.Count)
+                ElseIf offset >= table.ColumnEditOffset + shift.Count Then
+                    column.ColumnId = CUInt(offset - shift.Count)
+                Else
+                    deletedCriteria = deletedCriteria OrElse column.HasChildren
+                    column.Remove()
+                End If
+            Next
+            If deletedCriteria Then
+                For Each column In filter.Elements(Of FilterColumn)().Where(Function(item) item.HasChildren)
+                    table.ReappliedFilters.Add((table.TargetFirstColumn + CInt(column.ColumnId.Value), ReadNumericFilter(column)))
+                Next
+            End If
+            table.ClearsFilterCriteria = deletedCriteria
+        End Sub
+
+        Private Function ReadNumericFilter(column As FilterColumn) As Func(Of Double, Boolean)
+            Dim filters = column.GetFirstChild(Of CustomFilters)()
+            Dim conditions = filters?.Elements(Of CustomFilter)().ToArray()
+            If column.ChildElements.Count <> 1 OrElse conditions Is Nothing OrElse conditions.Length = 0 OrElse
+               conditions.Length > 2 OrElse filters.ChildElements.Count <> conditions.Length Then
+                Throw UnsupportedOperation("Reapplying a table filter other than a simple numeric custom filter")
+            End If
+            Dim first = ReadNumericFilterCondition(conditions(0))
+            If conditions.Length = 1 Then Return first
+            Dim second = ReadNumericFilterCondition(conditions(1))
+            If If(filters.[And]?.Value, False) Then Return Function(value) first(value) AndAlso second(value)
+            Return Function(value) first(value) OrElse second(value)
+        End Function
+
+        Private Function ReadNumericFilterCondition(condition As CustomFilter) As Func(Of Double, Boolean)
+            Dim threshold As Double
+            If Not Double.TryParse(condition.Val?.Value, NumberStyles.Float, CultureInfo.InvariantCulture, threshold) OrElse
+               Double.IsNaN(threshold) OrElse Double.IsInfinity(threshold) Then
+                Throw UnsupportedOperation("Reapplying a non-numeric custom table filter")
+            End If
+            Select Case If(condition.Operator?.Value, FilterOperatorValues.Equal)
+                Case FilterOperatorValues.Equal
+                    Return Function(value) value = threshold
+                Case FilterOperatorValues.NotEqual
+                    Return Function(value) value <> threshold
+                Case FilterOperatorValues.LessThan
+                    Return Function(value) value < threshold
+                Case FilterOperatorValues.LessThanOrEqual
+                    Return Function(value) value <= threshold
+                Case FilterOperatorValues.GreaterThan
+                    Return Function(value) value > threshold
+                Case FilterOperatorValues.GreaterThanOrEqual
+                    Return Function(value) value >= threshold
+                Case Else
+                    Throw UnsupportedOperation("Reapplying a custom table filter with an unsupported operator")
+            End Select
+        End Function
+
+        Private Sub ApplyTableFilterVisibility(data As SheetData, tables As IEnumerable(Of StructuralTable))
+            Dim affected = tables.Where(Function(item) item.ClearsFilterCriteria).ToArray()
+            For Each table In affected
+                If table.ReappliedFilters.Count > 0 AndAlso affected.Any(
+                    Function(other) other IsNot table AndAlso other.FirstDataRow <= table.LastDataRow AndAlso table.FirstDataRow <= other.LastDataRow) Then
+                    Throw UnsupportedOperation("Reapplying table filters over overlapping worksheet rows in the same edit")
+                End If
+                Dim dataRows = 0
+                For Each row In data.Elements(Of Row)()
+                    Dim index = CInt(row.RowIndex.Value) - 1
+                    If index < table.FirstDataRow OrElse index > table.LastDataRow Then Continue For
+                    dataRows += 1
+                    Dim visible = table.ReappliedFilters.All(
+                        Function(filter) filter.Match(ReadNumericFilterOperand(row, index, filter.Column)))
+                    row.Hidden = If(visible, Nothing, New BooleanValue(True))
+                Next
+                If table.ReappliedFilters.Count > 0 AndAlso dataRows <> table.LastDataRow - table.FirstDataRow + 1 Then
+                    Throw UnsupportedOperation("Reapplying a numeric table filter to a table with missing data rows")
+                End If
+            Next
+        End Sub
+
+        Private Function ReadNumericFilterOperand(row As Row, index As Integer, column As Integer) As Double
+            Dim address = ExcelCell.LocalCellAddress(index, column)
+            Dim cell = row.Elements(Of Cell)().FirstOrDefault(Function(item) item.CellReference.Value = address)
+            Dim value As Double
+            If cell Is Nothing OrElse cell.CellFormula IsNot Nothing OrElse
+               If(row.StyleIndex?.Value, 0UI) <> 0UI OrElse If(cell.StyleIndex?.Value, 0UI) <> 0UI OrElse
+               If(cell.DataType?.Value, CellValues.Number) <> CellValues.Number OrElse
+               Not Double.TryParse(cell.CellValue?.Text, NumberStyles.Float, CultureInfo.InvariantCulture, value) OrElse
+               Double.IsNaN(value) OrElse Double.IsInfinity(value) Then
+                Throw UnsupportedOperation("Reapplying a numeric table filter to anything other than unformatted numeric constants")
+            End If
+            Return value
+        End Function
 
         Private Sub SaveChangedTables(source As WorkbookPart, target As WorkbookPart)
             For Each change In _changedTables

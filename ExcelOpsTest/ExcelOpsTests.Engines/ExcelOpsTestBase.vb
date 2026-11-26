@@ -13,12 +13,6 @@ Namespace ExcelOpsTests.Engines
     <NonParallelizable>
     Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
-#If CI_CD Then
-        Private Const OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = False
-#Else
-        Private Const OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = True
-#End If
-
         Protected MustOverride Function _CreateInstanceUninitialized() As T
 
 #Disable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen
@@ -1051,6 +1045,36 @@ Namespace ExcelOpsTests.Engines
             Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName)
             CompareStructuralWorkbookWithExcel(source, scenario,
                 Function(workbook, output) StructuralReferenceCoverage.CompareWithExcel(workbook, scenario, output))
+        End Sub
+
+        <Test>
+        Public Sub EmbeddedChartPlacementCoverageAgainstExcel(<Values(True, False)> vertical As Boolean,
+            <Values("DeleteBefore", "DeleteAfter", "DeleteInside", "DeleteAll", "InsertBefore", "InsertInside", "InsertAfter")> operation As String)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName)
+            CompareStructuralWorkbookWithExcel(source, operation & If(vertical, " rows", " columns"),
+                Function(workbook, output) EmbeddedChartReferenceCoverage.CompareWithExcel(workbook, output, vertical, operation))
+        End Sub
+
+        <Test>
+        Public Sub EmbeddedChartPlacement_DefaultProtectsKnownDifferences(<Values(True, False)> vertical As Boolean,
+            <Values("DeleteAll", "InsertInside")> operation As String)
+            Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName)
+            Dim workbook = Me.CreateInstance(source, ExcelDataOperationsBase.OpenMode.OpenExistingFile,
+                New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
+            Try
+                If TypeOf workbook Is MsExcelDataOperations Then
+                    Assert.DoesNotThrow(Sub() EmbeddedChartReferenceCoverage.ApplyEdit(workbook, vertical, operation))
+                Else
+                    Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(
+                        Sub() EmbeddedChartReferenceCoverage.ApplyEdit(workbook, vertical, operation))
+                    Assert.That(failure.Message, Does.Contain("embedded chart placement"))
+                    Assert.That(failure.Message, Does.Contain(NameOf(ExcelDataOperationsOptions.AllowKnownStructuralReferenceDifferences)))
+                    Assert.That(workbook.LookupCellValue(Of String)("Dashboard", 19, 9, FormulaCalculationMode.EngineDefault),
+                                [Is].EqualTo("Worksheet marker"))
+                End If
+            Finally
+                workbook.Close()
+            End Try
         End Sub
 
         ' Uses the same database, criteria, and field arguments for each installed engine.
@@ -2380,12 +2404,7 @@ Namespace ExcelOpsTests.Engines
                 Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".html")
                 System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                 Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
-                If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                    Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                .UseShellExecute = True,
-                .FileName = TestHtmlOutputFile
-                })
-                End If
+                HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=True)
             Catch ex As NotImplementedException
                 ClassicAssert.Ignore("Not implemented for this Excel engine")
             Catch ex As TypeInitializationException
@@ -2405,36 +2424,21 @@ Namespace ExcelOpsTests.Engines
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor})
-                    If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                        Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                            .UseShellExecute = True,
-                            .FileName = TestHtmlOutputFile
-                            })
-                    End If
+                    HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=True)
                 End With
                 With Nothing
                     Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-anchor-fixed-on-top.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.JumpToAnchor, .SheetNavigationAlwaysVisible = True})
-                    If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                        Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                            .UseShellExecute = True,
-                            .FileName = TestHtmlOutputFile
-                            })
-                    End If
+                    HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=True)
                 End With
                 With Nothing
                     Dim Wb As CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase = Me.CreateInstance(TestXlsxFile.FullName, ExcelOps.ExcelDataOperationsBase.OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly))
                     Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Wb, TestXlsxFile.Name & ".nav-switch.html")
                     System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                     Wb.ExportWorkbookToHtml(TestHtmlOutputFile, New HtmlWorkbookExportOptions() With {.SheetNavigationActionStyle = HtmlWorkbookExportOptions.SheetNavigationActionStyles.SwitchVisibleSheet})
-                    If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                        Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                            .UseShellExecute = True,
-                            .FileName = TestHtmlOutputFile
-                            })
-                    End If
+                    HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=True)
                 End With
             Catch ex As NotImplementedException
                 ClassicAssert.Ignore("Not implemented for this Excel engine")
@@ -2467,22 +2471,12 @@ Namespace ExcelOpsTests.Engines
                         Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, TestXlsxFile.Name & "." & WorkSheetName & ".no-title.html")
                         System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
                         Wb.ExportSheetToHtml(WorkSheetName, TestHtmlOutputFile, New HtmlSheetExportOptions)
-                        If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                            Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                        .UseShellExecute = True,
-                        .FileName = TestHtmlOutputFile
-                        })
-                        End If
+                        HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=True)
                     End With
                     With Nothing
                         Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(Me.CreateInstanceUninitialized, TestXlsxFile.Name & "." & WorkSheetName & ".h2.html")
                         Wb.ExportSheetToHtml(WorkSheetName, TestHtmlOutputFile, New HtmlSheetExportOptions() With {.ExportSheetNameAsTitle = HtmlSheetExportOptions.SheetTitleStyles.H2})
-                        If OPEN_HTML_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                            Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                        .UseShellExecute = True,
-                        .FileName = TestHtmlOutputFile
-                        })
-                        End If
+                        HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=True)
                     End With
                 Next
             Catch ex As NotImplementedException

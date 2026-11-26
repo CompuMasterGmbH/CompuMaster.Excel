@@ -235,6 +235,7 @@ Namespace ExcelOps
                     _changedSheets.Clear()
                     _changedTables.Clear()
                     _changedCharts.Clear()
+                    _changedExtendedCharts.Clear()
                     _changedDrawings.Clear()
                     _formulaDependencies.Clear()
                     _pendingCellEdits.Clear()

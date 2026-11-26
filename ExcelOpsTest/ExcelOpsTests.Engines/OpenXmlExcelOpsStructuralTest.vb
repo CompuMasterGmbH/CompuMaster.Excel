@@ -15,6 +15,71 @@ Partial Public Class OpenXmlExcelOpsTest
     Private Const DataSheet As String = "O'Brien Data"
     Private Const DataQualifier As String = "'O''Brien Data'!"
 
+    <Test>
+    Public Sub EmbeddedChartPlacementReferenceMatchesExcel(<Values(True, False)> vertical As Boolean,
+        <Values("DeleteBefore", "DeleteAfter", "DeleteInside", "DeleteAll", "InsertBefore", "InsertInside", "InsertAfter")> operation As String)
+        Dim source = TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName)
+        Dim output = Path.Combine(_directory, "chart-placement.xlsx")
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            Assert.That(EmbeddedChartReferenceCoverage.CompareWithExcel(workbook, output, vertical, operation), [Is].Empty)
+        End Using
+        If operation = "DeleteAll" Then
+            Using document = SpreadsheetDocument.Open(output, False)
+                Dim placement = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart
+                Assert.That(placement.ChartParts.Count(), [Is].EqualTo(3), "Excel retains the collapsed chart on this worksheet.")
+            End Using
+        End If
+    End Sub
+
+    <Test>
+    Public Sub CopyingAWorksheetAfterAnUnsavedChartDeletionTransfersOnlyItsSurvivingCharts()
+        Dim source = Path.Combine(_directory, "blank-chart-placement.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            Dim worksheet = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").Worksheet
+            worksheet.GetFirstChild(Of SheetData)().RemoveAllChildren(Of Row)()
+            worksheet.SheetDimension.Reference = "A1"
+        End Using
+        Dim output = Path.Combine(_directory, "copied-chart-placement.xlsx")
+        Using original As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)),
+              destination As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, New ExcelDataOperationsOptions(WriteProtectionMode.DefaultBehaviourOnCreateFile))
+            original.RemoveRows("Dashboard", 2, 6, True)
+            original.CopySheet("Dashboard", destination, CopyWorksheetFormulaMode.PreserveFormulas)
+            destination.SaveAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim drawing = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart
+            Assert.That(drawing.WorksheetDrawing.ChildElements.Count, [Is].EqualTo(2))
+            Assert.That(drawing.ChartParts.Count(), [Is].EqualTo(2))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub EmbeddedChartPlacementRequiresOptInForAnUnverifiedColumnWidth()
+        Dim source = Path.Combine(_directory, "unverified-chart-font.xlsx")
+        Dim output = Path.Combine(_directory, "unverified-chart-font-edited.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", EmbeddedChartReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            document.WorkbookPart.WorkbookStylesPart.Stylesheet.Fonts.Elements(Of Font)().First().FontName.Val = "Arial"
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Dim failure = Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() workbook.AddColumn("Dashboard", 3, 1, True))
+            Assert.That(failure.Message, Does.Contain("Normal font"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+        options.AllowKnownStructuralReferenceDifferences = True
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, options)
+            Assert.DoesNotThrow(Sub() workbook.AddColumn("Dashboard", 3, 1, True))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Assert.That(StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Dashboard").DrawingsPart.ChartParts.Count(),
+                        [Is].EqualTo(3))
+        End Using
+    End Sub
+
     ' The reference strings cover whole-row and whole-column insertions and deletions as Excel stores them.
     <Test>
     Public Sub ShiftsRowsAndColumnsAndUpdatesReferencesAcrossSheets()
@@ -212,6 +277,11 @@ Partial Public Class OpenXmlExcelOpsTest
         Dim firstPath = Path.Combine(_directory, WorkbookReferenceCoverage.TargetName)
         Dim secondPath = Path.Combine(_directory, "second.xlsx")
         Dim output = Path.Combine(_directory, "saved-links.xlsx")
+        Using document = SpreadsheetDocument.Open(firstPath, True)
+            Dim book = document.WorkbookPart.Workbook
+            If book.DefinedNames Is Nothing Then book.DefinedNames = New DefinedNames()
+            book.DefinedNames.Append(New DefinedName("'[1]Remote Data'!$B$2:B3") With {.Name = "RemoteMixed"})
+        End Using
         File.Copy(firstPath, secondPath)
         Dim sourceName = WorkbookReferenceCoverage.RemoteSheet
         Dim updatedName = "O'Brien source"
@@ -237,11 +307,59 @@ Partial Public Class OpenXmlExcelOpsTest
             first.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
         End Using
         Using document = SpreadsheetDocument.Open(output, False)
+            Dim mixed = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().Single(Function(item) item.Name.Value = "RemoteMixed")
+            Assert.That(mixed.Text, [Is].EqualTo("'[1]O''Brien source'!$B$3:B3"))
             Dim external = document.WorkbookPart.ExternalWorkbookParts.Single().ExternalLink.GetFirstChild(Of ExternalBook)()
             Assert.That(external.SheetNames.GetFirstChild(Of SheetName)().Val.Value, [Is].EqualTo("O'Brien source"))
             Dim cached = external.SheetDataSet.Descendants(Of ExternalCell)()
             Assert.That(cached.Select(Function(cell) cell.CellReference.Value), [Is].EqualTo({"B3", "B4"}))
             Assert.That(cached.Select(Function(cell) cell.Xstring.Text), [Is].EqualTo({"11", "13"}))
+        End Using
+    End Sub
+
+    ' The second edit sees the moved filter in the current unsaved table definition.
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub StructuralReference_UpdatesTableFiltersAcrossSuccessiveColumnEdits(keepsNumericFilter As Boolean)
+        Dim source = Path.Combine(_directory, "filtered-table.xlsx")
+        Dim output = Path.Combine(_directory, "filtered-table-edited.xlsx")
+        File.Copy(TestEnvironment.FullPathOfExistingTestFile("test_data", StructuralReferenceCoverage.FixtureName), source)
+        Using document = SpreadsheetDocument.Open(source, True)
+            Dim data = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Data")
+            Dim table = data.TableDefinitionParts.Single().Table
+            Dim filter = table.GetFirstChild(Of AutoFilter)()
+            filter.Append(New FilterColumn(New Filters(New Filter With {.Val = "2"})) With {.ColumnId = 1UI})
+            If keepsNumericFilter Then
+                Dim comparison As New CustomFilter With {.Operator = FilterOperatorValues.GreaterThan, .Val = "3"}
+                filter.Append(New FilterColumn(New CustomFilters(comparison)) With {.ColumnId = 2UI})
+                For Each cell In data.Worksheet.Descendants(Of Cell)().Where(
+                    Function(item) {"D4", "D5", "D6"}.Contains(item.CellReference.Value))
+                    cell.CellFormula = Nothing
+                    cell.CellValue = New CellValue(If(cell.CellReference.Value = "D5", "2", "8"))
+                    cell.StyleIndex = Nothing
+                Next
+            End If
+            For Each row In data.Worksheet.GetFirstChild(Of SheetData)().Elements(Of Row)().Where(
+                Function(item) item.RowIndex.Value = 4UI OrElse item.RowIndex.Value = 7UI)
+                row.Hidden = True
+            Next
+        End Using
+        Using editor As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            editor.AddColumn("Data", 2, 1, True)
+            editor.RemoveColumns("Data", 3, 1, True)
+            Assert.That(editor.LookupCellFormula("Checks", 13, 0), [Is].EqualTo("SUM(#REF!)"))
+            editor.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim data = StructuralReferenceCoverage.WorksheetFor(document.WorkbookPart, "Data")
+            Dim table = data.TableDefinitionParts.Single().Table
+            Dim filter = table.GetFirstChild(Of AutoFilter)()
+            Assert.That(filter.Reference.Value, [Is].EqualTo("B3:D6"))
+            Dim filterColumns = filter.Elements(Of FilterColumn)().Select(Function(item) item.ColumnId.Value).ToArray()
+            Assert.That(filterColumns, [Is].EqualTo(If(keepsNumericFilter, {2UI}, Array.Empty(Of UInteger)())))
+            Dim hidden = data.Worksheet.GetFirstChild(Of SheetData)().Elements(Of Row)().
+                Where(Function(row) If(row.Hidden?.Value, False)).Select(Function(row) row.RowIndex.Value)
+            Assert.That(hidden, [Is].EqualTo(If(keepsNumericFilter, {5UI, 7UI}, {7UI})))
         End Using
     End Sub
 
@@ -345,7 +463,7 @@ Partial Public Class OpenXmlExcelOpsTest
         Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
     End Sub
 
-    <TestCase("DefinedName")>
+    <TestCase("UnscopedDefinedName")>
     <TestCase("ConditionalFormatting")>
     <TestCase("GroupedFormula")>
     <TestCase("RowExtension")>
@@ -359,8 +477,8 @@ Partial Public Class OpenXmlExcelOpsTest
             Dim part = document.WorkbookPart
             Dim worksheet = DirectCast(part.GetPartById("rIdData"), WorksheetPart).Worksheet
             Select Case feature
-                Case "DefinedName"
-                    part.Workbook.DefinedNames = New DefinedNames(New DefinedName(DataQualifier & "B2") With {.Name = "RelativeInput"})
+                Case "UnscopedDefinedName"
+                    part.Workbook.DefinedNames = New DefinedNames(New DefinedName("B2") With {.Name = "RelativeInput"})
                 Case "ConditionalFormatting"
                     Dim other = DirectCast(part.GetPartById("rIdCheck"), WorksheetPart).Worksheet
                     other.AddChild(New ConditionalFormatting())
@@ -385,6 +503,27 @@ Partial Public Class OpenXmlExcelOpsTest
             workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
         End Using
         Assert.That(HashFile(output), [Is].EqualTo(HashFile(source)))
+    End Sub
+
+    <Test>
+    Public Sub StructuralReference_DefinedNameShiftsKeepTheRelativeCoordinates()
+        Dim source = Path.Combine(_directory, "relative-names.xlsx")
+        Dim output = Path.Combine(_directory, "shifted-names.xlsx")
+        CreateStructuralWorkbook(source, {ValueCell("D4", 4)}, {FormulaCell("A1", "SUM(MixedInput)")},
+            New DefinedName(DataQualifier & "D4:F5") With {.Name = "RelativeInput"},
+            New DefinedName(DataQualifier & "$D$4:F5") With {.Name = "MixedInput"},
+            New DefinedName(DataQualifier & "D$4:F$5") With {.Name = "FixedRows"},
+            New DefinedName("$D4:$F5") With {.Name = "LocalColumns", .LocalSheetId = 0UI})
+        Using workbook As New OpenXmlExcelDataOperations(source, OpenMode.OpenExistingFile, New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly))
+            workbook.AddCells(DataSheet, 3, 3, 1, 1, CellInsertShiftDirection.ShiftCellsDown, True)
+            workbook.AddColumn(DataSheet, 3, 1, True)
+            Assert.That(workbook.LookupCellFormula("Check", 0, 0), [Is].EqualTo("SUM(MixedInput)"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Assert.That(document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().Select(Function(item) item.Text),
+                [Is].EqualTo({DataQualifier & "D4:F5", DataQualifier & "$E$5:F5", DataQualifier & "D$4:F$5", "$E4:$G5"}))
+        End Using
     End Sub
 
     <Test>

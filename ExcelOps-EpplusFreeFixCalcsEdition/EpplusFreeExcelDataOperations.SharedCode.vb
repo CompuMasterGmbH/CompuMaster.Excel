@@ -626,6 +626,9 @@ Namespace ExcelOps
 
         Private Sub ValidateStructuralReferenceCompatibility(sheet As ExcelWorksheet, start As Integer, shiftsRows As Boolean, inserting As Boolean)
             If Me.LoadOptions.AllowKnownStructuralReferenceDifferences Then Return
+            If sheet.Drawings.Any(Function(drawing) TypeOf drawing Is CompuMaster.Epplus4.Drawing.Chart.ExcelChart) Then
+                RejectStructuralReferenceDifference("embedded chart placement may differ from Microsoft Excel after a row or column edit")
+            End If
 
             For Each worksheet In Me.Workbook.Worksheets
                 If UsesLegacyStructuralReferenceRewriter Then
@@ -675,8 +678,9 @@ Namespace ExcelOps
             If rows < 0 Then Throw New ArgumentOutOfRangeException(NameOf(rows), "Row number must be a positive value or zero")
             If rows = 0 Then Return
             Dim Sheet As CompuMaster.Epplus4.ExcelWorksheet = Me.Workbook.Worksheets(sheetName)
-            If Sheet.Dimension Is Nothing Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
+            If Sheet Is Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName), "Sheet not found: " & sheetName)
             ValidateStructuralReferenceCompatibility(Sheet, startRowIndex, shiftsRows:=True, inserting:=False)
+            If Sheet.Dimension Is Nothing Then Throw New ArgumentException("Specified worksheet is not a data worksheet")
             Sheet.DeleteRow(startRowIndex + 1, rows)
         End Sub
 

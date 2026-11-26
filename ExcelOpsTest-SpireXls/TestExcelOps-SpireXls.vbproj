@@ -15,7 +15,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\ExcelOpsTest\HtmlVisualReview.vb" Link="HtmlVisualReview.vb" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="test_data\ChartSheet01.xlsx" />
+    <None Remove="test_data\EmbeddedChartPlacement.xlsx" />
     <None Remove="test_data\CircularRefs01.xlsx" />
     <None Remove="test_data\EmbeddedPicture01.xlsx" />
     <None Remove="test_data\EmbeddedPicture02.xlsx" />
@@ -48,6 +53,9 @@
 
   <ItemGroup>
     <Content Include="test_data\ChartSheet01.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="test_data\EmbeddedChartPlacement.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="test_data\CircularRefs01.xlsx">

@@ -123,7 +123,7 @@ Namespace ExcelOps
             If book.Workbook.DefinedNames IsNot Nothing Then
                 For Each definition In book.Workbook.DefinedNames.Elements(Of DefinedName)()
                     ' An incoming update must never bind unqualified references to the source worksheet.
-                    definition.Text = RewriteFormula(definition.Text, Nothing, editedSheet, shift, newSheetName, False, tableNames,
+                    definition.Text = RewriteFormula(definition.Text, Nothing, editedSheet, shift, newSheetName, True, tableNames,
                                                      formulaWorkbook:=book, structuralExternalLinks:=links)
                 Next
             End If
@@ -133,6 +133,10 @@ Namespace ExcelOps
                 change.Key.Table.Save()
             Next
             For Each change In charts.Charts
+                change.Key.ChartSpace = change.Value
+                change.Key.ChartSpace.Save()
+            Next
+            For Each change In charts.ExtendedCharts
                 change.Key.ChartSpace = change.Value
                 change.Key.ChartSpace.Save()
             Next

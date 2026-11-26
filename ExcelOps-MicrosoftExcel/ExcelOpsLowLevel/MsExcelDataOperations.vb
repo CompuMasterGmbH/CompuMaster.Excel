@@ -979,6 +979,7 @@ Namespace Global.CompuMaster.Excel.ExcelOps
         End Function
 
         ''' <inheritdoc/>
+        ''' <remarks>Reads Excel's <c>UsedRange</c> before <c>SpecialCells</c>. This can refresh Excel's cached last cell after a deletion before the workbook is saved.</remarks>
         Public Overrides Function LookupLastCell(sheetName As String) As ExcelOps.ExcelCell
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             Dim Sheet As MsExcel.Worksheet

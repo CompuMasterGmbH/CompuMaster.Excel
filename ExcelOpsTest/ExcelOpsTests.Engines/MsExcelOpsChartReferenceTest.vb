@@ -104,6 +104,147 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
+        <TestCase(51, "DeleteValues")>
+        <TestCase(51, "DeleteDataRows")>
+        <TestCase(51, "DeleteCategories")>
+        <TestCase(51, "DeleteTitleRow")>
+        <TestCase(-4169, "DeleteValues")>
+        <TestCase(-4169, "DeleteDataRows")>
+        <TestCase(-4169, "DeleteCategories")>
+        <TestCase(-4169, "DeleteTitleRow")>
+        <TestCase(65, "DeleteValues")>
+        <TestCase(65, "DeleteDataRows")>
+        <TestCase(65, "DeleteCategories")>
+        <TestCase(65, "DeleteTitleRow")>
+        Public Sub ChartReferences_OpenXmlMatchesExcelMultiSeriesDeletion(chartType As Integer, operation As String)
+            Dim caseDirectory = CreateChartTestDirectory()
+            Dim input = Path.Combine(caseDirectory, "before.xlsx")
+            Dim expected = Path.Combine(caseDirectory, "excel-edited.xlsx")
+            Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook As MsExcelDataOperations = Nothing
+            Try
+                workbook = CreateChartWorkbook()
+                Dim data = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
+                data.Range("E2").Value2 = "Costs"
+                For row = 3 To 5
+                    data.Range("E" & row).Value2 = row * 7
+                    If chartType <> -4169 Then data.Range("B" & row).Value2 = "Item " & row
+                Next
+                Dim chart = AddEmbeddedReferenceChart(data).Chart
+                chart.ChartType = CType(chartType, NativeExcel.XlChartType)
+                Dim series = DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection)
+                Dim qualifier = ChartSheetQualifier(ChartDataSheet)
+                While series.Count > 0
+                    series.Item(1).Delete()
+                End While
+                For Each column As String In {"C", "E"}
+                    Dim entry = series.NewSeries()
+                    Dim order = If(column = "C", "1", "2")
+                    entry.Formula = "=SERIES(" & qualifier & "$" & column & "$2," & qualifier & "$B$3:$B$5," &
+                                    qualifier & "$" & column & "$3:$" & column & "$5," & order & ")"
+                Next
+                workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                ApplyChartDataEdit(workbook, operation)
+                workbook.SaveAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.Close()
+
+                Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    ApplyChartDataEdit(editor, operation)
+                    editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                Assert.That(ReadClassicSeries(output), [Is].EqualTo(ReadClassicSeries(expected)))
+                workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim reopened = GetFirstEmbeddedChart(workbook, ChartDataSheet)
+                Assert.That(CInt(reopened.ChartType), [Is].EqualTo(chartType))
+                Assert.That(DirectCast(reopened.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(2))
+            Finally
+                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Function ReadClassicSeries(path As String, Optional expectedCount As Integer = 2) As String()
+            Using document = SpreadsheetDocument.Open(path, False)
+                Dim sheet = DirectCast(FindChartSourcePart(document.WorkbookPart, ChartDataSheet), WorksheetPart)
+                Dim chart = sheet.DrawingsPart.ChartParts.Single().ChartSpace
+                Dim series = chart.Descendants().Where(Function(item) item.LocalName = "ser").ToArray()
+                Assert.That(series.Length, [Is].EqualTo(expectedCount))
+                Return series.Select(Function(item)
+                    Dim references = item.Descendants(Of ChartXml.Formula)().Select(Function(formula)
+                        Dim reference = formula.Parent
+                        Dim cache = If(DirectCast(reference.GetFirstChild(Of ChartXml.NumberingCache)(), OpenXmlElement),
+                                       reference.GetFirstChild(Of ChartXml.StringCache)())
+                        Dim points = If(cache?.ChildElements.Where(Function(child) child.LocalName = "pt").Select(
+                            Function(point) point.GetAttribute("idx", "").Value & "=" & point.InnerText), Array.Empty(Of String)())
+                        Return reference.Parent.LocalName & "=" & formula.Text & ":" &
+                               If(cache?.GetFirstChild(Of ChartXml.PointCount)()?.Val?.Value.ToString(), "") & ":" & String.Join(",", points)
+                    End Function)
+                    Return item.Parent.LocalName & ":" & String.Join("|", references)
+                End Function).ToArray()
+            End Using
+        End Function
+
+        <TestCase(51, True)>
+        <TestCase(51, False)>
+        <TestCase(123, True)>
+        <TestCase(123, False)>
+        Public Sub ChartReferences_OpenXmlMatchesExcelWhenClearingTableBody(chartType As Integer, useTable As Boolean)
+            Dim caseDirectory = CreateChartTestDirectory()
+            Dim input = Path.Combine(caseDirectory, "table-chart.xlsx")
+            Dim expected = Path.Combine(caseDirectory, "excel-edited.xlsx")
+            Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+            Dim workbook As MsExcelDataOperations = Nothing
+            Try
+                workbook = CreateChartWorkbook()
+                Dim sheet = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
+                sheet.Range("B2").Value2 = "Category"
+                sheet.Range("D2").Value2 = "Count"
+                sheet.Range("F9").Value2 = "Category"
+                sheet.Range("G9").Value2 = "Outside sales"
+                For point = 1 To 3
+                    sheet.Range("B" & point + 2).Value2 = "Category " & point
+                    sheet.Range("D" & point + 2).Value2 = point
+                    sheet.Range("F" & point + 9).Value2 = "Outside " & point
+                    sheet.Range("G" & point + 9).Value2 = point * 20
+                Next
+                sheet.ListObjects.Add(NativeExcel.XlListObjectSourceType.xlSrcRange, sheet.Range("B2:D5"), Type.Missing, NativeExcel.XlYesNoGuess.xlYes)
+                sheet.Range(If(useTable, "B2:C5", "F9:G12")).Select()
+                sheet.Shapes.AddChart2(-1, CType(chartType, NativeExcel.XlChartType), 240, 120, 220, 150)
+                DirectCast(sheet.ChartObjects(1), NativeExcel.ChartObject).Placement = NativeExcel.XlPlacement.xlMoveAndSize
+                workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.RemoveRows(ChartDataSheet, 2, 3, True)
+                workbook.SaveAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                workbook.Close()
+
+                Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    editor.RemoveRows(ChartDataSheet, 2, 3, True)
+                    editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                Using document = SpreadsheetDocument.Open(output, False)
+                    Dim result = DirectCast(FindChartSourcePart(document.WorkbookPart, ChartDataSheet), WorksheetPart)
+                    Assert.That(result.TableDefinitionParts.Single().Table.Reference.Value, [Is].EqualTo("B2:D3"))
+                End Using
+                If chartType = 123 Then
+                    Dim native = ChartExReferences(expected, ChartDataSheet)
+                    Dim actual = ChartExReferences(output, ChartDataSheet)
+                    Assert.That(actual.References, [Is].EqualTo(native.References))
+                    Assert.That(actual.SeriesLayouts, [Is].EqualTo(native.SeriesLayouts))
+                    Assert.That(actual.Anchors, [Is].EqualTo(native.Anchors))
+                Else
+                    Assert.That(ReadClassicSeries(output, 1), [Is].EqualTo(ReadClassicSeries(expected, 1)))
+                End If
+                workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim reopened = GetFirstEmbeddedChart(workbook, ChartDataSheet)
+                Assert.That(CInt(reopened.ChartType), [Is].EqualTo(chartType))
+                Assert.That(DirectCast(reopened.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(1))
+            Finally
+                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
         <TestCase(117, "Rename")>
         <TestCase(118, "Rename")>
         <TestCase(117, "InsideRows")>
@@ -116,6 +257,31 @@ Namespace ExcelOpsTests.Engines
         <TestCase(140, "InsideRows")>
         <TestCase(117, "DeleteRow")>
         <TestCase(118, "InsertColumn")>
+        <TestCase(117, "DeleteCategories")>
+        <TestCase(119, "DeleteCategories")>
+        <TestCase(120, "DeleteCategories")>
+        <TestCase(121, "DeleteCategories")>
+        <TestCase(123, "DeleteCategories")>
+        <TestCase(140, "DeleteCategories")>
+        <TestCase(117, "DeleteTitleRow")>
+        <TestCase(118, "DeleteTitleRow")>
+        <TestCase(117, "DeleteValues")>
+        <TestCase(118, "DeleteValues")>
+        <TestCase(119, "DeleteValues")>
+        <TestCase(120, "DeleteValues")>
+        <TestCase(121, "DeleteValues")>
+        <TestCase(122, "DeleteValues")>
+        <TestCase(123, "DeleteValues")>
+        <TestCase(140, "DeleteValues")>
+        <TestCase(117, "DeleteDataRows")>
+        <TestCase(118, "DeleteDataRows")>
+        <TestCase(117, "DeleteSeriesRow")>
+        <TestCase(119, "DeleteSeriesRow")>
+        <TestCase(120, "DeleteSeriesRow")>
+        <TestCase(121, "DeleteSeriesRow")>
+        <TestCase(123, "DeleteSeriesRow")>
+        <TestCase(117, "DeleteSeriesFirstRow")>
+        <TestCase(119, "DeleteSeriesThenLast")>
         Public Sub ChartReferences_OpenXmlMatchesExcelChartExSourcesAndDrawingAnchors(chartType As Integer, operation As String)
             Dim caseDirectory = CreateChartTestDirectory()
             Dim input = Path.Combine(caseDirectory, "chartex.xlsx")
@@ -123,8 +289,10 @@ Namespace ExcelOpsTests.Engines
             Dim output = Path.Combine(caseDirectory, "openxml-edited.xlsx")
             Dim resultSheet = If(operation = "Rename", RenamedChartDataSheet, ChartDataSheet)
             Dim workbook As MsExcelDataOperations = Nothing
+            Dim mapApplication As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper = Nothing
             Try
-                workbook = CreateChartWorkbook()
+                If chartType = 140 Then mapApplication = NewMapChartApplication()
+                workbook = CreateChartWorkbook(mapApplication)
                 Dim data = DirectCast(workbook.Workbook.Worksheets.Item(ChartDataSheet), NativeExcel.Worksheet)
                 data.Range("B2").Value2 = "Category"
                 Dim numericOnly = chartType = 118 OrElse chartType = 122
@@ -134,7 +302,16 @@ Namespace ExcelOpsTests.Engines
                         data.Range("B" & point).Value2 = categories(point - 3)
                     Next
                 End If
-                data.Range(If(numericOnly, "C2:C5", "B2:C5")).Select()
+                Dim multipleSeries = operation.StartsWith("DeleteSeries", StringComparison.Ordinal)
+                If multipleSeries Then
+                    data.Range("D2").Value2 = "Profit"
+                    data.Range("E2").Value2 = "Visits"
+                    For point = 3 To 5
+                        data.Range("D" & point).Value2 = point * 9
+                        data.Range("E" & point).Value2 = point * 8
+                    Next
+                End If
+                data.Range(If(numericOnly, "C2:C5", If(multipleSeries, "B2:E5", "B2:C5"))).Select()
                 data.Shapes.AddChart2(-1, CType(chartType, NativeExcel.XlChartType), 240, 120, 220, 150)
                 DirectCast(data.ChartObjects(1), NativeExcel.ChartObject).Placement = NativeExcel.XlPlacement.xlMoveAndSize
                 workbook.SaveAs(input, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
@@ -144,38 +321,343 @@ Namespace ExcelOpsTests.Engines
 
                 Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
                 Using editor As New OpenXmlExcelDataOperations(input, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                    Assert.Throws(Of NotSupportedException)(Sub() editor.RemoveColumns(ChartDataSheet, 2, 1, True))
                     ApplyChartDataEdit(editor, operation)
                     editor.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 End Using
                 Dim native = ChartExReferences(expected, resultSheet)
                 Dim edited = ChartExReferences(output, resultSheet)
-                Assert.That(native.References, [Is].Not.Empty)
-                Assert.That(native.References, Has.All.StartsWith(ChartSheetQualifier(resultSheet)))
+                Dim emptyChart = operation = "DeleteValues" OrElse operation = "DeleteDataRows" OrElse operation = "DeleteSeriesThenLast"
+                Assert.That(native.HasChartData, [Is].EqualTo(Not emptyChart))
+                If multipleSeries AndAlso Not emptyChart Then Assert.That(native.SeriesLayouts.Length, [Is].EqualTo(2))
                 Assert.That(edited.References, [Is].EqualTo(native.References))
                 Assert.That(edited.Anchors, [Is].EqualTo(native.Anchors))
+                Assert.That(edited.HasChartData, [Is].EqualTo(native.HasChartData))
+                Assert.That(edited.SeriesLayouts, [Is].EqualTo(native.SeriesLayouts))
+                Assert.That(edited.AxisCount, [Is].EqualTo(native.AxisCount))
 
+                If emptyChart Then
+                    ' The saved part verifies the empty series and axes. Reopen the workbook to verify the chart object remains.
+                    If chartType = 140 Then
+                        ' Exercise the native and Open XML map packages in fresh Excel processes.
+                        For Each path In {expected, output}
+                            Using application = NewMapChartApplication()
+                                Dim reopened As New MsExcelDataOperations(path, ExcelDataOperationsBase.OpenMode.OpenExistingFile, application, False, options)
+                                Try
+                                    AssertSingleEmbeddedChart(reopened, resultSheet)
+                                Finally
+                                    reopened.Close()
+                                End Try
+                            End Using
+                        Next
+                    Else
+                        workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                        AssertSingleEmbeddedChart(workbook, resultSheet)
+                    End If
+                    Return
+                End If
+                workbook = Me.CreateInstance(expected, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim nativeChart = GetFirstEmbeddedChart(workbook, resultSheet)
+                Dim nativeType = CInt(nativeChart.ChartType)
+                Dim nativeSeries = DirectCast(nativeChart.SeriesCollection(), NativeExcel.SeriesCollection).Count
+                workbook.Close()
                 workbook = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
-                Dim renamed = DirectCast(workbook.Workbook.Worksheets.Item(resultSheet), NativeExcel.Worksheet)
-                Dim chart = DirectCast(renamed.ChartObjects(1), NativeExcel.ChartObject).Chart
-                Assert.That(CInt(chart.ChartType), [Is].EqualTo(chartType))
+                Dim chart = GetFirstEmbeddedChart(workbook, resultSheet)
+                Assert.That(CInt(chart.ChartType), [Is].EqualTo(nativeType))
+                Assert.That(DirectCast(chart.SeriesCollection(), NativeExcel.SeriesCollection).Count, [Is].EqualTo(nativeSeries))
             Finally
-                If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
-                Directory.Delete(caseDirectory, True)
+                Try
+                    If workbook IsNot Nothing AndAlso Not workbook.IsClosed Then workbook.Close()
+                Finally
+                    mapApplication?.Dispose()
+                    Directory.Delete(caseDirectory, True)
+                End Try
             End Try
         End Sub
 
-        Private Shared Function ChartExReferences(path As String, sheet As String) As (References As String(), Anchors As String())
-            Using document = SpreadsheetDocument.Open(path, False)
+        Private Shared Function NewMapChartApplication() As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper
+            Dim application As New CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper()
+            application.ComObjectStronglyTyped.ScreenUpdating = True
+            Return application
+        End Function
+
+        Private Shared Sub AssertSingleEmbeddedChart(workbook As MsExcelDataOperations, sheet As String)
+            Dim owner = DirectCast(workbook.Workbook.Worksheets.Item(sheet), NativeExcel.Worksheet)
+            Assert.That(DirectCast(owner.ChartObjects(), NativeExcel.ChartObjects).Count, [Is].EqualTo(1))
+        End Sub
+
+        Private Shared Function GetFirstEmbeddedChart(workbook As MsExcelDataOperations, sheet As String) As NativeExcel.Chart
+            Dim worksheet = DirectCast(workbook.Workbook.Worksheets.Item(sheet), NativeExcel.Worksheet)
+            Return DirectCast(worksheet.ChartObjects(1), NativeExcel.ChartObject).Chart
+        End Function
+
+        Private Shared Function ChartExReferences(path As String, sheet As String) As (References As String(), Anchors As String(),
+                                                                                      HasChartData As Boolean, SeriesLayouts As String(), AxisCount As Integer)
+            Using stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite),
+                  document = SpreadsheetDocument.Open(stream, False)
                 Dim book = document.WorkbookPart
-                Dim drawing = DirectCast(FindChartSourcePart(book, sheet), WorksheetPart).DrawingsPart
+                Dim owner = FindChartSourcePart(book, sheet)
+                Dim drawing = owner.Parts.Select(Function(item) item.OpenXmlPart).OfType(Of DrawingsPart)().Single()
                 Dim chart = drawing.Parts.Select(Function(part) part.OpenXmlPart).OfType(Of ExtendedChartPart)().Single()
                 Dim names = book.Workbook.DefinedNames.Elements(Of DefinedName)().ToDictionary(Function(item) item.Name.Value, Function(item) item.Text)
                 Dim namesUsed = chart.ChartSpace.Descendants(Of ExtendedChartXml.Formula)().Select(Function(formula) names(formula.Text)).ToArray()
                 Dim anchors = drawing.WorksheetDrawing.Descendants(Of DrawingXml.MarkerType)().
                     Select(Function(marker) String.Join(",", marker.ChildElements.Select(Function(element) element.InnerText))).ToArray()
-                Return (namesUsed, anchors)
+                Dim chartSpace = chart.ChartSpace
+                Dim series = chartSpace.Descendants(Of ExtendedChartXml.Series)().Select(
+                    Function(item) item.LayoutId?.Value.ToString() & ":" & item.GetFirstChild(Of ExtendedChartXml.DataId)()?.Val?.Value.ToString()
+                ).ToArray()
+                Return (namesUsed, anchors, chartSpace.ChartData IsNot Nothing, series, chartSpace.Descendants(Of ExtendedChartXml.Axis)().Count())
             End Using
+        End Function
+
+        <TestCase("OnData", False)>
+        <TestCase("OnData", True)>
+        <TestCase("Dashboard", False)>
+        <TestCase("Dashboard", True)>
+        <TestCase("ChartSheet", False)>
+        <TestCase("ChartSheet", True)>
+        <TestCase("Group", False)>
+        <TestCase("Group", True)>
+        <TestCase("UniqueGroup", True)>
+        <TestCase("AfterGroup", True)>
+        <TestCase("UniqueAfterGroup", True)>
+        <TestCase("DashboardGroup", True)>
+        <TestCase("UniqueDashboardGroup", True)>
+        <TestCase("AfterDashboardGroup", True)>
+        Public Sub WorksheetTransfer_OpenXmlMatchesExcelChartExSourcesAndExistingCharts(placement As String, move As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim expected = Path.Combine(caseDirectory, "excel-charts.xlsx")
+            Dim target As MsExcelDataOperations = Nothing
+            Dim source As MsExcelDataOperations = Nothing
+            Const dataName As String = "Data Set"
+            Dim group = placement.EndsWith("Group", StringComparison.Ordinal)
+            Dim collision = Not placement.StartsWith("Unique", StringComparison.Ordinal)
+            Dim chartBeforeData = Not placement.Contains("After")
+            Dim existingChartSheet = If(collision, dataName, "Existing Data")
+            Try
+                If group Then ResetChartTransferExcelProcess()
+                source = CreateTransferSource()
+                target = CreateTransferTarget(collision)
+                If Not collision Then target.AddSheet(existingChartSheet, Nothing)
+                AddTransferTreemap(target.Workbook, existingChartSheet)
+                Dim chart = AddTransferTreemap(source.Workbook, dataName)
+                Dim host = dataName
+                If placement.Contains("Dashboard") Then
+                    host = "Remain"
+                    chart.Location(NativeExcel.XlChartLocation.xlLocationAsObject, host)
+                ElseIf placement = "ChartSheet" OrElse group Then
+                    host = ChartViewSheet
+                    chart.Location(NativeExcel.XlChartLocation.xlLocationAsNewSheet, host)
+                End If
+                If group Then
+                    Dim data = TransferSheet(source.Workbook, dataName)
+                    If host = ChartViewSheet Then
+                        Dim tab = DirectCast(source.Workbook.Charts.Item(host), NativeExcel.Chart)
+                        If chartBeforeData Then tab.Move(Before:=data) Else tab.Move(After:=data)
+                    Else
+                        Dim tab = TransferSheet(source.Workbook, host)
+                        If chartBeforeData Then tab.Move(Before:=data) Else tab.Move(After:=data)
+                    End If
+                End If
+                Dim selected = If(group, {dataName, host}, {host})
+                Dim knownMoveDifference = move AndAlso group AndAlso chartBeforeData AndAlso (host = ChartViewSheet OrElse collision)
+
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                Dim native = If(move, source.MoveSheets(selected, target, 0), source.CopySheets(selected, target, 0))
+                Dim nativeHost = If(group, host, native.Single().TargetSheetName)
+                Dim transferredDataName As String = Nothing
+                If group Then
+                    transferredDataName = native.Single(Function(item) item.TargetSheetName <> host).TargetSheetName
+                    target.AddRow(transferredDataName, 3, 1, True)
+                End If
+                target.SaveCopyAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.Close()
+                source.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                If knownMoveDifference Then
+                    Assert.That(ChartExReferences(expected, nativeHost).References, [Is].Empty)
+                    Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                          destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                        Dim sourceSheets = origin.SheetNames()
+                        Dim targetSheets = destination.SheetNames()
+                        Assert.Throws(Of StructuralReferenceCompatibilityException)(Sub() origin.MoveSheets(selected, destination, 0))
+                        Assert.That(origin.SheetNames(), [Is].EqualTo(sourceSheets))
+                        Assert.That(destination.SheetNames(), [Is].EqualTo(targetSheets))
+                    End Using
+                    options.AllowKnownStructuralReferenceDifferences = True
+                End If
+                Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Dim actual = If(move, origin.MoveSheets(selected, destination, 0), origin.CopySheets(selected, destination, 0))
+                    Assert.That(actual.Select(Function(item) item.TargetSheetName), [Is].EqualTo(native.Select(Function(item) item.TargetSheetName)))
+                    If transferredDataName IsNot Nothing Then destination.AddRow(transferredDataName, 3, 1, True)
+                    If move Then origin.Save()
+                    destination.Save()
+                End Using
+                Dim references = ChartExReferences(targetPath, nativeHost).References
+                If knownMoveDifference Then
+                    Dim qualifier = ChartSheetQualifier(transferredDataName)
+                    Assert.That(references, [Is].EqualTo({qualifier & "$B$3:$B$6", qualifier & "$C$3:$C$6", qualifier & "$C$2"}))
+                Else
+                    Assert.That(references, [Is].EqualTo(ChartExReferences(expected, nativeHost).References))
+                End If
+                Assert.That(ChartExReferences(targetPath, existingChartSheet).References, [Is].EqualTo(ChartExReferences(expected, existingChartSheet).References))
+                If move Then
+                    Using document = SpreadsheetDocument.Open(sourcePath, False)
+                        Dim names = document.WorkbookPart.Workbook.DefinedNames
+                        Assert.That(names?.Elements(Of DefinedName)().Any(Function(item) item.Name.Value.StartsWith("_xlchart", StringComparison.OrdinalIgnoreCase)),
+                                    [Is].Not.True)
+                    End Using
+                End If
+                If group Then ResetChartTransferExcelProcess()
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim reopened = If(host = ChartViewSheet, DirectCast(target.Workbook.Charts.Item(nativeHost), NativeExcel.Chart),
+                                  GetFirstEmbeddedChart(target, nativeHost))
+                Assert.That(CInt(reopened.ChartType), [Is].EqualTo(117))
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Sub ResetChartTransferExcelProcess()
+            ' Open each chart group in a fresh process so prior chart operations cannot affect the comparison.
+            Dim application = MsExcelInstance
+            MsExcelInstance = Nothing
+            application?.Dispose()
+        End Sub
+
+        <TestCase(False)>
+        <TestCase(True)>
+        Public Sub WorksheetTransfer_OpenXmlPreservesChartExSourceFormulasWhenRequested(conflict As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim output = Path.Combine(caseDirectory, "preserved-chart.xlsx")
+            Dim target As MsExcelDataOperations = Nothing
+            Dim source As MsExcelDataOperations = Nothing
+            Const dataName As String = "Data Set"
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(True)
+                AddTransferTreemap(source.Workbook, dataName)
+                AddTransferTreemap(target.Workbook, dataName)
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.Close()
+                source.Close()
+                If conflict Then
+                    Using document = SpreadsheetDocument.Open(targetPath, True)
+                        Dim changed = document.WorkbookPart.Workbook.DefinedNames.Elements(Of DefinedName)().
+                            First(Function(item) item.Name.Value.StartsWith("_xlchart", StringComparison.OrdinalIgnoreCase) AndAlso item.Text.EndsWith("$5", StringComparison.Ordinal))
+                        changed.Text = changed.Text.Substring(0, changed.Text.Length - 1) & "6"
+                    End Using
+                End If
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+                Using origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      destination As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Dim mode = ExcelDataOperationsBase.CopyWorksheetFormulaMode.PreserveFormulas
+                    If conflict Then
+                        Assert.Throws(Of NotSupportedException)(Sub() origin.CopySheet(dataName, destination, 0, mode))
+                    Else
+                        Assert.That(origin.CopySheet(dataName, destination, 0, mode).TargetSheetName, [Is].EqualTo("Data Set (2)"))
+                    End If
+                    destination.SaveCopyAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                If conflict Then
+                    Assert.That(File.ReadAllBytes(output), [Is].EqualTo(File.ReadAllBytes(targetPath)))
+                Else
+                    Assert.That(ChartExReferences(output, "Data Set (2)").References, [Is].EqualTo(ChartExReferences(sourcePath, dataName).References))
+                    target = Me.CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Assert.That(CInt(GetFirstEmbeddedChart(target, "Data Set (2)").ChartType), [Is].EqualTo(117))
+                End If
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        <TestCase(False)>
+        <TestCase(True)>
+        Public Sub ChartReferences_OpenXmlSessionUpdatesExternalChartExSources(deleteData As Boolean)
+            Dim caseDirectory = CreateTransferTestDirectory()
+            Dim sourcePath = Path.Combine(caseDirectory, TransferSourceFile)
+            Dim targetPath = Path.Combine(caseDirectory, TransferTargetFile)
+            Dim expected = Path.Combine(caseDirectory, "excel-linked-chart.xlsx")
+            Dim target As MsExcelDataOperations = Nothing
+            Dim source As MsExcelDataOperations = Nothing
+            Const dataName As String = "Data Set"
+            Const chartHost As String = "Remain"
+            Dim editSource As Action(Of ExcelDataOperationsBase) =
+                Sub(engine)
+                    If deleteData Then
+                        engine.RemoveRows(dataName, 2, 3, True)
+                    Else
+                        engine.AddRow(dataName, 3, 1, True)
+                    End If
+                End Sub
+            Try
+                source = CreateTransferSource()
+                target = CreateTransferTarget(True)
+                AddTransferTreemap(target.Workbook, dataName)
+                AddTransferTreemap(source.Workbook, dataName).Location(NativeExcel.XlChartLocation.xlLocationAsObject, chartHost)
+                source.SaveAs(sourcePath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                source.CopySheet(chartHost, target, 0)
+                target.SaveAs(targetPath, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                editSource(source)
+                target.SaveCopyAs(expected, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                target.Close()
+                source.Close()
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite)
+                Using session As New OpenXmlWorkbookSession(),
+                      origin As New OpenXmlExcelDataOperations(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options),
+                      dependent As New OpenXmlExcelDataOperations(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    session.Attach(origin)
+                    session.Attach(dependent)
+                    editSource(origin)
+                    origin.Save()
+                    dependent.Save()
+                End Using
+                Dim reference = ChartExReferences(expected, chartHost)
+                Dim actual = ChartExReferences(targetPath, chartHost)
+                Assert.That(reference.HasChartData, [Is].EqualTo(Not deleteData))
+                Assert.That(actual.References, [Is].EqualTo(reference.References))
+                Assert.That(actual.HasChartData, [Is].EqualTo(reference.HasChartData))
+                Assert.That(actual.SeriesLayouts, [Is].EqualTo(reference.SeriesLayouts))
+                Assert.That(actual.Anchors, [Is].EqualTo(reference.Anchors))
+                Assert.That(ChartExReferences(targetPath, dataName).References, [Is].EqualTo(ChartExReferences(expected, dataName).References))
+                source = Me.CreateInstance(sourcePath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                target = Me.CreateInstance(targetPath, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim owner = TransferSheet(target.Workbook, chartHost)
+                Assert.That(DirectCast(owner.ChartObjects(), NativeExcel.ChartObjects).Count, [Is].EqualTo(1))
+                If Not deleteData Then Assert.That(CInt(GetFirstEmbeddedChart(target, chartHost).ChartType), [Is].EqualTo(117))
+            Finally
+                If target IsNot Nothing AndAlso Not target.IsClosed Then target.Close()
+                If source IsNot Nothing AndAlso Not source.IsClosed Then source.Close()
+                Directory.Delete(caseDirectory, True)
+            End Try
+        End Sub
+
+        Private Shared Function AddTransferTreemap(workbook As NativeExcel.Workbook, sheetName As String) As NativeExcel.Chart
+            workbook.Activate()
+            Dim sheet = TransferSheet(workbook, sheetName)
+            sheet.Activate()
+            sheet.Range("B2").Value2 = "Category"
+            sheet.Range("C2").Value2 = "Revenue"
+            For row = 3 To 5
+                sheet.Range("B" & row).Value2 = "Item " & row
+                sheet.Range("C" & row).Value2 = row * 10
+            Next
+            sheet.Range("B2:C5").Select()
+            Return sheet.Shapes.AddChart2(-1, CType(117, NativeExcel.XlChartType), 240, 120, 220, 150).Chart
         End Function
 
         ' Unsupported chart references must fail before even unrelated cell or anchor edits are applied.
@@ -263,9 +745,10 @@ Namespace ExcelOpsTests.Engines
             End Try
         End Sub
 
-        Private Function CreateChartWorkbook() As MsExcelDataOperations
+        Private Function CreateChartWorkbook(Optional application As CompuMaster.Excel.MsExcelCom.MsExcelApplicationWrapper = Nothing) As MsExcelDataOperations
             Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.DefaultBehaviourOnCreateFile)
-            Dim workbook = Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, options)
+            Dim workbook = If(application Is Nothing, Me.CreateInstance(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, options),
+                New MsExcelDataOperations(Nothing, ExcelDataOperationsBase.OpenMode.CreateFile, application, False, options))
             Dim data = DirectCast(workbook.Workbook.Worksheets.Item(1), NativeExcel.Worksheet)
             data.Name = ChartDataSheet
             data.Range("C2").Value2 = "Revenue"
@@ -318,6 +801,15 @@ Namespace ExcelOpsTests.Engines
                     workbook.RemoveRows(ChartDataSheet, 3, 1, True)
                 Case "DeleteDataRows"
                     workbook.RemoveRows(ChartDataSheet, 2, 3, True)
+                Case "DeleteTitleRow"
+                    workbook.RemoveRows(ChartDataSheet, 1, 1, True)
+                Case "DeleteSeriesRow"
+                    workbook.RemoveRows(ChartDataSheet, 3, 1, True)
+                Case "DeleteSeriesFirstRow"
+                    workbook.RemoveRows(ChartDataSheet, 2, 1, True)
+                Case "DeleteSeriesThenLast"
+                    workbook.RemoveRows(ChartDataSheet, 3, 1, True)
+                    workbook.RemoveRows(ChartDataSheet, 2, 2, True)
                 Case "InsertColumn"
                     workbook.AddColumn(ChartDataSheet, 1, 1, True)
                 Case "DeleteCategories"

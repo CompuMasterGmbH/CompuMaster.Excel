@@ -42,6 +42,7 @@
 - Static test workbooks belong in the appropriate `test_data` directories.
 - When repository copy/clone scripts generate or synchronize shared source or test files, include the resulting copied files in the same change.
 - When investigating or changing Microsoft Excel Interop behavior, run the relevant tests locally on a Windows development computer with Microsoft Excel installed. GitHub-hosted Windows runners do not provide Microsoft Excel, so skipped Interop tests there do not validate Excel compatibility. Complete these local tests before reporting the behavior as verified, and record the results without publishing the development computer's host name.
+- Set the `COMPUMASTER_EXCEL_HTML_VISUAL_TESTS` environment variable to `off` for agent-driven test runs. If a direct or indirect change could affect rendered HTML and visual inspection is needed, set it to the affected NUnit method names or full test names and review only those exports. The setting controls browser launches. Keep generating and checking HTML artifacts in all runs. Preserve existing defaults for local developer runs without the setting and keep CI browser-free.
 - Mark tests that submit physical print jobs as explicit manual tests. Run them only when the user has authorized the print jobs, and distinguish successful job submission from confirmation of the physical output.
 
 ## Package README

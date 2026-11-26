@@ -140,8 +140,8 @@ Namespace ExcelOps
         ''' <summary>Allows structural edits with known differences from Microsoft Excel.</summary>
         ''' <value>True to run an engine's existing implementation despite a detected Excel compatibility limitation. The default is false.</value>
         ''' <remarks>
-        ''' EPPlus and Spire engines throw <see cref="StructuralReferenceCompatibilityException"/> when they detect a known difference and this option is disabled.
-        ''' The option does not enable unavailable operations or change the requested formula and reference update mode.
+        ''' EPPlus, Spire and Open XML engines throw <see cref="StructuralReferenceCompatibilityException"/> for documented differences when this option is disabled.
+        ''' The option applies to operations supported by the engine and retains the requested formula and reference update mode.
         ''' </remarks>
         Public Property AllowKnownStructuralReferenceDifferences As Boolean
 

@@ -13,10 +13,33 @@ The reference tests use desktop Excel on Windows to edit a data worksheet and sa
 | Insert a column before the data | The series name, category or X range, value range, and title move with the corresponding cells. |
 | Shift only cells in the values column down | The values range expands. The category or X range keeps its bounds. The saved values cache records the inserted gap. |
 | Delete the entire categories or X range | In the saved column chart, Excel drops the category reference. In the saved scatter chart, Excel keeps an X reference with `#REF!`. The values range still refers to the original surviving cells. |
-| Delete the entire values range | The XLSX chart keeps an invalid values reference and a cached fallback point with value 1 in the tested charts. If the series name cell is also deleted, Excel drops that name reference. |
+| Delete the entire values range | The XLSX chart keeps an invalid values reference and a cached fallback point with value 1 in the tested charts. If the series name cell is also deleted, Excel drops the single-series chart's name reference. In the tested multiple-series column, line and scatter charts, the name reference remains and its cache contains `#REF!`. |
+| Clear the entire data body of a table used by a chart | The table retains a blank insertion row. The tested column and funnel chart series keep references to that row. The classic chart stores a point count of one with no cached point for the blank cells. Sources below the table shift up with their cells. |
 | Rename the source worksheet | All explicit sheet qualifiers follow the new name. Excel doubles an apostrophe in the quoted qualifier. |
 
 The embedded chart on the edited worksheet was configured to move and resize with cells. Its anchor followed whole-row and whole-column edits before it, including insertion immediately after the source range. The chart on the dashboard stayed anchored on that sheet. In the tested partial shift, the source chart's anchor also stayed in place.
+
+## Embedded chart placement
+
+The placement tests put chart data on an unaffected worksheet and edit only the worksheet hosting the chart. They compare Excel's chart presence, position and dimensions in points for whole rows and whole columns. The cases include default dimensions and explicit column widths and row heights. The standard three placement modes are defined by Excel's chart object API. [Excel placement modes](https://learn.microsoft.com/en-us/office/vba/api/excel.xlplacement)
+
+| Edit relative to the chart | Move and size with cells | Move without sizing | Free floating |
+| --- | --- | --- | --- |
+| Insert or delete before the chart | Moves with the cells and retains its size. | Moves with the cells and retains its size. | Retains its position and size. |
+| Insert or delete after the chart | Retains its position and size. | Retains its position and size. | Retains its position and size. |
+| Delete some of the covered rows or columns | Shrinks along the edited axis. If the first anchor cell is removed, its edge moves to the deletion boundary. | Retains its size. If its first anchor cell is removed, its edge moves to the deletion boundary. | Retains its position and size. |
+| Delete all covered rows or all covered columns | Removes the chart or retains it with zero height or width, depending on the original used range. | Retains the chart and its size, with its starting edge at the deletion boundary. | Retains the chart, its position and its size. |
+| Insert within the chart's extent | Expands along the edited axis. | Retains its position and size. | Retains its position and size. |
+
+Insertion at the first anchor cell moves the chart with that cell when the placement is cell-dependent. Insertion before the last covered cell counts as insertion inside the chart. If the chart ends exactly on a cell boundary, an edit starting at that boundary is outside its extent.
+
+When the chart collapses, Excel compares the original used range with the start of the chart on the other axis. For a chart starting at B3, deleting its entire row span retains a zero-height chart if the original used range includes column C or later. Deleting its entire column span retains a zero-width chart if the original used range includes row 4 or later. A formatted cell counts. A cell removed by the same edit still counts.
+
+Excel removes all eight tested types of ChartEx chart when deleting their full column span, even when the used range would retain a zero-width classic chart. The same ChartEx types can remain with zero height after deleting their full row span.
+
+Open XML applies the placement rules to supported embedded classic and ChartEx charts. It removes detached chart relationships along with a deleted drawing. The cross-engine fixture in `test_data/EmbeddedChartPlacement.xlsx` uses all three placement modes on one dashboard. The Excel Interop tests also verify the rendered positions and sizes after reopening the Open XML output.
+
+Both EPPlus adapters and both Spire adapters produced placement differences on the cross-engine fixture. They reject whole-row and whole-column edits on a worksheet with embedded charts by default. `AllowKnownStructuralReferenceDifferences` permits the adapter's existing behavior for callers that accept those differences.
 
 ## Survey by chart type
 
@@ -30,6 +53,6 @@ The eight ChartEx cases include treemap, histogram, waterfall, sunburst, box and
 
 The engine rewrites supported direct source references in classic chart parts. It maps cached points onto the new coordinates and updates supported cell anchors on the edited worksheet. The tests compare the saved references and points for each scenario above and reopen the Open XML output in Excel. The transfer tests also reopen copied embedded charts and chart sheets in both formula modes.
 
-Worksheet renames and supported shifts update the workbook-scoped `_xlchart` source names used by supported ChartEx charts. The row insertion test compares resolved references and drawing anchors for all eight ChartEx types produced by the survey. Additional tests cover a row deletion, a column insertion, and renames. The tests reopen the output in Excel.
+Worksheet renames and supported shifts update the workbook-scoped `_xlchart` source names used by supported ChartEx charts. The row insertion and full value-column deletion tests cover all eight ChartEx types produced by the survey. A deleted category range or series name continues to resolve to `#REF!` in the tested charts. Deleting an entire value range removes its series. If no values remain, Excel saves the empty chart without plot axes and retains its drawing anchor. The tests compare resolved references, series, axes and anchors, then reopen the files in Excel.
 
-Transfers of ChartEx charts, changing cached ChartEx dimensions, removing an entire ChartEx source, and complete source range deletions in classic multiple-series charts remain outside the supported scope. Named or extended classic chart formulas also remain unsupported. The guard tests verify that unsupported chart edits fail before changing the workbook. [Reference tests](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsChartReferenceTest.vb) · [Chart source references in Open XML](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.drawing.charts.formula)
+Complete source deletions in the tested multiple-series column, line and scatter charts keep the series and update their point caches. Classic multiple-series chart roles outside those supported series remain guarded. Supported ChartEx transfers cover embedded charts and chart sheets with direct source ranges. Changing or transferring cached ChartEx dimensions, deleting a value dimension from a ChartEx series with several numeric dimensions, and named or extended classic chart formulas remain unsupported. [Reference tests](../ExcelOpsTest/ExcelOpsTests.Engines/MsExcelOpsChartReferenceTest.vb) · [Sheet transfer behavior](worksheet-transfer-excel-behavior.md) · [Chart source references in Open XML](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.drawing.charts.formula)

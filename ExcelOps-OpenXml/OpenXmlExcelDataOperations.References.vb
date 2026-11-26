@@ -47,9 +47,14 @@ Namespace ExcelOps
 
             Friend ReadOnly Property IsAbsolute As Boolean
                 Get
-                    Return (Column < 0 OrElse ColumnText(0) = "$"c) AndAlso (Row < 0 OrElse RowText(0) = "$"c)
+                    Return IsAbsoluteOnAxis(False) AndAlso IsAbsoluteOnAxis(True)
                 End Get
             End Property
+
+            Friend Function IsAbsoluteOnAxis(vertical As Boolean) As Boolean
+                Dim coordinate = If(vertical, RowText, ColumnText)
+                Return coordinate.Length = 0 OrElse coordinate(0) = "$"c
+            End Function
 
             Friend Function Format(vertical As Boolean, index As Integer) As String
                 Return Format(If(vertical, index, Row), If(vertical, Column, index))
@@ -254,7 +259,10 @@ Namespace ExcelOps
                                         Optional structuralExternalLinks As HashSet(Of Integer) = Nothing,
                                         Optional contextualTable As StructuralTable = Nothing,
                                         Optional observeName As Action(Of String, String) = Nothing,
-                                        Optional allowSpillReferences As Boolean = False) As String
+                                        Optional allowSpillReferences As Boolean = False,
+                                        Optional validateTransferredNameOperands As Boolean = False,
+                                        Optional validateInvokedName As Action(Of String, String) = Nothing,
+                                        Optional rewriteNameOperand As Func(Of String, String, String) = Nothing) As String
             Dim result As New StringBuilder(value.Length)
             Dim index = 0
             Dim lastReferenceEnd = -1
@@ -361,10 +369,16 @@ Namespace ExcelOps
                 If first IsNot Nothing AndAlso (first.IsCell OrElse second IsNot Nothing) Then
                     result.Append(qualifier)
                     Dim unchanged = value.Substring(index, referenceEnd - index)
-                    If shift IsNot Nothing AndAlso isDefinedName AndAlso Not externalBook AndAlso
-                       (Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing OrElse Not first.IsAbsolute OrElse
-                        (second IsNot Nothing AndAlso Not second.IsAbsolute)) Then
-                        Throw New NotSupportedException("Structural shifts require every A1 reference in a defined name to be absolute and to have an explicit or worksheet-local scope.")
+                    Dim referenceLacksSheet = Not sheetSpan.Success AndAlso explicitSheet Is Nothing AndAlso scopeSheet Is Nothing
+                    If validateTransferredNameOperands Then
+                        Dim relative = Not first.IsAbsolute OrElse (second IsNot Nothing AndAlso Not second.IsAbsolute)
+                        Dim ownSheet = Not externalBook AndAlso
+                            String.Equals(If(explicitSheet, scopeSheet), If(scopeSheet, editedSheet), StringComparison.OrdinalIgnoreCase)
+                        If referenceLacksSheet OrElse (relative AndAlso Not ownSheet) Then
+                            Throw New NotSupportedException("A defined name contains a reference without a sheet or an unsupported relative reference.")
+                        End If
+                    ElseIf shift IsNot Nothing AndAlso isDefinedName AndAlso structuralExternalLinks Is Nothing AndAlso referenceLacksSheet Then
+                        Throw New NotSupportedException("A workbook-scoped defined name contains a reference without a sheet.")
                     End If
                     If copyRowOffset <> 0 OrElse copyColumnOffset <> 0 Then
                         Dim firstAddress = FormatCopiedEndpoint(first, copyRowOffset, copyColumnOffset)
@@ -378,7 +392,8 @@ Namespace ExcelOps
                     ElseIf shift IsNot Nothing AndAlso Not sheetSpan.Success AndAlso
                            String.Equals(If(externalBook OrElse structuralExternalLinks IsNot Nothing, linkedSheet, If(explicitSheet, scopeSheet)),
                                          editedSheet, StringComparison.OrdinalIgnoreCase) Then
-                        result.Append(shift.RewriteReference(first, second, separator))
+                        result.Append(If(isDefinedName, shift.RewriteDefinedNameReference(first, second, separator, unchanged),
+                                         shift.RewriteReference(first, second, separator)))
                     ElseIf second IsNot Nothing AndAlso (renamedSheet IsNot Nothing OrElse rewriteSheetQualifier IsNot Nothing) Then
                         result.Append(first.ColumnText).Append(first.RowText).Append(separator).Append(second.ColumnText).Append(second.RowText)
                     Else
@@ -413,11 +428,17 @@ Namespace ExcelOps
                         End If
                         index = selectorEnd
                     Else
-                        If observeName IsNot Nothing AndAlso isName Then
+                        Dim nameOperand = token.Value
+                        If isName AndAlso (observeName IsNot Nothing OrElse validateInvokedName IsNot Nothing OrElse rewriteNameOperand IsNot Nothing) Then
                             Dim afterName = SkipWhitespace(value, index)
-                            If afterName = value.Length OrElse value(afterName) <> "("c Then observeName(token.Value, explicitSheet)
+                            If afterName < value.Length AndAlso value(afterName) = "("c Then
+                                validateInvokedName?.Invoke(token.Value, explicitSheet)
+                            Else
+                                observeName?.Invoke(token.Value, explicitSheet)
+                                If rewriteNameOperand IsNot Nothing Then nameOperand = rewriteNameOperand(token.Value, explicitSheet)
+                            End If
                         End If
-                        result.Append(qualifier).Append(token.Value)
+                        result.Append(qualifier).Append(nameOperand)
                     End If
                 ElseIf explicitSheet Is Nothing AndAlso
                        ("+-*/^&=<>%(),;{}@".IndexOf(value(tokenStart)) >= 0 OrElse Char.IsWhiteSpace(value(tokenStart))) Then
