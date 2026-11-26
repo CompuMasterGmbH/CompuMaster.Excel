@@ -32,17 +32,23 @@
 
             Private Function EvaluateProbabilityArguments(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
                                                           engineering As Boolean, cumulativeIndex As Integer,
-                                                          calculate As Func(Of Double(), Boolean, Object)) As Object
+                                                          calculate As Func(Of Double(), Boolean, Object),
+                                                          Optional defaults As Double() = Nothing) As Object
                 Dim evaluated = arguments.Select(Function(argument) EvaluateExpression(argument, formulaCell)).ToArray()
                 If engineering Then
                     If evaluated.Any(Function(value) TypeOf value Is FormulaArea AndAlso IsMultiValue(value)) Then Return New FormulaError("#VALUE!")
                     If evaluated.Any(Function(value) value Is Nothing) Then Return New FormulaError("#N/A")
                 End If
+                If defaults IsNot Nothing Then
+                    For index = 0 To evaluated.Length - 1
+                        If evaluated(index) Is Nothing AndAlso index <> cumulativeIndex Then evaluated(index) = defaults(index)
+                    Next
+                End If
                 Dim inputs = evaluated.Select(Function(value) AsMatrix(value)).ToArray()
                 Dim rows = inputs.Max(Function(input) input.Rows)
                 Dim columns = inputs.Max(Function(input) input.Columns)
                 Dim results = AllocateMatrixValues(rows, columns)
-                Dim numbers(2) As Double
+                Dim numbers = If(defaults Is Nothing, New Double(2) {}, DirectCast(defaults.Clone(), Double()))
                 For row = 0 To rows - 1
                     For column = 0 To columns - 1
                         Dim cumulative = True

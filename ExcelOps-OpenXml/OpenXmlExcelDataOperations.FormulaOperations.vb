@@ -174,6 +174,12 @@ Namespace ExcelOps
                          "CHISQ.INV", "_XLFN.CHISQ.INV", "CHISQ.INV.RT", "_XLFN.CHISQ.INV.RT", "CHIINV",
                          "EXPON.DIST", "_XLFN.EXPON.DIST", "EXPONDIST", "WEIBULL.DIST", "_XLFN.WEIBULL.DIST", "WEIBULL"
                         Return EvaluateGammaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "BETA.DIST", "_XLFN.BETA.DIST", "BETADIST", "BETA.INV", "_XLFN.BETA.INV", "BETAINV",
+                         "T.DIST", "_XLFN.T.DIST", "T.DIST.RT", "_XLFN.T.DIST.RT", "T.DIST.2T", "_XLFN.T.DIST.2T", "TDIST",
+                         "T.INV", "_XLFN.T.INV", "T.INV.2T", "_XLFN.T.INV.2T", "TINV", "CONFIDENCE.T", "_XLFN.CONFIDENCE.T",
+                         "F.DIST", "_XLFN.F.DIST", "F.DIST.RT", "_XLFN.F.DIST.RT", "FDIST",
+                         "F.INV", "_XLFN.F.INV", "F.INV.RT", "_XLFN.F.INV.RT", "FINV"
+                        Return EvaluateBetaFamily(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
