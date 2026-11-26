@@ -7,11 +7,6 @@
         End Function
 
         ''' <inheritdoc/>
-        Public Overrides Sub CleanupRangeNames()
-            Throw UnsupportedOperation("Cleaning up range names")
-        End Sub
-
-        ''' <inheritdoc/>
         Public Overrides Sub RemoveSheet(sheetName As String)
             Throw UnsupportedOperation("Removing sheets")
         End Sub
@@ -34,11 +29,6 @@
         ''' <inheritdoc/>
         Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
             Throw UnsupportedOperation("Copying sheet content")
-        End Sub
-
-        ''' <inheritdoc/>
-        Public Overrides Sub SelectCell(cell As ExcelCell)
-            Throw UnsupportedOperation("Selecting cells")
         End Sub
 
         ''' <inheritdoc/>

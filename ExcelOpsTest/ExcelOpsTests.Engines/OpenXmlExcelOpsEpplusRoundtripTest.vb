@@ -16,6 +16,7 @@ Partial Public Class OpenXmlExcelOpsTest
             Dim sheet = epplus.Workbook.Worksheets.Add("Inputs")
             sheet.Cells("A8").Value = 10
             sheet.Cells("B8").Formula = "A8+1"
+            sheet.Cells("C8").Formula = "TEXT(42,""0"")"
             epplus.Save()
         End Using
 
@@ -29,6 +30,7 @@ Partial Public Class OpenXmlExcelOpsTest
             Dim sheet = epplus.Workbook.Worksheets("Inputs")
             Assert.That(sheet.Cells("B8").Formula, [Is].EqualTo("A8+1"))
             Assert.That(sheet.Cells("B8").GetValue(Of Double)(), [Is].EqualTo(11.0))
+            Assert.That(sheet.Cells("C8").GetValue(Of String)(), [Is].EqualTo("42"))
             sheet.Cells("A8").Value = 20
             epplus.Save()
         End Using

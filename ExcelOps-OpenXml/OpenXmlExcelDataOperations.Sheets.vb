@@ -1,9 +1,37 @@
-﻿Imports DocumentFormat.OpenXml.Packaging
+﻿Imports System.Text.RegularExpressions
+Imports DocumentFormat.OpenXml
+Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 
 Namespace ExcelOps
 
     Partial Public Class OpenXmlExcelDataOperations
+
+        ''' <inheritdoc/>
+        ''' <remarks>Removes definitions with broken references or invalid worksheet scope indexes.</remarks>
+        Public Overrides Sub CleanupRangeNames()
+            SyncLock WorkbookSaveLock
+                Dim workbook = WorkbookPart.Workbook
+                Dim names = workbook.DefinedNames
+                If names Is Nothing Then Return
+                Dim sheetCount = workbook.Sheets.Elements(Of Sheet)().Count()
+                Dim invalid = names.Elements(Of DefinedName)().Where(
+                    Function(name) (name.LocalSheetId IsNot Nothing AndAlso name.LocalSheetId.Value >= sheetCount) OrElse
+                        DefinedNameTokens.Matches(If(name.Text, String.Empty)).Cast(Of Match)().Any(Function(token) token.Value(0) = "#"c)).ToList()
+                If invalid.Count = 0 Then Return
+                For Each name In invalid
+                    name.Remove()
+                Next
+                If Not names.HasChildren Then names.Remove()
+                _workbookChanged = True
+                _calculationChainInvalid = True
+                RecalculationRequired = True
+                ResetCalculationDependencies()
+            End SyncLock
+        End Sub
+
+        Private Shared ReadOnly DefinedNameTokens As New Regex(
+            """(?:[^""]|"""")*""|'(?:[^']|'')*'|#REF!", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
         Private Function WorkbookSheets() As List(Of Sheet)
             Return WorkbookPart.Workbook.Sheets.Elements(Of Sheet)().ToList()
@@ -119,17 +147,7 @@ Namespace ExcelOps
 
         Private Sub SelectVisibleWorksheet(sheets As List(Of Sheet), selected As Sheet)
             If Not IsVisible(selected) Then Throw New InvalidOperationException("A hidden worksheet cannot be selected.")
-            Dim workbook = WorkbookPart.Workbook
-            Dim workbookViews = workbook.BookViews
-            If workbookViews Is Nothing Then
-                workbookViews = New BookViews()
-                workbook.AddChild(workbookViews)
-            End If
-            Dim view = workbookViews.GetFirstChild(Of WorkbookView)()
-            If view Is Nothing Then
-                view = workbookViews.AppendChild(New WorkbookView())
-                _workbookChanged = True
-            End If
+            Dim view = GetOrCreateFirstWorkbookView()
             Dim index = CUInt(sheets.IndexOf(selected))
             If If(view.ActiveTab?.Value, 0UI) <> index Then
                 view.ActiveTab = index
@@ -144,19 +162,86 @@ Namespace ExcelOps
             Next
         End Sub
 
+        Private Function GetOrCreateFirstWorkbookView() As WorkbookView
+            Dim workbook = WorkbookPart.Workbook
+            Dim workbookViews = workbook.BookViews
+            If workbookViews Is Nothing Then
+                workbookViews = New BookViews()
+                workbook.AddChild(workbookViews)
+            End If
+            Dim view = workbookViews.GetFirstChild(Of WorkbookView)()
+            If view Is Nothing Then
+                view = workbookViews.AppendChild(New WorkbookView())
+                _workbookChanged = True
+            End If
+            Return view
+        End Function
+
+        ''' <inheritdoc/>
+        ''' <remarks>Updates the target worksheet's selection in the first workbook view and preserves the active sheet.</remarks>
+        Public Overrides Sub SelectCell(cell As ExcelCell)
+            ValidateAddress(cell)
+            ValidateCoordinates(cell.RowIndex, cell.ColumnIndex)
+            SyncLock WorkbookSaveLock
+                Dim part = GetWorksheetPart(cell.SheetName)
+                Dim merged = MergedCells(cell.SheetName).FirstOrDefault(Function(range) CellIsInRange(cell.RowIndex, cell.ColumnIndex, range))
+                Dim address = If(merged?.AddressStart.Address, ExcelCell.LocalCellAddress(cell.RowIndex, cell.ColumnIndex))
+                Dim reference = If(merged Is Nothing, address, address & ":" & merged.AddressEnd.Address)
+                GetOrCreateFirstWorkbookView()
+                Dim view = GetWorksheetView(part, 0UI, create:=True)
+                Dim pane = view.GetFirstChild(Of Pane)()
+                Dim selectedPane = If(pane?.ActivePane?.Value, PaneValues.TopLeft)
+                Dim paneState = pane?.State?.Value
+                If paneState = PaneStateValues.Frozen OrElse paneState = PaneStateValues.FrozenSplit Then
+                    Dim row = If(merged?.AddressStart.RowIndex, cell.RowIndex)
+                    Dim column = If(merged?.AddressStart.ColumnIndex, cell.ColumnIndex)
+                    Dim rowSplit = If(pane.VerticalSplit?.Value, 0.0)
+                    Dim columnSplit = If(pane.HorizontalSplit?.Value, 0.0)
+                    Dim bottom = rowSplit > 0 AndAlso row >= rowSplit
+                    Dim right = columnSplit > 0 AndAlso column >= columnSplit
+                    selectedPane = If(bottom, If(right, PaneValues.BottomRight, PaneValues.BottomLeft), If(right, PaneValues.TopRight, PaneValues.TopLeft))
+                End If
+
+                Dim selection = view.Elements(Of Selection)().FirstOrDefault(Function(item) If(item.Pane?.Value, PaneValues.TopLeft) = selectedPane)
+                If selection Is Nothing Then
+                    selection = New Selection()
+                    If pane IsNot Nothing Then selection.Pane = selectedPane
+                    Dim preceding As OpenXmlElement = If(DirectCast(view.Elements(Of Selection)().LastOrDefault(), OpenXmlElement), pane)
+                    If preceding Is Nothing Then
+                        view.PrependChild(selection)
+                    Else
+                        view.InsertAfter(selection, preceding)
+                    End If
+                End If
+                If pane IsNot Nothing AndAlso selectedPane <> If(pane.ActivePane?.Value, PaneValues.TopLeft) Then pane.ActivePane = selectedPane
+                selection.ActiveCell = address
+                selection.ActiveCellId = Nothing
+                selection.SequenceOfReferences = New ListValue(Of StringValue) With {.InnerText = reference}
+                _changedSheets.Add(part)
+            End SyncLock
+        End Sub
+
+        Private Shared Function CellIsInRange(rowIndex As Integer, columnIndex As Integer, range As ExcelRange) As Boolean
+            Return rowIndex >= range.AddressStart.RowIndex AndAlso rowIndex <= range.AddressEnd.RowIndex AndAlso
+                columnIndex >= range.AddressStart.ColumnIndex AndAlso columnIndex <= range.AddressEnd.ColumnIndex
+        End Function
+
+        Private Shared Function GetWorksheetView(part As WorksheetPart, viewIndex As UInteger, create As Boolean) As SheetView
+            Dim views = part.Worksheet.SheetViews
+            Dim view = views?.Elements(Of SheetView)().FirstOrDefault(Function(item) item.WorkbookViewId IsNot Nothing AndAlso item.WorkbookViewId.Value = viewIndex)
+            If view IsNot Nothing OrElse Not create Then Return view
+            If views Is Nothing Then
+                views = New SheetViews()
+                part.Worksheet.AddChild(views)
+            End If
+            Return views.AppendChild(New SheetView With {.WorkbookViewId = viewIndex})
+        End Function
+
         Private Sub SetTabSelected(sheet As Sheet, viewIndex As UInteger, selected As Boolean)
             Dim part = WorkbookPart.GetPartById(sheet.Id.Value)
             Dim worksheet = TryCast(part, WorksheetPart)
             If worksheet IsNot Nothing Then
-                Dim views = worksheet.Worksheet.SheetViews
-                Dim view = views?.Elements(Of SheetView)().FirstOrDefault(Function(item) item.WorkbookViewId IsNot Nothing AndAlso item.WorkbookViewId.Value = viewIndex)
-                If view Is Nothing AndAlso selected Then
-                    If views Is Nothing Then
-                        views = New SheetViews()
-                        worksheet.Worksheet.AddChild(views)
-                    End If
-                    view = views.AppendChild(New SheetView With {.WorkbookViewId = viewIndex})
-                End If
+                Dim view = GetWorksheetView(worksheet, viewIndex, create:=selected)
                 If view IsNot Nothing AndAlso If(view.TabSelected?.Value, False) <> selected Then
                     view.TabSelected = selected
                     _changedSheets.Add(worksheet)
