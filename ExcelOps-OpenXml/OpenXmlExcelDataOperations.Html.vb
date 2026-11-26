@@ -231,7 +231,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Function LookupCellFormattedText(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
-            Dim value = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim value = ReadCellValue(sheetName, rowIndex, columnIndex, GetCell(sheetName, rowIndex, columnIndex))
             Return FormatCellValue(value, New NumberFormat(LookupCellFormat(sheetName, rowIndex, columnIndex)))
         End Function
 

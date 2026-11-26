@@ -162,8 +162,27 @@ Namespace ExcelOps
         <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
         <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValueAsObject(sheetName As String, rowIndex As Integer, columnIndex As Integer) As Object
-            Return ReadCellValue(sheetName, rowIndex, columnIndex, GetCell(sheetName, rowIndex, columnIndex))
+            Return ReadApiCellValue(sheetName, rowIndex, columnIndex, GetType(Object))
         End Function
+
+        Private Function ReadApiCellValue(sheetName As String, rowIndex As Integer, columnIndex As Integer, targetType As Type) As Object
+            Dim value = ReadCellValue(sheetName, rowIndex, columnIndex, GetCell(sheetName, rowIndex, columnIndex))
+            If TypeOf value Is String AndAlso Trim(DirectCast(value, String)) = Nothing Then Return Nothing
+            If Not TypeOf value Is Double OrElse (targetType IsNot GetType(Object) AndAlso targetType IsNot GetType(DateTime)) Then Return value
+
+            Dim format = LookupCellFormat(sheetName, rowIndex, columnIndex)
+            If Not New ExcelNumberFormat.NumberFormat(format).IsDateTimeFormat Then Return value
+            Dim tokens = Regex.Replace(format, """(?:[^""]|"""")*""|\\.|_.|\*.|\[[^\]]*\]|AM/PM|A/P", String.Empty, RegexOptions.IgnoreCase)
+            If Not Regex.IsMatch(tokens, "[yd]|m{3}", RegexOptions.IgnoreCase) AndAlso
+                (Not Regex.IsMatch(tokens, "m", RegexOptions.IgnoreCase) OrElse Regex.IsMatch(tokens, "[hs]", RegexOptions.IgnoreCase)) Then Return value
+
+            ' Excel exposes dates as OLE Automation values. Time-only fractions keep the OLE epoch in either date system.
+            Dim serial = DirectCast(value, Double)
+            If System.Math.Abs(serial) >= 1 AndAlso If(WorkbookPart.Workbook.WorkbookProperties?.Date1904?.Value, False) Then serial += 1462
+            If serial > -657435.0 AndAlso serial < 2958466.0 Then Return DateTime.FromOADate(serial)
+            Return value
+        End Function
+
 
         Private Function ReadCellValue(sheetName As String, rowIndex As Integer, columnIndex As Integer, cell As Cell) As Object
             If cell Is Nothing Then Return Nothing
@@ -214,7 +233,7 @@ Namespace ExcelOps
         <Obsolete("Use the overload with an explicit FormulaCalculationMode argument.", True)>
         <System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>
         Public Overrides Function LookupCellValue(Of T)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T
-            Dim value = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim value = ReadApiCellValue(sheetName, rowIndex, columnIndex, If(Nullable.GetUnderlyingType(GetType(T)), GetType(T)))
             Return ConvertValue(Of T)(value)
         End Function
 
@@ -237,7 +256,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Function TryLookupCellValue(Of T As Structure)(sheetName As String, rowIndex As Integer, columnIndex As Integer) As T?
-            Dim value = ReadLegacyCellValueAsObject(sheetName, rowIndex, columnIndex)
+            Dim value = ReadApiCellValue(sheetName, rowIndex, columnIndex, If(Nullable.GetUnderlyingType(GetType(T)), GetType(T)))
             If value Is Nothing OrElse (TypeOf value Is String AndAlso String.IsNullOrWhiteSpace(DirectCast(value, String))) Then Return Nothing
             Try
                 Return ConvertValue(Of T)(value)
