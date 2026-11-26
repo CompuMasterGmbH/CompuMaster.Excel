@@ -9,6 +9,7 @@
 
 ### Changes
 
+- `CompuMaster.Excel.OpenXml` updates last-used-cell lookups immediately after editing sheet contents or structure and reuses the bounds per worksheet during a recalculation run.
 - `CompuMaster.Excel.OpenXml` preserves registered external workbook references when rewriting local references during structural edits.
 - `CompuMaster.Excel.ExcelOps` adds single-sheet and group sheet transfer methods with positional overloads, destination names and indexes in the results, and a per-call copy formula mode. `CompuMaster.Excel.MicrosoftExcel` supports native copy and move, including chart sheets. `CompuMaster.Excel.OpenXml` supports both copy modes and moves for compatible groups of worksheets and classic chart sheets. A move updates supported direct references in the source and destination workbooks.
 - `CompuMaster.Excel.OpenXml` updates supported classic chart references, cached points, and drawing anchors during structural edits, including complete source deletions in supported multiple-series column, line and scatter charts. Transfers can include embedded classic charts. Worksheet renames also update supported ChartEx source names. `CompuMaster.Excel.MicrosoftExcel` implements the common worksheet rename method using Excel's native reference updates.

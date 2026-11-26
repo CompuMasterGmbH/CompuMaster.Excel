@@ -9,22 +9,30 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Protected Overrides Sub RecalculateAllInternal()
             EnsureCalculationEnabled()
-            Dim calculation As New FormulaCalculation(Me)
-            For Each sheetName In WorkSheetNames()
-                calculation.RecalculateSheet(sheetName)
-            Next
-            calculation.Commit()
+            RecalculateSheets(WorkSheetNames())
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub RecalculateSheet(sheetName As String)
             SyncLock WorkbookSaveLock
-                    EnsureCalculationEnabled()
-                    GetWorksheetPart(sheetName)
-                    Dim calculation As New FormulaCalculation(Me)
-                    calculation.RecalculateSheet(sheetName)
-                    calculation.Commit()
+                EnsureCalculationEnabled()
+                GetWorksheetPart(sheetName)
+                RecalculateSheets({sheetName})
             End SyncLock
+        End Sub
+
+        Private Sub RecalculateSheets(sheetNames As IEnumerable(Of String))
+            Dim previousLastCells = _recalculationLastCells
+            _recalculationLastCells = New Dictionary(Of WorksheetPart, (RowIndex As Integer, ColumnIndex As Integer))
+            Try
+                Dim calculation As New FormulaCalculation(Me)
+                For Each sheetName In sheetNames
+                    calculation.RecalculateSheet(sheetName)
+                Next
+                calculation.Commit()
+            Finally
+                _recalculationLastCells = previousLastCells
+            End Try
         End Sub
 
         ''' <inheritdoc/>
