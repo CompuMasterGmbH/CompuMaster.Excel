@@ -151,6 +151,8 @@ Namespace ExcelOps
                          "IMSINH", "_XLFN.IMSINH", "IMCOSH", "_XLFN.IMCOSH", "IMTAN", "_XLFN.IMTAN", "IMCOT", "_XLFN.IMCOT",
                          "IMSEC", "_XLFN.IMSEC", "IMCSC", "_XLFN.IMCSC", "IMSECH", "_XLFN.IMSECH", "IMCSCH", "_XLFN.IMCSCH"
                         Return EvaluateComplexFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "FV", "PV", "PMT", "NPER", "ISPMT"
+                        Return EvaluateLoanFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "HLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"
