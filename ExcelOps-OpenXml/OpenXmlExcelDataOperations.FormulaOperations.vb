@@ -160,6 +160,8 @@ Namespace ExcelOps
                         Return EvaluateLoanFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "FVSCHEDULE"
                         Return EvaluateGrowthSchedule(arguments, formulaCell)
+                    Case "SLN", "SYD", "DB", "DDB", "EFFECT", "NOMINAL", "DOLLARDE", "DOLLARFR"
+                        Return EvaluateDepreciationOrRate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
