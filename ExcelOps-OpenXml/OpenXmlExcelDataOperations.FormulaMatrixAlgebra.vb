@@ -4,8 +4,6 @@
 
         Private NotInheritable Partial Class FormulaCalculation
 
-            Private Const SmallestNormalMatrixNumber As Double = 2.2250738585072014E-308
-
             Private Function EvaluateMatrixAlgebra(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                                    formulaCell As ExcelCell) As Object
                 Dim multiply = name = "MMULT"
@@ -39,7 +37,7 @@
                 For index = 0 To size - 1
                     determinant *= numbers(index * size + index)
                 Next
-                Return FiniteNumber(MatrixNumber(determinant))
+                Return FiniteNumber(NormalizeWorksheetUnderflow(determinant))
             End Function
 
             Private Function EvaluateIdentityMatrix(input As FormulaMatrix, arrayInput As Boolean) As Object
@@ -79,7 +77,7 @@
                     Dim value = matrix.Values(index)
                     If TypeOf value Is FormulaError Then Return DirectCast(value, FormulaError)
                     If Not TypeOf value Is Double Then Return New FormulaError("#VALUE!")
-                    numbers(index) = MatrixNumber(DirectCast(value, Double))
+                    numbers(index) = NormalizeWorksheetUnderflow(DirectCast(value, Double))
                 Next
                 Return Nothing
             End Function
@@ -93,7 +91,7 @@
                         For index = 0 To sharedSize - 1
                             sum += left(row * sharedSize + index) * right(index * columns + column)
                         Next
-                        Dim result = FiniteNumber(MatrixNumber(sum))
+                        Dim result = FiniteNumber(NormalizeWorksheetUnderflow(sum))
                         If TypeOf result Is FormulaError Then Return result
                         values(row * columns + column) = result
                     Next
@@ -151,16 +149,12 @@
                             sum -= factors(row * size + index) * offsets(index)
                         Next
                         offsets(row) = sum / factors(row * size + row)
-                        Dim result = FiniteNumber(MatrixNumber(offsets(row)))
+                        Dim result = FiniteNumber(NormalizeWorksheetUnderflow(offsets(row)))
                         If TypeOf result Is FormulaError Then Return result
                         inverse(row * size + column) = result
                     Next
                 Next
                 Return New FormulaMatrix(size, size, inverse)
-            End Function
-
-            Private Shared Function MatrixNumber(value As Double) As Double
-                Return If(Math.Abs(value) < SmallestNormalMatrixNumber, 0.0, value)
             End Function
 
         End Class

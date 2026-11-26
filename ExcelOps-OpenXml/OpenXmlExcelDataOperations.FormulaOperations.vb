@@ -146,6 +146,8 @@ Namespace ExcelOps
                         Return EvaluateRadixConversion(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ROMAN", "ARABIC", "_XLFN.ARABIC"
                         Return EvaluateRomanNumerals(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "COMPLEX", "IMABS", "IMAGINARY", "IMARGUMENT", "IMCONJUGATE", "IMDIV", "IMREAL", "IMSUB", "IMSUM", "IMPRODUCT"
+                        Return EvaluateComplexFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "HLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"
@@ -239,6 +241,10 @@ Namespace ExcelOps
                     Case "MAX" : Return If(count = 0, 0.0, maximum)
                     Case Else : Return CDbl(count)
                 End Select
+            End Function
+
+            Private Shared Function NormalizeWorksheetUnderflow(number As Double) As Double
+                Return If(Math.Abs(number) < SmallestNormalDouble, 0.0, number)
             End Function
 
             Friend Shared Function FiniteNumber(number As Double) As Object
