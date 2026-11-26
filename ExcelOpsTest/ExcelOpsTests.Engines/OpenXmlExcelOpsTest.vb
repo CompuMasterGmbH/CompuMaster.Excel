@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports System.IO.Compression
 Imports System.Security.Cryptography
 Imports CompuMaster.Excel.ExcelOps
@@ -200,6 +201,67 @@ Partial Public Class OpenXmlExcelOpsTest
                 End Using
             End Sub)
         Assert.That(ex.InnerException, [Is].Not.Null)
+    End Sub
+
+    <Test>
+    Public Sub RecalculatesSharedFormulaFollowersWithoutChangingTheirStoredGroups()
+        Dim template = Path.Combine(_directory, "shared.xlsx")
+        Dim output = Path.Combine(_directory, "calculated.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            Dim source = DirectCast(document.WorkbookPart.GetPartById("rId1"), WorksheetPart).Worksheet
+            Dim sheetData = source.GetFirstChild(Of SheetData)()
+            Dim first = sheetData.GetFirstChild(Of Row)().Elements(Of Cell)().Last()
+            first.CellFormula = New CellFormula("B1+$B$1") With {
+                .FormulaType = CellFormulaValues.Shared, .SharedIndex = 0UI, .Reference = "C1:C3"
+            }
+            Dim second = New Cell With {
+                .CellReference = "C2", .CellFormula = New CellFormula With {.FormulaType = CellFormulaValues.Shared, .SharedIndex = 0UI}
+            }
+            sheetData.Append(New Row(New Cell With {.CellReference = "B2", .CellValue = New CellValue("7")}, second) With {.RowIndex = 2UI})
+            sheetData.Append(New Row(New Cell With {.CellReference = "C3", .CellValue = New CellValue("100")}) With {.RowIndex = 3UI})
+            source.SheetDimension.Reference = "A1:C3"
+            Dim other = DirectCast(document.WorkbookPart.GetPartById("rId2"), WorksheetPart).Worksheet.GetFirstChild(Of SheetData)()
+            other.Append(New Row(New Cell With {.CellReference = "A1", .CellFormula = New CellFormula("SUM(Inputs!C1:C3)")}) With {.RowIndex = 1UI})
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            workbook.RecalculateAll()
+            Assert.That(workbook.LookupCellValue(Of Double)("Inputs", 1, 2, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(9.0))
+            Assert.That(workbook.LookupCellValue(Of Double)("Notes", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(113.0))
+            workbook.SaveCopyAs(output, recalculateWorkbook:=False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim worksheet = DirectCast(document.WorkbookPart.GetPartById("rId1"), WorksheetPart).Worksheet
+            Dim formulas = worksheet.Descendants(Of CellFormula)().ToArray()
+            Assert.That(formulas.Select(Function(formula) formula.FormulaType.Value), [Is].All.EqualTo(CellFormulaValues.Shared))
+            Assert.That(formulas.Select(Function(formula) formula.SharedIndex.Value), [Is].All.EqualTo(0UI))
+            Assert.That(formulas(0).Reference.Value, [Is].EqualTo("C1:C3"))
+            Assert.That(formulas(1).Text, [Is].Empty)
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub RejectsADeepFormulaChainWithoutExhaustingTheThreadStack()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Dim depthPath = Path.Combine(_directory, "depth.xlsx")
+        Using document = SpreadsheetDocument.Create(depthPath, SpreadsheetDocumentType.Workbook)
+            Dim part = document.AddWorkbookPart()
+            Dim sheet = part.AddNewPart(Of WorksheetPart)("rId1")
+            part.Workbook = New Workbook(New Sheets(New Sheet With {.Id = "rId1", .Name = "Depth", .SheetId = 1UI}))
+            Dim data As New SheetData()
+            For rowIndex = 1 To 600
+                Dim nextCell = "A" & (rowIndex + 1).ToString(CultureInfo.InvariantCulture)
+                Dim formula = New CellFormula("IF(" & nextCell & "=0,1," & nextCell & "+1)")
+                data.Append(New Row(New Cell With {.CellReference = "A" & rowIndex.ToString(CultureInfo.InvariantCulture), .CellFormula = formula}) With {.RowIndex = CUInt(rowIndex)})
+            Next
+            sheet.Worksheet = New Worksheet(data)
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(depthPath, OpenMode.OpenExistingFile, options)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.RecalculateCell("Depth", 0, 0, throwExceptionOnCalculationError:=False))
+            Assert.That(workbook.HasMissingCachedFormulaResult("Depth", 0, 0), [Is].True)
+        End Using
     End Sub
 
     <Test>

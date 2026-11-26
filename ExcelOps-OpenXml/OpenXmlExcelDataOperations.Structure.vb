@@ -584,7 +584,7 @@ Namespace ExcelOps
             stageDependents(originalName, shift)
             For Each revision In revisedSheetData
                 revision.Key.Worksheet.ReplaceChild(revision.Value, GetSheetData(revision.Key))
-                _formulaRanges.Remove(revision.Key)
+                InvalidateGroupedFormulaRanges(revision.Key)
                 _changedSheets.Add(revision.Key)
             Next
             If shiftedData IsNot Nothing Then

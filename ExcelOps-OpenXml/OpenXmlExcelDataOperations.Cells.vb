@@ -11,7 +11,7 @@ Namespace ExcelOps
         Private Shared ReadOnly EscapedText As New Regex("_x([0-9a-f]{4})_", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
         Private Shared ReadOnly TextToEscape As New Regex(
             "_(?=[xX][0-9A-Fa-f]{4}_)|[\u0000-\u0008\u000B-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]")
-        Private ReadOnly _formulaRanges As New Dictionary(Of WorksheetPart, List(Of ExcelRange))
+        Private ReadOnly _formulaRanges As New Dictionary(Of (Part As WorksheetPart, IncludeShared As Boolean), List(Of ExcelRange))
 
         Private Shared Sub ValidateCoordinates(rowIndex As Integer, columnIndex As Integer)
             If rowIndex < 0 OrElse rowIndex >= 1048576 Then Throw New ArgumentOutOfRangeException(NameOf(rowIndex))
@@ -101,25 +101,36 @@ Namespace ExcelOps
             target.ValueMetaIndex = payload.ValueMetaIndex
             If payload.CellMetaIndex IsNot Nothing Then
                 target.CellMetaIndex = payload.CellMetaIndex
-                _formulaRanges.Remove(part)
+                InvalidateGroupedFormulaRanges(part)
             End If
             _changedSheets.Add(part)
             RecalculationRequired = True
             RecordCellEdit(sheetName, rowIndex, columnIndex, calculateOnEdit)
         End Sub
 
-        Private Function IsGroupedFormulaCell(part As WorksheetPart, sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As CellFormula) As Boolean
-            If formula?.FormulaType IsNot Nothing AndAlso formula.FormulaType.Value <> CellFormulaValues.Normal Then Return True
+        Private Function IsGroupedFormulaCell(part As WorksheetPart, sheetName As String, rowIndex As Integer, columnIndex As Integer,
+                                             formula As CellFormula, Optional includeShared As Boolean = True) As Boolean
+            Dim kind = If(formula?.FormulaType?.Value, CellFormulaValues.Normal)
+            If kind <> CellFormulaValues.Normal AndAlso (includeShared OrElse kind <> CellFormulaValues.Shared) Then Return True
             Dim ranges As List(Of ExcelRange) = Nothing
-            If Not _formulaRanges.TryGetValue(part, ranges) Then
+            If Not _formulaRanges.TryGetValue((part, includeShared), ranges) Then
                 ranges = GetSheetData(part).Descendants(Of CellFormula)().
-                    Where(Function(item) item.Reference IsNot Nothing AndAlso item.FormulaType IsNot Nothing AndAlso item.FormulaType.Value <> CellFormulaValues.Normal).
+                    Where(Function(item) item.Reference IsNot Nothing AndAlso item.FormulaType IsNot Nothing AndAlso
+                        item.FormulaType.Value <> CellFormulaValues.Normal AndAlso (includeShared OrElse item.FormulaType.Value <> CellFormulaValues.Shared)).
                     Select(Function(item) New ExcelRange(sheetName, item.Reference.Value)).ToList()
-                _formulaRanges.Add(part, ranges)
+                _formulaRanges.Add((part, includeShared), ranges)
             End If
-            Return ranges.Any(Function(range) rowIndex >= range.AddressStart.RowIndex AndAlso rowIndex <= range.AddressEnd.RowIndex AndAlso
-                                               columnIndex >= range.AddressStart.ColumnIndex AndAlso columnIndex <= range.AddressEnd.ColumnIndex)
+            For Each range In ranges
+                If rowIndex >= range.AddressStart.RowIndex AndAlso rowIndex <= range.AddressEnd.RowIndex AndAlso
+                    columnIndex >= range.AddressStart.ColumnIndex AndAlso columnIndex <= range.AddressEnd.ColumnIndex Then Return True
+            Next
+            Return False
         End Function
+
+        Private Sub InvalidateGroupedFormulaRanges(part As WorksheetPart)
+            _formulaRanges.Remove((part, True))
+            _formulaRanges.Remove((part, False))
+        End Sub
 
         Private Shared Sub UpdateDimension(worksheet As Worksheet, sheetName As String, rowIndex As Integer, columnIndex As Integer)
             Dim dimension = worksheet.SheetDimension

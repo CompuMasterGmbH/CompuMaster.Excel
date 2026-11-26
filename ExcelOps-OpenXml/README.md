@@ -60,6 +60,8 @@ Rectangular array constants can contain numbers, text, logical values and Excel 
 
 `CONVERT` supports the case-sensitive unit symbols and decimal or binary prefixes defined by Excel. The Bessel functions use the measured Excel approximation for modified Bessel I and K in their usual input range. Ordinary Bessel J and Y use Math.NET Numerics and can differ from Excel at its approximation boundaries. `EUROCONVERT` implements the fixed rates and triangulation rules documented for the Excel Euro Currency Tools add-in. `BAHTTEXT` writes the amount in Thai baht and satang.
 
+Open XML evaluates shared worksheet formulas using the anchor's relative and absolute references. Saving results retains the original shared formula groups. Existing limits for legacy array and data-table formulas continue to apply.
+
 ### Automatic calculation after value edits
 
 Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.

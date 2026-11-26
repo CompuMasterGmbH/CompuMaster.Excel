@@ -1,4 +1,5 @@
 ﻿Imports System.Globalization
+Imports System.Runtime.CompilerServices
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 Imports WorkbookTextVersion = DocumentFormat.OpenXml.Office.SpreadSheetML.Y2024.WorkbookCompatibilityVersion.Version
@@ -46,7 +47,7 @@ Namespace ExcelOps
                     EnsureCalculationEnabled()
                     ValidateCoordinates(rowIndex, columnIndex)
                     Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
-                    If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
+                    If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula, includeShared:=False) Then Return
                     Dim calculation As New FormulaCalculation(Me)
                     calculation.ReadCell(sheetName, rowIndex, columnIndex)
                     calculation.Commit()
@@ -181,7 +182,7 @@ Namespace ExcelOps
                 End If
                 Dim spill As SpillArea = Nothing
                 If Not worksheet.SpillAnchors.TryGetValue((rowIndex, columnIndex), spill) AndAlso
-                   _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) Then
+                   _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula, includeShared:=False) Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, cell?.CellFormula?.Text, "Grouped, array and data-table formulas are outside the supported calculation scope.")
                 End If
                 If cell?.CellFormula Is Nothing Then
@@ -211,12 +212,16 @@ Namespace ExcelOps
                     End If
                 End If
                 If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
-                If _run.Active.Count >= 256 Then
+                If _run.Active.Count >= 256 OrElse Not HasFormulaStackSpace() Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
                 _run.Active.Push(cell)
                 If _run.TrackDependencies Then _run.Frames.Push(New FormulaDependencies(location))
                 Try
+                    If If(cell.CellFormula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Shared Then
+                        formula = _owner.ResolveSharedFormulaText(cell.CellFormula, worksheet.SharedFormulas.Value, worksheet.Name,
+                                                                  rowIndex, columnIndex, Nothing, allowSpillReferences:=True)
+                    End If
                     Dim expression = FormulaParser.Parse(formula)
                     Dim value = EvaluateExpression(expression, address)
                     If TypeOf value Is FormulaLambda Then value = New FormulaError(CalcErrorCode)
@@ -235,8 +240,17 @@ Namespace ExcelOps
                 End Try
             End Function
 
+            Private Shared Function HasFormulaStackSpace() As Boolean
+                Try
+                    RuntimeHelpers.EnsureSufficientExecutionStack()
+                    Return True
+                Catch ex As InsufficientExecutionStackException
+                    Return False
+                End Try
+            End Function
+
             Friend Function EvaluateExpression(expression As FormulaExpression, formulaCell As ExcelCell) As Object
-                If _run.ExpressionDepth >= 512 Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
+                If _run.ExpressionDepth >= 512 OrElse Not HasFormulaStackSpace() Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
                 _run.ExpressionDepth += 1
                 Try
                     Return expression(Me, formulaCell)
@@ -377,6 +391,7 @@ Namespace ExcelOps
                 Private ReadOnly _spillAnchors As Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))
                 Friend ReadOnly HasActiveRowFilter As Lazy(Of Boolean)
                 Friend ReadOnly HiddenRows As Lazy(Of HashSet(Of Integer))
+                Friend ReadOnly SharedFormulas As Lazy(Of Dictionary(Of UInteger, SharedFormulaGroup))
                 Friend ReadOnly SpillResults As New Dictionary(Of SpillArea, FormulaMatrix)
                 Friend ReadOnly SpillChildren As New Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
 
@@ -386,6 +401,7 @@ Namespace ExcelOps
                     _cells = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))(
                         Function() EnumerateWorksheetCells(GetSheetData(part)).ToDictionary(
                             Function(item) (item.RowIndex, item.ColumnIndex), Function(item) item.Value))
+                    SharedFormulas = New Lazy(Of Dictionary(Of UInteger, SharedFormulaGroup))(Function() ReadSharedFormulaGroups(Cells.Values))
                     HiddenRows = New Lazy(Of HashSet(Of Integer))(
                         Function() New HashSet(Of Integer)(GetSheetData(part).Elements(Of Row)().
                             Where(Function(row) row.RowIndex IsNot Nothing AndAlso If(row.Hidden?.Value, False)).
