@@ -154,6 +154,11 @@ Namespace ExcelOpsTests.Engines
                     workbook.WriteDynamicArrayFormula(name, 1, 4, "TRANSPOSE(B2#)", False)
                     workbook.WriteCellValue(name, 2, 11, 123.0)
                     workbook.WriteDynamicArrayFormula(name, 1, 11, "SEQUENCE(2)", True)
+                    workbook.WriteDynamicArrayFormula(name, 1, 13, "MAP({1;2},LAMBDA(item,item+3))", False)
+                    workbook.WriteDynamicArrayFormula(name, 1, 15, "BYROW({1,2;3,4},SUM)", False)
+                    workbook.WriteDynamicArrayFormula(name, 1, 17, "LET(SIN,3,LAMBDA(item,SIN(item)+SIN)(0))", False)
+                    workbook.WriteDynamicArrayFormula(name, 1, 19, "LET(fn,LAMBDA(item,item*2),fn(3))", False)
+                    workbook.WriteDynamicArrayFormula(name, 1, 21, "AGGREGATE(14,4,B2:B4,{1;2})", False)
                     workbook.SaveCopyAs(output, recalculateWorkbook:=False, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
                 End Using
 
@@ -163,6 +168,11 @@ Namespace ExcelOpsTests.Engines
                 Assert.That(excel.LookupCellValue(Of Double)(name, 2, 6, FormulaCalculationMode.EngineDefault), [Is].EqualTo(20.0))
                 Assert.That(ReadFormulaReferenceResult(excel, New ExcelCell(name, "L2", ExcelCell.ValueTypes.All)), [Is].EqualTo("#SPILL!"))
                 Assert.That(excel.LookupCellValue(Of Double)(name, 2, 11, FormulaCalculationMode.EngineDefault), [Is].EqualTo(123.0))
+                Assert.That(excel.LookupCellValue(Of Double)(name, 2, 13, FormulaCalculationMode.EngineDefault), [Is].EqualTo(5.0))
+                Assert.That(excel.LookupCellValue(Of Double)(name, 2, 15, FormulaCalculationMode.EngineDefault), [Is].EqualTo(7.0))
+                Assert.That(excel.LookupCellValue(Of Double)(name, 1, 17, FormulaCalculationMode.EngineDefault), [Is].EqualTo(3.0))
+                Assert.That(excel.LookupCellValue(Of Double)(name, 1, 19, FormulaCalculationMode.EngineDefault), [Is].EqualTo(6.0))
+                Assert.That(excel.LookupCellValue(Of Double)(name, 2, 21, FormulaCalculationMode.EngineDefault), [Is].EqualTo(14.0))
             Finally
                 If excel IsNot Nothing AndAlso Not excel.IsClosed Then excel.Close()
                 IO.File.Delete(output)

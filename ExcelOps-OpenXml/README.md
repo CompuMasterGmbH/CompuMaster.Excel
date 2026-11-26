@@ -54,6 +54,8 @@ Rectangular array constants can contain numbers, text, logical values and Excel 
 
 `LAMBDA` supports inline functions and calls to workbook-scoped or worksheet-local named functions. A lambda can use enclosing `LET` bindings, call another lambda, and recurse within the evaluator's expression depth limit. `ISOMITTED` detects an explicitly omitted argument. `BYROW`, `BYCOL`, `MAP`, `MAKEARRAY`, `REDUCE` and `SCAN` pass ranges or arrays to lambda functions. Return a scalar from the lambda when processing each array element, row or column. A bare `LAMBDA` in a worksheet cell returns `#CALC!`.
 
+`SUBTOTAL` supports selectors 1 through 11 and 101 through 111. It skips nested `SUBTOTAL` and `AGGREGATE` results. It skips saved hidden rows when a worksheet or table filter is active, and the selectors 101 through 111 also skip them on worksheets with no active filter. `AGGREGATE` supports selectors 1 through 19 and all eight combinations of its hidden-row, error and nested-result options. Hidden-row and nested-result options use the metadata of direct references. Computed arrays carry values only.
+
 ### Automatic calculation after value edits
 
 Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.

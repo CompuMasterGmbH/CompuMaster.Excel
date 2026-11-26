@@ -130,6 +130,8 @@ Namespace ExcelOps
                          "PERCENTILE", "PERCENTILE.INC", "_XLFN.PERCENTILE.INC", "PERCENTILE.EXC", "_XLFN.PERCENTILE.EXC",
                          "QUARTILE", "QUARTILE.INC", "_XLFN.QUARTILE.INC", "QUARTILE.EXC", "_XLFN.QUARTILE.EXC"
                         Return EvaluateOrderStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "SUBTOTAL", "AGGREGATE", "_XLFN.AGGREGATE"
+                        Return EvaluateRowAggregate(name.Equals("SUBTOTAL", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
                     Case "FREQUENCY"
                         Return EvaluateFrequency(arguments, formulaCell)
                     Case "PROB"

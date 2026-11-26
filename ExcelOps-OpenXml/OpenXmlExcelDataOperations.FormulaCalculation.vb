@@ -299,7 +299,8 @@ Namespace ExcelOps
                 Return ResolveReference(area).ReadCell(area.Sheet, area.FirstRow, area.FirstColumn)
             End Function
 
-            Private Iterator Function RangeValues(area As FormulaArea) As IEnumerable(Of Object)
+            Private Iterator Function RangeValues(area As FormulaArea,
+                    Optional includeCell As Func(Of WorksheetSnapshot, Integer, Integer, Boolean) = Nothing) As IEnumerable(Of Object)
                 Dim source = ResolveReference(area)
                 RecordPrecedent(New FormulaPrecedent(New FormulaLocation(source._owner, area.Sheet, area.FirstRow, area.FirstColumn), area.LastRow, area.LastColumn))
                 Dim worksheet As WorksheetSnapshot = Nothing
@@ -312,7 +313,8 @@ Namespace ExcelOps
                 If worksheet.SpillChildren.Count > 0 Then addresses = addresses.Concat(worksheet.SpillChildren.Keys).Distinct().ToArray()
                 For Each address In addresses
                     If address.RowIndex >= area.FirstRow AndAlso address.RowIndex <= area.LastRow AndAlso
-                        address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn Then
+                        address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn AndAlso
+                        (includeCell Is Nothing OrElse includeCell(worksheet, address.RowIndex, address.ColumnIndex)) Then
                         Yield source.ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex, trackRead:=False)
                     End If
                 Next
@@ -373,6 +375,8 @@ Namespace ExcelOps
                 Friend ReadOnly Name As String
                 Friend ReadOnly Part As WorksheetPart
                 Private ReadOnly _spillAnchors As Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))
+                Friend ReadOnly HasActiveRowFilter As Lazy(Of Boolean)
+                Friend ReadOnly HiddenRows As Lazy(Of HashSet(Of Integer))
                 Friend ReadOnly SpillResults As New Dictionary(Of SpillArea, FormulaMatrix)
                 Friend ReadOnly SpillChildren As New Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
 
@@ -382,9 +386,21 @@ Namespace ExcelOps
                     _cells = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))(
                         Function() EnumerateWorksheetCells(GetSheetData(part)).ToDictionary(
                             Function(item) (item.RowIndex, item.ColumnIndex), Function(item) item.Value))
+                    HiddenRows = New Lazy(Of HashSet(Of Integer))(
+                        Function() New HashSet(Of Integer)(GetSheetData(part).Elements(Of Row)().
+                            Where(Function(row) row.RowIndex IsNot Nothing AndAlso If(row.Hidden?.Value, False)).
+                            Select(Function(row) CInt(row.RowIndex.Value) - 1)))
+                    HasActiveRowFilter = New Lazy(Of Boolean)(
+                        Function() If(part.Worksheet.SheetProperties?.FilterMode?.Value, False) OrElse
+                            HasRowFilterCriteria(part.Worksheet.GetFirstChild(Of AutoFilter)()) OrElse
+                            part.TableDefinitionParts.Any(Function(tablePart) HasRowFilterCriteria(tablePart.Table?.AutoFilter)))
                     _spillAnchors = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))(
                         Function() ReadDynamicSpills(metadata, Cells.Values).ToDictionary(Function(item) (item.First.Row, item.First.Column)))
                 End Sub
+
+                Private Shared Function HasRowFilterCriteria(filter As AutoFilter) As Boolean
+                    Return filter IsNot Nothing AndAlso filter.Elements(Of FilterColumn)().Any(Function(column) column.HasChildren)
+                End Function
 
                 Friend ReadOnly Property SpillAnchors As Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
                     Get
