@@ -57,6 +57,8 @@ Namespace ExcelOps
                                                      End Function).ToArray())
                     Case "PROPER"
                         Return WorksheetProperCase(text)
+                    Case "ENCODEURL"
+                        Return EncodeWorksheetUrl(text)
                     Case "CODE", "UNICODE"
                         If text.Length = 0 Then Return New FormulaError("#VALUE!")
                         Dim pair = Char.IsSurrogatePair(text, 0)
@@ -70,6 +72,22 @@ Namespace ExcelOps
                     Case Else
                         Return New FormulaError("#VALUE!")
                 End Select
+            End Function
+
+            Private Shared Function EncodeWorksheetUrl(text As String) As Object
+                Const maxEncodedLength As Integer = 32766
+                If text.Length > maxEncodedLength Then Return New FormulaError("#VALUE!")
+                Dim encoded As New StringBuilder(text.Length)
+                For Each character In Encoding.UTF8.GetBytes(text)
+                    If (character >= 65 AndAlso character <= 90) OrElse (character >= 97 AndAlso character <= 122) OrElse
+                       (character >= 48 AndAlso character <= 57) OrElse character = 45 OrElse character = 46 OrElse character = 95 Then
+                        encoded.Append(ChrW(character))
+                    Else
+                        encoded.Append("%"c).Append(character.ToString("X2", CultureInfo.InvariantCulture))
+                    End If
+                    If encoded.Length > maxEncodedLength Then Return New FormulaError("#VALUE!")
+                Next
+                Return encoded.ToString()
             End Function
 
             Private Function WorksheetCharacter(value As Object, unicode As Boolean) As Object

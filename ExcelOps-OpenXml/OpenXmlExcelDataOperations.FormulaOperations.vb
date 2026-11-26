@@ -101,12 +101,14 @@ Namespace ExcelOps
                          "CEILING", "CEILING.MATH", "_XLFN.CEILING.MATH", "CEILING.PRECISE", "_XLFN.CEILING.PRECISE",
                          "ISO.CEILING", "_XLFN.ISO.CEILING", "MROUND", "EVEN", "ODD", "QUOTIENT"
                         Return EvaluateIntegerMath(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DELTA", "GESTEP"
+                        Return EvaluateNumericThreshold(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "FIND", "SEARCH"
                         Return EvaluateTextSearch(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "VALUE", "NUMBERVALUE", "_XLFN.NUMBERVALUE", "CHAR", "CODE", "UNICHAR", "_XLFN.UNICHAR",
-                         "UNICODE", "_XLFN.UNICODE", "CLEAN", "PROPER"
+                         "UNICODE", "_XLFN.UNICODE", "CLEAN", "PROPER", "ENCODEURL", "_XLFN.ENCODEURL"
                         Return EvaluateTextConversion(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "TEXTBEFORE", "_XLFN.TEXTBEFORE", "TEXTAFTER", "_XLFN.TEXTAFTER", "TEXTSPLIT", "_XLFN.TEXTSPLIT"
                         Return EvaluateTextDelimiterFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
