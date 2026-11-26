@@ -144,6 +144,8 @@ Namespace ExcelOps
                         Return EvaluateLogicalFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS", "AVERAGEIF", "AVERAGEIFS", "MINIFS", "MAXIFS", "_XLFN.MINIFS", "_XLFN.MAXIFS"
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DAVERAGE", "DCOUNT", "DCOUNTA", "DGET", "DMAX", "DMIN", "DPRODUCT", "DSTDEV", "DSTDEVP", "DSUM", "DVAR", "DVARP"
+                        Return EvaluateDatabaseFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SUMPRODUCT"
                         Return EvaluateSumProduct(arguments, formulaCell)
                     Case "SERIESSUM"
