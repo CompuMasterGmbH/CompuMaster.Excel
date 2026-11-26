@@ -146,8 +146,11 @@ Namespace ExcelOps
                         Return EvaluateRadixConversion(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "ROMAN", "ARABIC", "_XLFN.ARABIC"
                         Return EvaluateRomanNumerals(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
-                    Case "COMPLEX", "IMABS", "IMAGINARY", "IMARGUMENT", "IMCONJUGATE", "IMDIV", "IMREAL", "IMSUB", "IMSUM", "IMPRODUCT"
-                        Return EvaluateComplexFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "COMPLEX", "IMABS", "IMAGINARY", "IMARGUMENT", "IMCONJUGATE", "IMDIV", "IMREAL", "IMSUB", "IMSUM", "IMPRODUCT",
+                         "IMEXP", "IMLN", "IMLOG10", "IMLOG2", "IMPOWER", "IMSQRT", "IMSIN", "IMCOS",
+                         "IMSINH", "_XLFN.IMSINH", "IMCOSH", "_XLFN.IMCOSH", "IMTAN", "_XLFN.IMTAN", "IMCOT", "_XLFN.IMCOT",
+                         "IMSEC", "_XLFN.IMSEC", "IMCSC", "_XLFN.IMCSC", "IMSECH", "_XLFN.IMSECH", "IMCSCH", "_XLFN.IMCSCH"
+                        Return EvaluateComplexFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "HLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"

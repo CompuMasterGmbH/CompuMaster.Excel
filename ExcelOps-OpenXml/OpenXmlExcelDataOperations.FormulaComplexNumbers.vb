@@ -21,7 +21,7 @@ Namespace ExcelOps
                                                     formulaCell As ExcelCell) As Object
                 If name = "IMSUM" OrElse name = "IMPRODUCT" Then Return AggregateComplexValues(name, arguments, formulaCell)
                 Dim construct = name = "COMPLEX"
-                Dim binary = name = "IMDIV" OrElse name = "IMSUB"
+                Dim binary = name = "IMDIV" OrElse name = "IMSUB" OrElse name = "IMPOWER"
                 Dim minimum = If(construct OrElse binary, 2, 1)
                 If arguments.Count < minimum OrElse arguments.Count > If(construct, 3, minimum) Then Return New FormulaError("#VALUE!")
 
@@ -76,6 +76,8 @@ Namespace ExcelOps
                         If value = Complex.Zero Then Return New FormulaError("#DIV/0!")
                         Return value.Phase
                     Case "IMCONJUGATE" : Return FormatComplexValue(Complex.Conjugate(value), operand.Unit)
+                    Case "IMSUB", "IMDIV"
+                    Case Else : Return CalculateComplexMath(name, operand, second)
                 End Select
 
                 Dim secondValue = ReadComplexOperand(second)
@@ -168,7 +170,16 @@ Namespace ExcelOps
                 End If
                 Dim number = ConvertWorksheetText("VALUE", text)
                 If Not TypeOf number Is Double Then Return Nothing
-                Return NormalizeWorksheetUnderflow(sign * DirectCast(number, Double))
+                Dim magnitude = DirectCast(number, Double)
+                If Math.Abs(magnitude) >= 1.0E308 Then Return Nothing
+                If magnitude = 0.0 Then
+                    Dim marker = text.IndexOfAny({"e"c, "E"c})
+                    Dim exponent As Integer
+                    If marker > 0 AndAlso Integer.TryParse(text.Substring(marker + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, exponent) Then
+                        If exponent < -323 OrElse exponent > 308 OrElse text.Take(marker).Any(Function(ch) ch >= "1"c AndAlso ch <= "9"c) Then Return Nothing
+                    End If
+                End If
+                Return NormalizeWorksheetUnderflow(sign * magnitude)
             End Function
 
             Private Function FormatComplexValue(value As Complex, unit As Char) As Object

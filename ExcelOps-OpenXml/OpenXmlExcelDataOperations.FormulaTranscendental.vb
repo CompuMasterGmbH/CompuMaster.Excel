@@ -83,23 +83,31 @@
                 End Select
             End Function
 
-            Private Shared Function CircularValue(name As String, angle As Double) As Object
-                If Math.Abs(angle) >= CircularArgumentLimit Then Return New FormulaError("#NUM!")
+            Private Shared Function TryCircularParts(angle As Double, ByRef sine As Double, ByRef cosine As Double) As Boolean
+                If Double.IsNaN(angle) OrElse Math.Abs(angle) >= CircularArgumentLimit Then Return False
 
                 ' Reduce small enough to avoid platform rounding differences near poles and large multiples of pi.
                 Dim quadrant = CInt(Math.Round(angle / (Math.PI / 2.0)))
                 Dim reduced = ((angle - quadrant * HalfPiHigh) - quadrant * HalfPiMiddle) - quadrant * HalfPiLow
                 Dim reducedSine = Math.Sin(reduced)
                 Dim reducedCosine = Math.Cos(reduced)
-                Dim sine As Double
-                Dim cosine As Double
+                If Math.Abs(reduced) = Math.PI / 4.0 Then
+                    ' Excel uses adjacent binary64 values for sine and cosine at this stored angle.
+                    reducedSine = If(reduced < 0.0, -0.70710678118654746, 0.70710678118654746)
+                    reducedCosine = 0.70710678118654757
+                End If
                 Select Case quadrant And 3
                     Case 0 : sine = reducedSine : cosine = reducedCosine
                     Case 1 : sine = reducedCosine : cosine = -reducedSine
                     Case 2 : sine = -reducedSine : cosine = -reducedCosine
                     Case Else : sine = -reducedCosine : cosine = reducedSine
                 End Select
+                Return True
+            End Function
 
+            Private Shared Function CircularValue(name As String, angle As Double) As Object
+                Dim sine As Double, cosine As Double
+                If Not TryCircularParts(angle, sine, cosine) Then Return New FormulaError("#NUM!")
                 Select Case name
                     Case "SIN" : Return sine
                     Case "COS" : Return cosine
