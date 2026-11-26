@@ -195,6 +195,13 @@ Namespace ExcelOps
                         Return EvaluatePercentOf(arguments, formulaCell)
                     Case "LOOKUP"
                         Return EvaluateClassicLookup(arguments, formulaCell)
+                    Case "CORREL", "PEARSON", "COVAR", "COVARIANCE.P", "_XLFN.COVARIANCE.P", "COVARIANCE.S", "_XLFN.COVARIANCE.S",
+                         "SLOPE", "INTERCEPT", "RSQ", "STEYX", "FORECAST", "FORECAST.LINEAR", "_XLFN.FORECAST.LINEAR"
+                        Return EvaluatePairedStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "GEOMEAN", "HARMEAN", "SKEW", "SKEW.P", "_XLFN.SKEW.P", "KURT", "TRIMMEAN"
+                        Return EvaluateShapeStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "FISHER", "FISHERINV", "SQRTPI"
+                        Return EvaluateFisherTransform(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
