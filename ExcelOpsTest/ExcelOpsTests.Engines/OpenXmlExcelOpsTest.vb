@@ -541,6 +541,31 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <TestCase(0, 103.06098565131704)>
+    <TestCase(1, 103.04500491892979)>
+    <TestCase(2, 103.0007840871962)>
+    <TestCase(3, 103.03788090276133)>
+    <TestCase(4, 103.06098565131704)>
+    Public Sub MatchesExcelForAnOddFirstCouponSettledAfterTheLastMonthEndBoundary(basis As Integer, excelPrice As Double)
+        Dim input = Path.Combine(_directory, "odd-first-boundary.xlsx")
+        Dim arguments = "DATE(2024,4,1),DATE(2029,9,30),DATE(2024,1,10),DATE(2024,9,30),0.062,"
+        Dim remainder = ",100,2," & basis.ToString(CultureInfo.InvariantCulture)
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(input))
+            Dim sheet = package.Workbook.Worksheets.Add("Boundary")
+            sheet.Cells("A1").Formula = "ODDFPRICE(" & arguments & "0.05" & remainder & ")"
+            sheet.Cells("B1").Formula = "ODDFYIELD(" & arguments & excelPrice.ToString("R", CultureInfo.InvariantCulture) & remainder & ")"
+            package.Save()
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(input, OpenMode.OpenExistingFile, options)
+            workbook.RecalculateAll()
+            Const cached As FormulaCalculationMode = FormulaCalculationMode.UseCachedValueOnly
+            Assert.That(workbook.LookupCellValue(Of Double)("Boundary", 0, 0, cached), [Is].EqualTo(excelPrice).Within(1.0E-11))
+            Assert.That(workbook.LookupCellValue(Of Double)("Boundary", 0, 1, cached), [Is].EqualTo(0.05).Within(1.0E-11))
+        End Using
+    End Sub
+
+
     Private Shared Function ReadBytes(stream As Stream) As Byte()
         Using input = stream, result As New MemoryStream()
             input.CopyTo(result)

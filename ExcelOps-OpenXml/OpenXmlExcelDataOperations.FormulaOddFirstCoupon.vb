@@ -86,6 +86,12 @@
                 Else
                     remaining = OddFirstFractions(settlement, firstCoupon, firstCoupon, months, basis, endOfMonth, rollDays:=False)
                 End If
+                ' Excel counts another quasi-coupon on an end-of-month schedule if the
+                ' settlement within the last interval is before that month's last day.
+                If endOfMonth AndAlso settlement > prior Then
+                    Dim settled = DateParts(settlement)
+                    If settled.Day < DaysInExcelMonth(settled.Year, settled.Month) Then remaining += 1.0
+                End If
                 Return (firstPayment, accrued, remaining)
             End Function
 
