@@ -144,6 +144,10 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 51)>
     <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 75)>
     <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 38)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon price", 756)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon yield", 756)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon price", 756)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon yield", 756)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
@@ -318,6 +322,10 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 873)>
     <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 1982)>
     <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 4732)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon price", 16)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon yield", 16)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon price", 16)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon yield", 16)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>

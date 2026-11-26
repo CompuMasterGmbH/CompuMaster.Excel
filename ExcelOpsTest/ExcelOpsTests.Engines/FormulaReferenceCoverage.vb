@@ -137,6 +137,10 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Friend Shared Function ReferenceNumberTolerance(expected As Double, fileName As String, sheetName As String) As Double
+            If fileName.StartsWith("FormulaReferenceOddFirst", StringComparison.Ordinal) AndAlso sheetName = "Odd first coupon yield" Then
+                ' The same clean price can converge to a slightly different representable yield in Excel.
+                Return 2.0E-10
+            End If
             If fileName.StartsWith("FormulaReferenceBonds", StringComparison.Ordinal) AndAlso sheetName = "Bond yields" Then
                 ' Excel and the engine stop the numerical yield inversion at different points.
                 Return 1.0E-10

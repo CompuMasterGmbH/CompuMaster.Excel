@@ -154,6 +154,8 @@ Namespace ExcelOps
                         Return EvaluateRegression(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "COUPDAYBS", "COUPDAYS", "COUPDAYSNC", "COUPNCD", "COUPNUM", "COUPPCD", "DURATION", "MDURATION", "PRICE", "YIELD"
                         Return EvaluateCouponSecurity(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "ODDFPRICE", "ODDFYIELD"
+                        Return EvaluateOddFirstCoupon(name.Equals("ODDFYIELD", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
                     Case "ODDLPRICE", "ODDLYIELD"
                         Return EvaluateOddLastCoupon(name.Equals("ODDLYIELD", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
                     Case "ACCRINT"

@@ -201,16 +201,20 @@
                                                          price As Double, frequency As Double) As Object
                 If fraction <= 0.0 AndAlso coupons = 1 Then Return New FormulaError("#DIV/0!")
                 If coupons = 1 Then Return FiniteNumber(((redemption + amount) / price - 1.0) / fraction * frequency)
+                Return InvertCouponPrice(price, frequency, Function(yield) DirtyCouponPrice(coupons, fraction, amount, redemption, yield))
+            End Function
+
+            Private Shared Function InvertCouponPrice(price As Double, frequency As Double, presentValue As Func(Of Double, Double)) As Object
                 Dim lower = -0.999999999999999
                 Dim upper = 1.0
-                While DirtyCouponPrice(coupons, fraction, amount, redemption, upper) > price
+                While presentValue(upper) > price
                     upper *= 2
                     If Double.IsInfinity(upper) Then Return New FormulaError("#NUM!")
                 End While
                 For index = 0 To 79
                     Dim middle = lower + (upper - lower) / 2.0
                     If middle = lower OrElse middle = upper Then Exit For
-                    Dim candidate = DirtyCouponPrice(coupons, fraction, amount, redemption, middle)
+                    Dim candidate = presentValue(middle)
                     If candidate > price OrElse Double.IsNaN(candidate) Then
                         lower = middle
                     Else
