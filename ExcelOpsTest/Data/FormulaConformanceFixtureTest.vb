@@ -100,6 +100,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 215)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits functions", 713)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits arrays", 23)>
+    <TestCase("FormulaReferenceGermanText1900.xlsx", "German formula text", 34)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>

@@ -27,9 +27,6 @@ Namespace ExcelOps
             Private Shared ReadOnly GermanRowColumn As New Regex("\AZ([1-9][0-9]*|\([+-]?[0-9]+\))?S([1-9][0-9]*|\([+-]?[0-9]+\))?\z",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly UnquotedSheet As New Regex("\A[\p{L}_][\p{L}\p{M}\p{Nd}_.]*\z", RegexOptions.CultureInvariant)
-            Private Shared ReadOnly FormulaTextTokens As New Regex(
-                """(?:[^""]|"""")*""|'(?:[^']|'')*'|(?:_xlfn\.|_xlws\.)|(?<![\p{L}\p{Nd}_.])(?:TRUE|FALSE)(?![\p{L}\p{Nd}_.])|[{},;]|\.", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
-
             Friend Function EvaluateReferenceUnion(expressions As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
                 Dim areas As New List(Of FormulaArea)
                 For Each expression In expressions
@@ -153,26 +150,6 @@ Namespace ExcelOps
                     Function(item) String.Equals(item.Name.Value, sheet, StringComparison.OrdinalIgnoreCase))
                 If index < 0 Then Return New FormulaError("#N/A")
                 Return CDbl(index + 1)
-            End Function
-
-            Private Function DisplayFormula(formula As String) As String
-                Dim german = ConversionCulture.TwoLetterISOLanguageName = "de"
-                Dim arrayDepth = 0
-                Return "=" & FormulaTextTokens.Replace(formula,
-                    Function(match)
-                        Dim token = match.Value
-                        If token.Equals("_xlfn.", StringComparison.OrdinalIgnoreCase) OrElse
-                            token.Equals("_xlws.", StringComparison.OrdinalIgnoreCase) Then Return String.Empty
-                        If Not german Then Return token
-                        If token = "{" Then arrayDepth += 1
-                        If token = "}" Then arrayDepth -= 1
-                        If token = "," Then Return If(arrayDepth > 0, ".", ";")
-                        If token.Equals("TRUE", StringComparison.OrdinalIgnoreCase) Then Return "WAHR"
-                        If token.Equals("FALSE", StringComparison.OrdinalIgnoreCase) Then Return "FALSCH"
-                        If token = "." AndAlso match.Index > 0 AndAlso match.Index + 1 < formula.Length AndAlso
-                            Char.IsDigit(formula(match.Index - 1)) AndAlso Char.IsDigit(formula(match.Index + 1)) Then Return ","
-                        Return token
-                    End Function)
             End Function
 
             Private Function BroadcastReferenceArguments(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
