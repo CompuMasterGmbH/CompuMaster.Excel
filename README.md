@@ -95,6 +95,17 @@ The following known limitations remain:
 
 Use separately owned packages and streams for parallel jobs, with one thread accessing each package at a time. The independent-package regression tests cover selected operations, not every feature. Other lazy initialization paths, the shared `RAND()` seed, and publicly mutable operator/validation objects still require investigation; these code observations are not all demonstrated runtime defects.
 
+## Reviewing HTML export tests
+
+Local test runs retain their usual browser behavior. The ExcelOps smoke tests open their generated HTML files, while the standalone Spire export tests leave them on disk. CI never launches a browser.
+
+Set `COMPUMASTER_EXCEL_HTML_VISUAL_TESTS` to `off` to leave all exports on disk without opening them. When a change could affect the rendered HTML and you want to inspect specific exports, set the value to a comma-separated list of exact NUnit method names or full test names. A full name can select a single engine's test. HTML generation and automated checks still run in either mode.
+
+```powershell
+dotnet test ExcelOpsTest/TestExcelOps.vbproj -f net8.0 --environment COMPUMASTER_EXCEL_HTML_VISUAL_TESTS=off
+dotnet test ExcelOpsTest/TestExcelOps.vbproj -f net8.0 --filter FullyQualifiedName~HtmlExportWorksheetGrunddatenV19 --environment COMPUMASTER_EXCEL_HTML_VISUAL_TESTS=HtmlExportWorksheetGrunddatenV19
+```
+
 ## Licensing
 
   * Please see license type for every sub project within its directory

@@ -255,21 +255,6 @@ Namespace ExcelOps
         End Function
 
         ''' <inheritdoc/>
-        Public Overrides Function LookupLastCell(sheetName As String) As ExcelCell
-            Dim row = 0
-            Dim column = 0
-            For Each item In EnumerateWorksheetCells(GetSheetData(GetWorksheetPart(sheetName)))
-                row = Math.Max(row, item.RowIndex)
-                column = Math.Max(column, item.ColumnIndex)
-            Next
-            For Each merge In MergedCells(sheetName)
-                row = Math.Max(row, merge.AddressEnd.RowIndex)
-                column = Math.Max(column, merge.AddressEnd.ColumnIndex)
-            Next
-            Return New ExcelCell(sheetName, row, column, ExcelCell.ValueTypes.All)
-        End Function
-
-        ''' <inheritdoc/>
         Protected Overrides Function MergedCells(sheetName As String) As List(Of ExcelRange)
             Return GetWorksheetPart(sheetName).Worksheet.Elements(Of MergeCells)().
                 SelectMany(Function(element) element.Elements(Of MergeCell)()).

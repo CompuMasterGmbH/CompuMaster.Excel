@@ -1127,7 +1127,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Looks up the last column index (zero-based index) (the last content cell equals to Excel's special cell xlLastCell).
+        ''' Looks up the zero-based column index of the last used cell.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
         ''' <returns>The zero-based column index.</returns>
@@ -1136,7 +1136,7 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Looks up the last row index (zero-based index) (the last content cell equals to Excel's special cell xlLastCell).
+        ''' Looks up the zero-based row index of the last used cell.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
         ''' <returns>The zero-based row index.</returns>
@@ -1145,10 +1145,11 @@ Namespace ExcelOps
         End Function
 
         ''' <summary>
-        ''' Looks up the last cell (the last content cell equals to Excel's special cell xlLastCell).
+        ''' Looks up the bottom-right corner of the worksheet's used range.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
-        ''' <returns>The located cell.</returns>
+        ''' <returns>The address at the greatest used row and column. The cell at that address can be empty.</returns>
+        ''' <remarks>Corresponds to Excel's <c>xlCellTypeLastCell</c>. When the result changes after an edit depends on the engine.</remarks>
         Public MustOverride Function LookupLastCell(sheetName As String) As ExcelCell
 
         ''' <summary>
@@ -2153,7 +2154,7 @@ Namespace ExcelOps
             ''' </summary>
             LastContentCell = 2
             ''' <summary>
-            ''' The last worksheet cell known to the engine.
+            ''' The bottom-right corner of the worksheet's used range.
             ''' </summary>
             LastCell = 3
             ''' <summary>

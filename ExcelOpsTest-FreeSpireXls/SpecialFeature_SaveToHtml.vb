@@ -4,7 +4,6 @@ Imports CompuMaster.Excel.ExcelOps
 
 Public Class SpecialFeature_SaveToHtml
 
-    Private Const OPEN_OUTPUT_IN_BROWSER_AFTER_TEST As Boolean = False
     Private Const UNIQUE_TEST_OUTPUT_SUBDIR_NAME_FOR_PROVIDER = "FreeSpire"
 
     Private ReadOnly Property DisabledCalculationEngineOptions As ExcelDataOperationsOptions = New ExcelDataOperationsOptions("", True, True, True)
@@ -23,12 +22,7 @@ Public Class SpecialFeature_SaveToHtml
             ClassicAssert.Ignore("Not supported on this platform " & System.Environment.OSVersion.Platform.ToString)
         End Try
 
-        If OPEN_OUTPUT_IN_BROWSER_AFTER_TEST Then
-            Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                .UseShellExecute = True,
-                .FileName = TestHtmlOutputFile
-                })
-        End If
+        HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=False)
     End Sub
 
     <Test>
@@ -49,12 +43,7 @@ Public Class SpecialFeature_SaveToHtml
             Dim TestHtmlOutputFile = TestEnvironment.FullPathOfDynTestFile(UNIQUE_TEST_OUTPUT_SUBDIR_NAME_FOR_PROVIDER, TestXlsxFile.Name & "." & WorkSheetName & ".html")
             System.Console.WriteLine("TEST OUT FILE: " & TestHtmlOutputFile)
             Wb.SaveWorksheetToHtml(WorkSheetName, TestHtmlOutputFile)
-            If OPEN_OUTPUT_IN_BROWSER_AFTER_TEST Then
-                Dim OpenFileProcess = System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo() With {
-                    .UseShellExecute = True,
-                    .FileName = TestHtmlOutputFile
-                    })
-            End If
+            HtmlVisualReview.OpenIfRequested(TestHtmlOutputFile, openByDefault:=False)
         Next
 
     End Sub
