@@ -49,6 +49,66 @@
                 Return New FormulaMatrix(rows, columns, results)
             End Function
 
+            Private Function EvaluatePercentRank(exclusive As Boolean, arguments As IReadOnlyList(Of FormulaExpression),
+                                                 formulaCell As ExcelCell) As Object
+                If arguments.Count < 2 OrElse arguments.Count > 3 Then Return New FormulaError("#VALUE!")
+                Dim values As New List(Of Double)
+                Dim dataError = AddStatisticValues(EvaluateExpression(arguments(0), formulaCell), values)
+                values.Sort()
+
+                Dim targets = AsMatrix(EvaluateExpression(arguments(1), formulaCell))
+                Dim digitsValue = If(arguments.Count = 3, EvaluateExpression(arguments(2), formulaCell), Nothing)
+                Dim digits = AsMatrix(If(digitsValue, 3.0))
+                Dim rows = Math.Max(targets.Rows, digits.Rows)
+                Dim columns = Math.Max(targets.Columns, digits.Columns)
+                Dim results = AllocateMatrixValues(rows, columns)
+                For row = 0 To rows - 1
+                    For column = 0 To columns - 1
+                        Dim number = NumberValue(targets.BroadcastAt(row, column))
+                        Dim precision = NumberValue(digits.BroadcastAt(row, column))
+                        Dim result As Object
+                        If TypeOf number Is FormulaError Then
+                            result = number
+                        ElseIf TypeOf precision Is FormulaError Then
+                            result = precision
+                        ElseIf dataError IsNot Nothing Then
+                            result = dataError
+                        Else
+                            result = PercentRankValue(values, DirectCast(number, Double), DirectCast(precision, Double), exclusive)
+                        End If
+                        results(row * columns + column) = result
+                    Next
+                Next
+                If results.Length = 1 Then Return results(0)
+                Return New FormulaMatrix(rows, columns, results)
+            End Function
+
+            Private Shared Function PercentRankValue(values As List(Of Double), number As Double, precision As Double,
+                                                     exclusive As Boolean) As Object
+                If values.Count = 0 Then Return New FormulaError("#N/A")
+                If values.Count = 1 Then
+                    If number = values(0) Then Return 1.0
+                    Return New FormulaError("#N/A")
+                End If
+                If number < values(0) OrElse number > values(values.Count - 1) Then Return New FormulaError("#N/A")
+                If precision < 1.0 Then Return New FormulaError("#NUM!")
+                Dim scale = Math.Pow(10.0, Math.Truncate(precision))
+                If Double.IsInfinity(scale) Then Return New FormulaError("#DIV/0!")
+
+                Dim upper = RankBoundary(values, number, upper:=False)
+                Dim position = CDbl(upper)
+                If values(upper) <> number Then
+                    Dim low = values(upper - 1)
+                    Dim high = values(upper)
+                    Dim extent = high - low
+                    Dim fraction = If(Double.IsInfinity(extent), (number * 0.5 - low * 0.5) / (high * 0.5 - low * 0.5),
+                                      (number - low) / extent)
+                    position = upper - 1.0 + fraction
+                End If
+                Dim ratio = If(exclusive, (position + 1.0) / (values.Count + 1.0), position / (values.Count - 1.0))
+                Return Math.Truncate(ToWorksheetPrecision(ratio * scale)) / scale
+            End Function
+
             Private Enum StatisticInput
                 Numeric
                 IncludeReferenceTextAndBooleans
