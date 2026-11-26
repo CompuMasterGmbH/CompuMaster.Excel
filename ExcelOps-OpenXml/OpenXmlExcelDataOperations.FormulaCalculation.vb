@@ -70,14 +70,17 @@ Namespace ExcelOps
         Private NotInheritable Class FormulaArea
             Friend ReadOnly Sheet As String
             Friend ReadOnly WorkbookIndex As Integer?
+            Friend ReadOnly SourceWorkbook As OpenXmlExcelDataOperations
             Friend ReadOnly FirstRow As Integer
             Friend ReadOnly FirstColumn As Integer
             Friend ReadOnly LastRow As Integer
             Friend ReadOnly LastColumn As Integer
 
-            Friend Sub New(sheet As String, first As ExcelCell, last As ExcelCell, workbookIndex As Integer?)
+            Friend Sub New(sheet As String, first As ExcelCell, last As ExcelCell, workbookIndex As Integer?,
+                           Optional sourceWorkbook As OpenXmlExcelDataOperations = Nothing)
                 Me.Sheet = sheet
                 Me.WorkbookIndex = workbookIndex
+                Me.SourceWorkbook = sourceWorkbook
                 FirstRow = Math.Min(first.RowIndex, last.RowIndex)
                 FirstColumn = Math.Min(first.ColumnIndex, last.ColumnIndex)
                 LastRow = Math.Max(first.RowIndex, last.RowIndex)

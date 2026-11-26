@@ -119,7 +119,7 @@ Namespace ExcelOps
                                               lastRow As Integer, lastColumn As Integer) As FormulaArea
                 Return New FormulaArea(area.Sheet,
                     New ExcelCell(Nothing, area.FirstRow + firstRow, area.FirstColumn + firstColumn, ExcelCell.ValueTypes.All),
-                    New ExcelCell(Nothing, area.FirstRow + lastRow, area.FirstColumn + lastColumn, ExcelCell.ValueTypes.All), area.WorkbookIndex)
+                    New ExcelCell(Nothing, area.FirstRow + lastRow, area.FirstColumn + lastColumn, ExcelCell.ValueTypes.All), area.WorkbookIndex, area.SourceWorkbook)
             End Function
 
             Private Function MakeCriterion(value As Object) As Predicate(Of Object)

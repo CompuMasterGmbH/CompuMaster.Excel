@@ -107,7 +107,8 @@ Namespace ExcelOps
                 Dim unionReference = TryCast(value, FormulaReferenceUnion)
                 If unionReference IsNot Nothing Then
                     reference = unionReference.Areas(0)
-                    If unionReference.Areas.Any(Function(area) Not Object.Equals(area.WorkbookIndex, reference.WorkbookIndex) OrElse
+                    If unionReference.Areas.Any(Function(area) area.SourceWorkbook IsNot reference.SourceWorkbook OrElse
+                        Not Object.Equals(area.WorkbookIndex, reference.WorkbookIndex) OrElse
                          Not String.Equals(area.Sheet, reference.Sheet, StringComparison.OrdinalIgnoreCase)) Then Return New FormulaError("#VALUE!")
                     If name = "AREAS" Then Return CDbl(unionReference.Areas.Count)
                 End If
@@ -251,7 +252,14 @@ Namespace ExcelOps
                 If qualifier <> "" Then
                     sourceSheet = If(qualifier(0) = "'"c, qualifier.Substring(1, qualifier.Length - 2).Replace("''", "'"), qualifier)
                 End If
-                If Not _worksheets.ContainsKey(sourceSheet) Then Return New FormulaError("#REF!")
+                Dim sourceWorkbook As OpenXmlExcelDataOperations = Nothing
+                Dim source = Me
+                If sourceSheet.Contains("]"c) Then
+                    sourceWorkbook = FindWorkbookForTextReference(sourceSheet, sourceSheet)
+                    If sourceWorkbook Is Nothing Then Return New FormulaError("#REF!")
+                    source = ForWorkbook(sourceWorkbook)
+                End If
+                If Not source._worksheets.ContainsKey(sourceSheet) Then Return New FormulaError("#REF!")
 
                 Dim address = matched.Groups("address").Value
                 Dim parts = address.Split(":"c)
@@ -259,13 +267,14 @@ Namespace ExcelOps
                 Dim last As (Row As Integer, Column As Integer)
                 If DirectCast(style, Boolean) Then
                     If parts.Length <= 2 AndAlso TryA1Coordinates(parts(0), first) AndAlso
-                        TryA1Coordinates(parts(parts.Length - 1), last) Then Return MakeArea(sourceSheet, first, last, Nothing)
-                    If parts.Length = 2 AndAlso TryWholeReference(parts, first, last) Then Return MakeArea(sourceSheet, first, last, Nothing)
+                        TryA1Coordinates(parts(parts.Length - 1), last) Then Return MakeArea(sourceSheet, first, last, Nothing, sourceWorkbook)
+                    If parts.Length = 2 AndAlso TryWholeReference(parts, first, last) Then Return MakeArea(sourceSheet, first, last, Nothing, sourceWorkbook)
                 Else
                     If parts.Length <= 2 AndAlso TryRowColumnCoordinates(parts(0), formulaCell, first) AndAlso
-                        TryRowColumnCoordinates(parts(parts.Length - 1), formulaCell, last) Then Return MakeArea(sourceSheet, first, last, Nothing)
+                        TryRowColumnCoordinates(parts(parts.Length - 1), formulaCell, last) Then Return MakeArea(sourceSheet, first, last, Nothing, sourceWorkbook)
                 End If
                 If Not IsValidDefinedNameToken(address) Then Return New FormulaError("#REF!")
+                If sourceWorkbook IsNot Nothing Then Return New FormulaError("#REF!")
                 Dim definition = EvaluateDefinedName(address, If(qualifier = "", Nothing, sourceSheet), formulaCell)
                 Return If(TryCast(definition, FormulaArea), CObj(New FormulaError("#REF!")))
             End Function
@@ -333,13 +342,14 @@ Namespace ExcelOps
                 Dim right = left + width - Math.Sign(width)
                 If Math.Min(top, bottom) < 0 OrElse Math.Max(top, bottom) >= RowCount OrElse
                     Math.Min(left, right) < 0 OrElse Math.Max(left, right) >= ColumnCount Then Return New FormulaError("#REF!")
-                Return MakeArea(area.Sheet, (CInt(top), CInt(left)), (CInt(bottom), CInt(right)), area.WorkbookIndex)
+                Return MakeArea(area.Sheet, (CInt(top), CInt(left)), (CInt(bottom), CInt(right)), area.WorkbookIndex, area.SourceWorkbook)
             End Function
 
             Private Shared Function MakeArea(sheet As String, first As (Row As Integer, Column As Integer),
-                                             last As (Row As Integer, Column As Integer), workbook As Integer?) As FormulaArea
+                                             last As (Row As Integer, Column As Integer), workbookIndex As Integer?,
+                                             Optional sourceWorkbook As OpenXmlExcelDataOperations = Nothing) As FormulaArea
                 Return New FormulaArea(sheet, New ExcelCell(Nothing, first.Row, first.Column, ExcelCell.ValueTypes.All),
-                    New ExcelCell(Nothing, last.Row, last.Column, ExcelCell.ValueTypes.All), workbook)
+                    New ExcelCell(Nothing, last.Row, last.Column, ExcelCell.ValueTypes.All), workbookIndex, sourceWorkbook)
             End Function
 
             Private Function EvaluateChoose(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object

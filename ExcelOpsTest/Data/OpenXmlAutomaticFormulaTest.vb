@@ -149,6 +149,38 @@ Public Class OpenXmlAutomaticFormulaTest
     End Sub
 
     <Test>
+    Public Sub ResolvesTextReferencesAcrossOpenWorkbooksAndTracksSourceEdits()
+        Dim session As New ExcelFormulaSession()
+        Dim sourcePath = TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", "FormulaReferenceSource.xlsx")
+        Dim options = MakeOptions(session)
+        options.FormulaWorkbookName = "Indirect target"
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, MakeOptions(session)),
+              target As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            source.WriteCellValue("Source Data", 0, 0, 41.0)
+            source.WriteCellValue("Source Data", 1, 0, 42.0)
+            source.WriteCellValue("Source Data", 2, 0, 43.0)
+            Dim sheetReference = "'[FormulaReferenceSource.xlsx]Source Data'!"
+            Dim singleCell = "INDIRECT(""" & sheetReference & "A1"")"
+            Dim range = "INDIRECT(""" & sheetReference & "A1:A3"")"
+            target.WriteCellFormula("Sheet1", 0, 0, singleCell, False)
+            target.WriteCellFormula("Sheet1", 0, 1, "SUM(" & range & ")", False)
+            target.WriteCellFormula("Sheet1", 0, 2, "SUM(OFFSET(" & singleCell & ",1,0,2,1))", False)
+            target.WriteCellFormula("Sheet1", 0, 3, "INDEX(" & range & ",2)", False)
+            target.RecalculateAll()
+            Assert.That(Enumerable.Range(0, 4).Select(Function(column) Result(target, column)), [Is].EqualTo({41.0, 126.0, 85.0, 42.0}))
+
+            source.WriteCellValue("Source Data", 1, 0, 52.0)
+            Assert.That(Enumerable.Range(0, 4).Select(Function(column) Result(target, column)), [Is].EqualTo({41.0, 136.0, 95.0, 52.0}))
+
+            source.Close()
+            target.RecalculateAll()
+            For column = 0 To 3
+                Assert.That(target.LookupCellErrorValue("Sheet1", 0, column), [Is].EqualTo("#REF!"))
+            Next
+        End Using
+    End Sub
+
+    <Test>
     Public Sub ReusesTheSessionDependencyGraphWhenExternalInputsChange()
         Dim session As New ExcelFormulaSession()
         Dim targetPath = TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", "FormulaReference.xlsx")

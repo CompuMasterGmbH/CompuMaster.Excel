@@ -21,6 +21,7 @@ Namespace ExcelOps
             Private ReadOnly _externalWorkbooks As New Dictionary(Of Integer, FormulaCalculation)
 
             Private Function ResolveReference(area As FormulaArea) As FormulaCalculation
+                If area.SourceWorkbook IsNot Nothing Then Return ForWorkbook(area.SourceWorkbook)
                 If Not area.WorkbookIndex.HasValue Then Return Me
                 Dim index = area.WorkbookIndex.Value
                 Dim source As FormulaCalculation = Nothing
@@ -35,6 +36,32 @@ Namespace ExcelOps
                 source = ForWorkbook(workbook)
                 _externalWorkbooks.Add(index, source)
                 Return source
+            End Function
+
+            Private Function FindOpenWorkbookByName(name As String) As OpenXmlExcelDataOperations
+                If String.Equals(Path.GetFileName(ReferencePath(_owner)), name, StringComparison.OrdinalIgnoreCase) Then Return _owner
+                If _run.Session Is Nothing Then Return Nothing
+                Dim entry As ExcelDataOperationsBase = Nothing
+                If _run.Session.Workbooks.TryGetValue(name, entry) AndAlso Not entry.IsClosed Then
+                    Return TryCast(entry, OpenXmlExcelDataOperations)
+                End If
+                Dim matches = _run.Session.Workbooks.Values.OfType(Of OpenXmlExcelDataOperations)().Where(
+                    Function(workbook) Not workbook.IsClosed AndAlso
+                        String.Equals(Path.GetFileName(ReferencePath(workbook)), name, StringComparison.OrdinalIgnoreCase)).Take(2).ToArray()
+                Return If(matches.Length = 1, matches(0), Nothing)
+            End Function
+
+            Private Function FindWorkbookForTextReference(qualifier As String, ByRef sheet As String) As OpenXmlExcelDataOperations
+                Dim closing = qualifier.LastIndexOf("]"c)
+                If closing < 0 Then Return Nothing
+                Dim opening = qualifier.LastIndexOf("["c, closing)
+                If opening < 0 OrElse closing <= opening + 1 OrElse closing + 1 >= qualifier.Length Then Return Nothing
+                sheet = qualifier.Substring(closing + 1)
+                Dim name = qualifier.Substring(opening + 1, closing - opening - 1)
+                If opening = 0 Then Return FindOpenWorkbookByName(name)
+                Dim uri As Uri = Nothing
+                If Not Uri.TryCreate(qualifier.Substring(0, opening) & name, UriKind.RelativeOrAbsolute, uri) Then Return Nothing
+                Return FindExternalWorkbook(uri)
             End Function
 
             Private Function FindExternalWorkbook(uri As Uri) As OpenXmlExcelDataOperations

@@ -30,7 +30,9 @@ Namespace ExcelOps
                 If reference Is Nothing OrElse reference.FirstRow <> reference.LastRow OrElse reference.FirstColumn <> reference.LastColumn Then
                     Return New FormulaError("#REF!")
                 End If
-                If reference.WorkbookIndex.HasValue Then Throw New NotSupportedException("Spill references across workbooks are outside the supported calculation scope.")
+                If reference.WorkbookIndex.HasValue OrElse (reference.SourceWorkbook IsNot Nothing AndAlso reference.SourceWorkbook IsNot _owner) Then
+                    Throw New NotSupportedException("Spill references across workbooks are outside the supported calculation scope.")
+                End If
 
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not _worksheets.TryGetValue(reference.Sheet, worksheet) Then Return New FormulaError("#REF!")
