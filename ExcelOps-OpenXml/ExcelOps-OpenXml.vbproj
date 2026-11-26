@@ -6,8 +6,6 @@
     <Copyright>2005-2026 CompuMaster GmbH</Copyright>
     <AssemblyName>CompuMaster.Excel.OpenXml</AssemblyName>
     <PackageId>CompuMaster.Excel.OpenXml</PackageId>
-    <!-- Set the Open XML release version here. Dated releases use major.minor.YYYY with a revision of MMDD * 10 plus the daily index, starting at 0. -->
-    <VersionPrefix>1.0.0</VersionPrefix>
     <Authors>CompuMaster GmbH</Authors>
     <Description>Edits XLSX templates with the Open XML SDK through the ExcelOps API.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
