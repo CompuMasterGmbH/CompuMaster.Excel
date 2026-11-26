@@ -207,6 +207,21 @@ Public Class OpenXmlSpillFormulaTest
     End Sub
 
     <Test>
+    Public Sub AuthorsLocalLambdaCallsWithoutChangingBuiltInCalls()
+        Using workbook = CreateBlankWorkbook()
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 0, "LET(SIN,3,LAMBDA(item,SIN(item)+SIN)(0))", True)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 1, "LET(fn,LAMBDA(item,item*2),fn(3))", True)
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 0),
+                        [Is].EqualTo("_xlfn.LET(_xlpm.SIN,3,_xlfn.LAMBDA(_xlpm.item,SIN(_xlpm.item)+_xlpm.SIN)(0))"))
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 1),
+                        [Is].EqualTo("_xlfn.LET(_xlpm.fn,_xlfn.LAMBDA(_xlpm.item,_xlpm.item*2),_xlpm.fn(3))"))
+            Assert.That(Number(workbook, sheet, "A1"), [Is].EqualTo(3.0))
+            Assert.That(Number(workbook, sheet, "B1"), [Is].EqualTo(6.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub MovesANewDynamicAnchorBeforeTheFirstSave()
         Using workbook = CreateBlankWorkbook()
             Dim sheet = workbook.SheetNames()(0)

@@ -1,4 +1,5 @@
 ﻿Imports System.Globalization
+Imports System.IO
 Imports System.Text
 Imports System.Text.RegularExpressions
 
@@ -15,6 +16,7 @@ Namespace ExcelOps
             Private Shared ReadOnly CellAddressPattern As New Regex("^\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly UnsupportedSheetCharacters As Char() = {"["c, "]"c, ":"c}
+            Private Shared ReadOnly CatalogFunctionNames As New Lazy(Of HashSet(Of String))(AddressOf ReadCatalogFunctionNames)
             Private ReadOnly _tokens As New List(Of String)
             Private ReadOnly _tokenStarts As List(Of Integer)
             Private ReadOnly _storagePrefixes As SortedDictionary(Of Integer, String)
@@ -309,8 +311,25 @@ Namespace ExcelOps
                 Dim arguments = ParseArguments(allowNativeCallback:=IsLambdaArrayFunctionName(name))
                 Dim binding As Object = Nothing
                 If _localNames IsNot Nothing AndAlso _localNames.TryGetValue(LocalName(name), binding) AndAlso
-                    Not NativeLambdaFunctions.Contains(name) Then AddStoragePrefix(nameIndex, "_xlpm.")
+                    _storagePrefixes IsNot Nothing AndAlso Not CatalogFunctionNames.Value.Contains(name) Then
+                    AddStoragePrefix(nameIndex, "_xlpm.")
+                End If
                 Return Function(calculation, formulaCell) calculation.EvaluateFunction(name, arguments, formulaCell, binding)
+            End Function
+
+            Private Shared Function ReadCatalogFunctionNames() As HashSet(Of String)
+                Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+                Using stream = GetType(OpenXmlExcelDataOperations).Assembly.GetManifestResourceStream("CompuMaster.Excel.OpenXml.ExcelFunctionCatalog.csv")
+                    Using reader As New StreamReader(stream)
+                        reader.ReadLine() ' Column headings.
+                        While Not reader.EndOfStream
+                            Dim line = reader.ReadLine()
+                            Dim nameEnd = line.IndexOf(""""c, 1)
+                            names.Add(line.Substring(1, nameEnd - 1))
+                        End While
+                    End Using
+                End Using
+                Return names
             End Function
 
             Private Function ParseArguments(Optional allowNativeCallback As Boolean = False) As List(Of FormulaExpression)
