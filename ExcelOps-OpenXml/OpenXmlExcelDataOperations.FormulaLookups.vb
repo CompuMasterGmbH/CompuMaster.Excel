@@ -12,7 +12,9 @@
                     Case "MATCH"
                         Return EvaluateMatch(arguments, formulaCell)
                     Case "VLOOKUP"
-                        Return EvaluateVLookup(arguments, formulaCell)
+                        Return EvaluateLegacyLookup(arguments, formulaCell, horizontal:=False)
+                    Case "HLOOKUP"
+                        Return EvaluateLegacyLookup(arguments, formulaCell, horizontal:=True)
                     Case "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateXMatch(arguments, formulaCell)
                     Case Else
@@ -75,31 +77,77 @@
                 Return If(index < 0, CType(New FormulaError("#N/A"), Object), CDbl(index + 1))
             End Function
 
-            Private Function EvaluateVLookup(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+            Private Function EvaluateLegacyLookup(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
+                                                  horizontal As Boolean) As Object
                 If arguments.Count < 3 OrElse arguments.Count > 4 Then Return New FormulaError("#VALUE!")
-                Dim needle = Scalar(EvaluateExpression(arguments(0), formulaCell))
-                If TypeOf needle Is FormulaError Then Return needle
                 Dim input = EvaluateExpression(arguments(1), formulaCell)
+                Dim area = TryCast(input, FormulaArea)
+                Dim table = TryCast(input, FormulaMatrix)
                 If TypeOf input Is FormulaError Then Return input
-                Dim table = TryCast(input, FormulaArea)
-                If table Is Nothing Then Return New FormulaError("#VALUE!")
-                Dim column = ReadIndex(arguments(2), formulaCell)
-                If TypeOf column Is FormulaError Then Return column
-                Dim columnNumber = DirectCast(column, Double)
-                If columnNumber < 1 Then Return New FormulaError("#VALUE!")
-                If columnNumber > table.LastColumn - table.FirstColumn + 1 Then Return New FormulaError("#REF!")
-
-                Dim approximate = True
-                If arguments.Count = 4 Then
-                    Dim optionValue = NumberValue(Scalar(EvaluateExpression(arguments(3), formulaCell)))
-                    If TypeOf optionValue Is FormulaError Then Return optionValue
-                    approximate = DirectCast(optionValue, Double) <> 0
+                If area Is Nothing AndAlso table Is Nothing Then Return New FormulaError("#N/A")
+                Dim rowCount = If(area Is Nothing, table.Rows, area.LastRow - area.FirstRow + 1)
+                Dim columnCount = If(area Is Nothing, table.Columns, area.LastColumn - area.FirstColumn + 1)
+                Dim needles = AsMatrix(EvaluateExpression(arguments(0), formulaCell))
+                Dim modes = AsMatrix(If(arguments.Count = 4, EvaluateExpression(arguments(3), formulaCell), True))
+                Dim indexInput = EvaluateExpression(arguments(2), formulaCell)
+                ' Excel uses only the first result index when the lookup value or match option is an array.
+                If needles.Values.Length > 1 OrElse modes.Values.Length > 1 Then
+                    Dim indexArea = TryCast(indexInput, FormulaArea)
+                    Dim indexMatrix = TryCast(indexInput, FormulaMatrix)
+                    If indexArea IsNot Nothing Then
+                        indexInput = SliceArea(indexArea, 0, 0, 0, 0)
+                    ElseIf indexMatrix IsNot Nothing Then
+                        indexInput = indexMatrix.At(0, 0)
+                    End If
                 End If
-                Dim keys = SliceArea(table, 0, 0, table.LastRow - table.FirstRow, 0)
+                Dim indices = AsMatrix(indexInput)
+                Dim keys As Object()
+                If area IsNot Nothing Then
+                    keys = MaterializeRange(SliceArea(area, 0, 0, If(horizontal, 0, rowCount - 1), If(horizontal, columnCount - 1, 0)))
+                ElseIf horizontal Then
+                    keys = table.Values.Take(columnCount).ToArray()
+                Else
+                    keys = Enumerable.Range(0, rowCount).Select(Function(row) table.At(row, 0)).ToArray()
+                End If
+                Dim resultCount = If(horizontal, rowCount, columnCount)
+                Dim selectValue As Func(Of Integer, Integer, Object) =
+                    Function(key, index)
+                        Dim row = If(horizontal, index, key)
+                        Dim column = If(horizontal, key, index)
+                        If area Is Nothing Then Return table.At(row, column)
+                        Return Scalar(SliceArea(area, row, column, row, column))
+                    End Function
+
+                Dim rows = Math.Max(Math.Max(needles.Rows, modes.Rows), indices.Rows)
+                Dim columns = Math.Max(Math.Max(needles.Columns, modes.Columns), indices.Columns)
+                Dim results = AllocateMatrixValues(rows, columns)
+                For row = 0 To rows - 1
+                    For column = 0 To columns - 1
+                        results(row * columns + column) = LegacyLookupValue(needles.BroadcastAt(row, column),
+                            indices.BroadcastAt(row, column), modes.BroadcastAt(row, column), keys, resultCount, selectValue)
+                    Next
+                Next
+                If results.Length = 1 Then Return results(0)
+                Return New FormulaMatrix(rows, columns, results)
+            End Function
+
+            Private Function LegacyLookupValue(needle As Object, resultIndex As Object, lookupMode As Object,
+                                               keys As Object(), resultCount As Integer,
+                                               selectValue As Func(Of Integer, Integer, Object)) As Object
+                If TypeOf needle Is FormulaError Then Return needle
+                Dim optionValue = LogicalOptionValue(lookupMode)
+                If TypeOf optionValue Is FormulaError Then Return optionValue
+                Dim approximate = DirectCast(optionValue, Boolean)
                 Dim mode = If(approximate, -1, If(TypeOf needle Is String, 2, 0))
-                Dim index = FindLookupIndex(needle, MaterializeRange(keys), mode, reverse:=False, preferLastEqual:=approximate)
-                If index < 0 Then Return New FormulaError("#N/A")
-                Return Scalar(SliceArea(table, index, CInt(columnNumber) - 1, index, CInt(columnNumber) - 1))
+                Dim key = FindLookupIndex(needle, keys, mode, reverse:=False, preferLastEqual:=approximate)
+                If key < 0 Then Return New FormulaError("#N/A")
+
+                Dim indexValue = NumberValue(resultIndex)
+                If TypeOf indexValue Is FormulaError Then Return indexValue
+                Dim index = Math.Truncate(DirectCast(indexValue, Double))
+                If index < 1 Then Return New FormulaError("#VALUE!")
+                If index > resultCount Then Return New FormulaError("#REF!")
+                Return If(selectValue(key, CInt(index) - 1), 0.0)
             End Function
 
             Private Function EvaluateXMatch(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object

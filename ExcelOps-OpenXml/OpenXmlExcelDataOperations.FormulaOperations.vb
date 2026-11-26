@@ -145,7 +145,7 @@ Namespace ExcelOps
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "SUMPRODUCT"
                         Return EvaluateSumProduct(arguments, formulaCell)
-                    Case "MATCH", "INDEX", "VLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
+                    Case "MATCH", "INDEX", "VLOOKUP", "HLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"
                         Return EvaluateSortFunction(name.ToUpperInvariant().Replace("_XLFN.", "").Replace("_XLWS.", ""), arguments, formulaCell)
