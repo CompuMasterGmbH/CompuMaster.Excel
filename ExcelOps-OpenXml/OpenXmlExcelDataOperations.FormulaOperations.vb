@@ -162,6 +162,12 @@ Namespace ExcelOps
                         Return EvaluateGrowthSchedule(arguments, formulaCell)
                     Case "SLN", "SYD", "DB", "DDB", "EFFECT", "NOMINAL", "DOLLARDE", "DOLLARFR"
                         Return EvaluateDepreciationOrRate(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "ERF", "ERFC", "ERF.PRECISE", "_XLFN.ERF.PRECISE", "ERFC.PRECISE", "_XLFN.ERFC.PRECISE",
+                         "PHI", "_XLFN.PHI", "GAUSS", "_XLFN.GAUSS", "NORMSDIST", "NORM.S.DIST", "_XLFN.NORM.S.DIST",
+                         "NORM.DIST", "_XLFN.NORM.DIST", "NORMDIST", "LOGNORM.DIST", "_XLFN.LOGNORM.DIST", "LOGNORMDIST", "STANDARDIZE",
+                         "NORM.S.INV", "_XLFN.NORM.S.INV", "NORMSINV", "NORM.INV", "_XLFN.NORM.INV", "NORMINV",
+                         "LOGNORM.INV", "_XLFN.LOGNORM.INV", "LOGINV", "CONFIDENCE", "CONFIDENCE.NORM", "_XLFN.CONFIDENCE.NORM"
+                        Return EvaluateNormalFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
