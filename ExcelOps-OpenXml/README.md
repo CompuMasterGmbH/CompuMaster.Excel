@@ -64,6 +64,8 @@ Open XML evaluates shared worksheet formulas using the anchor's relative and abs
 
 Worksheet formulas can refer to whole rows or columns. Criteria aggregates inspect stored cells and account for missing cells without allocating the entire referenced range. Other array operations remain subject to their materialization limit.
 
+`LINEST` and `LOGEST` return regression coefficients and optional statistics for one or more predictors. `TREND` and `GROWTH` use the fitted models to evaluate the original or supplied predictors. The evaluator preserves the worksheet's row or column orientation and uses Excel's coefficient order.
+
 ### Automatic calculation after value edits
 
 Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.

@@ -148,6 +148,8 @@ Namespace ExcelOps
                         Return EvaluateBahtText(arguments, formulaCell)
                     Case "EUROCONVERT", "_XLFN.EUROCONVERT"
                         Return EvaluateEuroConvert(arguments, formulaCell)
+                    Case "LINEST", "LOGEST", "TREND", "GROWTH"
+                        Return EvaluateRegression(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "FREQUENCY"
                         Return EvaluateFrequency(arguments, formulaCell)
                     Case "PROB"
