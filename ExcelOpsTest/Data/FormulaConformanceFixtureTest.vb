@@ -101,6 +101,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits functions", 713)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits arrays", 23)>
     <TestCase("FormulaReferenceGermanText1900.xlsx", "German formula text", 34)>
+    <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis functions", 1657)>
+    <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis arrays", 159)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -226,6 +228,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 78)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 1120)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits arrays", 46)>
+    <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis arrays", 325)>
     Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)

@@ -202,6 +202,9 @@ Namespace ExcelOps
                         Return EvaluateShapeStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "FISHER", "FISHERINV", "SQRTPI"
                         Return EvaluateFisherTransform(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "CHISQ.TEST", "_XLFN.CHISQ.TEST", "CHITEST", "F.TEST", "_XLFN.F.TEST", "FTEST",
+                         "T.TEST", "_XLFN.T.TEST", "TTEST", "Z.TEST", "_XLFN.Z.TEST", "ZTEST"
+                        Return EvaluateHypothesisTest(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
