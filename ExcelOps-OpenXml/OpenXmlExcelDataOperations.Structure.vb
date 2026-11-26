@@ -354,19 +354,23 @@ Namespace ExcelOps
         ''' <remarks>Supports automatic updates of sheet qualifiers for the workbook structures documented by this engine.</remarks>
         Public Overrides Sub RenameWorksheet(sheetName As String, newSheetName As String, updateFormulasAndReferences As Boolean)
             ValidateFormulaReferenceUpdateRequest(updateFormulasAndReferences)
-            If newSheetName Is Nothing Then Throw New ArgumentNullException(NameOf(newSheetName))
+            ValidateNewWorksheetName(newSheetName, NameOf(newSheetName))
+            ApplyStructuralEdit(sheetName, Nothing, newSheetName)
+        End Sub
+
+        Private Shared Sub ValidateNewWorksheetName(newSheetName As String, parameter As String)
+            If newSheetName Is Nothing Then Throw New ArgumentNullException(parameter)
             If newSheetName.Length = 0 OrElse newSheetName.Length > 31 OrElse
                newSheetName.IndexOfAny(InvalidWorksheetNameCharacters) >= 0 OrElse
                newSheetName(0) = "'"c OrElse newSheetName(newSheetName.Length - 1) = "'"c OrElse
                newSheetName.Any(Function(character) Char.IsControl(character)) Then
-                Throw New ArgumentException("The requested name is not a valid Excel worksheet name.", NameOf(newSheetName))
+                Throw New ArgumentException("The requested name is not a valid Excel worksheet name.", parameter)
             End If
             Try
                 System.Xml.XmlConvert.VerifyXmlChars(newSheetName)
             Catch ex As System.Xml.XmlException
-                Throw New ArgumentException("The requested name contains characters that cannot be stored in an XLSX workbook.", NameOf(newSheetName), ex)
+                Throw New ArgumentException("The requested name contains characters that cannot be stored in an XLSX workbook.", parameter, ex)
             End Try
-            ApplyStructuralEdit(sheetName, Nothing, newSheetName)
         End Sub
 
         Private Shared ReadOnly InvalidWorksheetNameCharacters As Char() = {":"c, "\"c, "/"c, "?"c, "*"c, "["c, "]"c}
@@ -630,14 +634,54 @@ Namespace ExcelOps
         End Sub
 
         Private Function ShiftColumnLayout(source As Columns, shift As StructuralShift, hasFilter As Boolean) As Columns
+            Dim widths = ReadColumnLayouts(source)
+
+            If Not shift.Inserting AndAlso hasFilter AndAlso Not LoadOptions.AllowKnownStructuralReferenceDifferences AndAlso
+               widths.Skip(shift.Start).Take(shift.Count).All(Function(column) If(column?.Hidden?.Value, False)) Then
+                Throw New StructuralReferenceCompatibilityException(EngineName,
+                    "Excel refuses to remove columns when every selected column is hidden and a table filter is active on the worksheet")
+            End If
+
+            Dim inserted As Column = Nothing
+            If shift.Inserting AndAlso shift.Start > 0 Then
+                Dim left = widths(shift.Start - 1)
+                Dim right = widths(shift.Start)
+                If left IsNot Nothing Then
+                    ' Excel inherits width and style from the left, but extends an outline only inside the group.
+                    Dim level = System.Math.Min(If(left.OutlineLevel?.Value, CByte(0)), If(right?.OutlineLevel?.Value, CByte(0)))
+                    If If(left.Width?.Value, 0.0) > 0.0 OrElse If(left.Style?.Value, 0UI) > 0 OrElse level > 0 Then
+                        inserted = DirectCast(left.CloneNode(False), Column)
+                        inserted.Hidden = Nothing
+                        inserted.Collapsed = Nothing
+                        inserted.OutlineLevel = If(level > 0, New ByteValue(level), Nothing)
+                    End If
+                End If
+            End If
+
+            Dim updated(ColumnCount - 1) As Column
+            Dim offset = If(shift.Inserting, -shift.Count, shift.Count)
+            For index = 0 To updated.Length - 1
+                If index < shift.Start Then
+                    updated(index) = widths(index)
+                ElseIf shift.Inserting AndAlso index < shift.Start + shift.Count Then
+                    updated(index) = inserted
+                ElseIf index + offset < ColumnCount Then
+                    updated(index) = widths(index + offset)
+                End If
+            Next
+            Return BuildColumnLayouts(source, updated)
+        End Function
+
+        Private Function ReadColumnLayouts(source As Columns) As Column()
             Dim widths(ColumnCount - 1) As Column
-            Dim supportedAttributes = {"min", "max", "width", "customWidth", "hidden"}
+            Dim supportedAttributes = {"min", "max", "width", "customWidth", "hidden", "style", "outlineLevel", "collapsed", "bestFit", "phonetic"}
             Dim lastColumn As UInteger = 0
+            If source Is Nothing Then Return widths
             For Each item In source.ChildElements
                 Dim column = TryCast(item, Column)
                 If column Is Nothing OrElse column.GetAttributes().Any(Function(attribute) attribute.NamespaceUri <> "" OrElse
                     Not supportedAttributes.Contains(attribute.LocalName)) Then
-                    Throw UnsupportedOperation("Shifting whole columns with unsupported width, style or outline information")
+                    Throw UnsupportedOperation("Editing unsupported column layout information")
                 End If
                 Dim first = column.Min?.Value
                 Dim last = column.Max?.Value
@@ -650,49 +694,14 @@ Namespace ExcelOps
                 Next
                 lastColumn = last.Value
             Next
-
-            If Not shift.Inserting AndAlso hasFilter AndAlso Not LoadOptions.AllowKnownStructuralReferenceDifferences AndAlso
-               widths.Skip(shift.Start).Take(shift.Count).All(Function(column) If(column?.Hidden?.Value, False)) Then
-                Throw New StructuralReferenceCompatibilityException(EngineName,
-                    "Excel refuses to remove columns when every selected column is hidden and a table filter is active on the worksheet")
-            End If
-
-            Dim inserted = If(shift.Inserting AndAlso shift.Start > 0, widths(shift.Start - 1), Nothing)
-            If If(inserted?.Width?.Value, 0.0) > 0.0 Then
-                ' Excel inherits the width from the left while the new columns remain visible.
-                inserted = DirectCast(inserted.CloneNode(False), Column)
-                inserted.Hidden = Nothing
-            Else
-                inserted = Nothing
-            End If
-
-            Dim result = DirectCast(source.CloneNode(False), Columns)
-            Dim previous As Column = Nothing
-            Dim offset = If(shift.Inserting, -shift.Count, shift.Count)
-            For index = 0 To ColumnCount - 1
-                Dim layout As Column = Nothing
-                If index < shift.Start Then
-                    layout = widths(index)
-                ElseIf shift.Inserting AndAlso index < shift.Start + shift.Count Then
-                    layout = inserted
-                ElseIf index + offset < ColumnCount Then
-                    layout = widths(index + offset)
-                End If
-                If layout Is Nothing Then
-                    previous = Nothing
-                ElseIf previous IsNot Nothing AndAlso Nullable.Equals(previous.Width?.Value, layout.Width?.Value) AndAlso
-                    Nullable.Equals(previous.CustomWidth?.Value, layout.CustomWidth?.Value) AndAlso
-                    Nullable.Equals(previous.Hidden?.Value, layout.Hidden?.Value) Then
-                    previous.Max = CUInt(index + 1)
-                Else
-                    previous = DirectCast(layout.CloneNode(False), Column)
-                    previous.Min = CUInt(index + 1)
-                    previous.Max = previous.Min.Value
-                    result.Append(previous)
-                End If
-            Next
-            Return result
+            Return widths
         End Function
+
+        Private Shared Function SameColumnLayout(first As Column, second As Column) As Boolean
+            Return first.GetAttributes().Where(Function(attribute) attribute.LocalName <> "min" AndAlso attribute.LocalName <> "max").
+                SequenceEqual(second.GetAttributes().Where(Function(attribute) attribute.LocalName <> "min" AndAlso attribute.LocalName <> "max"))
+        End Function
+
 
         Private Shared Function ReadStructuralRange(reference As String) As (First As ReferenceEndpoint, Last As ReferenceEndpoint)
             If String.IsNullOrEmpty(reference) OrElse reference.IndexOf("$"c) >= 0 Then

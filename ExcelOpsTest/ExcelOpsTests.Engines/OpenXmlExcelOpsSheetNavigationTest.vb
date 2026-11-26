@@ -68,4 +68,52 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub AddsAndRemovesSheetsWithExcelReferenceAndViewUpdates()
+        Dim input = Path.Combine(_directory, "sheet-lifecycle.xlsx")
+        Dim output = Path.Combine(_directory, "sheet-lifecycle-out.xlsx")
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(input))
+            Dim kept = package.Workbook.Worksheets.Add("Kept")
+            Dim removed = package.Workbook.Worksheets.Add("Removed")
+            package.Workbook.Worksheets.Add("Tail")
+            removed.Cells("A1").Value = 12
+            kept.Cells("A1").Formula = "Removed!A1"
+            kept.Cells("A2").Formula = "SUM(Removed!A1:B2)"
+            kept.Cells("A3").Formula = "INDIRECT(""Removed!A1"")"
+            package.Workbook.Names.Add("RemovedReference", removed.Cells("A1"))
+            package.Save()
+        End Using
+        Using document = SpreadsheetDocument.Open(input, True)
+            document.WorkbookPart.Workbook.DefinedNames.Append(New DefinedName("$A$1") With {.Name = "TailLocal", .LocalSheetId = 2UI})
+        End Using
+
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False, .DisableInitialCalculation = True}
+        Using workbook As New OpenXmlExcelDataOperations(input, OpenMode.OpenExistingFile, options)
+            workbook.AddSheet("Inserted", "Removed")
+            Assert.That(workbook.SheetNames(), [Is].EqualTo({"Kept", "Inserted", "Removed", "Tail"}))
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Inserted"))
+            Assert.Throws(Of ArgumentException)(Sub() workbook.AddSheet("iNsErTeD", "Removed"))
+            workbook.WriteCellValue("Inserted", 0, 0, 7)
+            workbook.SelectSheet("Removed")
+            workbook.RemoveSheet("Removed")
+            Assert.That(workbook.SheetNames(), [Is].EqualTo({"Kept", "Inserted", "Tail"}))
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Tail"))
+            Assert.That(workbook.LookupCellFormula(New ExcelCell("Kept", "A1", ExcelCell.ValueTypes.All)), [Is].EqualTo("#REF!A1"))
+            Assert.That(workbook.LookupCellFormula(New ExcelCell("Kept", "A2", ExcelCell.ValueTypes.All)), [Is].EqualTo("SUM(#REF!A1:B2)"))
+            Assert.That(workbook.LookupCellFormula(New ExcelCell("Kept", "A3", ExcelCell.ValueTypes.All)), [Is].EqualTo("INDIRECT(""Removed!A1"")"))
+            Assert.That(workbook.LookupCellValue(Of Integer)("Inserted", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(7))
+            workbook.RecalculateAll()
+            Assert.That(workbook.LookupCellValueAsObject("Kept", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("#REF!"))
+            workbook.SaveCopyAs(output, False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim book = document.WorkbookPart
+            Dim names = book.Workbook.DefinedNames.Elements(Of DefinedName)().ToDictionary(Function(item) item.Name.Value)
+            Assert.That(names("RemovedReference").Text, [Is].EqualTo("#REF!$A$1"))
+            Assert.That(names("TailLocal").LocalSheetId.Value, [Is].EqualTo(2UI))
+            Assert.That(book.WorksheetParts.Count(), [Is].EqualTo(3))
+        End Using
+    End Sub
+
+
 End Class

@@ -11,7 +11,7 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaParser
             Private Shared ReadOnly TokenPattern As New Regex(
-                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$[1-9][0-9]{0,6}|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!{};])",
+                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#REF!(?:\$?[A-Z]{1,3}(?:\$?[1-9][0-9]{0,6})?|\$?[1-9][0-9]{0,6})(?![A-Z0-9_.$])|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$[1-9][0-9]{0,6}|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!{};])",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly CellAddressPattern As New Regex("^\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
@@ -343,13 +343,15 @@ Namespace ExcelOps
             End Function
 
             Private Shared Function IsBrokenReference(token As String) As Boolean
-                Return String.Equals(token, "#REF!", StringComparison.OrdinalIgnoreCase)
+                If Not token.StartsWith("#REF!", StringComparison.OrdinalIgnoreCase) Then Return False
+                Dim suffix = token.Substring(5)
+                Return suffix.Length = 0 OrElse CellAddressPattern.IsMatch(suffix) OrElse WholeColumnAddress.IsMatch(suffix) OrElse WholeRowAddress.IsMatch(suffix)
             End Function
 
             Private Function BrokenReferenceExpression() As FormulaExpression
                 If Match(":") Then
                     Dim last = Consume()
-                    If Not IsBrokenReference(last) AndAlso Not CellAddressPattern.IsMatch(last) AndAlso Not WholeColumnAddress.IsMatch(last) Then
+                    If Not IsBrokenReference(last) AndAlso Not CellAddressPattern.IsMatch(last) AndAlso Not WholeColumnAddress.IsMatch(last) AndAlso Not WholeRowAddress.IsMatch(last) Then
                         Throw New NotSupportedException("Unsupported end of a broken worksheet reference.")
                     End If
                 End If

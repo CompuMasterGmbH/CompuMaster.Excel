@@ -43,7 +43,7 @@ Namespace ExcelOps
                             changed = True
                         End If
                     Next
-                    If changed Then worksheet.Worksheet.Save()
+                    If changed Then SaveWorksheet(worksheet.Worksheet, worksheet)
                     Dim drawing = worksheet.DrawingsPart
                     If drawing IsNot Nothing Then
                         Dim charts = PrepareDrawingChartCopy(drawing, name, CopyWorksheetFormulaMode.ExcelCompatible, rewriteQualifier,
@@ -201,7 +201,7 @@ Namespace ExcelOps
                     SaveChangedParts(WorkbookPart, book, clearCache:=False)
                     edit(book)
                     For Each part In book.WorksheetParts
-                        If ClearFormulaResults(GetSheetData(part)) Then part.Worksheet.Save()
+                        If ClearFormulaResults(GetSheetData(part), book.CellMetadataPart?.Metadata) Then SaveWorksheet(part.Worksheet, part)
                     Next
                     If book.CalculationChainPart IsNot Nothing Then book.DeletePart(book.CalculationChainPart)
                     If book.Workbook.CalculationProperties Is Nothing Then book.Workbook.CalculationProperties = New CalculationProperties()
