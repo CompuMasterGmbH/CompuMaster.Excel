@@ -9,8 +9,10 @@
                 Dim interestOnly = name = "ISPMT"
                 Dim cumulative = name = "CUMIPMT" OrElse name = "CUMPRINC"
                 Dim installment = name = "IPMT" OrElse name = "PPMT"
+                Dim rateEstimate = name = "RATE"
+                Dim growth = name = "RRI" OrElse name = "PDURATION"
                 Dim minimum = If(cumulative, 6, If(interestOnly OrElse installment, 4, 3))
-                Dim maximum = If(cumulative OrElse installment, 6, If(interestOnly, 4, 5))
+                Dim maximum = If(cumulative OrElse installment OrElse rateEstimate, 6, If(interestOnly, 4, If(growth, 3, 5)))
                 If arguments.Count < minimum OrElse arguments.Count > maximum Then Return New FormulaError("#VALUE!")
 
                 Dim evaluated = arguments.Select(Function(argument) EvaluateExpression(argument, formulaCell)).ToArray()
@@ -23,6 +25,7 @@
                 Dim columns = inputs.Max(Function(input) input.Columns)
                 Dim values = AllocateMatrixValues(rows, columns)
                 Dim numbers(5) As Double
+                If rateEstimate AndAlso arguments.Count < 6 Then numbers(5) = 0.1
                 For row = 0 To rows - 1
                     For column = 0 To columns - 1
                         Dim failure As FormulaError = Nothing
@@ -43,6 +46,8 @@
             End Function
 
             Private Shared Function LoanValue(name As String, values As Double()) As Object
+                If name = "RATE" Then Return EstimateLoanRate(values)
+                If name = "RRI" OrElse name = "PDURATION" Then Return ConstantGrowthRate(name, values)
                 If name = "IPMT" OrElse name = "PPMT" Then Return InstallmentComponent(name = "IPMT", values)
                 If name = "CUMIPMT" OrElse name = "CUMPRINC" Then Return AccumulatedInstallments(name = "CUMIPMT", values)
                 Dim rate = values(0)
