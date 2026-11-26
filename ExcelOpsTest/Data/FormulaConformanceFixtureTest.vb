@@ -95,7 +95,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceDiscrete1900.xlsx", "Discrete functions", 1845)>
     <TestCase("FormulaReferenceDiscrete1900.xlsx", "Discrete arrays", 5)>
     <TestCase("FormulaReferenceReferences1900.xlsx", "References functions", 579)>
-    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 40)>
+    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 33)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape functions", 622)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 215)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits functions", 713)>
@@ -138,6 +138,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceOddLast1900.xlsx", "Odd last coupon yield", 1217)>
     <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon price", 1217)>
     <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon yield", 1217)>
+    <TestCase("FormulaReferenceAccrual1900.xlsx", "Accrued periodic interest", 3031)>
+    <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 3031)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
@@ -277,7 +279,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGamma1900.xlsx", "Gamma arrays", 20)>
     <TestCase("FormulaReferenceBeta1900.xlsx", "Beta arrays", 20)>
     <TestCase("FormulaReferenceDiscrete1900.xlsx", "Discrete arrays", 24)>
-    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 78)>
+    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 85)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 1120)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits arrays", 46)>
     <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis arrays", 325)>
@@ -306,6 +308,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceOddLast1900.xlsx", "Odd last coupon yield", 6)>
     <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon price", 6)>
     <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon yield", 6)>
+    <TestCase("FormulaReferenceAccrual1900.xlsx", "Accrued periodic interest", 6)>
+    <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 6)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
     <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>

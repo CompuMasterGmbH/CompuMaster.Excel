@@ -156,6 +156,8 @@ Namespace ExcelOps
                         Return EvaluateCouponSecurity(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ODDLPRICE", "ODDLYIELD"
                         Return EvaluateOddLastCoupon(name.Equals("ODDLYIELD", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "ACCRINT"
+                        Return EvaluateAccruedPeriodicInterest(arguments, formulaCell)
                     Case "PRICEMAT", "YIELDMAT", "ACCRINTM"
                         Return EvaluateMaturityInterest(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "FREQUENCY"
