@@ -265,6 +265,17 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
     <Test>
+    Public Sub CalculatesAFormulaWithMoreThanFiveHundredTokens()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Dim sheet = workbook.SheetNames()(0)
+            Dim formula = "SUM({" & String.Join(",", Enumerable.Repeat("2", 700)) & "})"
+            workbook.WriteCellFormula(sheet, 0, 0, formula, immediatelyCalculateCellValue:=True)
+            Assert.That(workbook.LookupCellValue(Of Integer)(sheet, 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(1400))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub WritesFormulaAndSwitchesActiveTabWhenHidingIt()
         Dim template = Path.Combine(_directory, "template.xlsx")
         Dim output = Path.Combine(_directory, "edited.xlsx")

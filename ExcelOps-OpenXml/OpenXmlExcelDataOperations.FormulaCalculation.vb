@@ -62,6 +62,15 @@ Namespace ExcelOps
             RecalculateCell(sheetName, rowIndex, columnIndex, throwExceptionOnCalculationError:=False)
         End Sub
 
+        Private Shared Function HasFormulaStackSpace() As Boolean
+            Try
+                RuntimeHelpers.EnsureSufficientExecutionStack()
+                Return True
+            Catch ex As InsufficientExecutionStackException
+                Return False
+            End Try
+        End Function
+
         Private Shared Sub ThrowIfFormulaError(sheetName As String, rowIndex As Integer, columnIndex As Integer, result As Object)
             If Not TypeOf result Is FormulaError Then Return
             Dim address As New ExcelCell(sheetName, rowIndex, columnIndex, ExcelCell.ValueTypes.All)
@@ -237,15 +246,6 @@ Namespace ExcelOps
                 Finally
                     If _run.TrackDependencies Then _run.Frames.Pop()
                     _run.Active.Pop()
-                End Try
-            End Function
-
-            Private Shared Function HasFormulaStackSpace() As Boolean
-                Try
-                    RuntimeHelpers.EnsureSufficientExecutionStack()
-                    Return True
-                Catch ex As InsufficientExecutionStackException
-                    Return False
                 End Try
             End Function
 

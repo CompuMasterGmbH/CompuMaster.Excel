@@ -11,10 +11,12 @@ Namespace ExcelOps
 
         Private NotInheritable Class FormulaParser
             Private Shared ReadOnly TokenPattern As New Regex(
-                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!{};])",
+                "\G\s*(""(?:[^""]|"""")*""|'(?:[^']|'')*'|#[A-Z0-9/?!._]+|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][+-]?[0-9]+)?|\[[0-9]+\][A-Z_][A-Z0-9_.$]*|\$[1-9][0-9]{0,6}|\$?[A-Z_][A-Z0-9_.$]*|<=|>=|<>|[=<>+\-*/^&%(),:!{};])",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
             Private Shared ReadOnly CellAddressPattern As New Regex("^\$?[A-Z]{1,3}\$?[1-9][0-9]{0,6}$",
                 RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+            Private Shared ReadOnly WholeColumnAddress As New Regex("^\$?[A-Z]{1,3}$", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+            Private Shared ReadOnly WholeRowAddress As New Regex("^\$?[1-9][0-9]{0,6}$", RegexOptions.CultureInvariant)
             Private Shared ReadOnly UnsupportedSheetCharacters As Char() = {"["c, "]"c, ":"c}
             Private Shared ReadOnly CatalogFunctionNames As New Lazy(Of HashSet(Of String))(AddressOf ReadCatalogFunctionNames)
             Private ReadOnly _tokens As New List(Of String)
@@ -32,13 +34,15 @@ Namespace ExcelOps
                 End If
                 formula = formula.Trim()
                 If formula.Length > 0 AndAlso formula(0) = "="c Then formula = formula.Substring(1).Trim()
+                ' Excel permits 8,192 characters in worksheet formula contents.
+                If formula.Length > 8192 Then Throw New NotSupportedException("This formula exceeds the Excel formula length limit.")
                 Dim offset = 0
                 While offset < formula.Length
                     Dim token = TokenPattern.Match(formula, offset)
                     If Not token.Success Then Throw New NotSupportedException("Unsupported formula syntax at character " & (offset + 1).ToString(CultureInfo.InvariantCulture) & ".")
                     _tokens.Add(token.Groups(1).Value)
                     If _storagePrefixes IsNot Nothing Then _tokenStarts.Add(token.Groups(1).Index)
-                    If _tokens.Count > 512 Then Throw New NotSupportedException("This formula exceeds the supported expression size.")
+
                     offset += token.Length
                 End While
             End Sub
@@ -95,6 +99,7 @@ Namespace ExcelOps
             End Sub
 
             Private Function ParseExpression(minimumPrecedence As Integer) As FormulaExpression
+                If Not HasFormulaStackSpace() Then Throw New NotSupportedException("The nested formula expression exceeds the supported parsing depth.")
                 Dim left = ParsePrimary()
                 While Match("(")
                     Dim callable = left
@@ -171,6 +176,8 @@ Namespace ExcelOps
                     Return ParseFunction(token)
                 End If
 
+                Dim wholeAxis = TryParseWholeAxis(Nothing, token, Nothing)
+                If wholeAxis IsNot Nothing Then Return wholeAxis
                 If Char.IsDigit(token(0)) OrElse token(0) = "."c Then
                     Dim value = ReadNumberLiteral(token)
                     Return Function(calculation, formulaCell) value
@@ -286,8 +293,31 @@ Namespace ExcelOps
 
             Private Function ParseReferenceOrName(sheetName As String, token As String, workbookIndex As Integer?) As FormulaExpression
                 If CellAddressPattern.IsMatch(token) Then Return ParseReference(sheetName, token, workbookIndex)
+                Dim wholeAxis = TryParseWholeAxis(sheetName, token, workbookIndex)
+                If wholeAxis IsNot Nothing Then Return wholeAxis
                 If workbookIndex.HasValue Then Throw New NotSupportedException("External defined names are outside the supported calculation scope.")
                 Return Function(calculation, formulaCell) calculation.EvaluateDefinedName(token, sheetName, formulaCell)
+            End Function
+
+            Private Function TryParseWholeAxis(sheetName As String, first As String, workbookIndex As Integer?) As FormulaExpression
+                If Current <> ":" Then Return Nothing
+                Dim columns = WholeColumnAddress.IsMatch(first)
+                If Not columns AndAlso Not WholeRowAddress.IsMatch(first) Then Return Nothing
+                Expect(":")
+                Dim last = Consume()
+                Dim pattern = If(columns, WholeColumnAddress, WholeRowAddress)
+                If Not pattern.IsMatch(last) Then Throw New NotSupportedException("Invalid whole-row or whole-column reference.")
+                If _requireAbsoluteReferences AndAlso (first(0) <> "$"c OrElse last(0) <> "$"c) Then
+                    Throw New NotSupportedException("Relative references inside a defined name are outside the supported calculation scope.")
+                End If
+
+                Dim firstName = first.Replace("$", "")
+                Dim lastName = last.Replace("$", "")
+                Dim firstCell = New ExcelCell(Nothing, If(columns, firstName & "1", "A" & firstName), ExcelCell.ValueTypes.All)
+                Dim lastCell = New ExcelCell(Nothing, If(columns, lastName & "1048576", "XFD" & lastName), ExcelCell.ValueTypes.All)
+                ValidateCoordinates(firstCell.RowIndex, firstCell.ColumnIndex)
+                ValidateCoordinates(lastCell.RowIndex, lastCell.ColumnIndex)
+                Return Function(calculation, formulaCell) New FormulaArea(If(sheetName, formulaCell.SheetName), firstCell, lastCell, workbookIndex)
             End Function
 
             Private Function ParseReference(sheetName As String, first As String, workbookIndex As Integer?) As FormulaExpression

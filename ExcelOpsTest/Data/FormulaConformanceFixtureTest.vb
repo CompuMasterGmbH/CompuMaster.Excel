@@ -129,6 +129,8 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 38)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 43)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit catalog", 144)>
+    <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 42)>
+    <TestCase("FormulaReferenceAxes1900.xlsx", "Other worksheet", 8)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
