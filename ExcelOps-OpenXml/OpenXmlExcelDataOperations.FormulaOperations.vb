@@ -188,6 +188,13 @@ Namespace ExcelOps
                          "SHEET", "_XLFN.SHEET", "SHEETS", "_XLFN.SHEETS",
                          "ISFORMULA", "_XLFN.ISFORMULA", "FORMULATEXT", "_XLFN.FORMULATEXT"
                         Return EvaluateReferenceUtility(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "EXPAND", "_XLFN.EXPAND", "TOCOL", "_XLFN.TOCOL", "TOROW", "_XLFN.TOROW",
+                         "WRAPCOLS", "_XLFN.WRAPCOLS", "WRAPROWS", "_XLFN.WRAPROWS", "TRIMRANGE", "_XLFN.TRIMRANGE"
+                        Return EvaluateReshape(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "PERCENTOF", "_XLFN.PERCENTOF"
+                        Return EvaluatePercentOf(arguments, formulaCell)
+                    Case "LOOKUP"
+                        Return EvaluateClassicLookup(arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"

@@ -4,6 +4,75 @@
 
         Private NotInheritable Partial Class FormulaCalculation
 
+            Private Function EvaluateClassicLookup(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+                If arguments.Count < 2 OrElse arguments.Count > 3 Then Return New FormulaError("#VALUE!")
+                Dim needle = EvaluateExpression(arguments(0), formulaCell)
+                If TypeOf needle Is FormulaError Then Return needle
+                Dim input = EvaluateExpression(arguments(1), formulaCell)
+                If TypeOf input Is FormulaError Then Return input
+                Dim table = AsMatrix(input)
+                Dim vertical = table.Rows >= table.Columns
+                Dim count = If(vertical, table.Rows, table.Columns)
+                Dim keys = Enumerable.Range(0, count).Select(Function(index) If(vertical, table.At(index, 0), table.At(0, index))).ToArray()
+
+                Dim selectValue As Func(Of Integer, Object)
+                If arguments.Count = 2 Then
+                    selectValue = Function(index) If(vertical, table.At(index, table.Columns - 1), table.At(table.Rows - 1, index))
+                Else
+                    Dim result = EvaluateExpression(arguments(2), formulaCell)
+                    If TypeOf result Is FormulaError Then Return result
+                    Dim area = TryCast(result, FormulaArea)
+                    If area IsNot Nothing Then
+                        selectValue = Function(index) ClassicLookupAreaValue(area, index)
+                    Else
+                        Dim values = AsMatrix(result)
+                        Dim byRow = values.Rows >= values.Columns
+                        Dim length = If(byRow, values.Rows, values.Columns)
+                        selectValue = Function(index) If(index >= length, CObj(New FormulaError("#N/A")),
+                            If(byRow, values.At(index, 0), values.At(0, index)))
+                    End If
+                End If
+
+                Dim positions = Enumerable.Range(0, keys.Length).Where(Function(index) keys(index) IsNot Nothing AndAlso
+                    Not TypeOf keys(index) Is FormulaError).GroupBy(Function(index) keys(index).GetType()).
+                    ToDictionary(Function(group) group.Key, Function(group) group.ToArray())
+                If Not IsMultiValue(needle) Then Return ClassicLookupMatch(Scalar(needle), keys, positions, selectValue)
+                Dim queries = AsMatrix(needle)
+                Dim results = queries.Values.Select(Function(value) ClassicLookupMatch(value, keys, positions, selectValue)).ToArray()
+                Return New FormulaMatrix(queries.Rows, queries.Columns, results)
+            End Function
+
+            Private Function ClassicLookupAreaValue(area As FormulaArea, index As Integer) As Object
+                Dim rows = area.LastRow - area.FirstRow + 1
+                Dim columns = area.LastColumn - area.FirstColumn + 1
+                If rows = 1 AndAlso columns = 1 AndAlso index > 0 Then Return 0.0
+                Dim vertical = rows >= columns
+                Dim row = If(vertical, index, 0)
+                Dim column = If(vertical, 0, index)
+                If area.FirstRow + row >= RowCount OrElse area.FirstColumn + column >= ColumnCount Then Return New FormulaError("#REF!")
+                Return If(Scalar(SliceArea(area, row, column, row, column)), 0.0)
+            End Function
+
+            Private Shared Function ClassicLookupMatch(needle As Object, keys As Object(), positions As Dictionary(Of Type, Integer()),
+                                                       selectValue As Func(Of Integer, Object)) As Object
+                If TypeOf needle Is FormulaError Then Return needle
+                needle = If(needle, 0.0)
+                Dim candidates As Integer() = Nothing
+                If Not positions.TryGetValue(needle.GetType(), candidates) Then Return New FormulaError("#N/A")
+                Dim first = 0
+                Dim last = candidates.Length
+                While first < last
+                    Dim middle = first + (last - first) \ 2
+                    If EvaluateComparison("<=", keys(candidates(middle)), needle) Then
+                        first = middle + 1
+                    Else
+                        last = middle
+                    End If
+                End While
+                If first = 0 Then Return New FormulaError("#N/A")
+                Return If(selectValue(candidates(first - 1)), 0.0)
+            End Function
+
             Private Function EvaluateLookupFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
                                                      formulaCell As ExcelCell) As Object
                 Select Case name

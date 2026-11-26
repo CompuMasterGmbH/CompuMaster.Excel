@@ -290,13 +290,7 @@ Namespace ExcelOps
                     Yield New FormulaError("#REF!")
                     Return
                 End If
-                For Each spill In worksheet.SpillAnchors.Values
-                    If spill.First.Row <= area.LastRow AndAlso spill.Last.Row >= area.FirstRow AndAlso
-                       spill.First.Column <= area.LastColumn AndAlso spill.Last.Column >= area.FirstColumn AndAlso
-                       Not source._run.Active.Contains(worksheet.Cells((spill.First.Row, spill.First.Column))) Then
-                        source.ReadCell(worksheet.Name, spill.First.Row, spill.First.Column, trackRead:=False)
-                    End If
-                Next
+                RecalculateReferencedSpills(source, worksheet, area)
                 Dim addresses = worksheet.Cells.Keys.AsEnumerable()
                 If worksheet.SpillChildren.Count > 0 Then addresses = addresses.Concat(worksheet.SpillChildren.Keys).Distinct().ToArray()
                 For Each address In addresses
@@ -306,6 +300,16 @@ Namespace ExcelOps
                     End If
                 Next
             End Function
+
+            Private Shared Sub RecalculateReferencedSpills(source As FormulaCalculation, worksheet As WorksheetSnapshot, area As FormulaArea)
+                For Each spill In worksheet.SpillAnchors.Values
+                    If spill.First.Row <= area.LastRow AndAlso spill.Last.Row >= area.FirstRow AndAlso
+                       spill.First.Column <= area.LastColumn AndAlso spill.Last.Column >= area.FirstColumn AndAlso
+                       Not source._run.Active.Contains(worksheet.Cells((spill.First.Row, spill.First.Column))) Then
+                        source.ReadCell(worksheet.Name, spill.First.Row, spill.First.Column, trackRead:=False)
+                    End If
+                Next
+            End Sub
 
             Private Function ForWorkbook(workbook As OpenXmlExcelDataOperations) As FormulaCalculation
                 Dim calculation As FormulaCalculation = Nothing
