@@ -111,8 +111,8 @@ Namespace ExcelOps
             Private Function FindSparseCriteriaMatches(ranges As List(Of (Area As FormulaArea, Matches As Predicate(Of Object))),
                                                        amounts As FormulaArea, columns As Integer, size As Long,
                                                        ByRef blankMatches As Long) As IEnumerable(Of Object)
-                Dim bindings = ranges.Select(Function(range) (Reader:=BindCriteriaRange(range.Area), Matches:=range.Matches)).ToArray()
-                Dim output = If(amounts Is Nothing, Nothing, BindCriteriaRange(amounts))
+                Dim bindings = ranges.Select(Function(range) (Reader:=BindSparseRange(range.Area), Matches:=range.Matches)).ToArray()
+                Dim output = If(amounts Is Nothing, Nothing, BindSparseRange(amounts))
                 Dim locations As New HashSet(Of Long)
                 If output IsNot Nothing Then
                     output.AddStoredPositions(locations, columns)
@@ -130,8 +130,8 @@ Namespace ExcelOps
                 Return SparseCriteriaMatches(bindings, output, locations.OrderBy(Function(index) index), columns)
             End Function
 
-            Private Iterator Function SparseCriteriaMatches(ranges As (Reader As CriteriaRangeReader, Matches As Predicate(Of Object))(),
-                                                            amounts As CriteriaRangeReader, candidates As IEnumerable(Of Long),
+            Private Iterator Function SparseCriteriaMatches(ranges As (Reader As SparseRangeReader, Matches As Predicate(Of Object))(),
+                                                            amounts As SparseRangeReader, candidates As IEnumerable(Of Long),
                                                             columns As Integer) As IEnumerable(Of Object)
                 For Each index In candidates
                     Dim row = CInt(index \ columns)
@@ -142,16 +142,16 @@ Namespace ExcelOps
                 Next
             End Function
 
-            Private Function BindCriteriaRange(area As FormulaArea) As CriteriaRangeReader
+            Private Function BindSparseRange(area As FormulaArea) As SparseRangeReader
                 Dim source = ResolveReference(area)
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not source._worksheets.TryGetValue(area.Sheet, worksheet) Then Throw New NotSupportedException("The referenced worksheet is unavailable.")
                 RecordPrecedent(New FormulaPrecedent(New FormulaLocation(source._owner, area.Sheet, area.FirstRow, area.FirstColumn), area.LastRow, area.LastColumn))
                 RecalculateReferencedSpills(source, worksheet, area)
-                Return New CriteriaRangeReader(source, worksheet, area)
+                Return New SparseRangeReader(source, worksheet, area)
             End Function
 
-            Private NotInheritable Class CriteriaRangeReader
+            Private NotInheritable Class SparseRangeReader
                 Private ReadOnly _source As FormulaCalculation
                 Private ReadOnly _worksheet As WorksheetSnapshot
                 Private ReadOnly _area As FormulaArea

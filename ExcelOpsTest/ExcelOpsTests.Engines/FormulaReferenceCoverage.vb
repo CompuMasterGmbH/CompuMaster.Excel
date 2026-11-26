@@ -137,6 +137,10 @@ Namespace ExcelOpsTests.Engines
         End Function
 
         Friend Shared Function ReferenceNumberTolerance(expected As Double, fileName As String, sheetName As String) As Double
+            If fileName.StartsWith("FormulaReferenceBonds", StringComparison.Ordinal) AndAlso sheetName = "Bond yields" Then
+                ' Excel and the engine stop the numerical yield inversion at different points.
+                Return 1.0E-10
+            End If
             If fileName = "FormulaReferenceEngineering1900.xlsx" AndAlso sheetName = "Bessel J values" Then
                 ' Excel differs from the managed Bessel J function near the x = 8 approximation boundary.
                 Return Math.Max(5.0E-9, Math.Abs(expected) * 4.0E-5)

@@ -150,6 +150,10 @@ Namespace ExcelOps
                         Return EvaluateEuroConvert(arguments, formulaCell)
                     Case "LINEST", "LOGEST", "TREND", "GROWTH"
                         Return EvaluateRegression(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "COUPDAYBS", "COUPDAYS", "COUPDAYSNC", "COUPNCD", "COUPNUM", "COUPPCD", "DURATION", "MDURATION", "PRICE", "YIELD"
+                        Return EvaluateCouponSecurity(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "PRICEMAT", "YIELDMAT", "ACCRINTM"
+                        Return EvaluateMaturityInterest(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "FREQUENCY"
                         Return EvaluateFrequency(arguments, formulaCell)
                     Case "PROB"

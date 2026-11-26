@@ -129,10 +129,18 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 38)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 43)>
     <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit catalog", 144)>
-    <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 42)>
+    <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
     <TestCase("FormulaReferenceAxes1900.xlsx", "Other worksheet", 8)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 210)>
     <TestCase("FormulaReferenceRegression1900.xlsx", "Forecast values", 230)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Coupon periods", 1140)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Bond valuations", 429)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Interest at maturity", 540)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Bond yields", 143)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Coupon periods", 1140)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Bond valuations", 429)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Interest at maturity", 540)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Bond yields", 143)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>

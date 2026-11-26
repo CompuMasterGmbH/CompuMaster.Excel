@@ -66,6 +66,8 @@ Worksheet formulas can refer to whole rows or columns. Criteria aggregates inspe
 
 `LINEST` and `LOGEST` return regression coefficients and optional statistics for one or more predictors. `TREND` and `GROWTH` use the fitted models to evaluate the original or supplied predictors. The evaluator preserves the worksheet's row or column orientation and uses Excel's coefficient order.
 
+The coupon functions calculate scheduled payment dates and day counts. `PRICE`, `YIELD`, `DURATION` and `MDURATION` support annual, semiannual and quarterly coupons. `PRICEMAT`, `YIELDMAT` and `ACCRINTM` handle securities that pay interest at maturity. These functions use the workbook's 1900 or 1904 date system and the measured date conventions for each function. `MATCH` can search a whole column without materializing its empty cells.
+
 ### Automatic calculation after value edits
 
 Set `CalculateOnCellEdit = true` and enable the calculation engine to opt in to recalculating after `WriteCellValue`. The workbook's automatic calculation setting controls when this happens. In manual mode, value edits retain the previous formula caches until a recalculation is requested. The existing formula-write argument still controls whether a formula write calculates immediately.

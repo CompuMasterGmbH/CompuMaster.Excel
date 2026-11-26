@@ -131,8 +131,6 @@
                 If TypeOf needle Is FormulaError Then Return needle
                 Dim input = EvaluateExpression(arguments(1), formulaCell)
                 If TypeOf input Is FormulaError Then Return input
-                Dim keys = AsMatrix(input)
-                If keys.Rows > 1 AndAlso keys.Columns > 1 Then Return New FormulaError("#N/A")
 
                 Dim mode = 1.0
                 If arguments.Count = 3 Then
@@ -142,8 +140,29 @@
                 End If
                 If Math.Abs(mode) > 1.0 Then Return New FormulaError("#N/A")
                 Dim matchMode = If(mode = 0, If(TypeOf needle Is String, 2, 0), -CInt(mode))
-                Dim index = FindLookupIndex(needle, keys.Values, matchMode, reverse:=False, preferLastEqual:=mode <> 0)
+                Dim area = TryCast(input, FormulaArea)
+                If area IsNot Nothing AndAlso area.FirstRow <> area.LastRow AndAlso area.FirstColumn <> area.LastColumn Then Return New FormulaError("#N/A")
+                Dim index As Integer
+                If area IsNot Nothing AndAlso Math.Max(area.LastRow - area.FirstRow + 1,
+                                                       area.LastColumn - area.FirstColumn + 1) > MaxMaterializedReferenceCells Then
+                    index = MatchSparseVector(needle, area, matchMode, preferLastEqual:=mode <> 0)
+                Else
+                    Dim keys = AsMatrix(input)
+                    If keys.Rows > 1 AndAlso keys.Columns > 1 Then Return New FormulaError("#N/A")
+                    index = FindLookupIndex(needle, keys.Values, matchMode, reverse:=False, preferLastEqual:=mode <> 0)
+                End If
                 Return If(index < 0, CType(New FormulaError("#N/A"), Object), CDbl(index + 1))
+            End Function
+
+            Private Function MatchSparseVector(needle As Object, area As FormulaArea, mode As Integer, preferLastEqual As Boolean) As Integer
+                Dim reader = BindSparseRange(area)
+                Dim columns = area.LastColumn - area.FirstColumn + 1
+                Dim offsets As New HashSet(Of Long)
+                reader.AddStoredPositions(offsets, columns)
+                Dim sorted = offsets.OrderBy(Function(offset) offset).ToArray()
+                Dim values = sorted.Select(Function(offset) reader.Read(CInt(offset \ columns), CInt(offset Mod columns))).ToArray()
+                Dim selected = FindLookupIndex(needle, values, mode, reverse:=False, preferLastEqual:=preferLastEqual)
+                Return If(selected < 0, -1, CInt(sorted(selected)))
             End Function
 
             Private Function EvaluateLegacyLookup(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
