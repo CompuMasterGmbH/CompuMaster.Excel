@@ -35,6 +35,8 @@ workbook.SaveCopyAs("filled.xlsx", SaveOptionsForDisabledCalculationEngines.NoRe
 
 ## Formula calculation
 
+`GETPIVOTDATA` reads visible aggregate values from saved worksheet-based pivot tables by data field and visible row or column item. It supports multiple measures and sheet-qualified pivot references. Refresh the pivot table in a compatible engine when its source data changes. Report-filter fields, grouped-field lookups and OLAP pivots require a different engine.
+
 Enable the evaluator by setting `ExcelDataOperationsOptions.DisableCalculationEngine` to `false`. Opening a workbook still preserves its caches by default. Set `DisableInitialCalculation` to `false` as well to recalculate on open.
 
 With the evaluator enabled, call `RecalculateCell`, `RecalculateSheet` or `RecalculateAll` to refresh results, or use `FormulaCalculationMode.CalculateIfMissing` for a cell lookup or HTML export. `CalculateIfMissing` uses an existing result for the requested cell. When it calculates a missing result, it also refreshes any evaluated formula precedents. An explicit calculation attempt with the evaluator disabled raises `FeatureDisabledException`. On save, pass `recalculateWorkbook: false` to preserve the current caches without requesting calculation after edits.

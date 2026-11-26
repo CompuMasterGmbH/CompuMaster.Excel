@@ -144,6 +144,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 51)>
     <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 75)>
     <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 38)>
+    <TestCase("FormulaReferencePivotTables1900.xlsx", "GETPIVOTDATA", 16)>
     <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon price", 756)>
     <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon yield", 756)>
     <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon price", 756)>

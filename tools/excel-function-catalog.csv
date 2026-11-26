@@ -203,7 +203,7 @@
 "GCD","Math and trigonometry","","","Present","64","https://support.microsoft.com/en-us/excel/functions/gcd-function"
 "GEOMEAN","Statistical","","","Present","21","https://support.microsoft.com/en-us/excel/functions/geomean-function"
 "GESTEP","Engineering","","","Present","145","https://support.microsoft.com/en-us/excel/functions/gestep-function"
-"GETPIVOTDATA","Lookup and reference","","","","0","https://support.microsoft.com/en-us/excel/functions/getpivotdata-function"
+"GETPIVOTDATA","Lookup and reference","","","Present","16","https://support.microsoft.com/en-us/excel/functions/getpivotdata-function"
 "GROUPBY","Lookup and reference","Microsoft 365","_xlfn.GROUPBY","Present","105","https://support.microsoft.com/en-us/excel/functions/groupby-function"
 "GROWTH","Statistical","","","Present","115","https://support.microsoft.com/en-us/excel/functions/growth-function"
 "HARMEAN","Statistical","","","Present","21","https://support.microsoft.com/en-us/excel/functions/harmean-function"
