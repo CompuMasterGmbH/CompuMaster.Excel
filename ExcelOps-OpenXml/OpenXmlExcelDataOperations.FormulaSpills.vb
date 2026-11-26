@@ -7,6 +7,12 @@ Namespace ExcelOps
 
         Private Const SpillErrorCode As String = "#SPILL!"
 
+        Private Shared Function IsSpillPlaceholder(cell As Cell) As Boolean
+            Dim formula = cell?.CellFormula
+            Return formula IsNot Nothing AndAlso String.IsNullOrEmpty(formula.Text) AndAlso If(formula.CalculateCell?.Value, False) AndAlso
+                If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Normal
+        End Function
+
         Private Shared Iterator Function ReadDynamicSpills(metadata As Metadata, cells As IEnumerable(Of Cell)) As IEnumerable(Of SpillArea)
             If metadata Is Nothing Then Return
             For Each cell In cells
@@ -82,6 +88,10 @@ Namespace ExcelOps
                     Return New FormulaError(SpillErrorCode)
                 End If
 
+                If matrix.Values.Any(Function(item) TypeOf item Is FormulaArea) Then
+                    matrix = New FormulaMatrix(matrix.Rows, matrix.Columns, matrix.Values.Select(
+                        Function(item) If(TypeOf item Is FormulaArea, CObj(New FormulaError("#VALUE!")), item)).ToArray())
+                End If
                 worksheet.SpillResults(spill) = matrix
                 For row = spill.First.Row To bottom
                     For column = spill.First.Column To right
@@ -107,8 +117,10 @@ Namespace ExcelOps
                         Dim coordinates = (row, column)
                         Dim cell As Cell = Nothing
                         worksheet.Cells.TryGetValue(coordinates, cell)
-                        If cell?.CellFormula IsNot Nothing OrElse cell?.CellMetaIndex IsNot Nothing OrElse worksheet.SpillChildren.ContainsKey(coordinates) Then Return True
-                        If spill.Contains(row, column) Then Continue For
+                        Dim inPreviousSpill = spill.Contains(row, column)
+                        If cell?.CellMetaIndex IsNot Nothing OrElse worksheet.SpillChildren.ContainsKey(coordinates) Then Return True
+                        If cell?.CellFormula IsNot Nothing AndAlso Not (inPreviousSpill AndAlso IsSpillPlaceholder(cell)) Then Return True
+                        If inPreviousSpill Then Continue For
                         If cell?.CellValue IsNot Nothing OrElse cell?.InlineString IsNot Nothing OrElse
                             _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, row, column, Nothing) Then Return True
                     Next
@@ -127,8 +139,9 @@ Namespace ExcelOps
                         For Each item In worksheet.Cells
                             Dim row = item.Key.RowIndex
                             Dim column = item.Key.ColumnIndex
-                            If item.Value.CellFormula Is Nothing AndAlso item.Value.CellMetaIndex Is Nothing AndAlso
-                               oldRange.Contains(row, column) AndAlso (row > bottom OrElse column > right) Then
+                            If item.Value.CellMetaIndex Is Nothing AndAlso oldRange.Contains(row, column) AndAlso (row > bottom OrElse column > right) AndAlso
+                                (item.Value.CellFormula Is Nothing OrElse IsSpillPlaceholder(item.Value)) Then
+                                item.Value.CellFormula = Nothing
                                 ClearStoredCellResult(item.Value)
                             End If
                         Next

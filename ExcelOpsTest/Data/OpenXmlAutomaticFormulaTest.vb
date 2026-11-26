@@ -111,6 +111,33 @@ Public Class OpenXmlAutomaticFormulaTest
     End Sub
 
     <Test>
+    Public Sub FollowsChangingIndirectTargetsThroughAnOffsetInBothCalculationModes()
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, MakeOptions())
+            workbook.WriteCellValue("Sheet1", 0, 0, "A2")
+            workbook.WriteCellValue("Sheet1", 1, 0, 10.0)
+            workbook.WriteCellValue("Sheet1", 2, 0, 20.0)
+            workbook.WriteCellFormula("Sheet1", 0, 1, "INDIRECT(A1)", False)
+            workbook.WriteCellFormula("Sheet1", 0, 2, "OFFSET(B1,0,0)", False)
+            workbook.WriteCellFormula("Sheet1", 0, 3, "C1+1", False)
+            workbook.RecalculateAll()
+            Assert.That(Result(workbook, 3), [Is].EqualTo(11.0))
+
+            workbook.WriteCellValue("Sheet1", 0, 0, "A3")
+            Assert.That(Result(workbook, 3), [Is].EqualTo(21.0))
+            workbook.WriteCellValue("Sheet1", 2, 0, 30.0)
+            Assert.That(Result(workbook, 3), [Is].EqualTo(31.0))
+            workbook.WriteCellValue("Sheet1", 1, 0, 99.0)
+            Assert.That(Result(workbook, 3), [Is].EqualTo(31.0))
+
+            workbook.AutoCalculationEnabledWorkbookSetting = False
+            workbook.WriteCellValue("Sheet1", 2, 0, 40.0)
+            Assert.That(Result(workbook, 3), [Is].EqualTo(31.0))
+            workbook.RecalculateCell("Sheet1", 0, 3)
+            Assert.That(Result(workbook, 3), [Is].EqualTo(41.0))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub TracksCellsThatWereEmptyWhenAnAggregateWasLastEvaluated()
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, MakeOptions())
             workbook.WriteCellFormula("Sheet1", 0, 3, "SUM(A1:A3)", False)

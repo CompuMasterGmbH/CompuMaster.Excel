@@ -158,7 +158,7 @@ Namespace ExcelOps
                 If trackRead Then RecordPrecedent(New FormulaPrecedent(location, rowIndex, columnIndex))
                 Dim cell As Cell = Nothing
                 worksheet.Cells.TryGetValue((rowIndex, columnIndex), cell)
-                If cell?.CellFormula Is Nothing Then
+                If cell?.CellFormula Is Nothing OrElse IsSpillPlaceholder(cell) Then
                     Dim spillValue As Object = Nothing
                     If ReadSpillCell(worksheet, rowIndex, columnIndex, spillValue) Then Return spillValue
                 End If
@@ -265,10 +265,11 @@ Namespace ExcelOps
             End Sub
 
             Private Function Scalar(value As Object) As Object
+                If TypeOf value Is FormulaReferenceUnion Then Return New FormulaError("#VALUE!")
                 Dim matrix = TryCast(value, FormulaMatrix)
                 If matrix IsNot Nothing Then
                     If matrix.Values.Length <> 1 Then Throw New NotSupportedException("A multi-cell array result requires spill calculation.")
-                    Return matrix.Values(0)
+                    Return If(TypeOf matrix.Values(0) Is FormulaArea, CObj(New FormulaError("#VALUE!")), matrix.Values(0))
                 End If
                 Dim area = TryCast(value, FormulaArea)
                 If area Is Nothing Then Return value

@@ -84,7 +84,8 @@ Namespace ExcelOps
             If spills.Count = 0 Then Return False
             Dim changed As Boolean
             For Each cell In cells
-                If cell.CellFormula IsNot Nothing OrElse cell.CellReference Is Nothing OrElse cell.CellMetaIndex IsNot Nothing Then Continue For
+                If cell.CellReference Is Nothing OrElse cell.CellMetaIndex IsNot Nothing OrElse
+                    (cell.CellFormula IsNot Nothing AndAlso Not IsSpillPlaceholder(cell)) Then Continue For
                 Dim address = ReadSharedCellAddress(cell)
                 If spills.Any(Function(spill) spill.Contains(address.Row, address.Column)) Then
                     changed = ClearStoredCellResult(cell) OrElse changed

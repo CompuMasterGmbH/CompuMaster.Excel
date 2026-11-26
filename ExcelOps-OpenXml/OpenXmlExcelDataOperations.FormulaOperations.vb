@@ -184,6 +184,10 @@ Namespace ExcelOps
                          "BINOM.DIST.RANGE", "_XLFN.BINOM.DIST.RANGE", "NEGBINOM.DIST", "_XLFN.NEGBINOM.DIST", "NEGBINOMDIST",
                          "HYPGEOM.DIST", "_XLFN.HYPGEOM.DIST", "HYPGEOMDIST", "POISSON.DIST", "_XLFN.POISSON.DIST", "POISSON"
                         Return EvaluateDiscreteDistribution(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "ADDRESS", "INDIRECT", "OFFSET", "CHOOSE", "AREAS",
+                         "SHEET", "_XLFN.SHEET", "SHEETS", "_XLFN.SHEETS",
+                         "ISFORMULA", "_XLFN.ISFORMULA", "FORMULATEXT", "_XLFN.FORMULATEXT"
+                        Return EvaluateReferenceUtility(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "NPV", "IRR", "MIRR"
                         Return EvaluateCashFlowFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "XNPV", "XIRR"
@@ -242,18 +246,9 @@ Namespace ExcelOps
                 Dim firstError As FormulaError = Nothing
                 For Each argument In arguments
                     Dim value = EvaluateExpression(argument, formulaCell)
-                    Dim area = TryCast(value, FormulaArea)
-                    Dim matrix = TryCast(value, FormulaMatrix)
-                    Dim values As IEnumerable(Of Object)
-                    If area IsNot Nothing Then
-                        values = RangeValues(area)
-                    ElseIf matrix IsNot Nothing Then
-                        values = matrix.Values
-                    Else
-                        values = {value}
-                    End If
-                    For Each item In values
-                        If (area IsNot Nothing OrElse matrix IsNot Nothing) AndAlso
+                    Dim collection = TypeOf value Is FormulaArea OrElse TypeOf value Is FormulaMatrix OrElse TypeOf value Is FormulaReferenceUnion
+                    For Each item In ReferenceArgumentValues(value)
+                        If collection AndAlso
                             Not TypeOf item Is Double AndAlso Not TypeOf item Is FormulaError Then Continue For
                         If item Is Nothing Then Continue For
                         Dim number = NumberValue(item)

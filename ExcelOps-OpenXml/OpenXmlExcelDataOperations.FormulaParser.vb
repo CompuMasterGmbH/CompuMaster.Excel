@@ -85,8 +85,16 @@ Namespace ExcelOps
                 If token = "+" OrElse token = "-" Then Return UnaryExpression(token, ParseExpression(7))
                 If token = "(" Then
                     Dim inner = ParseExpression(1)
+                    If Not Match(",") Then
+                        Expect(")")
+                        Return inner
+                    End If
+                    Dim areas As New List(Of FormulaExpression) From {inner}
+                    Do
+                        areas.Add(ParseExpression(1))
+                    Loop While Match(",")
                     Expect(")")
-                    Return inner
+                    Return Function(calculation, formulaCell) calculation.EvaluateReferenceUnion(areas, formulaCell)
                 End If
                 If token = "{" Then Return ParseArrayConstant()
                 If token(0) = """"c Then
