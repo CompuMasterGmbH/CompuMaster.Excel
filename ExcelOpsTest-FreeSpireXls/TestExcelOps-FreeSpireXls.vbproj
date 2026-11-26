@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\ExcelOpsTest\HtmlVisualReview.vb" Link="HtmlVisualReview.vb" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="test_data\ChartSheet01.xlsx" />
     <None Remove="test_data\EmbeddedChartPlacement.xlsx" />
     <None Remove="test_data\CircularRefs01.xlsx" />
