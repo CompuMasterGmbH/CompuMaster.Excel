@@ -144,6 +144,8 @@ Namespace ExcelOps
                          "BIN2DEC", "BIN2HEX", "BIN2OCT", "OCT2BIN", "OCT2DEC", "OCT2HEX",
                          "HEX2BIN", "HEX2DEC", "HEX2OCT", "DEC2BIN", "DEC2OCT", "DEC2HEX"
                         Return EvaluateRadixConversion(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "ROMAN", "ARABIC", "_XLFN.ARABIC"
+                        Return EvaluateRomanNumerals(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "MATCH", "INDEX", "VLOOKUP", "HLOOKUP", "XLOOKUP", "_XLFN.XLOOKUP", "XMATCH", "_XLFN.XMATCH"
                         Return EvaluateLookupFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SORT", "_XLFN.SORT", "_XLFN._XLWS.SORT", "SORTBY", "_XLFN.SORTBY", "UNIQUE", "_XLFN.UNIQUE"
