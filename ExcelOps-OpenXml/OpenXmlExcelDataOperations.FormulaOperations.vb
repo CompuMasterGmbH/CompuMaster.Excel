@@ -81,6 +81,8 @@ Namespace ExcelOps
                         Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), formulaCell)))
                         If TypeOf operand Is FormulaError Then Return operand
                         Return Math.Abs(DirectCast(operand, Double))
+                    Case "RTD", "_XLFN.RTD"
+                        Return EvaluateRegisteredFunction(name, arguments, formulaCell)
                     Case "GETPIVOTDATA"
                         Return EvaluatePivotData(arguments, formulaCell)
                     Case "ISREF"

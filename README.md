@@ -23,7 +23,7 @@ A bunch of libraries to access and edit Excel files with common interface for se
     * Use FreeSpire.Xls for solutions targetting .NET Framework 4.8 or .NET 6 or higher
 
   * **CompuMaster.Excel.OpenXml**
-    * Use the Open XML SDK to edit and save copies of XLSX templates on Windows and Linux. See the [engine guide](ExcelOps-OpenXml/README.md) for supported operations and a sample.
+    * Use the Open XML SDK to edit and save copies of XLSX templates on Windows and Linux. See the [engine guide](ExcelOps-OpenXml/README.md) and the [Excel compatibility guide](ExcelOps-OpenXml/COMPATIBILITY.md) for supported operations, differences and examples.
 
 ### Quick & dirty engine comparison / why you shouldn't use MS Excel for all situations
 

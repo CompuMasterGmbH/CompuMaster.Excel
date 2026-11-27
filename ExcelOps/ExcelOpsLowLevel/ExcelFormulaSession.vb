@@ -4,6 +4,7 @@
     Public NotInheritable Class ExcelFormulaSession
         Friend ReadOnly WorkbookSyncRoot As New Object()
         Private ReadOnly _functions As New Dictionary(Of String, ExcelFormulaRegistration)(StringComparer.OrdinalIgnoreCase)
+        Private ReadOnly _rtdProviders As New Dictionary(Of String, ExcelFormulaRegistration)(StringComparer.OrdinalIgnoreCase)
         Private ReadOnly _workbooks As New Dictionary(Of String, ExcelDataOperationsBase)(StringComparer.OrdinalIgnoreCase)
         Private _revision As Long
         Private _activeWorkbook As String
@@ -38,6 +39,30 @@
         Public Function RemoveFunction(name As String) As Boolean
             SyncLock WorkbookSyncRoot
                 If Not _functions.Remove(name) Then Return False
+                _revision += 1
+                Return True
+            End SyncLock
+        End Function
+
+        ''' <summary>Registers a data provider for an RTD server identifier in this session.</summary>
+        ''' <param name="progId">The case-insensitive identifier supplied as the first RTD argument.</param>
+        ''' <param name="implementation">The provider, which receives the formula context and all RTD arguments in order.</param>
+        ''' <remarks>Open XML evaluates the provider on automatic calculation passes. A second registration with the same identifier replaces the first.</remarks>
+        Public Sub RegisterRtdProvider(progId As String, implementation As Func(Of ExcelFormulaContext, IReadOnlyList(Of ExcelFormulaValue), ExcelFormulaValue))
+            If String.IsNullOrWhiteSpace(progId) Then Throw New ArgumentException("An RTD provider identifier is required.", NameOf(progId))
+            If implementation Is Nothing Then Throw New ArgumentNullException(NameOf(implementation))
+            SyncLock WorkbookSyncRoot
+                _rtdProviders(progId) = New ExcelFormulaRegistration(implementation, isVolatile:=True)
+                _revision += 1
+            End SyncLock
+        End Sub
+
+        ''' <summary>Removes the RTD provider for a server identifier.</summary>
+        ''' <param name="progId">The registered server identifier.</param>
+        ''' <returns>True if a registration was removed.</returns>
+        Public Function RemoveRtdProvider(progId As String) As Boolean
+            SyncLock WorkbookSyncRoot
+                If Not _rtdProviders.Remove(progId) Then Return False
                 _revision += 1
                 Return True
             End SyncLock
@@ -96,6 +121,7 @@
                 Return New ExcelFormulaSessionSnapshot(
                     New Dictionary(Of String, ExcelDataOperationsBase)(_workbooks, StringComparer.OrdinalIgnoreCase),
                     New Dictionary(Of String, ExcelFormulaRegistration)(_functions, StringComparer.OrdinalIgnoreCase),
+                    New Dictionary(Of String, ExcelFormulaRegistration)(_rtdProviders, StringComparer.OrdinalIgnoreCase),
                     _activeWorkbook, CopyCell(_activeCell), _revision)
             End SyncLock
         End Function
@@ -119,15 +145,18 @@
     Friend NotInheritable Class ExcelFormulaSessionSnapshot
         Friend ReadOnly Workbooks As IReadOnlyDictionary(Of String, ExcelDataOperationsBase)
         Friend ReadOnly Functions As IReadOnlyDictionary(Of String, ExcelFormulaRegistration)
+        Friend ReadOnly RtdProviders As IReadOnlyDictionary(Of String, ExcelFormulaRegistration)
         Friend ReadOnly ActiveWorkbook As String
         Friend ReadOnly ActiveCell As ExcelCell
         Friend ReadOnly Revision As Long
 
         Friend Sub New(workbooks As IReadOnlyDictionary(Of String, ExcelDataOperationsBase),
                        functions As IReadOnlyDictionary(Of String, ExcelFormulaRegistration),
+                       rtdProviders As IReadOnlyDictionary(Of String, ExcelFormulaRegistration),
                        activeWorkbook As String, activeCell As ExcelCell, revision As Long)
             Me.Workbooks = workbooks
             Me.Functions = functions
+            Me.RtdProviders = rtdProviders
             Me.ActiveWorkbook = activeWorkbook
             Me.ActiveCell = activeCell
             Me.Revision = revision

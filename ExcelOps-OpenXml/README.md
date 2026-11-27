@@ -2,6 +2,8 @@
 
 Edit Open XML workbooks and templates with the [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) through the ExcelOps API. The engine runs on .NET Framework 4.8 on Windows and modern .NET on Windows and Linux. It copies the input package and edits the affected worksheet and workbook XML. Embedded images and drawing relationships are preserved without using Excel or a graphics library.
 
+See the [Excel compatibility guide](https://github.com/CompuMasterGmbH/CompuMaster.Excel/blob/main/ExcelOps-OpenXml/COMPATIBILITY.md) for official formula references, documented differences, and Open XML extensions with examples.
+
 ```csharp
 using CompuMaster.Excel.ExcelOps;
 using static CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase;
@@ -101,6 +103,10 @@ A registered function receives typed scalar arguments and an `ExcelFormulaContex
 Excel worksheet formulas can also read linked XLSX workbooks when the sources are explicitly opened in the same session. Path-backed sources are matched to the stored link target. A relative single-file link can use a matching session name when the source is opened from memory. Calculation reports an unavailable source and preserves existing caches. Opening or calculating a workbook never opens a source file or fetches a remote link.
 
 Registered functions are application code. XLSX stores the formula and its cached result. The caller supplies the registration again when it wants to recalculate. An unregistered function is reported as unsupported. Use the registration overload with `isVolatile: true` if the result depends on state outside the tracked workbook reads. This API supports scalar inputs and outputs. Excel itself needs a separately installed function provider to recalculate the custom formula.
+
+### Real-time data
+
+Use an application-defined provider registered for a specific `ProgID`, or allow a local Windows COM server for `RTD`. See the [RTD setup and examples](https://github.com/CompuMasterGmbH/CompuMaster.Excel/blob/main/ExcelOps-OpenXml/COMPATIBILITY.md#real-time-data-rtd).
 
 ## Structural edits
 

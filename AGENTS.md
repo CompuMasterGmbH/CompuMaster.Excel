@@ -35,6 +35,13 @@
 - If an engine can only support one formula/reference update mode, reject unsupported requests with a clear exception.
 - Preserve engine-specific limitations explicitly and keep the original exception as an inner exception when wrapping known unsupported workbook structures.
 
+## Open XML Compatibility Documentation
+
+- Link Excel-compatible worksheet functions to the corresponding official Microsoft reference in the function catalog or the engine guide.
+- Document known differences, breaking changes, and limits due to formula complexity or the operating environment in the English [Open XML compatibility guide](ExcelOps-OpenXml/COMPATIBILITY.md). Give a concrete example, describe what the engine does, and show a supported alternative when one exists. Include a formula or code example where it clarifies the behavior.
+- Document Open XML extensions in the same guide with examples. Link the guide prominently from the repository README and the Open XML package README.
+- Update the documentation alongside changes to formula behavior or compatibility.
+
 ## Tests and Generated Files
 
 - Add durable unit tests for new behavior, including engine-specific behavior where engines differ.

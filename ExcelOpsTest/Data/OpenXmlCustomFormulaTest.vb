@@ -1,4 +1,5 @@
-﻿Imports CompuMaster.Excel.ExcelOps
+﻿Imports System.Runtime.InteropServices
+Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
 Imports NUnit.Framework
@@ -125,6 +126,87 @@ Public Class OpenXmlCustomFormulaTest
             workbook.RecalculateCell(Cell("A1"))
             Assert.That(Cached(workbook, "A1"), [Is].EqualTo("test result"))
             Assert.That(workbook.LookupCellFormula("Sheet1", 0, 0), [Is].EqualTo(formula))
+        End Using
+    End Sub
+
+    <TestCase("RTD", False)>
+    <TestCase("_xlfn.rtd", True)>
+    Public Sub ReportsMissingRtdProviderWithoutCachingAFormulaError(storedName As String, useSession As Boolean)
+        Dim session = If(useSession, New ExcelFormulaSession(), Nothing)
+        Using workbook = CreateWorkbook(session, If(useSession, "Target", Nothing))
+            Dim formula = storedName & "(""Example.Provider"",,""price"")"
+            workbook.WriteCellFormula("Sheet1", 0, 0, formula, False)
+
+            Dim failure = Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.LookupCellValueAsObject(Cell("A1"), FormulaCalculationMode.CalculateIfMissing))
+
+            Dim reason = If(RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
+                "requires an entry in AllowedNativeRtdProgIds.",
+                "Windows COM RTD is not supported on this platform.")
+            Assert.That(failure.Message, Does.Contain(reason).And.Contain("Register an RTD provider for this ProgID"))
+            Assert.That(failure.Cell.Address, [Is].EqualTo("A1"))
+            Assert.That(failure.Formula, [Is].EqualTo(formula))
+            Assert.That(workbook.HasMissingCachedFormulaResult(Cell("A1")), [Is].True)
+        End Using
+    End Sub
+
+    <TestCase("RTD")>
+    <TestCase("_xlfn.rtd")>
+    Public Sub EvaluatesRtdThroughTheRegisteredFunction(storedName As String)
+        Dim session As New ExcelFormulaSession()
+        Dim price = 42.0
+        session.RegisterFunction("RTD",
+            Function(context, arguments)
+                Assert.That(context.FormulaCell.Address, [Is].EqualTo("A1"))
+                Assert.That(arguments.Select(Function(argument) argument.Value),
+                    [Is].EqualTo(New Object() {"Example.Provider", Nothing, "price"}))
+                Return ExcelFormulaValue.FromNumber(price)
+            End Function, isVolatile:=True)
+        Using workbook = CreateWorkbook(session, "Target")
+            workbook.WriteCellFormula("Sheet1", 0, 0, storedName & "(""Example.Provider"",,""price"")", False)
+
+            Assert.That(workbook.LookupCellValueAsObject(Cell("A1"), FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(42.0))
+            price = 43.0
+            workbook.RecalculateCell(Cell("A1"))
+            Assert.That(Cached(workbook, "A1"), [Is].EqualTo(43.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub RoutesRtdByProgIdBeforeTheSessionWideFunction()
+        Dim session As New ExcelFormulaSession()
+        session.RegisterFunction("RTD", Function(context, arguments) ExcelFormulaValue.FromNumber(10))
+        session.RegisterRtdProvider("Example.First",
+            Function(context, arguments)
+                Assert.That(arguments(1).Kind, [Is].EqualTo(ExcelFormulaValueKind.Blank))
+                Assert.That(arguments(2).Value, [Is].EqualTo("price"))
+                Return ExcelFormulaValue.FromNumber(20)
+            End Function)
+        session.RegisterRtdProvider("Example.Second", Function(context, arguments) ExcelFormulaValue.FromNumber(30))
+        Using workbook = CreateWorkbook(session, "Target")
+            workbook.WriteCellFormula("Sheet1", 0, 0, "RTD(""example.first"",,""price"")", False)
+            workbook.WriteCellFormula("Sheet1", 1, 0, "_xlfn.RTD(""example.second"",,""price"")", False)
+            workbook.WriteCellFormula("Sheet1", 2, 0, "RTD(""example.third"",,""price"")", False)
+            workbook.RecalculateSheet("Sheet1")
+
+            Assert.That(Cached(workbook, "A1"), [Is].EqualTo(20.0))
+            Assert.That(Cached(workbook, "A2"), [Is].EqualTo(30.0))
+            Assert.That(Cached(workbook, "A3"), [Is].EqualTo(10.0))
+
+            Assert.That(session.RemoveRtdProvider("EXAMPLE.SECOND"), [Is].True)
+            workbook.RecalculateCell(Cell("A2"))
+            Assert.That(Cached(workbook, "A2"), [Is].EqualTo(10.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub ReportsRemoteNativeRtdAsUnsupported()
+        If Not RuntimeInformation.IsOSPlatform(OSPlatform.Windows) Then Assert.Ignore("Windows COM is required for this case.")
+        Using workbook = CreateWorkbook(Nothing, Nothing)
+            workbook.WriteCellFormula("Sheet1", 0, 0, "RTD(""Example.Provider"",""server"",""price"")", False)
+            Dim failure = Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.LookupCellValueAsObject(Cell("A1"), FormulaCalculationMode.CalculateIfMissing))
+            Assert.That(failure.Message, Does.Contain("local COM servers only"))
         End Using
     End Sub
 

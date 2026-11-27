@@ -8,17 +8,27 @@
                                                         formulaCell As ExcelCell) As Object
                 Dim session = _run.Session
                 Dim registration As ExcelFormulaRegistration = Nothing
-                If session IsNot Nothing AndAlso Not session.Functions.TryGetValue(name, registration) Then
-                    Dim registeredName = name
+                Dim registeredName = name
+                If session IsNot Nothing Then session.Functions.TryGetValue(name, registration)
+                If registration Is Nothing Then
                     For Each prefix In {"_xlfn.", "_xlws.", "_xll."}
                         If registeredName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) Then registeredName = registeredName.Substring(prefix.Length)
                     Next
-                    If registeredName <> name Then session.Functions.TryGetValue(registeredName, registration)
+                    If session IsNot Nothing AndAlso registeredName <> name Then session.Functions.TryGetValue(registeredName, registration)
+                End If
+                If String.Equals(registeredName, "RTD", StringComparison.OrdinalIgnoreCase) Then
+                    Return EvaluateRtd(arguments, formulaCell, registration)
                 End If
                 If registration Is Nothing Then Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
 
                 If registration.IsVolatile Then MarkVolatile()
                 Dim values = arguments.Select(Function(argument) ToFormulaValue(Scalar(EvaluateExpression(argument, formulaCell)))).ToArray()
+                Return InvokeRegisteredFunction(name, registration, values, formulaCell)
+            End Function
+
+            Private Function InvokeRegisteredFunction(name As String, registration As ExcelFormulaRegistration, values As ExcelFormulaValue(),
+                                                      formulaCell As ExcelCell) As Object
+                Dim session = _run.Session
                 Dim views As New Dictionary(Of String, ExcelFormulaWorkbookReference)(StringComparer.OrdinalIgnoreCase)
                 Dim inCall = True
                 For Each item In session.Workbooks
