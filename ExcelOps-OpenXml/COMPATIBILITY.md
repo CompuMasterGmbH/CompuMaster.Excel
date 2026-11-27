@@ -16,9 +16,52 @@ Use the [worksheet function catalog](../tools/excel-function-catalog.csv) to fin
 - **Structural edits.** If a deletion selection consists entirely of hidden columns and a table filter is active, Open XML raises `StructuralReferenceCompatibilityException` before changing the workbook. Clear the filter or set `AllowKnownStructuralReferenceDifferences = True` in the options before opening a workbook that requires the Open XML behavior. See the [structural edit guide](README.md#structural-edits).
 - **HTML export.** When a formula result is missing, the default export raises `MissingCalculatedCellValueException`. Set `HtmlSheetExportOptions.MissingFormulaResultText = "#Value?"` to show a visible marker, or enable calculation and select `FormulaCalculationMode.CalculateIfMissing` to calculate missing values. See the [HTML export examples](../README.md#missing-formula-results-in-html).
 
+## VBA and Excel 4.0 macros
+
+Open XML edits the workbook package. To run existing VBA or Excel 4.0 (XLM) code, open the workbook in desktop Excel with the applicable macro settings. For a headless application, port the logic to .NET and choose how to invoke it based on what the original code does. [VBA worksheet functions](https://support.microsoft.com/en-us/excel/create-custom-functions-in-excel) · [VBA macro triggers](https://support.microsoft.com/en-us/excel/run-a-macro-in-excel) · [Excel 4.0 macros](https://support.microsoft.com/en-au/excel/working-with-excel-4-0-macros)
+
+### Preserve or remove macro content
+
+| Input and destination | Open XML behavior |
+| --- | --- |
+| A VBA workbook saved as `report.xlsm` or `report.xltm` | The macro-enabled format preserves the VBA project. Call `RemoveVbaProject()` to omit it on the next save. |
+| A VBA workbook saved as `report.xlsx` or `report.xltx` | The macro-free format omits the VBA project. Worksheet formulas that call the old functions can still need a .NET implementation for recalculation. |
+| An XLM workbook saved as `report.xlsm` or `report.xltm` | Open XML can carry the macro sheets through when saving the package. Execution remains an Excel operation. |
+| An XLM workbook saved as `report.xlsx` or `report.xltx` | Open XML rejects the save with `NotSupportedException`. Use a macro-enabled destination or prepare a new macro-free template after migrating the XLM workflow. |
+
+For example, this makes a macro-enabled copy and preserves the existing formula results for use in Excel. Passing `recalculateWorkbook:=False` lets the copy retain previously saved results, which may be stale after input edits.
+
+```vbnet
+workbook.SaveCopyAs("report.xlsm",
+    recalculateWorkbook:=False,
+    cachedCalculationsOption:=ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+```
+
+`HasVbaProject` reports the presence of a VBA project. Use the XLM save rule above for workbooks with macro sheets, which are separate package parts.
+
+### Port actions and event handlers
+
+An event handler such as `Workbook_Open`, a button macro, or an XLM macro-sheet routine can perform actions. Port the actions to an application method and invoke it at the equivalent point in the application workflow. For example, if a workbook-open macro writes a status into `Inputs!A1`, call this method after opening the workbook.
+
+```vbnet
+Private Sub InitializeReport(workbook As OpenXmlExcelDataOperations)
+    workbook.WriteCellValue("Inputs", 0, 0, "Ready")
+End Sub
+```
+
+Keep that method in the application's open or command workflow. A worksheet can use the function registration described below when it needs a calculated result.
+
+### Replace legacy native calls
+
+A legacy macro sheet can use `CALL(A1,B2)` to invoke a native function with the registration ID in `A1`. `REGISTER.ID` can obtain that ID. Open XML reports native `CALL` and `REGISTER.ID` evaluation as unsupported. For a scalar calculation such as a rebate, migrate the old call to a worksheet formula such as `=REBATE(B2)` and register its .NET implementation. For a call that performs an action, port it to the application workflow. Use Excel with the original add-in when the workbook must run the legacy call as written. [CALL](https://support.microsoft.com/en-us/excel/functions/call-function) · [REGISTER.ID](https://support.microsoft.com/en-us/excel/functions/register-id-function)
+
 ## Application-defined worksheet functions
 
-A workbook can use a .NET implementation for a cell formula such as `=REBATE(B2)`. Port the business logic from the original VBA worksheet function and register it under the formula name.
+A cell formula such as `=REBATE(B2)` calls a function that returns a value. Port the original VBA function to .NET, register it under the same name, and pass the session when opening the workbook. The example calculates 25 when `B2` is 250.
+
+```vbnet
+Imports CompuMaster.Excel.ExcelOps
+```
 
 ```vbnet
 Dim session As New ExcelFormulaSession()
@@ -29,9 +72,19 @@ session.RegisterFunction("REBATE",
         End If
         Return ExcelFormulaValue.FromNumber(CDbl(arguments(0).Value) * 0.1)
     End Function)
+
+Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+    .DisableCalculationEngine = False,
+    .FormulaSession = session
+}
+
+Using workbook As New OpenXmlExcelDataOperations(
+    "report.xlsm", ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+    workbook.RecalculateAll()
+End Using
 ```
 
-Pass this session in `ExcelDataOperationsOptions.FormulaSession`. The context identifies the formula cell and provides read-only access to workbooks in the session. The XLSX stores the formula and its result. Supply the registration again when reopening it for calculation. For a VBA macro driven by a button or by an event such as `Workbook_Open`, port the operation to application code and connect it to the equivalent application action. [Excel worksheet functions written in VBA](https://support.microsoft.com/en-us/excel/create-custom-functions-in-excel)
+The callback receives the typed scalar arguments and a context containing the workbook, worksheet, and formula cell. It can read cells in workbooks in the same session during the call. The callback returns a scalar value or an Excel error. Supply the registration whenever a workbook is opened for fresh calculation. The saved file stores the formula and the calculated result, so another reader can use the saved result. For fresh calculation in Excel, supply an equivalent Excel-side function, such as the original VBA function in a macro-enabled workbook. [Excel worksheet functions written in VBA](https://support.microsoft.com/en-us/excel/create-custom-functions-in-excel)
 
 ## Real-time data (RTD)
 
@@ -108,3 +161,18 @@ End Using
 The callback receives the `ProgID`, server argument and all topics in formula order. The same code works on Windows, Linux and macOS. For a live source, replace the sample assignments with updates from the application. The registration is evaluated on automatic calculation passes. An update to the application's data source needs to request recalculation when the workbook must reflect the change immediately.
 
 Open XML checks `RegisterRtdProvider` for the specific `ProgID` first, the existing session-wide `RegisterFunction("RTD", …)` second, and the allowed native Windows server third. If an existing session-wide function should yield to native providers, migrate it to one registration per `ProgID`. Use `RemoveRtdProvider` to remove a specific application registration.
+
+## Functions that require other engines or data sources
+
+The [function catalog](../tools/excel-function-catalog.csv) tracks evaluator support. The examples below show how to handle formulas that fall outside the current Open XML evaluator. When a workbook already contains the Excel result, a cached-only read or export can use it. A missing cached result requires a calculation engine or an application-supplied result. Open XML reports an unsupported fresh calculation through `FormulaComplexityNotSupportedException`. The EPPlus 4 formula compiler can return the worksheet error `#NAME?` for an unknown function.
+
+| Formula or feature | Current behavior and application alternatives |
+| --- | --- |
+| `=TRANSLATE("Hola","es","en")` and `=DETECTLANGUAGE("Hola")` | Fresh calculation without a registered implementation raises `FormulaComplexityNotSupportedException`. Register a scalar .NET function that uses a translation or language detection provider, or calculate in Excel. A different provider can return different translations or language codes. [TRANSLATE](https://support.microsoft.com/en-us/excel/functions/translate-function) · [DETECTLANGUAGE](https://support.microsoft.com/en-us/excel/functions/detectlanguage-function) |
+| `=STOCKHISTORY("MSFT",DATE(2025,1,2),DATE(2025,1,10))` | Use Excel to populate the historical series. Excel obtains the data from LSEG, whose direct historical-pricing API requires authenticated access. An application with authorized market data can write dates and prices into worksheet cells. A registered scalar function can return one value, while this Excel formula produces a spill range. [STOCKHISTORY](https://support.microsoft.com/en-gb/excel/functions/stockhistory-function) · [Excel's data provider](https://support.microsoft.com/en-us/excel/about-the-stocks-financial-data-sources) · [LSEG API access](https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/refinitiv-data-platform-apis/quick-start/quick-start-guide-for-refinitiv-data-platform) |
+| `=CUBEVALUE("ThisWorkbookDataModel","[Measures].[TotalSales]")` and `=CUBESETCOUNT(A1)` | Use Excel or a compatible OLAP engine to evaluate the cube or workbook data model. When `A1` contains a `CUBESET` formula, the count uses its evaluated set. The worksheet caption alone cannot determine its size. For a simple report, the application can provide a table of data or precomputed aggregates and use ordinary worksheet formulas over that table. [CUBEVALUE](https://support.microsoft.com/en-us/excel/functions/cubevalue-function) · [CUBESETCOUNT](https://support.microsoft.com/en-us/excel/functions/cubesetcount-function) |
+| `=IMAGE("https://example.org/logo.png","Logo")` | Fresh evaluation of this image formula is outside the current scope. For a static logo, prepare the template with an embedded worksheet picture. See the [engine guide](README.md) for supported drawing preservation. [IMAGE](https://support.microsoft.com/en-us/excel/functions/image-function) |
+| `=WEBSERVICE("https://example.org/data")` | Use application code to obtain the response and write it to a worksheet cell. A registered scalar .NET function can also supply the response text. Excel's own implementation uses Windows components. [WEBSERVICE](https://support.microsoft.com/en-us/excel/functions/webservice-function) |
+| `=FORECAST.ETS(A13,B1:B12,A1:A12)`, `FORECAST.ETS.CONFINT`, `FORECAST.ETS.SEASONALITY`, and `FORECAST.ETS.STAT` | Use Excel for fresh calculation. The formulas operate on the supplied series. Matching Excel's smoothing, seasonality selection, and statistics is a calculation implementation task. [Excel forecasting functions](https://support.microsoft.com/en-us/excel/functions/forecasting-functions-reference) |
+
+The [RTD section](#real-time-data-rtd) covers the implemented Windows COM and application-provider paths. It includes setup, update behavior, and alternatives for remote servers and other platforms.
