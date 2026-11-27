@@ -166,6 +166,8 @@ Open XML checks `RegisterRtdProvider` for the specific `ProgID` first, the exist
 
 The [function catalog](../tools/excel-function-catalog.csv) tracks evaluator support. The examples below show how to handle formulas that fall outside the current Open XML evaluator. When a workbook already contains the Excel result, a cached-only read or export can use it. A missing cached result requires a calculation engine or an application-supplied result. Open XML reports an unsupported fresh calculation through `FormulaComplexityNotSupportedException`. The EPPlus 4 formula compiler can return the worksheet error `#NAME?` for an unknown function.
 
+When Open XML needs to calculate one of the four `FORECAST.ETS` functions, `TRANSLATE`, `DETECTLANGUAGE`, `STOCKHISTORY`, `CALL`, or `REGISTER.ID`, the exception names the function and states that it is not yet implemented. A registered .NET implementation can still handle that function. See [the implementation follow-up](https://github.com/CompuMasterGmbH/CompuMaster.Excel/issues/66).
+
 | Formula or feature | Current behavior and application alternatives |
 | --- | --- |
 | `=TRANSLATE("Hola","es","en")` and `=DETECTLANGUAGE("Hola")` | Fresh calculation without a registered implementation raises `FormulaComplexityNotSupportedException`. Register a scalar .NET function that uses a translation or language detection provider, or calculate in Excel. A different provider can return different translations or language codes. [TRANSLATE](https://support.microsoft.com/en-us/excel/functions/translate-function) · [DETECTLANGUAGE](https://support.microsoft.com/en-us/excel/functions/detectlanguage-function) |

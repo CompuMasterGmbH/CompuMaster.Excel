@@ -19,7 +19,15 @@
                 If String.Equals(registeredName, "RTD", StringComparison.OrdinalIgnoreCase) Then
                     Return EvaluateRtd(arguments, formulaCell, registration)
                 End If
-                If registration Is Nothing Then Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
+                If registration Is Nothing Then
+                    Dim invariantName = registeredName.ToUpperInvariant()
+                    Select Case invariantName
+                        Case "FORECAST.ETS", "FORECAST.ETS.CONFINT", "FORECAST.ETS.SEASONALITY", "FORECAST.ETS.STAT",
+                             "TRANSLATE", "DETECTLANGUAGE", "STOCKHISTORY", "CALL", "REGISTER.ID"
+                            Throw New NotSupportedException("The function " & invariantName & " is not yet implemented by the Open XML calculation engine.")
+                    End Select
+                    Throw New NotSupportedException("The function " & name & " is outside the supported calculation scope.")
+                End If
 
                 If registration.IsVolatile Then MarkVolatile()
                 Dim values = arguments.Select(Function(argument) ToFormulaValue(Scalar(EvaluateExpression(argument, formulaCell)))).ToArray()
