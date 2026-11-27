@@ -287,6 +287,10 @@ Namespace ExcelOps
                     End If
                 End If
                 If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
+                ' Yield before the runtime stack guard so the deferred retry has room on smaller threads.
+                If _run.Active.Count >= 64 AndAlso CanDeferFormulaPrecedent() Then
+                    Throw New DeferredFormulaPrecedent(location, formula)
+                End If
                 If _run.Active.Count >= 256 OrElse Not HasFormulaStackSpace() Then
                     If CanDeferFormulaPrecedent() Then Throw New DeferredFormulaPrecedent(location, formula)
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")

@@ -24,21 +24,21 @@ Partial Public Class OpenXmlExcelOpsTest
         End Using
     End Sub
 
-    <Test>
-    Public Sub WorksheetTransfer_OpenXmlCanMoveBetweenUnsavedWorkbooksWithoutCreatingALink()
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub WorksheetTransfer_OpenXmlCanMoveBetweenUnsavedWorkbooksWithoutCreatingALink(moveAllSheets As Boolean)
         Dim input = Path.Combine(_directory, "move-source.xlsx")
         CreateSimpleMoveWorkbook(input, withIncomingReference:=False)
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
         Using source As New OpenXmlExcelDataOperations(File.ReadAllBytes(input), options),
               target As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options)
-            Assert.Throws(Of NotSupportedException)(Sub() source.MoveSheets({"Data", "Remain"}, target))
-            Assert.That(source.SheetNames(), [Is].EqualTo({"Data", "Remain"}))
-            Assert.That(target.SheetNames(), [Is].EqualTo({"Sheet1"}))
-            Dim moved = source.MoveSheet("Data", target, 0)
-            Assert.That(moved.TargetSheetName, [Is].EqualTo("Data"))
-            Assert.That(moved.TargetSheetIndex, [Is].Zero)
-            Assert.That(source.SheetNames(), [Is].EqualTo({"Remain"}))
-            Assert.That(target.SheetNames(), [Is].EqualTo({"Data", "Sheet1"}))
+            Dim sheets = If(moveAllSheets, {"Data", "Remain"}, {"Data"})
+            Dim moved = source.MoveSheets(sheets, target, 0)
+            Assert.That(moved.Select(Function(item) item.TargetSheetName), [Is].EqualTo(sheets))
+            Assert.That(moved.Select(Function(item) item.TargetSheetIndex), [Is].EqualTo(Enumerable.Range(0, sheets.Length)))
+            Assert.That(source.IsClosed, [Is].False)
+            Assert.That(source.SheetNames(), [Is].EqualTo(If(moveAllSheets, Array.Empty(Of String)(), {"Remain"})))
+            Assert.That(target.SheetNames(), [Is].EqualTo(sheets.Concat({"Sheet1"})))
             Assert.That(target.LookupCellValue(Of Integer)("Data", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(12))
         End Using
     End Sub

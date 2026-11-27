@@ -331,7 +331,7 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
     <Test>
-    Public Sub RejectsADeepFormulaChainWithoutExhaustingTheThreadStack()
+    Public Sub CalculatesADeepFormulaChainWithoutExhaustingTheThreadStack()
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
         Dim depthPath = Path.Combine(_directory, "depth.xlsx")
         Using document = SpreadsheetDocument.Create(depthPath, SpreadsheetDocumentType.Workbook)
@@ -347,9 +347,10 @@ Partial Public Class OpenXmlExcelOpsTest
             sheet.Worksheet = New Worksheet(data)
         End Using
         Using workbook As New OpenXmlExcelDataOperations(depthPath, OpenMode.OpenExistingFile, options)
-            Assert.Throws(Of FormulaComplexityNotSupportedException)(
-                Sub() workbook.RecalculateCell("Depth", 0, 0, throwExceptionOnCalculationError:=False))
-            Assert.That(workbook.HasMissingCachedFormulaResult("Depth", 0, 0), [Is].True)
+            workbook.RecalculateCell("Depth", 0, 0, throwExceptionOnCalculationError:=False)
+            Const cached As FormulaCalculationMode = FormulaCalculationMode.UseCachedValueOnly
+            Assert.That(workbook.LookupCellValue(Of Double)("Depth", 0, 0, cached), [Is].EqualTo(600.0))
+            Assert.That(workbook.LookupCellValue(Of Double)("Depth", 599, 0, cached), [Is].EqualTo(1.0))
         End Using
     End Sub
 
