@@ -162,6 +162,31 @@ The callback receives the `ProgID`, server argument and all topics in formula or
 
 Open XML checks `RegisterRtdProvider` for the specific `ProgID` first, the existing session-wide `RegisterFunction("RTD", …)` second, and the allowed native Windows server third. If an existing session-wide function should yield to native providers, migrate it to one registration per `ProgID`. Use `RemoveRtdProvider` to remove a specific application registration.
 
+## Format worksheet cells and layout
+
+Use the optional `IExcelWorksheetFormatting` interface to format a range, including blank cells. The supplied properties modify the existing style and leave the cell values and formulas in place. Number format strings use Excel file syntax.
+
+```csharp
+using System.Drawing;
+using CompuMaster.Excel.ExcelOps;
+
+IExcelWorksheetFormatting formatting = workbook;
+formatting.ApplyCellFormatting(new ExcelRange("Sheet1", "A1:D1"), new ExcelCellFormatting
+{
+    Bold = true,
+    FillColor = Color.LightSteelBlue,
+    OutsideBorder = new ExcelCellBorder(ExcelBorderLineStyle.Thin)
+});
+formatting.ApplyCellFormatting(new ExcelRange("Sheet1", "D2:D25"), new ExcelCellFormatting
+{
+    NumberFormat = "0.00"
+});
+formatting.SetColumnWidth("Sheet1", 3, 14);
+formatting.SetRowHeight("Sheet1", 0, 24);
+```
+
+The formatting applies to the XLSX output. The HTML exporter displays the style properties listed in the [engine guide](README.md).
+
 ## Functions that require other engines or data sources
 
 The [function catalog](../tools/excel-function-catalog.csv) tracks evaluator support. The examples below show how to handle formulas that fall outside the current Open XML evaluator. When a workbook already contains the Excel result, a cached-only read or export can use it. A missing cached result requires a calculation engine or an application-supplied result. Open XML reports an unsupported fresh calculation through `FormulaComplexityNotSupportedException`. The EPPlus 4 formula compiler can return the worksheet error `#NAME?` for an unknown function.

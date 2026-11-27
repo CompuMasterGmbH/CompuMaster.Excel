@@ -10,7 +10,7 @@ Namespace ExcelOps
     ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in formula evaluation and structural reference updates on compatible workbooks.</remarks>
     Public NotInheritable Partial Class OpenXmlExcelDataOperations
         Inherits ExcelDataOperationsBase
-        Implements IDisposable, ICloneable
+        Implements IDisposable, ICloneable, IExcelWorksheetFormatting
 
         Private _source As MemoryStream
         Private _document As SpreadsheetDocument
@@ -18,6 +18,7 @@ Namespace ExcelOps
         Private ReadOnly _changedSheets As New HashSet(Of WorksheetPart)
         Private ReadOnly _changedChartSheets As New HashSet(Of ChartsheetPart)
         Private _workbookChanged As Boolean
+        Private _editedStyles As Stylesheet
         Private _calculationChainInvalid As Boolean
         Private _recalculateOnOpen As Boolean
         Private _initialAutomaticCalculation As Boolean?
@@ -245,6 +246,7 @@ Namespace ExcelOps
                     _completeDependencyRevision = Nothing
                     _formulaRanges.Clear()
                     _authoredDynamicMetadata = Nothing
+                    _editedStyles = Nothing
                     _workbookChanged = False
                     _calculationChainInvalid = False
                     _recalculateOnOpen = False
@@ -420,7 +422,7 @@ Namespace ExcelOps
             Dim sourceWorkbook = WorkbookPart
             Dim linkedPaths = ResolvedSessionLinks(sourceWorkbook)
             _source.WriteTo(output)
-            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _changedChartSheets.Count > 0 OrElse _calculationChainInvalid OrElse
+            If Not (_workbookChanged OrElse _editedStyles IsNot Nothing OrElse _changedSheets.Count > 0 OrElse _changedChartSheets.Count > 0 OrElse _calculationChainInvalid OrElse
                     _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache OrElse
                     linkedPaths.Count > 0 OrElse
                     (removeVba AndAlso sourceWorkbook.VbaProjectPart IsNot Nothing) OrElse
@@ -453,6 +455,12 @@ Namespace ExcelOps
             If _workbookChanged Then
                 Using output = target.GetStream(FileMode.Create, FileAccess.Write)
                     source.Workbook.Save(output)
+                End Using
+            End If
+            If _editedStyles IsNot Nothing Then
+                Dim stylePart = If(target.WorkbookStylesPart, target.AddNewPart(Of WorkbookStylesPart)())
+                Using output = stylePart.GetStream(FileMode.Create, FileAccess.Write)
+                    _editedStyles.Save(output)
                 End Using
             End If
             If _authoredDynamicMetadata IsNot Nothing Then

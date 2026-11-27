@@ -120,13 +120,13 @@ Namespace ExcelOps
                         If TypeOf value Is String Then Return "l"
                         Return If(german, "w", "v")
                     Case "width", "breite"
-                        Return MetadataColumnWidth(snapshot.Part.Worksheet, reference.ColumnIndex, source._owner.WorkbookPart.WorkbookStylesPart?.Stylesheet)
+                        Return MetadataColumnWidth(snapshot.Part.Worksheet, reference.ColumnIndex, source._owner.CurrentStyles)
                 End Select
 
                 Dim cell As Cell = Nothing
                 snapshot.Cells.TryGetValue((reference.RowIndex, reference.ColumnIndex), cell)
                 Dim row = If(TryCast(cell?.Parent, Row), FindRow(GetSheetData(snapshot.Part), reference.RowIndex, False))
-                Dim styles = source._owner.WorkbookPart.WorkbookStylesPart?.Stylesheet
+                Dim styles = source._owner.CurrentStyles
                 Dim styleIndex = WorksheetCellStyleIndex(snapshot.Part.Worksheet, row, cell, reference.ColumnIndex)
                 Dim style = GetCellFormat(styles, styleIndex)
                 Select Case kind

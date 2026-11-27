@@ -437,6 +437,7 @@ Namespace ExcelOps
             _formulaRanges.Clear()
             ResetCalculationDependencies()
             _workbookChanged = False
+            _editedStyles = Nothing
             _calculationChainInvalid = False
             RecalculationRequired = True
         End Sub

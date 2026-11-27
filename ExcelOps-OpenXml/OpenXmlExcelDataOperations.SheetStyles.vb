@@ -16,16 +16,18 @@ Namespace ExcelOps
         End Function
 
         Private Sub TransferWorksheetStyles(destination As WorkbookPart, worksheets As IEnumerable(Of Worksheet))
-            Dim sourcePart = WorkbookPart.WorkbookStylesPart
-            If sourcePart Is Nothing Then Return
+            Dim sourceStyles = CurrentStyles
+            If sourceStyles Is Nothing Then Return
             Dim materializeTheme = WorksheetThemesDiffer(destination)
             Dim targetPart = destination.WorkbookStylesPart
             If targetPart Is Nothing Then
-                targetPart = destination.AddPart(sourcePart)
+                targetPart = destination.AddNewPart(Of WorkbookStylesPart)()
+                targetPart.Stylesheet = DirectCast(sourceStyles.CloneNode(True), Stylesheet)
+                targetPart.Stylesheet.Save()
             End If
-            If Not materializeTheme AndAlso sourcePart.Stylesheet.OuterXml = targetPart.Stylesheet.OuterXml Then Return
+            If Not materializeTheme AndAlso sourceStyles.OuterXml = targetPart.Stylesheet.OuterXml Then Return
 
-            Dim transfer As New WorksheetStyleTransfer(sourcePart.Stylesheet, targetPart.Stylesheet,
+            Dim transfer As New WorksheetStyleTransfer(sourceStyles, targetPart.Stylesheet,
                 If(materializeTheme, GetThemePalette(), Nothing), WorkbookPart.ThemePart?.Theme)
             For Each worksheet In worksheets
                 transfer.Apply(worksheet)
@@ -205,7 +207,7 @@ Namespace ExcelOps
                 Return DirectCast(record.CloneNode(True), T)
             End Function
 
-            Private Shared Function AppendStyleRecord(Of T As OpenXmlElement)(target As OpenXmlCompositeElement, candidate As T) As UInteger
+            Friend Shared Function AppendStyleRecord(Of T As OpenXmlElement)(target As OpenXmlCompositeElement, candidate As T) As UInteger
                 Dim index As UInteger = 0
                 For Each record In target.Elements(Of T)()
                     If SameStyleRecord(record, candidate) Then Return index

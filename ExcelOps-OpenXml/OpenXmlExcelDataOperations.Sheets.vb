@@ -336,7 +336,7 @@ Namespace ExcelOps
             Dim part = GetWorksheetPart(sheetName)
             Dim row = FindRow(GetSheetData(part), rowIndex, False)
             Dim cell = FindCell(row, rowIndex, columnIndex, False)
-            Dim stylesheet = WorkbookPart.WorkbookStylesPart?.Stylesheet
+            Dim stylesheet = CurrentStyles
             Dim format = GetCellFormat(stylesheet, WorksheetCellStyleIndex(part.Worksheet, row, cell, columnIndex))
             If format Is Nothing Then Return True
             If format.Protection IsNot Nothing AndAlso (format.ApplyProtection Is Nothing OrElse format.ApplyProtection.Value) Then
