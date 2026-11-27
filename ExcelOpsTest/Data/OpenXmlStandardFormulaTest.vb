@@ -183,6 +183,19 @@ Public Class OpenXmlStandardFormulaTest
         End Using
     End Sub
 
+    <Test>
+    Public Sub FormatsGermanMarchAsExcelAndRecalculatesDependentText()
+        Dim settings = Options()
+        settings.FormulaCulture = Globalization.CultureInfo.GetCultureInfo("de-DE")
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            workbook.WriteCellFormula("Sheet1", 0, 0, "TEXT(DATE(2031,3,9),""MMM"")", False)
+            workbook.WriteCellFormula("Sheet1", 0, 1, "A1&"" ""&TEXT(DATE(2031,3,9),""MMMM"")", False)
+            workbook.RecalculateAll()
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("Mrz"))
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("Mrz M" & ChrW(&HE4) & "rz"))
+        End Using
+    End Sub
+
     Private Shared Sub AssertResult(workbook As OpenXmlExcelDataOperations, formula As String, expected As Object)
         workbook.WriteCellFormula("Sheet1", 0, 0, formula, False)
         Dim result = workbook.LookupCellValueAsObject("Sheet1", 0, 0, FormulaCalculationMode.CalculateIfMissing)
