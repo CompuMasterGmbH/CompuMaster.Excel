@@ -7,11 +7,6 @@
         End Function
 
         ''' <inheritdoc/>
-        Public Overrides Sub CopySheetContentInternal(sheetName As String, targetWorkbook As ExcelDataOperationsBase, targetSheetName As String)
-            Throw UnsupportedOperation("Copying sheet content")
-        End Sub
-
-        ''' <inheritdoc/>
         Public Overrides Function ExportChartSheetImage(chartSheetName As String) As System.Drawing.Image
             Throw UnsupportedOperation("Rendering chart sheets")
         End Function

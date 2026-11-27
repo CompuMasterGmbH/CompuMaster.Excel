@@ -381,7 +381,7 @@ Namespace ExcelOps
 
         Private Shared ReadOnly StandardWorksheetElements As New HashSet(Of String)(StringComparer.Ordinal) From {
             "sheetPr", "dimension", "sheetViews", "sheetFormatPr", "cols", "sheetData", "sheetProtection",
-            "printOptions", "pageMargins", "pageSetup", "headerFooter", "drawing", "mergeCells", "tableParts"
+            "printOptions", "pageMargins", "pageSetup", "headerFooter", "drawing", "mergeCells", "tableParts", "phoneticPr"
         }
 
         Private Shared ReadOnly LocalWorksheetReferences As New HashSet(Of String)(StringComparer.Ordinal) From {

@@ -2061,6 +2061,7 @@ Namespace ExcelOps
             If sheetName Is Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook Is Nothing Then Throw New ArgumentNullException(NameOf(targetWorkbook))
             If targetWorkbook Is Me Then Throw New ArgumentException("Must be another workbook", NameOf(targetWorkbook))
+            If TryCopySheetContentCore(sheetName, targetWorkbook, targetSheetName, copyOption) Then Return
             Select Case copyOption
                 Case CopySheetOption.TargetSheetMustNotExist
                     If targetWorkbook.SheetNames.Contains(targetSheetName) = True Then Throw New InvalidOperationException("Target workbook must not contain worksheet """ & sheetName & """")
@@ -2078,6 +2079,17 @@ Namespace ExcelOps
             targetWorkbook.ClearSheet(sheetName)
             Me.CopySheetContentInternal(sheetName, targetWorkbook, targetSheetName)
         End Sub
+
+        ''' <summary>Attempts to copy worksheet content using a single engine-specific operation.</summary>
+        ''' <param name="sheetName">The source worksheet.</param>
+        ''' <param name="targetWorkbook">The workbook receiving the content.</param>
+        ''' <param name="targetSheetName">The destination worksheet.</param>
+        ''' <param name="copyOption">Specifies whether the destination worksheet is required or created.</param>
+        ''' <returns>True if the copy completed. False delegates to the existing copy workflow.</returns>
+        Protected Overridable Function TryCopySheetContentCore(sheetName As String, targetWorkbook As ExcelDataOperationsBase,
+                                                              targetSheetName As String, copyOption As CopySheetOption) As Boolean
+            Return False
+        End Function
 
         ''' <summary>
         ''' Gets all formulas of all workbook sheets.
