@@ -64,6 +64,35 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
     <Test>
+    Public Sub ClearingRangeResetsInheritedCellFormatsAndKeepsTheSurroundingLayout()
+        Dim input = Path.Combine(_directory, "inherited-layout.xlsx")
+        Dim output = Path.Combine(_directory, "inherited-layout-cleared.xlsx")
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(input))
+            Dim sheet = package.Workbook.Worksheets.Add("Layout")
+            sheet.Column(2).Style.Numberformat.Format = "0.000"
+            sheet.Row(3).Style.Numberformat.Format = "0%"
+            sheet.Cells("B2").Value = 123
+            package.Save()
+        End Using
+
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(input, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.LookupCellFormat("Layout", 1, 1), [Is].EqualTo("0.000"))
+            Assert.That(workbook.LookupCellFormat("Layout", 2, 2), [Is].EqualTo("0%"))
+            workbook.ClearCells(New ExcelRange("Layout", "B2:C3"))
+            workbook.SaveCopyAs(output, False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.LookupCellValueAsObject("Layout", 1, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].Null)
+            Assert.That(workbook.LookupCellFormat("Layout", 1, 1), [Is].EqualTo("General"))
+            Assert.That(workbook.LookupCellFormat("Layout", 2, 2), [Is].EqualTo("General"))
+            Assert.That(workbook.LookupCellFormat("Layout", 0, 1), [Is].EqualTo("0.000"))
+            Assert.That(workbook.LookupCellFormat("Layout", 2, 0), [Is].EqualTo("0%"))
+        End Using
+    End Sub
+
+    <Test>
     Public Sub FitsColumnsToFormattedTextAndPreservesNeighbouringLayout()
         Dim input = Path.Combine(_directory, "fit.xlsx")
         Dim output = Path.Combine(_directory, "fit-out.xlsx")

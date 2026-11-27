@@ -31,6 +31,9 @@ Namespace ExcelOps
         Private Sub CopyOpenXmlSheetContent(sheetName As String, destination As OpenXmlExcelDataOperations,
                                             targetSheetName As String, copyOption As CopySheetOption)
             Dim source = GetWorksheetPart(sheetName)
+            If source.Parts.Any(Function(item) IsSupportedLegacyWorksheetPart(source, item)) Then
+                Throw UnsupportedOperation("Copying cell content from a worksheet with legacy drawings. Use CopySheet to include the drawings")
+            End If
             Dim existing = destination.WorkbookSheets().Find(Function(sheet) String.Equals(sheet.Name.Value, targetSheetName, StringComparison.OrdinalIgnoreCase))
             Select Case copyOption
                 Case CopySheetOption.TargetSheetMustNotExist

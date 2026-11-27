@@ -142,7 +142,9 @@ Namespace ExcelOps
                             If copied.Worksheet IsNot Nothing Then
                                 Dim worksheetPart = bookPart.AddNewPart(Of WorksheetPart)()
                                 worksheetPart.Worksheet = copied.Worksheet
-                                For Each settings In copied.SourceWorksheet.Parts.Where(Function(item) TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart)
+                                For Each settings In copied.SourceWorksheet.Parts.Where(
+                                    Function(item) TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart OrElse
+                                                   IsSupportedLegacyWorksheetPart(copied.SourceWorksheet, item))
                                     worksheetPart.AddPart(settings.OpenXmlPart, settings.RelationshipId)
                                 Next
                                 If copied.Drawing IsNot Nothing Then
@@ -368,7 +370,8 @@ Namespace ExcelOps
         End Sub
 
         Private Sub ValidateCopySourceWorksheet(part As WorksheetPart)
-            If part.Parts.Any(Function(item) Not (TypeOf item.OpenXmlPart Is DrawingsPart OrElse TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart)) OrElse
+            If part.Parts.Any(Function(item) Not (TypeOf item.OpenXmlPart Is DrawingsPart OrElse
+                TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart OrElse IsSupportedLegacyWorksheetPart(part, item))) OrElse
                part.ExternalRelationships.Any() OrElse part.HyperlinkRelationships.Any() OrElse
                part.Worksheet.ChildElements.Any(Function(item) Not StandardWorksheetElements.Contains(item.LocalName)) Then
                 Throw UnsupportedOperation("Copying a worksheet with related parts or unsupported worksheet elements")

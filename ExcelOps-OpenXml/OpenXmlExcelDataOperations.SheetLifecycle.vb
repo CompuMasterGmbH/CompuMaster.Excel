@@ -47,7 +47,8 @@ Namespace ExcelOps
                     changes.Add(Me,
                         Sub(book)
                             RewriteMoveDependents(book, removed,
-                                Function(referencedName, qualifier) If(removed.ContainsKey(referencedName), "#REF!", qualifier))
+                                Function(referencedName, qualifier) If(removed.ContainsKey(referencedName), "#REF!", qualifier),
+                                allowConditionalFormatting:=True)
                             If book.Workbook.BookViews Is Nothing Then book.Workbook.AddChild(New BookViews(New WorkbookView()))
                             RemoveTransferredSheets(book, removed)
                         End Sub)
