@@ -6,6 +6,7 @@ Namespace ExcelOps
 
         Private NotInheritable Partial Class FormulaCalculation
             Private ReadOnly _activeNames As New HashSet(Of DefinedName)
+            Private ReadOnly _parsedNameExpressions As New Dictionary(Of DefinedName, (Text As String, Expression As FormulaExpression))
             Private _localValues As New Dictionary(Of Object, Lazy(Of Object))
 
             Friend Function EvaluateLet(bindings As IReadOnlyList(Of (Key As Object, Value As FormulaExpression)),
@@ -64,10 +65,19 @@ Namespace ExcelOps
 
             Private Function EvaluateDefinedNameValue(definition As DefinedName, formulaCell As ExcelCell) As Object
                 If Not _activeNames.Add(definition) Then Throw New CircularReferenceException(formulaCell, definition.Text)
+                Dim callerValues = _localValues
                 Try
-                    Dim expression = FormulaParser.Parse(definition.Text, requireAbsoluteReferences:=True)
-                    Return EvaluateExpression(expression, formulaCell)
+                    Dim text = definition.Text
+                    Dim parsed As (Text As String, Expression As FormulaExpression)
+                    If Not _parsedNameExpressions.TryGetValue(definition, parsed) OrElse parsed.Text <> text Then
+                        parsed = (text, FormulaParser.Parse(text, requireAbsoluteReferences:=True))
+                        _parsedNameExpressions(definition) = parsed
+                    End If
+                    ' A defined name has no lexical bindings from its caller.
+                    _localValues = New Dictionary(Of Object, Lazy(Of Object))
+                    Return EvaluateExpression(parsed.Expression, formulaCell)
                 Finally
+                    _localValues = callerValues
                     _activeNames.Remove(definition)
                 End Try
             End Function

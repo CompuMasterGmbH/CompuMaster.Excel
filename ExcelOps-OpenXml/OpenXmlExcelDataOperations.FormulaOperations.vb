@@ -57,11 +57,25 @@ Namespace ExcelOps
                 End Select
             End Function
 
+            Private Shared ReadOnly UnhandledBuiltInFunction As New Object()
+
             Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
                                              Optional localBinding As Object = Nothing) As Object
-                Select Case name.ToUpperInvariant()
-                    Case "IF"
-                        Return EvaluateIf(arguments, formulaCell)
+                ' Do not keep the full built-in dispatcher on the stack during LAMBDA recursion.
+                Dim upperName = name.ToUpperInvariant()
+                If upperName = "IF" Then Return EvaluateIf(arguments, formulaCell)
+                Dim builtInResult = EvaluateBuiltInFunction(upperName, arguments, formulaCell)
+                If builtInResult IsNot UnhandledBuiltInFunction Then Return builtInResult
+
+                If localBinding IsNot Nothing Then Return InvokeFormulaLambda(ReadLocalName(localBinding), arguments, formulaCell)
+                Dim definedResult As Object = Nothing
+                If TryInvokeDefinedLambda(name, arguments, formulaCell, definedResult) Then Return definedResult
+                Return EvaluateRegisteredFunction(name, arguments, formulaCell)
+            End Function
+
+            Private Function EvaluateBuiltInFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
+                                                     formulaCell As ExcelCell) As Object
+                Select Case name
                     Case "ABS"
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
                         Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), formulaCell)))
@@ -281,10 +295,7 @@ Namespace ExcelOps
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"
                         Return Aggregate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case Else
-                        If localBinding IsNot Nothing Then Return InvokeFormulaLambda(ReadLocalName(localBinding), arguments, formulaCell)
-                        Dim definedResult As Object = Nothing
-                        If TryInvokeDefinedLambda(name, arguments, formulaCell, definedResult) Then Return definedResult
-                        Return EvaluateRegisteredFunction(name, arguments, formulaCell)
+                        Return UnhandledBuiltInFunction
                 End Select
             End Function
 
