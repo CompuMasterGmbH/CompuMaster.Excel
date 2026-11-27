@@ -302,6 +302,7 @@ Namespace ExcelOps
             Dim clearCache = cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation OrElse
                 (cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired AndAlso RecalculationRequired)
 
+            EnsureVisibleSheetForSave()
             Dim temporaryPath = Path.Combine(Path.GetDirectoryName(destination), Path.GetRandomFileName())
             Dim temporaryFile As New FileStream(temporaryPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None)
             Try
@@ -321,6 +322,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Protected Overrides Sub SaveCopyAsCore(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Dim destination = ValidateSaveDestination(filePath)
+            EnsureVisibleSheetForSave()
             If Not recalculateWorkbook.GetValueOrDefault(RecalculationRequired AndAlso Not CalculationModuleDisabled) Then
                 SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
                 SaveAsInternal(destination, cachedCalculationsOption)

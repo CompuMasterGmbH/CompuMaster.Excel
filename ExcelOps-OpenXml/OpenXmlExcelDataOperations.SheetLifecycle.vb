@@ -16,7 +16,7 @@ Namespace ExcelOps
                     Throw New ArgumentException("A sheet with the requested name already exists.", NameOf(sheetName))
                 End If
                 Dim index = If(String.IsNullOrEmpty(beforeSheetName), sheets.Count, sheets.IndexOf(FindSheet(beforeSheetName)))
-                Dim sheetId = sheets.Max(Function(sheet) sheet.SheetId.Value) + 1UI
+                Dim sheetId = sheets.Select(Function(sheet) sheet.SheetId.Value).DefaultIfEmpty(0UI).Max() + 1UI
                 Using changes As New StagedWorkbookChanges()
                     changes.Add(Me,
                         Sub(book)
@@ -39,10 +39,6 @@ Namespace ExcelOps
             SyncLock WorkbookSaveLock
                 ValidateSheetLifecycle()
                 Dim sheet = FindSheet(sheetName)
-                Dim sheets = WorkbookSheets()
-                If Not sheets.Any(Function(item) item IsNot sheet AndAlso IsVisible(item)) Then
-                    Throw New InvalidOperationException("At least one sheet must remain visible.")
-                End If
                 ValidateMoveWorkbook()
                 Dim removedName = sheet.Name.Value
                 Dim removed As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase) From {{removedName, removedName}}
@@ -57,8 +53,9 @@ Namespace ExcelOps
                         End Sub)
                     changes.Apply()
                 End Using
-                If wasActive Then
-                    Dim selected = FindSheet(SelectedSheetName())
+                Dim selectedName = SelectedSheetName()
+                If wasActive AndAlso selectedName IsNot Nothing Then
+                    Dim selected = FindSheet(selectedName)
                     For Each remaining In WorkbookSheets()
                         SetTabSelected(remaining, 0UI, remaining Is selected)
                     Next

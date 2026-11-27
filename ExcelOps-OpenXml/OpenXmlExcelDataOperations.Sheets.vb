@@ -262,7 +262,8 @@ Namespace ExcelOps
         Public Overrides Function SelectedSheetName() As String
             Dim sheets = WorkbookSheets()
             Dim index = WorkbookPart.Workbook.BookViews?.GetFirstChild(Of WorkbookView)()?.ActiveTab?.Value
-            Return sheets.ElementAtOrDefault(CInt(If(index, 0UI)))?.Name?.Value
+            Dim active = sheets.ElementAtOrDefault(CInt(If(index, 0UI)))
+            Return If(active IsNot Nothing AndAlso IsVisible(active), active.Name?.Value, Nothing)
         End Function
 
         ''' <inheritdoc/>

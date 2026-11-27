@@ -334,19 +334,63 @@ Partial Public Class OpenXmlExcelOpsTest
     End Sub
 
 
-    <Test>
-    Public Sub WorksheetTransfer_OpenXmlRejectsMovingTheLastVisibleSheetAtomically()
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub WorksheetTransfer_OpenXmlMovesTheLastVisibleSheetAndKeepsSourceOpen(saveEmptySource As Boolean)
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
         Using source As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options),
               destination As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options)
             Dim sourceSheet = source.WorkSheetNames().Single()
             Dim targetSheet = destination.WorkSheetNames().Single()
             source.WriteCellValue(sourceSheet, 0, 0, 42)
-            Assert.Throws(Of NotSupportedException)(Sub() source.MoveSheet(sourceSheet, destination))
-            Assert.That(source.WorkSheetNames(), [Is].EqualTo({sourceSheet}))
-            Assert.That(destination.WorkSheetNames(), [Is].EqualTo({targetSheet}))
-            Assert.That(source.LookupCellValue(Of Integer)(sourceSheet, 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(42))
+            Dim assigned = source.MoveSheet(sourceSheet, destination)
+            Assert.That(source.IsClosed, [Is].False)
+            Assert.That(source.WorkSheetNames(), [Is].Empty)
+            Assert.That(destination.WorkSheetNames(), [Is].EqualTo({targetSheet, assigned.TargetSheetName}))
+            Assert.That(destination.LookupCellValue(Of Integer)(assigned.TargetSheetName, 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(42))
+            If saveEmptySource Then
+                Dim output = Path.Combine(_directory, "empty-move-source.xlsx")
+                source.SaveAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Using reopened As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+                    Assert.That(reopened.WorkSheetNames(), [Is].EqualTo({"Sheet1"}))
+                    Assert.That(reopened.LookupCellValueAsObject("Sheet1", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].Null)
+                End Using
+            Else
+                source.AddSheet("Replacement")
+                Assert.That(source.SelectedSheetName(), [Is].EqualTo("Replacement"))
+            End If
         End Using
     End Sub
+
+    <TestCase("Save")>
+    <TestCase("SaveAs")>
+    <TestCase("SaveCopyAs")>
+    <TestCase("Add")>
+    Public Sub RemovingLastSheetKeepsWorkbookEditableAndSavesValidXlsx(operation As String)
+        ExcelOpsTests.Engines.ExcelOpsTestBase(Of OpenXmlExcelDataOperations).VerifyEmptyWorksheetLifecycle(
+            Function(path, options) New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options), operation)
+    End Sub
+
+
+    <Test>
+    Public Sub SavingWithoutAVisibleSheetPreservesHiddenSheetsAndChoosesAnUnusedName()
+        Dim output = Path.Combine(_directory, "hidden-only.xlsx")
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Using workbook As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options)
+            Dim original = workbook.WorkSheetNames().Single()
+            If Not String.Equals(original, "Sheet1", StringComparison.Ordinal) Then workbook.RenameWorksheet(original, "Sheet1", True)
+            workbook.AddSheet("Visible")
+            workbook.HideSheet("Sheet1", stronglyHide:=True)
+            workbook.RemoveSheet("Visible")
+            Assert.That(workbook.SelectedSheetName(), [Is].Null)
+            workbook.SaveAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using reopened As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(reopened.SheetNames(), [Is].EqualTo({"Sheet1", "Sheet2"}))
+            Assert.That(reopened.IsHiddenSheet("Sheet1"), [Is].True)
+            Assert.That(reopened.SelectedSheetName(), [Is].EqualTo("Sheet2"))
+        End Using
+    End Sub
+
 
 End Class

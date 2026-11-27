@@ -13,6 +13,76 @@ Namespace ExcelOpsTests.Engines
     <NonParallelizable>
     Public MustInherit Class ExcelOpsTestBase(Of T As ExcelOps.ExcelDataOperationsBase)
 
+        <TestCase("Save")>
+        <TestCase("SaveAs")>
+        <TestCase("SaveCopyAs")>
+        <TestCase("Add")>
+        Public Sub RemovingLastSheetKeepsWorkbookEditableAndSavesValidXlsx(operation As String)
+            If GetType(T) Is GetType(MsExcelDataOperations) Then
+                Assert.Ignore("Microsoft Excel's native behavior is covered by a separate test.")
+            End If
+            VerifyEmptyWorksheetLifecycle(Function(path, options) CreateInstance(path, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options), operation)
+        End Sub
+
+        Friend Shared Sub VerifyEmptyWorksheetLifecycle(open As Func(Of String, ExcelDataOperationsOptions, ExcelDataOperationsBase), operation As String)
+            Dim folder = IO.Path.Combine(IO.Path.GetTempPath(), "excel-last-sheet-" & Guid.NewGuid().ToString("N"))
+            IO.Directory.CreateDirectory(folder)
+            Try
+                Dim input = IO.Path.Combine(folder, "input.xlsx")
+                Dim output = If(operation = "Save", input, IO.Path.Combine(folder, "result.xlsx"))
+                Using package As New CompuMaster.Epplus4.ExcelPackage(New IO.FileInfo(input))
+                    package.Workbook.Worksheets.Add("Original").Cells("A1").Value = 23
+                    package.Save()
+                End Using
+
+                Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite) With {
+                    .DisableInitialCalculation = True
+                }
+                Const keep = ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset
+                Dim workbook = open(input, options)
+                Dim isCommercialSpire = String.Equals(workbook.EngineName, "Spire.Xls", StringComparison.Ordinal)
+                Try
+                    workbook.RemoveSheet("Original")
+                    Assert.That(workbook.IsClosed, [Is].False)
+                    Assert.That(workbook.SheetNames(), [Is].Empty)
+                    Assert.That(workbook.WorkSheetNames(), [Is].Empty)
+                    Assert.That(workbook.SelectedSheetName(), [Is].Null)
+                    If operation = "Add" Then
+                        workbook.AddSheet("Replacement")
+                        workbook.WriteCellValue("Replacement", 0, 0, 42)
+                    End If
+                    Select Case operation
+                        Case "Save"
+                            workbook.Save(keep)
+                        Case "SaveCopyAs"
+                            workbook.SaveCopyAs(output, keep)
+                        Case Else
+                            workbook.SaveAs(output, keep)
+                    End Select
+                Finally
+                    workbook.Close()
+                End Try
+
+                Using reopened As New OpenXmlExcelDataOperations(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                    Dim expectedName = If(operation = "Add", "Replacement", "Sheet1")
+                    Dim names = reopened.SheetNames()
+                    ' The commercial Spire SDK can add its evaluation sheet when serializing an unlicensed copy.
+                    If isCommercialSpire Then names.Remove("Evaluation Warning")
+                    Assert.That(names, [Is].EqualTo({expectedName}))
+                    Assert.That(reopened.IsHiddenSheet(expectedName), [Is].False)
+                    Dim value = reopened.LookupCellValueAsObject(expectedName, 0, 0, FormulaCalculationMode.UseCachedValueOnly)
+                    If operation = "Add" Then
+                        Assert.That(value, [Is].EqualTo(42.0))
+                    Else
+                        Assert.That(value, [Is].Null)
+                    End If
+                End Using
+            Finally
+                IO.Directory.Delete(folder, recursive:=True)
+            End Try
+        End Sub
+
+
         Protected MustOverride Function _CreateInstanceUninitialized() As T
 
 #Disable Warning CA1716 ' Bezeichner dürfen nicht mit Schlüsselwörtern übereinstimmen

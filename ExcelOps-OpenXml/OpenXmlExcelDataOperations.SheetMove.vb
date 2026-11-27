@@ -175,7 +175,13 @@ Namespace ExcelOps
                 If Not workbook.DefinedNames.HasChildren Then workbook.DefinedNames.Remove()
             End If
             If workbook.BookViews Is Nothing Then Return
+            Dim hasVisibleSheets = remaining.Any(AddressOf IsVisible)
             For Each view In workbook.BookViews.Elements(Of WorkbookView)()
+                If Not hasVisibleSheets Then
+                    view.ActiveTab = Nothing
+                    view.FirstSheet = Nothing
+                    Continue For
+                End If
                 view.ActiveTab = RemapRemovedSheetPosition(If(view.ActiveTab?.Value, 0UI), positions, remaining)
                 If view.FirstSheet IsNot Nothing Then
                     view.FirstSheet = RemapRemovedSheetPosition(view.FirstSheet.Value, positions, remaining)

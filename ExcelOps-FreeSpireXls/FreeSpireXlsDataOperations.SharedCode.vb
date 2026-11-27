@@ -32,10 +32,13 @@ Namespace ExcelOps
             End Get
         End Property
 
+        Private _emptyWorksheetPlaceholder As Worksheet
+
         ''' <inheritdoc/>
         Public Overrides Sub Close()
             If Me.IsClosed = False Then Me._Workbook.Dispose()
             Me._Workbook = Nothing
+            _emptyWorksheetPlaceholder = Nothing
         End Sub
 
         ''' <inheritdoc/>
@@ -47,6 +50,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub SaveInternal(cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            EnsureVisibleSheetForSave(requireWorksheet:=_emptyWorksheetPlaceholder IsNot Nothing)
             Me._Workbook.SaveToFile(Me.FilePath) 'NOTE: _Workbook.Save is forbidden since the file path might have changed in background due to a workaround required for RemoveVbaProject
         End Sub
 
@@ -57,6 +61,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
+            EnsureVisibleSheetForSave(requireWorksheet:=_emptyWorksheetPlaceholder IsNot Nothing)
             Me._Workbook.OpenPassword = Me.PasswordForOpening
             Me._Workbook.SaveToFile(fileName)
             Me.SetWorkbookFilePath(New System.IO.FileInfo(fileName).FullName)
@@ -99,10 +104,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         ''' <remarks>WARNING: due to lack of engine feature, the order is always: 1st worksheets, 2nd chart sheets</remarks>
         Public Overrides Function SheetNames() As List(Of String)
-            Dim Result As New List(Of String)
-            For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
-                Result.Add(Me.Workbook.Worksheets(MyCounter).Name)
-            Next
+            Dim Result = WorkSheetNames()
             For MyCounter As Integer = 0 To Me.Workbook.Chartsheets.Count - 1
                 Result.Add(Me.Workbook.Chartsheets(MyCounter).Name)
             Next
@@ -113,7 +115,8 @@ Namespace ExcelOps
         Public Overrides Function WorkSheetNames() As List(Of String)
             Dim Result As New List(Of String)
             For MyCounter As Integer = 0 To Me.Workbook.Worksheets.Count - 1
-                Result.Add(Me.Workbook.Worksheets(MyCounter).Name)
+                Dim sheet = Me.Workbook.Worksheets(MyCounter)
+                If sheet IsNot _emptyWorksheetPlaceholder Then Result.Add(sheet.Name)
             Next
             Return Result
         End Function
@@ -686,22 +689,51 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Public Overrides Sub RemoveSheet(sheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Me.Workbook.Worksheets.Remove(sheetName)
+            SyncLock WorkbookSaveLock
+                If _emptyWorksheetPlaceholder IsNot Nothing Then Throw New ArgumentOutOfRangeException(NameOf(sheetName))
+                Dim sheets = Me.Workbook.Worksheets
+                If sheets.Count <> 1 OrElse Not String.Equals(sheets(0).Name, sheetName, StringComparison.OrdinalIgnoreCase) Then
+                    sheets.Remove(sheetName)
+                    Return
+                End If
+
+                ' Spire requires a physical worksheet. Keep an empty backing sheet until the next addition or save.
+                Dim originalName = sheets(0).Name
+                Dim placeholder = sheets.Add("_Empty_" & Guid.NewGuid().ToString("N").Substring(0, 24))
+                Try
+                    sheets.Remove(originalName)
+                Catch
+                    sheets.Remove(placeholder.Name)
+                    Throw
+                End Try
+                _emptyWorksheetPlaceholder = placeholder
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Sub AddSheet(sheetName As String, beforeSheetName As String)
             If sheetName = Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
-            Dim ws As Worksheet = Me.Workbook.Worksheets.Add(sheetName)
-            If beforeSheetName <> Nothing Then
-                Dim OldIndex As Integer = Me.Workbook.Worksheets(sheetName).Index
-                Dim NewIndex As Integer = Me.Workbook.Worksheets(beforeSheetName).Index
-                Me.Workbook.Worksheets.Move(OldIndex, NewIndex)
-            End If
+            SyncLock WorkbookSaveLock
+                If _emptyWorksheetPlaceholder IsNot Nothing Then
+                    If beforeSheetName <> Nothing Then Throw New ArgumentOutOfRangeException(NameOf(beforeSheetName))
+                    _emptyWorksheetPlaceholder.Name = sheetName
+                    _emptyWorksheetPlaceholder.Select()
+                    _emptyWorksheetPlaceholder = Nothing
+                    Return
+                End If
+
+                Me.Workbook.Worksheets.Add(sheetName)
+                If beforeSheetName <> Nothing Then
+                    Dim OldIndex As Integer = Me.Workbook.Worksheets(sheetName).Index
+                    Dim NewIndex As Integer = Me.Workbook.Worksheets(beforeSheetName).Index
+                    Me.Workbook.Worksheets.Move(OldIndex, NewIndex)
+                End If
+            End SyncLock
         End Sub
 
         ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
+            If _emptyWorksheetPlaceholder IsNot Nothing Then Return Nothing
             Return Me.Workbook.ActiveSheet.Name
         End Function
 

@@ -730,6 +730,24 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption">Option for handling cached formula results while saving.</param>
         Protected MustOverride Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
+        ''' <summary>Ensures that a workbook being saved contains a visible worksheet or chart sheet.</summary>
+        ''' <remarks>Call this from the save implementation of an engine that supports editing without visible sheets.</remarks>
+        ''' <param name="requireWorksheet">Requires a visible worksheet even if there is already a visible chart sheet.</param>
+        Protected Sub EnsureVisibleSheetForSave(Optional requireWorksheet As Boolean = False)
+            Dim names = SheetNames()
+            Dim eligibleNames = If(requireWorksheet, WorkSheetNames(), names)
+            If eligibleNames.Any(Function(sheetName) Not IsHiddenSheet(sheetName)) Then Return
+            Dim existing As New HashSet(Of String)(names, StringComparer.OrdinalIgnoreCase)
+            Dim index = 1
+            Dim name As String
+            Do
+                name = "Sheet" & index.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                index += 1
+            Loop While existing.Contains(name)
+            AddSheet(name)
+            SelectSheet(name)
+        End Sub
+
         ''' <summary>Lists worksheet and chart sheet names together in workbook tab order.</summary>
         ''' <returns>The combined list of tab names. Use the list's Count property for the total.</returns>
         Public MustOverride Function SheetNames() As List(Of String)
@@ -1289,6 +1307,7 @@ Namespace ExcelOps
         ''' Removes a sheet.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <remarks>Engines that support removing the last visible sheet keep the workbook open. Saving such a workbook adds an empty visible worksheet. Microsoft Excel applies its native worksheet deletion rules.</remarks>
         Public MustOverride Sub RemoveSheet(sheetName As String)
 
         ''' <summary>

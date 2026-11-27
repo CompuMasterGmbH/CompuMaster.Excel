@@ -61,9 +61,6 @@ Namespace ExcelOps
                 If If(workbook.WorkbookProtection?.LockStructure?.Value, False) Then
                     Throw UnsupportedOperation("Removing sheets from a structure-protected workbook")
                 End If
-                If Not remaining.Any(AddressOf IsVisible) Then
-                    Throw New NotSupportedException("The source workbook must retain at least one visible sheet after the move.")
-                End If
             End If
 
             Dim resolveQualifier As Func(Of String, String, String) =

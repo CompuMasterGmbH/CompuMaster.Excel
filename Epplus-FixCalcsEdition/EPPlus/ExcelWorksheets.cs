@@ -940,6 +940,12 @@ namespace CompuMaster.Epplus4
                 _pck.Workbook.VbaProject.Modules.Remove(worksheet.CodeModule);
             }
 			ReindexWorksheetDictionary();
+            if (_worksheets.Count == 0)
+            {
+                _pck.Workbook.View.ActiveTab = 0;
+                return;
+            }
+
             //If the active sheet is deleted, set the first tab as active.
             if (_pck.Workbook.View.ActiveTab >= _pck.Workbook.Worksheets.Count)
             {

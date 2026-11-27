@@ -139,6 +139,43 @@ Namespace ExcelOpsTests.Engines
         End Sub
 
         <Test>
+        Public Sub ExcelRejectsRemovingItsLastWorksheetAndReopensTheSavedPlaceholder()
+            Dim output = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
+            Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
+                .DisableInitialCalculation = True
+            }
+            Dim excel As MsExcelDataOperations = Nothing
+            Try
+                Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), ExcelDataOperationsBase.OpenMode.CreateFile, options)
+                    workbook.RemoveSheet(workbook.SheetNames().Single())
+                    workbook.SaveAs(output, ExcelDataOperationsBase.SaveOptionsForDisabledCalculationEngines.NoReset)
+                End Using
+                excel = CreateInstance(output, ExcelDataOperationsBase.OpenMode.OpenExistingFile, options)
+                Dim sheet = excel.WorkSheetNames().Single()
+                Assert.That(sheet, [Is].EqualTo("Sheet1"))
+                Dim application = excel.Workbook.Application
+                Dim alerts = application.DisplayAlerts
+                Try
+                    application.DisplayAlerts = False
+                    Dim failure = Assert.Throws(Of System.Runtime.InteropServices.COMException)(Sub() excel.RemoveSheet(sheet))
+                    Assert.That(failure.HResult, [Is].EqualTo(&H800A03EC))
+                Finally
+                    application.DisplayAlerts = alerts
+                End Try
+                Assert.That(excel.IsClosed, [Is].False)
+                Assert.That(excel.SheetNames(), [Is].EqualTo({sheet}))
+            Catch ex As PlatformNotSupportedException
+                Assert.Ignore(ex.Message)
+            Catch ex As CompuMaster.ComInterop.ComApplicationNotAvailableException
+                Assert.Ignore(ex.Message)
+            Finally
+                If excel IsNot Nothing AndAlso Not excel.IsClosed Then excel.Close()
+                If IO.File.Exists(output) Then IO.File.Delete(output)
+            End Try
+        End Sub
+
+
+        <Test>
         Public Sub ExcelReopensAndCalculatesOpenXmlAuthoredDynamicArrays()
             Dim output = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") & ".xlsx")
             Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {

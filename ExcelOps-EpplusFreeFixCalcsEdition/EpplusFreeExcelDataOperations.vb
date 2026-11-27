@@ -370,6 +370,7 @@ Namespace ExcelOps
 
         ''' <inheritdoc/>
         Public Overrides Function SelectedSheetName() As String
+            If Me.Workbook.Worksheets.Count = 0 Then Return Nothing
             Return Me.Workbook.Worksheets(Me.Workbook.View.ActiveTab).Name
         End Function
 
