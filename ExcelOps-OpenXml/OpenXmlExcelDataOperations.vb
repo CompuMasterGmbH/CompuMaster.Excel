@@ -231,6 +231,7 @@ Namespace ExcelOps
                     If _formulaWorkbookName IsNot Nothing Then _formulaSession.DetachWorkbook(_formulaWorkbookName, Me)
                     _formulaWorkbookName = Nothing
                     _document = Nothing
+                    CloseNativeRtd()
                     _source?.Dispose()
                     _source = Nothing
                     _changedSheets.Clear()
@@ -336,7 +337,7 @@ Namespace ExcelOps
                     Dim session = _formulaSession.Snapshot()
                     Dim workbooks = session.Workbooks.ToDictionary(Function(item) item.Key,
                         Function(item) If(item.Value Is Me, copy, item.Value), StringComparer.OrdinalIgnoreCase)
-                    Dim copySession As New ExcelFormulaSessionSnapshot(workbooks, session.Functions, session.ActiveWorkbook,
+                    Dim copySession As New ExcelFormulaSessionSnapshot(workbooks, session.Functions, session.RtdProviders, session.ActiveWorkbook,
                         session.ActiveCell, session.Revision)
                     Dim calculation As New FormulaCalculation(copy, copySession, Me.FilePath)
                     calculation.RecalculateWorkbook()
@@ -392,6 +393,7 @@ Namespace ExcelOps
                     Nothing, disableInitialCalculation:=True, disableAutoCalculation:=Nothing, disableCalculationEngine:=CalculationModuleDisabled) With {
                         .FormulaCulture = LoadOptions.FormulaCulture, .FormulaLocalClock = LoadOptions.FormulaLocalClock,
                         .CalculateOnCellEdit = LoadOptions.CalculateOnCellEdit,
+                        .AllowedNativeRtdProgIds = LoadOptions.AllowedNativeRtdProgIds?.ToArray(),
                         .AllowKnownStructuralReferenceDifferences = LoadOptions.AllowKnownStructuralReferenceDifferences
                     }
                 Dim copy As New OpenXmlExcelDataOperations(options)

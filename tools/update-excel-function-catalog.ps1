@@ -39,10 +39,12 @@ if ($documentedTokens.Count -lt 100) { throw 'The XLSX future-function table con
 
 $implementation = @{}
 $operations = Get-Content -LiteralPath (Join-Path $root 'ExcelOps-OpenXml/OpenXmlExcelDataOperations.FormulaOperations.vb') -Raw
-$dispatch = [regex]::Match($operations, '(?s)Friend Function EvaluateFunction\(.*?End Function').Value
-foreach ($case in [regex]::Matches($dispatch, '(?m)^\s*Case\s+("[^"]+"(?:\s*,\s*"[^"]+")*)')) {
-    foreach ($name in [regex]::Matches($case.Groups[1].Value, '"([^"]+)"')) {
-        $implementation[(Convert-FunctionName $name.Groups[1].Value)] = $true
+$dispatch = [regex]::Matches($operations, '(?s)(?:Friend Function EvaluateFunction|Private Function EvaluateBuiltInFunction)\(.*?End Function')
+foreach ($method in $dispatch) {
+    foreach ($case in [regex]::Matches($method.Value, '(?m)^\s*(?:Case\s+|If upperName = )("[^"]+"(?:\s*,\s*"[^"]+")*)')) {
+        foreach ($name in [regex]::Matches($case.Groups[1].Value, '"([^"]+)"')) {
+            $implementation[(Convert-FunctionName $name.Groups[1].Value)] = $true
+        }
     }
 }
 $parser = Get-Content -LiteralPath (Join-Path $root 'ExcelOps-OpenXml/OpenXmlExcelDataOperations.FormulaParser.vb') -Raw

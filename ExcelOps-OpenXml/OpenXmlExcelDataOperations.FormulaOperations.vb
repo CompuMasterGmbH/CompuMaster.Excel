@@ -81,6 +81,8 @@ Namespace ExcelOps
                         Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), formulaCell)))
                         If TypeOf operand Is FormulaError Then Return operand
                         Return Math.Abs(DirectCast(operand, Double))
+                    Case "RTD", "_XLFN.RTD"
+                        Return EvaluateRegisteredFunction(name, arguments, formulaCell)
                     Case "GETPIVOTDATA"
                         Return EvaluatePivotData(arguments, formulaCell)
                     Case "ISREF"
@@ -227,6 +229,8 @@ Namespace ExcelOps
                         Return EvaluateGrowthSchedule(arguments, formulaCell)
                     Case "AMORLINC", "AMORDEGRC"
                         Return EvaluateFrenchDepreciation(name.Equals("AMORDEGRC", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "VDB"
+                        Return EvaluateVariableDecliningDepreciation(arguments, formulaCell)
                     Case "SLN", "SYD", "DB", "DDB", "EFFECT", "NOMINAL", "DOLLARDE", "DOLLARFR"
                         Return EvaluateDepreciationOrRate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ERF", "ERFC", "ERF.PRECISE", "_XLFN.ERF.PRECISE", "ERFC.PRECISE", "_XLFN.ERFC.PRECISE",

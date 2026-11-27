@@ -126,6 +126,11 @@ Namespace ExcelOps
         ''' <remarks>Supported by the Open XML engine.</remarks>
         Public Property FormulaSession As ExcelFormulaSession
 
+        ''' <summary>Gets or sets the local COM servers that Open XML may activate for RTD formulas.</summary>
+        ''' <value>The allowed case-insensitive server ProgIDs. Nothing or an empty collection disables native activation.</value>
+        ''' <remarks>Supported on Windows. Configure this list before opening the workbook. Application-registered RTD providers take precedence.</remarks>
+        Public Property AllowedNativeRtdProgIds As IReadOnlyCollection(Of String)
+
         ''' <summary>Gets or sets the workbook name used to resolve references within the formula session.</summary>
         ''' <value>An explicit name, or Nothing to use the file name of a path-backed workbook.</value>
         ''' <remarks>A name is required when a workbook without a file path is opened in a session.</remarks>
@@ -156,6 +161,7 @@ Namespace ExcelOps
                 .FormulaCulture = Me.FormulaCulture,
                 .FormulaLocalClock = Me.FormulaLocalClock,
                 .FormulaSession = Me.FormulaSession,
+                .AllowedNativeRtdProgIds = Me.AllowedNativeRtdProgIds?.ToArray(),
                 .FormulaWorkbookName = Me.FormulaWorkbookName,
                 .AllowKnownStructuralReferenceDifferences = Me.AllowKnownStructuralReferenceDifferences
             }
