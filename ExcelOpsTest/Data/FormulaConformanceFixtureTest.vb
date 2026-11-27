@@ -86,6 +86,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceSeries1900.xlsx", "Series arrays", 2)>
     <TestCase("FormulaReferenceDepreciation1900.xlsx", "Depreciation functions", 980)>
     <TestCase("FormulaReferenceDepreciation1900.xlsx", "Depreciation arrays", 10)>
+    <TestCase("FormulaReferenceVariableDepreciation1900.xlsx", "Variable depreciation", 3096)>
     <TestCase("FormulaReferenceNormal1900.xlsx", "Normal functions", 919)>
     <TestCase("FormulaReferenceNormal1900.xlsx", "Normal arrays", 8)>
     <TestCase("FormulaReferenceGamma1900.xlsx", "Gamma functions", 1506)>
@@ -284,6 +285,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGrowth1900.xlsx", "Growth arrays", 14)>
     <TestCase("FormulaReferenceSeries1900.xlsx", "Series arrays", 5)>
     <TestCase("FormulaReferenceDepreciation1900.xlsx", "Depreciation arrays", 19)>
+    <TestCase("FormulaReferenceVariableDepreciation1900.xlsx", "Variable depreciation", 15)>
     <TestCase("FormulaReferenceNormal1900.xlsx", "Normal arrays", 20)>
     <TestCase("FormulaReferenceGamma1900.xlsx", "Gamma arrays", 20)>
     <TestCase("FormulaReferenceBeta1900.xlsx", "Beta arrays", 20)>

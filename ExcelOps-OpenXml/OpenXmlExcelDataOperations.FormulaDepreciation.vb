@@ -93,6 +93,143 @@
                 Return FiniteNumber(Math.Max(0.0, Math.Min(opening * rate, opening - salvage)))
             End Function
 
+            Private Function EvaluateVariableDecliningDepreciation(arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
+                If arguments.Count < 5 OrElse arguments.Count > 7 Then Return New FormulaError("#VALUE!")
+                Return BroadcastReferenceArguments(arguments, formulaCell, AddressOf VariableDecliningDepreciationValue)
+            End Function
+
+            Private Function VariableDecliningDepreciationValue(values As Object()) As Object
+                Dim inputs(5) As Double
+                inputs(5) = 2.0
+                For index = 0 To Math.Min(5, values.Length - 1)
+                    Dim value = ReadFinancialNumber(values(index))
+                    If TypeOf value Is FormulaError Then Return value
+                    inputs(index) = DirectCast(value, Double)
+                Next
+
+                Dim noSwitch = False
+                If values.Length = 7 Then
+                    If TypeOf values(6) Is String Then Return New FormulaError("#VALUE!")
+                    noSwitch = DirectCast(NumberValue(values(6)), Double) <> 0.0
+                End If
+                Return VariableDecliningDepreciation(inputs(0), inputs(1), inputs(2), inputs(3), inputs(4), inputs(5), noSwitch)
+            End Function
+
+            Private Shared Function VariableDecliningDepreciation(cost As Double, salvage As Double, life As Double, startPeriod As Double,
+                                                                  endPeriod As Double, factor As Double, noSwitch As Boolean) As Object
+                If cost < 0.0 OrElse salvage < 0.0 OrElse life < 0.0 OrElse factor < 0.0 OrElse
+                   startPeriod < 0.0 OrElse endPeriod < startPeriod OrElse endPeriod > life Then Return New FormulaError("#NUM!")
+                If life = 0.0 Then Return New FormulaError("#DIV/0!")
+                If startPeriod = endPeriod Then
+                    If Not noSwitch AndAlso startPeriod = life AndAlso
+                       ((salvage = 0.0 AndAlso (cost = 0.0 OrElse factor >= life)) OrElse (cost <= salvage AndAlso factor = 0.0)) Then
+                        Return New FormulaError("#DIV/0!")
+                    End If
+                    Return 0.0
+                End If
+
+                Dim duration = endPeriod - startPeriod
+                Dim depreciable = cost - salvage
+                If depreciable < 0.0 Then Return If(noSwitch OrElse startPeriod >= 1.0, 0.0, depreciable * Math.Min(1.0, duration))
+                If Not noSwitch AndAlso life < 1.0 Then Return FiniteNumber(depreciable * duration / life)
+
+                Dim rate = Math.Min(1.0, factor / life)
+                If noSwitch Then
+                    Return FiniteNumber(DecliningDepreciationTotal(cost, salvage, endPeriod, rate) -
+                                        DecliningDepreciationTotal(cost, salvage, startPeriod, rate))
+                End If
+
+                Dim line = depreciable / life
+                Dim firstDecline = Math.Min(cost * rate, depreciable)
+                If line > firstDecline OrElse (life = 1.0 AndAlso factor = 1.0 AndAlso salvage = 0.0) Then Return FiniteNumber(line * duration)
+
+                ' Excel can apply the fractional part of the starting period before the whole periods.
+                Dim fraction = startPeriod - Math.Floor(startPeriod)
+                Dim offset = startPeriod
+                If fraction > 0.0 AndAlso (factor > 1.0 OrElse Math.Min(depreciable, line) <= firstDecline) Then offset = fraction
+                Dim opening = cost - DepreciationWithSwitch(cost, salvage, life, offset, rate, openingPeriod:=True)
+                Return FiniteNumber(DepreciationWithSwitch(opening, salvage, life - offset, endPeriod - offset, rate, openingPeriod:=False) -
+                                    DepreciationWithSwitch(opening, salvage, life - offset, startPeriod - offset, rate, openingPeriod:=False))
+            End Function
+
+            Private Shared Function DecliningDepreciationTotal(cost As Double, salvage As Double, period As Double, rate As Double) As Double
+                Dim wholePeriods = Math.Floor(period)
+                Dim book = Math.Max(salvage, cost * Math.Pow(1.0 - rate, wholePeriods))
+                Dim fractionalDepreciation = Math.Min(book * rate, book - salvage) * (period - wholePeriods)
+                Return cost - book + fractionalDepreciation
+            End Function
+
+            Private Shared Function DepreciationWithSwitch(cost As Double, salvage As Double, life As Double, period As Double,
+                                                           rate As Double, openingPeriod As Boolean) As Double
+                If period >= 1048576.0 Then Return DepreciationWithSwitchOverLongInterval(cost, salvage, life, period, rate, openingPeriod)
+
+                Dim book = cost
+                Dim elapsed = 0.0
+                ' Before this point the remaining life is too long for straight-line depreciation to exceed the declining rate.
+                Dim guaranteedDecliningPeriods = Math.Floor(Math.Min(period, life - 1.0 / rate))
+                If guaranteedDecliningPeriods > 1024.0 Then
+                    elapsed = guaranteedDecliningPeriods
+                    book = Math.Max(salvage, cost * Math.Pow(1.0 - rate, elapsed))
+                End If
+                While elapsed < period AndAlso book > salvage
+                    Dim remaining = book - salvage
+                    Dim declining = Math.Min(book * rate, remaining)
+                    Dim span = Math.Min(1.0, period - elapsed)
+                    If Not openingPeriod OrElse span = 1.0 Then
+                        Dim straight = remaining / (life - elapsed)
+                        If Math.Min(remaining, straight) > declining Then
+                            Return cost - book + straight * (period - elapsed)
+                        End If
+                        book -= declining * span
+                    ElseIf elapsed = 0.0 Then
+                        book -= declining * span
+                    Else
+                        book -= Math.Min(book * rate * span, remaining)
+                    End If
+                    elapsed += 1.0
+                End While
+                Return cost - book
+            End Function
+
+            Private Shared Function DepreciationWithSwitchOverLongInterval(cost As Double, salvage As Double, life As Double,
+                                                                           period As Double, rate As Double, openingPeriod As Boolean) As Double
+                Dim wholePeriods = Math.Floor(period)
+                Dim last = If(openingPeriod, wholePeriods, Math.Ceiling(period)) - 1.0
+                Dim retention = 1.0 - rate
+                If rate > 0.0 AndAlso retention > 0.0 AndAlso cost > salvage Then
+                    ' The straight-line advantage increases while the next declining period stays above salvage.
+                    If salvage > 0.0 AndAlso retention < 1.0 Then
+                        last = Math.Min(last, Math.Floor((Math.Log(salvage) - Math.Log(cost)) / Math.Log(retention) - 1.0))
+                    End If
+                    If last >= 0.0 AndAlso StraightLineDepreciationWins(cost, salvage, life, rate, last) Then
+                        Dim first = 0.0
+                        While first < last
+                            Dim middle = Math.Floor(first + (last - first) / 2.0)
+                            If middle <= first OrElse middle >= last Then Exit While
+                            If StraightLineDepreciationWins(cost, salvage, life, rate, middle) Then
+                                last = middle
+                            Else
+                                first = middle + 1.0
+                            End If
+                        End While
+                        Dim switchPeriod = If(StraightLineDepreciationWins(cost, salvage, life, rate, first), first, last)
+                        Dim book = cost * Math.Pow(retention, switchPeriod)
+                        Return cost - book + (book - salvage) / (life - switchPeriod) * (period - switchPeriod)
+                    End If
+                End If
+
+                If Not openingPeriod Then Return DecliningDepreciationTotal(cost, salvage, period, rate)
+                Dim opening = Math.Max(salvage, cost * Math.Pow(retention, wholePeriods))
+                Return cost - opening + Math.Min(opening * rate * (period - wholePeriods), opening - salvage)
+            End Function
+
+            Private Shared Function StraightLineDepreciationWins(cost As Double, salvage As Double, life As Double,
+                                                                 rate As Double, elapsed As Double) As Boolean
+                Dim book = cost * Math.Pow(1.0 - rate, elapsed)
+                Dim remaining = book - salvage
+                Return Math.Min(remaining, remaining / (life - elapsed)) > book * rate
+            End Function
+
             Private Shared Function ConvertDollarFraction(amount As Double, rawDenominator As Double, fractional As Boolean) As Object
                 If rawDenominator < 0.0 Then Return New FormulaError("#NUM!")
                 Dim denominator = Math.Truncate(rawDenominator)

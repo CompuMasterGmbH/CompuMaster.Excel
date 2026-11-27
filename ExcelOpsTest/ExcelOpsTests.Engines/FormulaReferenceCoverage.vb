@@ -153,6 +153,10 @@ Namespace ExcelOpsTests.Engines
                 ' Excel and the managed special functions use different approximations.
                 Return Math.Max(1.0E-12, Math.Abs(expected) * 1.0E-7)
             End If
+            If fileName = "FormulaReferenceVariableDepreciation1900.xlsx" Then
+                ' Small period amounts can be differences of book values several orders of magnitude larger.
+                Return 1.0E-10
+            End If
             Return 1.0E-12
         End Function
 
