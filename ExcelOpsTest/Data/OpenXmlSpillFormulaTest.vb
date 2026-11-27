@@ -10,6 +10,39 @@ Imports NUnit.Framework
 Public Class OpenXmlSpillFormulaTest
     Private Const SheetName As String = "Spills"
 
+    <Test>
+    Public Sub WritesGroupingFormulasWithExcelAggregationTokens()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Const source As String = "GROUPBY({""a"";""b"";""a""},{2;3;4},HSTACK(SUM,MAX),0,0)"
+            workbook.WriteDynamicArrayFormula("Sheet1", 0, 0, source, immediatelyCalculateCellValue:=True)
+            Dim stored = workbook.LookupCellFormula("Sheet1", 0, 0)
+            Assert.That(stored, Does.StartWith("_xlfn.GROUPBY("))
+            Assert.That(stored, Does.Contain("_xlfn.HSTACK(_xleta.SUM,_xleta.MAX)"))
+            Assert.That(Value(workbook, "Sheet1", "A2"), [Is].EqualTo("a"))
+            Assert.That(Number(workbook, "Sheet1", "B2"), [Is].EqualTo(6.0))
+            Assert.That(Number(workbook, "Sheet1", "C2"), [Is].EqualTo(4.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub WritesPivotFormulasAndReportsUnsupportedMultiValueColumnSubtotals()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Const source As String = "PIVOTBY({""a"";""b"";""a""},{""x"";""y"";""x""},{2;3;4},SUM,0,0,,0)"
+            workbook.WriteDynamicArrayFormula("Sheet1", 0, 0, source, immediatelyCalculateCellValue:=True)
+            Dim stored = workbook.LookupCellFormula("Sheet1", 0, 0)
+            Assert.That(stored, Does.StartWith("_xlfn.PIVOTBY("))
+            Assert.That(stored, Does.Contain("_xleta.SUM"))
+            Assert.That(Value(workbook, "Sheet1", "A2"), [Is].EqualTo("a"))
+            Assert.That(Number(workbook, "Sheet1", "B2"), [Is].EqualTo(6.0))
+            Assert.That(Number(workbook, "Sheet1", "C3"), [Is].EqualTo(3.0))
+            Const subtotals As String = "PIVOTBY({""a"";""b"";""a""},{""x"",1;""y"",2;""x"",2},{2,8;3,9;4,7},SUM,0,0,,2)"
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.WriteDynamicArrayFormula("Sheet1", 0, 5, subtotals, immediatelyCalculateCellValue:=True))
+        End Using
+    End Sub
+
     <TestCase(False)>
     <TestCase(True)>
     Public Sub ExpandsAndShrinksAnExcelSpillWithDependentFormulas(automatic As Boolean)
@@ -187,6 +220,37 @@ Public Class OpenXmlSpillFormulaTest
             Assert.That(workbook.LookupCellFormula(sheet, 0, 0), [Is].EqualTo("_xlfn.MUNIT(2)"))
             Assert.That(Number(workbook, sheet, "A2"), [Is].EqualTo(0.0))
             Assert.That(Number(workbook, sheet, "B2"), [Is].EqualTo(1.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub AuthorsExcelCompatibleLambdaArraysAndShorthand()
+        Using workbook = CreateBlankWorkbook()
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 0, "MAP({1;2},LAMBDA(item,item+3))", True)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 2, "BYROW({1,2;3,4},SUM)", True)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 4, "LET(fn,LAMBDA(item,item+5),MAP({1;2},fn))", True)
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 0), [Is].EqualTo("_xlfn.MAP({1;2},_xlfn.LAMBDA(_xlpm.item,_xlpm.item+3))"))
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 2), [Is].EqualTo("_xlfn.BYROW({1,2;3,4},_xleta.SUM)"))
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 4), [Is].EqualTo("_xlfn.LET(_xlpm.fn,_xlfn.LAMBDA(_xlpm.item,_xlpm.item+5),_xlfn.MAP({1;2},_xlpm.fn))"))
+            Assert.That(Number(workbook, sheet, "A2"), [Is].EqualTo(5.0))
+            Assert.That(Number(workbook, sheet, "C2"), [Is].EqualTo(7.0))
+            Assert.That(Number(workbook, sheet, "E2"), [Is].EqualTo(7.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub AuthorsLocalLambdaCallsWithoutChangingBuiltInCalls()
+        Using workbook = CreateBlankWorkbook()
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 0, "LET(SIN,3,LAMBDA(item,SIN(item)+SIN)(0))", True)
+            workbook.WriteDynamicArrayFormula(sheet, 0, 1, "LET(fn,LAMBDA(item,item*2),fn(3))", True)
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 0),
+                        [Is].EqualTo("_xlfn.LET(_xlpm.SIN,3,_xlfn.LAMBDA(_xlpm.item,SIN(_xlpm.item)+_xlpm.SIN)(0))"))
+            Assert.That(workbook.LookupCellFormula(sheet, 0, 1),
+                        [Is].EqualTo("_xlfn.LET(_xlpm.fn,_xlfn.LAMBDA(_xlpm.item,_xlpm.item*2),_xlpm.fn(3))"))
+            Assert.That(Number(workbook, sheet, "A1"), [Is].EqualTo(3.0))
+            Assert.That(Number(workbook, sheet, "B1"), [Is].EqualTo(6.0))
         End Using
     End Sub
 

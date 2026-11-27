@@ -129,12 +129,11 @@ Namespace ExcelOps
                 If name = "AND" OrElse name = "OR" OrElse name = "XOR" Then Return CombineLogical(name, arguments, formulaCell)
                 Dim expectsFallback = name = "IFERROR" OrElse name = "IFNA"
                 If arguments.Count <> If(expectsFallback, 2, 1) Then Return New FormulaError("#VALUE!")
-                Dim value = Scalar(EvaluateExpression(arguments(0), formulaCell))
+                Dim input = EvaluateExpression(arguments(0), formulaCell)
+                If expectsFallback Then Return EvaluateErrorFallback(name, input, arguments(1), formulaCell)
+                Dim value = Scalar(input)
                 Dim failure = TryCast(value, FormulaError)
                 Select Case name
-                    Case "IFERROR", "IFNA"
-                        If failure Is Nothing OrElse (name = "IFNA" AndAlso failure.Code <> "#N/A") Then Return value
-                        Return EvaluateExpression(arguments(1), formulaCell)
                     Case "ISBLANK" : Return value Is Nothing
                     Case "ISNUMBER" : Return TypeOf value Is Double
                     Case "ISTEXT" : Return TypeOf value Is String
@@ -147,6 +146,35 @@ Namespace ExcelOps
                         If TypeOf truth Is FormulaError Then Return truth
                         Return DirectCast(truth, Double) = 0.0
                 End Select
+            End Function
+
+            Private Function EvaluateErrorFallback(name As String, input As Object, fallback As FormulaExpression,
+                                                   formulaCell As ExcelCell) As Object
+                Dim onlyNotAvailable = name = "IFNA"
+                If Not IsMultiValue(input) Then
+                    Dim value = Scalar(input)
+                    If ReplacesFormulaError(value, onlyNotAvailable) Then Return EvaluateExpression(fallback, formulaCell)
+                    Return value
+                End If
+
+                Dim original = AsMatrix(input)
+                If Not original.Values.Any(Function(value) ReplacesFormulaError(value, onlyNotAvailable)) Then Return original
+                Dim replacement = AsMatrix(EvaluateExpression(fallback, formulaCell))
+                Dim rows = Math.Max(original.Rows, replacement.Rows)
+                Dim columns = Math.Max(original.Columns, replacement.Columns)
+                Dim values = AllocateMatrixValues(rows, columns)
+                For row = 0 To rows - 1
+                    For column = 0 To columns - 1
+                        Dim value = original.BroadcastAt(row, column)
+                        values(row * columns + column) = If(ReplacesFormulaError(value, onlyNotAvailable), replacement.BroadcastAt(row, column), value)
+                    Next
+                Next
+                Return New FormulaMatrix(rows, columns, values)
+            End Function
+
+            Private Shared Function ReplacesFormulaError(value As Object, onlyNotAvailable As Boolean) As Boolean
+                Dim failure = TryCast(value, FormulaError)
+                Return failure IsNot Nothing AndAlso (Not onlyNotAvailable OrElse failure.Code = "#N/A")
             End Function
 
             Private Function LogicalOptionValue(value As Object) As Object
@@ -215,7 +243,8 @@ Namespace ExcelOps
                     Dim area = TryCast(value, FormulaArea)
                     If area Is Nothing Then
                         If name = "COUNTBLANK" Then Return If(TypeOf value Is FormulaError, value, New FormulaError("#VALUE!"))
-                        count += 1.0
+                        Dim matrix = TryCast(value, FormulaMatrix)
+                        count += If(matrix Is Nothing, 1, matrix.Values.Count(Function(item) item IsNot Nothing))
                     Else
                         If Not ResolveReference(area)._worksheets.ContainsKey(area.Sheet) Then Return New FormulaError("#REF!")
                         Dim values = RangeValues(area)

@@ -9,39 +9,58 @@ Namespace ExcelOps
                                               Optional allowSpillReferences As Boolean = False) As SheetData
             If Not source.Descendants(Of CellFormula)().Any(Function(formula) If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Shared) Then Return source
             Dim data = DirectCast(source.CloneNode(True), SheetData)
-            Dim groups As New Dictionary(Of UInteger, (First As ReferenceEndpoint, Last As ReferenceEndpoint, Formula As String))
-            Dim followers As New List(Of (Cell As Cell, Formula As CellFormula))
+            Dim groups = ReadSharedFormulaGroups(source.Descendants(Of Cell)())
             For Each cell In data.Descendants(Of Cell)()
                 Dim formula = cell.CellFormula
                 If If(formula?.FormulaType?.Value, CellFormulaValues.Normal) <> CellFormulaValues.Shared Then Continue For
-                If formula.SharedIndex Is Nothing Then Throw New InvalidDataException("A shared formula has no group index.")
-                If String.IsNullOrEmpty(formula.Text) Then
-                    followers.Add((cell, formula))
-                Else
-                    Dim area = ReadStructuralRange(formula.Reference?.Value)
-                    Dim anchor = ReadSharedCellAddress(cell)
-                    If anchor.Row <> area.First.Row OrElse anchor.Column <> area.First.Column OrElse groups.ContainsKey(formula.SharedIndex.Value) Then
-                        Throw New InvalidDataException("A shared formula has an invalid or duplicate anchor.")
-                    End If
-                    groups.Add(formula.SharedIndex.Value, (area.First, area.Last, formula.Text))
-                    MakeIndividualFormula(formula, formula.Text)
-                End If
-            Next
-
-            For Each follower In followers
-                Dim group As (First As ReferenceEndpoint, Last As ReferenceEndpoint, Formula As String) = Nothing
-                Dim address = ReadSharedCellAddress(follower.Cell)
-                If Not groups.TryGetValue(follower.Formula.SharedIndex.Value, group) OrElse
-                   address.Row < group.First.Row OrElse address.Row > group.Last.Row OrElse
-                   address.Column < group.First.Column OrElse address.Column > group.Last.Column Then
-                    Throw New InvalidDataException("A shared formula cell lies outside its group.")
-                End If
-                Dim text = RewriteFormula(group.Formula, sheetName, sheetName, Nothing, Nothing, False, tableNames,
-                                          copyRowOffset:=address.Row - group.First.Row, copyColumnOffset:=address.Column - group.First.Column,
-                                          allowSpillReferences:=allowSpillReferences)
-                MakeIndividualFormula(follower.Formula, text)
+                Dim address = ReadSharedCellAddress(cell)
+                Dim text = ResolveSharedFormulaText(formula, groups, sheetName, address.Row, address.Column, tableNames, allowSpillReferences)
+                MakeIndividualFormula(formula, text)
             Next
             Return data
+        End Function
+
+        Private NotInheritable Class SharedFormulaGroup
+            Friend ReadOnly First As ReferenceEndpoint
+            Friend ReadOnly Last As ReferenceEndpoint
+            Friend ReadOnly Formula As String
+
+            Friend Sub New(first As ReferenceEndpoint, last As ReferenceEndpoint, formula As String)
+                Me.First = first
+                Me.Last = last
+                Me.Formula = formula
+            End Sub
+        End Class
+
+        Private Shared Function ReadSharedFormulaGroups(cells As IEnumerable(Of Cell)) As Dictionary(Of UInteger, SharedFormulaGroup)
+            Dim groups As New Dictionary(Of UInteger, SharedFormulaGroup)
+            For Each cell In cells
+                Dim formula = cell.CellFormula
+                If If(formula?.FormulaType?.Value, CellFormulaValues.Normal) <> CellFormulaValues.Shared Then Continue For
+                If formula.SharedIndex Is Nothing Then Throw New InvalidDataException("A shared formula has no group index.")
+                If String.IsNullOrEmpty(formula.Text) Then Continue For
+                Dim area = ReadStructuralRange(formula.Reference?.Value)
+                Dim anchor = ReadSharedCellAddress(cell)
+                If anchor.Row <> area.First.Row OrElse anchor.Column <> area.First.Column OrElse groups.ContainsKey(formula.SharedIndex.Value) Then
+                    Throw New InvalidDataException("A shared formula has an invalid or duplicate anchor.")
+                End If
+                groups.Add(formula.SharedIndex.Value, New SharedFormulaGroup(area.First, area.Last, formula.Text))
+            Next
+            Return groups
+        End Function
+
+        Private Function ResolveSharedFormulaText(formula As CellFormula, groups As Dictionary(Of UInteger, SharedFormulaGroup),
+                                                  sheetName As String, row As Integer, column As Integer, tableNames As HashSet(Of String),
+                                                  allowSpillReferences As Boolean) As String
+            Dim group As SharedFormulaGroup = Nothing
+            If formula.SharedIndex Is Nothing OrElse Not groups.TryGetValue(formula.SharedIndex.Value, group) OrElse
+                row < group.First.Row OrElse row > group.Last.Row OrElse column < group.First.Column OrElse column > group.Last.Column Then
+                Throw New InvalidDataException("A shared formula cell lies outside its group.")
+            End If
+            If row = group.First.Row AndAlso column = group.First.Column Then Return group.Formula
+            Return RewriteFormula(group.Formula, sheetName, sheetName, Nothing, Nothing, False, tableNames,
+                                  copyRowOffset:=row - group.First.Row, copyColumnOffset:=column - group.First.Column,
+                                  allowSpillReferences:=allowSpillReferences)
         End Function
 
         Private Shared Function ReadSharedCellAddress(cell As Cell) As ReferenceEndpoint

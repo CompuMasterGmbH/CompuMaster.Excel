@@ -95,7 +95,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceDiscrete1900.xlsx", "Discrete functions", 1845)>
     <TestCase("FormulaReferenceDiscrete1900.xlsx", "Discrete arrays", 5)>
     <TestCase("FormulaReferenceReferences1900.xlsx", "References functions", 579)>
-    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 40)>
+    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 33)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape functions", 622)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 215)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits functions", 713)>
@@ -111,6 +111,58 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceThreshold1900.xlsx", "Threshold arrays", 59)>
     <TestCase("FormulaReferencePercentRank1900.xlsx", "Percent rank", 532)>
     <TestCase("FormulaReferencePercentRank1900.xlsx", "Percent rank arrays", 96)>
+    <TestCase("FormulaReferenceHistograms1900.xlsx", "Distribution results", 579)>
+    <TestCase("FormulaReferenceHistograms1900.xlsx", "Distribution arrays", 234)>
+    <TestCase("FormulaReferenceDatabase1900.xlsx", "Database results", 626)>
+    <TestCase("FormulaReferenceDatabase1900.xlsx", "Database arrays", 138)>
+    <TestCase("FormulaReferenceLambda1900.xlsx", "Lambda results", 337)>
+    <TestCase("FormulaReferenceLambda1900.xlsx", "Lambda arrays", 161)>
+    <TestCase("FormulaReferenceRowAggregates1900.xlsx", "Row visibility", 84)>
+    <TestCase("FormulaReferenceRowAggregates1900.xlsx", "Filter modes", 524)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Formats", 146)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Array display", 98)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Links and XML", 87)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Byte text", 95)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Random rules", 29)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel values", 228)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel J values", 76)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 38)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 43)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit catalog", 144)>
+    <TestCase("FormulaReferenceFrench1900.xlsx", "Straight-line depreciation", 1451)>
+    <TestCase("FormulaReferenceFrench1900.xlsx", "Declining depreciation", 1425)>
+    <TestCase("FormulaReferenceFrench1904.xlsx", "Straight-line depreciation", 1451)>
+    <TestCase("FormulaReferenceFrench1904.xlsx", "Declining depreciation", 1425)>
+    <TestCase("FormulaReferenceUnary1900.xlsx", "Unary plus", 44)>
+    <TestCase("FormulaReferenceOddLast1900.xlsx", "Odd last coupon price", 1217)>
+    <TestCase("FormulaReferenceOddLast1900.xlsx", "Odd last coupon yield", 1217)>
+    <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon price", 1217)>
+    <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon yield", 1217)>
+    <TestCase("FormulaReferenceAccrual1900.xlsx", "Accrued periodic interest", 3031)>
+    <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 3031)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy probes", 54)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 51)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 75)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 38)>
+    <TestCase("FormulaReferencePivotTables1900.xlsx", "GETPIVOTDATA", 16)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon price", 756)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon yield", 756)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon price", 756)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon yield", 756)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 173)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 20)>
+    <TestCase("FormulaReferenceAxes1900.xlsx", "Whole axes", 56)>
+    <TestCase("FormulaReferenceAxes1900.xlsx", "Other worksheet", 8)>
+    <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 210)>
+    <TestCase("FormulaReferenceRegression1900.xlsx", "Forecast values", 230)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Coupon periods", 1140)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Bond valuations", 429)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Interest at maturity", 540)>
+    <TestCase("FormulaReferenceBonds1900.xlsx", "Bond yields", 143)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Coupon periods", 1140)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Bond valuations", 429)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Interest at maturity", 540)>
+    <TestCase("FormulaReferenceBonds1904.xlsx", "Bond yields", 143)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Lookups", 128)>
     <TestCase("FormulaReferenceLookupVariants.xlsx", "Regex", 1)>
     <TestCase("FormulaReferenceRegexVariants.xlsx", "Regex lookups", 33)>
@@ -139,16 +191,19 @@ Public Class FormulaConformanceFixtureTest
 
             Dim actual = ReadFormulaCaches(output, sheetName)
             Assert.That(actual.Keys, [Is].EquivalentTo(expected.Keys), sheetName)
-            For Each item In expected
-                Dim address = sheetName & "!" & item.Key
-                Dim result = actual(item.Key)
-                Assert.That(result.Kind, [Is].EqualTo(item.Value.Kind), address)
-                If result.Kind = CellValues.Number Then
-                    Assert.That(result.Value, [Is].EqualTo(item.Value.Value).Within(1.0E-12), address)
-                Else
-                    Assert.That(result.Value, [Is].EqualTo(item.Value.Value), address)
-                End If
-            Next
+            Using assertions = Assert.EnterMultipleScope()
+                For Each item In expected
+                    Dim address = sheetName & "!" & item.Key
+                    Dim result = actual(item.Key)
+                    Assert.That(result.Kind, [Is].EqualTo(item.Value.Kind), address)
+                    If result.Kind <> item.Value.Kind Then Continue For
+                    If result.Kind = CellValues.Number Then
+                        Assert.That(result.Value, [Is].EqualTo(item.Value.Value).Within(ExcelOpsTests.Engines.FormulaReferenceCoverage.ReferenceNumberTolerance(DirectCast(item.Value.Value, Double), fileName, sheetName)), address)
+                    Else
+                        Assert.That(result.Value, [Is].EqualTo(item.Value.Value), address)
+                    End If
+                Next
+            End Using
             If fileName = ReferenceWorkbook Then
                 Assert.That(ReadFormulaCaches(output, "External cases"), [Is].EqualTo(ReadFormulaCaches(fixture, "External cases")))
             End If
@@ -233,7 +288,7 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceGamma1900.xlsx", "Gamma arrays", 20)>
     <TestCase("FormulaReferenceBeta1900.xlsx", "Beta arrays", 20)>
     <TestCase("FormulaReferenceDiscrete1900.xlsx", "Discrete arrays", 24)>
-    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 78)>
+    <TestCase("FormulaReferenceReferences1900.xlsx", "References arrays", 85)>
     <TestCase("FormulaReferenceReshape1900.xlsx", "Reshape arrays", 1120)>
     <TestCase("FormulaReferenceFits1900.xlsx", "Fits arrays", 46)>
     <TestCase("FormulaReferenceHypothesis1900.xlsx", "Hypothesis arrays", 325)>
@@ -241,6 +296,41 @@ Public Class FormulaConformanceFixtureTest
     <TestCase("FormulaReferenceSecurities1904.xlsx", "Securities arrays", 4)>
     <TestCase("FormulaReferenceThreshold1900.xlsx", "Threshold arrays", 118)>
     <TestCase("FormulaReferencePercentRank1900.xlsx", "Percent rank arrays", 528)>
+    <TestCase("FormulaReferenceHistograms1900.xlsx", "Distribution arrays", 526)>
+    <TestCase("FormulaReferenceDatabase1900.xlsx", "Database arrays", 63)>
+    <TestCase("FormulaReferenceLambda1900.xlsx", "Lambda arrays", 409)>
+    <TestCase("FormulaReferenceRowAggregates1900.xlsx", "Filter modes", 25)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Formats", 2)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Array display", 52)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Links and XML", 24)>
+    <TestCase("FormulaReferenceFormats1900.xlsx", "Random rules", 10)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel values", 15)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Bessel J values", 5)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Unit examples", 3)>
+    <TestCase("FormulaReferenceEngineering1900.xlsx", "Baht text", 1)>
+    <TestCase("FormulaReferenceFrench1900.xlsx", "Straight-line depreciation", 4)>
+    <TestCase("FormulaReferenceFrench1900.xlsx", "Declining depreciation", 4)>
+    <TestCase("FormulaReferenceFrench1904.xlsx", "Straight-line depreciation", 4)>
+    <TestCase("FormulaReferenceFrench1904.xlsx", "Declining depreciation", 4)>
+    <TestCase("FormulaReferenceUnary1900.xlsx", "Unary plus", 14)>
+    <TestCase("FormulaReferenceOddLast1900.xlsx", "Odd last coupon price", 6)>
+    <TestCase("FormulaReferenceOddLast1900.xlsx", "Odd last coupon yield", 6)>
+    <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon price", 6)>
+    <TestCase("FormulaReferenceOddLast1904.xlsx", "Odd last coupon yield", 6)>
+    <TestCase("FormulaReferenceAccrual1900.xlsx", "Accrued periodic interest", 6)>
+    <TestCase("FormulaReferenceAccrual1904.xlsx", "Accrued periodic interest", 6)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy probes", 396)>
+    <TestCase("FormulaReferenceGrouping1900.xlsx", "GroupBy shapes", 873)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy probes", 1982)>
+    <TestCase("FormulaReferencePivotGroups1900.xlsx", "PivotBy options", 4732)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon price", 16)>
+    <TestCase("FormulaReferenceOddFirst1900.xlsx", "Odd first coupon yield", 16)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon price", 16)>
+    <TestCase("FormulaReferenceOddFirst1904.xlsx", "Odd first coupon yield", 16)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Cell metadata", 10)>
+    <TestCase("FormulaReferenceMetadata1900.xlsx", "Info metadata", 1)>
+    <TestCase("FormulaReferenceRegression1900.xlsx", "Fit coefficients", 570)>
+    <TestCase("FormulaReferenceRegression1900.xlsx", "Forecast values", 248)>
     Public Sub RecalculatesTheSpilledExcelResults(fileName As String, sheetName As String, expectedChildren As Integer)
         Dim addresses As New List(Of String)
         Using package = SpreadsheetDocument.Open(FixturePath(fileName), False)
@@ -248,7 +338,7 @@ Public Class FormulaConformanceFixtureTest
             Dim sheet = workbook.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = sheetName)
             Dim worksheet = DirectCast(workbook.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
             For Each cell In worksheet.Descendants(Of Cell)()
-                If cell.CellFormula IsNot Nothing OrElse cell.CellValue Is Nothing Then Continue For
+                If IsFormulaAnchor(cell) OrElse cell.CellValue Is Nothing Then Continue For
                 Dim address As New ExcelCell(sheetName, cell.CellReference.Value, ExcelCell.ValueTypes.All)
                 If address.RowIndex > 0 AndAlso address.ColumnIndex >= 3 Then addresses.Add(cell.CellReference.Value)
             Next
@@ -262,16 +352,18 @@ Public Class FormulaConformanceFixtureTest
         Using expected = OpenForCalculation(path), calculated = OpenForCalculation(path)
             calculated.ResetCellValueFromFormulaCell(sheetName)
             calculated.RecalculateSheet(sheetName)
-            For Each address In addresses
-                Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
-                Dim actual = calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
-                Dim reference = expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
-                If TypeOf actual Is Double AndAlso TypeOf reference Is Double Then
-                    Assert.That(actual, [Is].EqualTo(reference).Within(1.0E-12), address)
-                Else
-                    Assert.That(actual, [Is].EqualTo(reference), address)
-                End If
-            Next
+            Using assertions = Assert.EnterMultipleScope()
+                For Each address In addresses
+                    Dim cell As New ExcelCell(sheetName, address, ExcelCell.ValueTypes.All)
+                    Dim actual = calculated.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
+                    Dim reference = expected.LookupCellValueAsObject(cell, FormulaCalculationMode.UseCachedValueOnly)
+                    If TypeOf actual Is Double AndAlso TypeOf reference Is Double Then
+                        Assert.That(actual, [Is].EqualTo(reference).Within(ExcelOpsTests.Engines.FormulaReferenceCoverage.ReferenceNumberTolerance(DirectCast(reference, Double), fileName, sheetName)), address)
+                    Else
+                        Assert.That(actual, [Is].EqualTo(reference), address)
+                    End If
+                Next
+            End Using
         End Using
     End Sub
 
@@ -395,11 +487,36 @@ Public Class FormulaConformanceFixtureTest
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
             .DisableCalculationEngine = False, .FormulaCulture = CultureInfo.GetCultureInfo("de-DE")
         }
+        If IO.Path.GetFileName(path) = "FormulaReferenceMetadata1900.xlsx" Then
+            Return New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
+        End If
         Return New OpenXmlExcelDataOperations(File.ReadAllBytes(path), options)
     End Function
 
     Private Shared Function FixturePath(fileName As String) As String
         Return TestEnvironment.FullPathOfExistingTestFile("test_data", "FormulaConformance", fileName)
+    End Function
+
+    <TestCase("EUROCONVERT(1.2,""DEM"",""EUR"")", 0.61)>
+    <TestCase("EUROCONVERT(1,""FRF"",""EUR"",TRUE,3)", 0.152)>
+    <TestCase("EUROCONVERT(1,""FRF"",""EUR"",FALSE,3)", 0.15)>
+    <TestCase("EUROCONVERT(1,""FRF"",""DEM"",TRUE,3)", 0.29728616)>
+    <TestCase("EUROCONVERT(123.456,""EUR"",""EUR"")", 123.456)>
+    <TestCase("EUROCONVERT(1,""EUR"",""ATS"",TRUE)", 13.7603)>
+    Public Sub CalculatesDocumentedEuroConversions(formula As String, expected As Double)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Dim sheet = workbook.SheetNames()(0)
+            workbook.WriteCellFormula(sheet, 0, 0, formula, immediatelyCalculateCellValue:=True)
+            Assert.That(workbook.LookupCellValue(Of Double)(sheet, 0, 0, FormulaCalculationMode.UseCachedValueOnly),
+                        [Is].EqualTo(expected).Within(1.0E-12))
+        End Using
+    End Sub
+
+    Private Shared Function IsFormulaAnchor(cell As Cell) As Boolean
+        Dim formula = cell.CellFormula
+        Return formula IsNot Nothing AndAlso Not (String.IsNullOrEmpty(formula.Text) AndAlso
+            If(formula.CalculateCell?.Value, False) AndAlso If(formula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Normal)
     End Function
 
     Private Shared Function ReadFormulaCaches(fileName As String, sheetName As String) As Dictionary(Of String, (Kind As CellValues, Value As Object))
@@ -408,7 +525,7 @@ Public Class FormulaConformanceFixtureTest
             Dim workbook = package.WorkbookPart
             Dim sheet = workbook.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = sheetName)
             Dim worksheet = DirectCast(workbook.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet
-            For Each cell In worksheet.Descendants(Of Cell)().Where(Function(item) item.CellFormula IsNot Nothing)
+            For Each cell In worksheet.Descendants(Of Cell)().Where(AddressOf IsFormulaAnchor)
                 Dim address = cell.CellReference.Value
                 Assert.That(cell.CellValue, [Is].Not.Null, sheetName & "!" & address)
                 Dim text = If(cell.CellValue.Text, String.Empty)

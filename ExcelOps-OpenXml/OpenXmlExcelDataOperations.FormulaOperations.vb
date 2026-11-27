@@ -7,6 +7,7 @@ Namespace ExcelOps
         Partial Private NotInheritable Class FormulaCalculation
 
             Friend Function EvaluateUnary(operation As String, operand As Object) As Object
+                If operation = "+" Then Return If(IsMultiValue(operand), AsMatrix(operand), Scalar(operand))
                 If IsMultiValue(operand) Then
                     Dim matrix = AsMatrix(operand)
                     Return New FormulaMatrix(matrix.Rows, matrix.Columns,
@@ -16,7 +17,6 @@ Namespace ExcelOps
                 If TypeOf value Is FormulaError Then Return value
                 Dim number = DirectCast(value, Double)
                 Select Case operation
-                    Case "+" : Return number
                     Case "-" : Return -number
                     Case "%" : Return number / 100.0
                     Case Else : Throw New NotSupportedException("Unsupported unary operator " & operation & ".")
@@ -57,15 +57,32 @@ Namespace ExcelOps
                 End Select
             End Function
 
-            Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell) As Object
-                Select Case name.ToUpperInvariant()
-                    Case "IF"
-                        Return EvaluateIf(arguments, formulaCell)
+            Private Shared ReadOnly UnhandledBuiltInFunction As New Object()
+
+            Friend Function EvaluateFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression), formulaCell As ExcelCell,
+                                             Optional localBinding As Object = Nothing) As Object
+                ' Do not keep the full built-in dispatcher on the stack during LAMBDA recursion.
+                Dim upperName = name.ToUpperInvariant()
+                If upperName = "IF" Then Return EvaluateIf(arguments, formulaCell)
+                Dim builtInResult = EvaluateBuiltInFunction(upperName, arguments, formulaCell)
+                If builtInResult IsNot UnhandledBuiltInFunction Then Return builtInResult
+
+                If localBinding IsNot Nothing Then Return InvokeFormulaLambda(ReadLocalName(localBinding), arguments, formulaCell)
+                Dim definedResult As Object = Nothing
+                If TryInvokeDefinedLambda(name, arguments, formulaCell, definedResult) Then Return definedResult
+                Return EvaluateRegisteredFunction(name, arguments, formulaCell)
+            End Function
+
+            Private Function EvaluateBuiltInFunction(name As String, arguments As IReadOnlyList(Of FormulaExpression),
+                                                     formulaCell As ExcelCell) As Object
+                Select Case name
                     Case "ABS"
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
                         Dim operand = NumberValue(Scalar(EvaluateExpression(arguments(0), formulaCell)))
                         If TypeOf operand Is FormulaError Then Return operand
                         Return Math.Abs(DirectCast(operand, Double))
+                    Case "GETPIVOTDATA"
+                        Return EvaluatePivotData(arguments, formulaCell)
                     Case "ISREF"
                         If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
                         Dim reference = TryCast(EvaluateExpression(arguments(0), formulaCell), FormulaArea)
@@ -105,7 +122,7 @@ Namespace ExcelOps
                         Return EvaluateNumericThreshold(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ROUND", "ROUNDUP", "ROUNDDOWN", "TRUNC", "INT", "MOD", "SIGN", "SQRT", "POWER"
                         Return EvaluateNumericFunction(name.ToUpperInvariant(), arguments, formulaCell)
-                    Case "FIND", "SEARCH"
+                    Case "FIND", "SEARCH", "FINDB", "SEARCHB"
                         Return EvaluateTextSearch(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "VALUE", "NUMBERVALUE", "_XLFN.NUMBERVALUE", "CHAR", "CODE", "UNICHAR", "_XLFN.UNICHAR",
                          "UNICODE", "_XLFN.UNICODE", "CLEAN", "PROPER", "ENCODEURL", "_XLFN.ENCODEURL"
@@ -129,8 +146,50 @@ Namespace ExcelOps
                          "PERCENTILE", "PERCENTILE.INC", "_XLFN.PERCENTILE.INC", "PERCENTILE.EXC", "_XLFN.PERCENTILE.EXC",
                          "QUARTILE", "QUARTILE.INC", "_XLFN.QUARTILE.INC", "QUARTILE.EXC", "_XLFN.QUARTILE.EXC"
                         Return EvaluateOrderStatistic(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "SUBTOTAL", "AGGREGATE", "_XLFN.AGGREGATE"
+                        Return EvaluateRowAggregate(name.Equals("SUBTOTAL", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "RAND", "RANDBETWEEN", "RANDARRAY", "_XLFN.RANDARRAY"
+                        Return EvaluateRandomFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DOLLAR", "FIXED", "TEXT", "ARRAYTOTEXT", "_XLFN.ARRAYTOTEXT", "VALUETOTEXT", "_XLFN.VALUETOTEXT"
+                        Return EvaluateDisplayFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "CELL", "INFO"
+                        Return EvaluateMetadataFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "HYPERLINK", "FILTERXML", "_XLFN.FILTERXML"
+                        Return EvaluateLinkOrXml(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "ASC", "DBCS", "_XLFN.DBCS", "JIS", "PHONETIC"
+                        Return EvaluateWidthFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "LENB", "LEFTB", "RIGHTB", "MIDB", "REPLACEB"
+                        Return EvaluateByteFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "BESSELI", "BESSELJ", "BESSELK", "BESSELY", "CONVERT"
+                        Return EvaluateEngineeringFunction(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "BAHTTEXT"
+                        Return EvaluateBahtText(arguments, formulaCell)
+                    Case "EUROCONVERT", "_XLFN.EUROCONVERT"
+                        Return EvaluateEuroConvert(arguments, formulaCell)
+                    Case "LINEST", "LOGEST", "TREND", "GROWTH"
+                        Return EvaluateRegression(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "COUPDAYBS", "COUPDAYS", "COUPDAYSNC", "COUPNCD", "COUPNUM", "COUPPCD", "DURATION", "MDURATION", "PRICE", "YIELD"
+                        Return EvaluateCouponSecurity(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "ODDFPRICE", "ODDFYIELD"
+                        Return EvaluateOddFirstCoupon(name.Equals("ODDFYIELD", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "ODDLPRICE", "ODDLYIELD"
+                        Return EvaluateOddLastCoupon(name.Equals("ODDLYIELD", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "ACCRINT"
+                        Return EvaluateAccruedPeriodicInterest(arguments, formulaCell)
+                    Case "PRICEMAT", "YIELDMAT", "ACCRINTM"
+                        Return EvaluateMaturityInterest(name.ToUpperInvariant(), arguments, formulaCell)
+                    Case "FREQUENCY"
+                        Return EvaluateFrequency(arguments, formulaCell)
+                    Case "PROB"
+                        Return EvaluateDiscreteProbability(arguments, formulaCell)
                     Case "PERCENTRANK", "PERCENTRANK.INC", "_XLFN.PERCENTRANK.INC", "PERCENTRANK.EXC", "_XLFN.PERCENTRANK.EXC"
                         Return EvaluatePercentRank(name.EndsWith(".EXC", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
+                    Case "BYROW", "_XLFN.BYROW", "BYCOL", "_XLFN.BYCOL", "MAP", "_XLFN.MAP",
+                         "MAKEARRAY", "_XLFN.MAKEARRAY", "REDUCE", "_XLFN.REDUCE", "SCAN", "_XLFN.SCAN"
+                        Return EvaluateLambdaArray(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "ISOMITTED", "_XLFN.ISOMITTED"
+                        If arguments.Count <> 1 Then Return New FormulaError("#VALUE!")
+                        Return EvaluateExpression(arguments(0), formulaCell) Is MissingLambdaArgument
                     Case "ISERR", "ISNONTEXT", "ISEVEN", "ISODD", "N", "T", "TYPE", "ERROR.TYPE"
                         Return EvaluateInformationFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "IFS", "_XLFN.IFS", "SWITCH", "_XLFN.SWITCH"
@@ -140,6 +199,8 @@ Namespace ExcelOps
                         Return EvaluateLogicalFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "COUNTIF", "COUNTIFS", "SUMIF", "SUMIFS", "AVERAGEIF", "AVERAGEIFS", "MINIFS", "MAXIFS", "_XLFN.MINIFS", "_XLFN.MAXIFS"
                         Return EvaluateCriteriaFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "DAVERAGE", "DCOUNT", "DCOUNTA", "DGET", "DMAX", "DMIN", "DPRODUCT", "DSTDEV", "DSTDEVP", "DSUM", "DVAR", "DVARP"
+                        Return EvaluateDatabaseFunction(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "SUMPRODUCT"
                         Return EvaluateSumProduct(arguments, formulaCell)
                     Case "SERIESSUM"
@@ -164,6 +225,8 @@ Namespace ExcelOps
                         Return EvaluateLoanFunction(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
                     Case "FVSCHEDULE"
                         Return EvaluateGrowthSchedule(arguments, formulaCell)
+                    Case "AMORLINC", "AMORDEGRC"
+                        Return EvaluateFrenchDepreciation(name.Equals("AMORDEGRC", StringComparison.OrdinalIgnoreCase), arguments, formulaCell)
                     Case "SLN", "SYD", "DB", "DDB", "EFFECT", "NOMINAL", "DOLLARDE", "DOLLARFR"
                         Return EvaluateDepreciationOrRate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case "ERF", "ERFC", "ERF.PRECISE", "_XLFN.ERF.PRECISE", "ERFC.PRECISE", "_XLFN.ERFC.PRECISE",
@@ -195,6 +258,10 @@ Namespace ExcelOps
                     Case "EXPAND", "_XLFN.EXPAND", "TOCOL", "_XLFN.TOCOL", "TOROW", "_XLFN.TOROW",
                          "WRAPCOLS", "_XLFN.WRAPCOLS", "WRAPROWS", "_XLFN.WRAPROWS", "TRIMRANGE", "_XLFN.TRIMRANGE"
                         Return EvaluateReshape(name.ToUpperInvariant().Replace("_XLFN.", ""), arguments, formulaCell)
+                    Case "PIVOTBY", "_XLFN.PIVOTBY"
+                        Return EvaluatePivotBy(arguments, formulaCell)
+                    Case "GROUPBY", "_XLFN.GROUPBY"
+                        Return EvaluateGroupBy(arguments, formulaCell)
                     Case "PERCENTOF", "_XLFN.PERCENTOF"
                         Return EvaluatePercentOf(arguments, formulaCell)
                     Case "LOOKUP"
@@ -228,7 +295,7 @@ Namespace ExcelOps
                     Case "SUM", "AVERAGE", "MIN", "MAX", "COUNT", "PRODUCT"
                         Return Aggregate(name.ToUpperInvariant(), arguments, formulaCell)
                     Case Else
-                        Return EvaluateRegisteredFunction(name, arguments, formulaCell)
+                        Return UnhandledBuiltInFunction
                 End Select
             End Function
 
@@ -273,7 +340,7 @@ Namespace ExcelOps
                     For Each item In ReferenceArgumentValues(value)
                         If collection AndAlso
                             Not TypeOf item Is Double AndAlso Not TypeOf item Is FormulaError Then Continue For
-                        If item Is Nothing Then Continue For
+                        If item Is Nothing AndAlso name <> "COUNT" Then Continue For
                         Dim number = NumberValue(item)
                         If TypeOf number Is FormulaError Then
                             If name <> "COUNT" AndAlso firstError Is Nothing Then firstError = DirectCast(number, FormulaError)
@@ -317,7 +384,7 @@ Namespace ExcelOps
             End Property
 
             Private Function NumberValue(value As Object) As Object
-                If value Is Nothing Then Return 0.0
+                If value Is Nothing OrElse value Is MissingLambdaArgument Then Return 0.0
                 If TypeOf value Is FormulaError OrElse TypeOf value Is Double Then Return value
                 If TypeOf value Is Boolean Then Return If(DirectCast(value, Boolean), 1.0, 0.0)
                 If TypeOf value Is String Then
@@ -329,7 +396,7 @@ Namespace ExcelOps
             End Function
 
             Private Function TextValue(value As Object) As String
-                If value Is Nothing Then Return String.Empty
+                If value Is Nothing OrElse value Is MissingLambdaArgument Then Return String.Empty
                 If TypeOf value Is Boolean Then
                     If ConversionCulture.TwoLetterISOLanguageName = "de" Then Return If(DirectCast(value, Boolean), "WAHR", "FALSCH")
                     Return If(DirectCast(value, Boolean), "TRUE", "FALSE")

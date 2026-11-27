@@ -152,7 +152,7 @@ Namespace ExcelOps
                             Dim address = ExcelCell.LocalCellAddress(oldRange.First.Row, oldRange.First.Column)
                             anchor.CellFormula.Reference = If(bottom = oldRange.First.Row AndAlso right = oldRange.First.Column,
                                 address, address & ":" & ExcelCell.LocalCellAddress(bottom, right))
-                            _owner._formulaRanges.Remove(worksheet.Part)
+                            _owner.InvalidateGroupedFormulaRanges(worksheet.Part)
                             _owner._calculationChainInvalid = True
                         End If
                     Next

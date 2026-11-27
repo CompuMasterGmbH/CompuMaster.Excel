@@ -45,9 +45,35 @@ Public Class OpenXmlStandardFormulaTest
     <TestCase("ISERROR(1/0)", True)>
     <TestCase("ISNA(NA())", True)>
     <TestCase("COUNTA(1,,2)", 3.0)>
+    <TestCase("COUNTA({1;2;3})", 3.0)>
     <TestCase("COUNTBLANK(B1:C2)", 4.0)>
     Public Sub CalculatesStandardScalarFunctions(formula As String, expected As Object)
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())
+            AssertResult(workbook, formula, expected)
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub ReportsUnstableSubperiodOfDecliningFrenchDepreciation()
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())
+            workbook.WriteCellFormula("Sheet1", 0, 0, "AMORDEGRC(1200,DATE(2008,7,1),DATE(2008,12,31),150,0.25,0.15)", False)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.LookupCellValueAsObject("Sheet1", 0, 0, FormulaCalculationMode.CalculateIfMissing))
+        End Using
+    End Sub
+
+    <TestCase("Inputs!#REF!", "#REF!")>
+    <TestCase("SUM(A1:#REF!)", "#REF!")>
+    <TestCase("SUM(#REF!:A1)", "#REF!")>
+    <TestCase("SUM(A:#REF!)", "#NAME?")>
+    <TestCase("SUM(#REF!:A)", "#REF!")>
+    <TestCase("Inputs!A1:#REF!", "#REF!")>
+    <TestCase("Inputs!#REF!:A1", "#REF!")>
+    <TestCase("IF(FALSE,Inputs!A1:#REF!,12)", 12.0)>
+    <TestCase("IFERROR(Inputs!#REF!,7)", 7.0)>
+    <TestCase("IFERROR(A1:#REF!,""fallback"")", "fallback")>
+    Public Sub CalculatesExcelErrorsFromBrokenReferences(formula As String, expected As Object)
+        Using workbook As New OpenXmlExcelDataOperations(DateWorkbook(False, includeInputs:=True), Options())
             AssertResult(workbook, formula, expected)
         End Using
     End Sub
@@ -75,6 +101,46 @@ Public Class OpenXmlStandardFormulaTest
     Public Sub CalculatesDatesUsingTheWorkbookDateSystem(date1904 As Boolean, formula As String, expected As Object)
         Using workbook As New OpenXmlExcelDataOperations(DateWorkbook(date1904), Options())
             AssertResult(workbook, formula, expected)
+        End Using
+    End Sub
+
+
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub CalculatesDeepAcyclicDependenciesAcrossWorksheets(recalculateAll As Boolean)
+        Dim settings = Options()
+        Dim clock = New DateTime(2024, 7, 10, 11, 30, 0)
+        Dim samples = 0
+        settings.FormulaLocalClock =
+            Function()
+                samples += 1
+                Return clock
+            End Function
+        Using workbook As New OpenXmlExcelDataOperations(DateWorkbook(False, includeInputs:=True), settings)
+            For row = 0 To 599
+                workbook.WriteCellFormula("Sheet1", row, 0, String.Concat("Inputs!A", row + 1, "+1"), False)
+                workbook.WriteCellFormula("Inputs", row, 0, String.Concat("Sheet1!A", row + 2, "+1"), False)
+            Next
+            workbook.WriteCellFormula("Sheet1", 600, 0, "2*HOUR(NOW())", False)
+            If recalculateAll Then
+                workbook.RecalculateAll()
+            Else
+                workbook.RecalculateCell("Sheet1", 0, 0)
+            End If
+            Dim result = workbook.LookupCellValue(Of Double)("Sheet1", 0, 0, FormulaCalculationMode.UseCachedValueOnly)
+            Assert.That(result, [Is].EqualTo(1222.0))
+            Assert.That(samples, [Is].EqualTo(1))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub DetectsCircularDependenciesLongerThanTheRecursiveStack()
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())
+            For row = 0 To 599
+                workbook.WriteCellFormula("Sheet1", row, 0, String.Concat("A", row + 2), False)
+            Next
+            workbook.WriteCellFormula("Sheet1", 600, 0, "A1", False)
+            Assert.Throws(Of CircularReferenceException)(Sub() workbook.RecalculateCell("Sheet1", 0, 0))
         End Using
     End Sub
 
@@ -131,7 +197,7 @@ Public Class OpenXmlStandardFormulaTest
         Return New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
     End Function
 
-    Private Shared Function DateWorkbook(date1904 As Boolean) As Byte()
+    Private Shared Function DateWorkbook(date1904 As Boolean, Optional includeInputs As Boolean = False) As Byte()
         Using memory As New MemoryStream()
             Using doc = SpreadsheetDocument.Create(memory, DocumentFormat.OpenXml.SpreadsheetDocumentType.Workbook)
                 Dim workbook = doc.AddWorkbookPart()
@@ -144,6 +210,11 @@ Public Class OpenXmlStandardFormulaTest
                 sheet.Worksheet = New Worksheet(data)
                 workbook.Workbook = New Workbook(New WorkbookProperties With {.Date1904 = date1904},
                     New Sheets(New Sheet With {.Name = "Sheet1", .SheetId = 1UI, .Id = workbook.GetIdOfPart(sheet)}))
+                If includeInputs Then
+                    Dim inputs = workbook.AddNewPart(Of WorksheetPart)()
+                    inputs.Worksheet = New Worksheet(New SheetData())
+                    workbook.Workbook.Sheets.Append(New Sheet With {.Name = "Inputs", .SheetId = 2UI, .Id = workbook.GetIdOfPart(inputs)})
+                End If
             End Using
             Return memory.ToArray()
         End Using

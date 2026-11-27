@@ -30,11 +30,17 @@
                     Case "MAXA" : Return If(values.Count = 0, 0.0, values.Max())
                 End Select
 
+                If name = "AVERAGEA" Then
+                    If values.Count = 0 Then Return New FormulaError("#DIV/0!")
+                    Return FiniteNumber(values.Average())
+                End If
+                Return EvaluateDeviation(name, values)
+            End Function
+
+            Private Shared Function EvaluateDeviation(name As String, values As IReadOnlyList(Of Double)) As Object
                 Dim count = values.Count
                 Dim isDeviation = name = "DEVSQ" OrElse name = "AVEDEV"
                 If count = 0 Then Return New FormulaError(If(isDeviation, "#NUM!", "#DIV/0!"))
-                If name = "AVERAGEA" Then Return FiniteNumber(values.Average())
-
                 Dim sample = name = "VAR" OrElse name = "VAR.S" OrElse name = "VARA" OrElse
                     name = "STDEV" OrElse name = "STDEV.S" OrElse name = "STDEVA"
                 If sample AndAlso count < 2 Then Return New FormulaError("#DIV/0!")

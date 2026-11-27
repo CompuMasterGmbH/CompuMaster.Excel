@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports System.IO.Compression
 Imports System.Security.Cryptography
 Imports CompuMaster.Excel.ExcelOps
@@ -202,6 +203,168 @@ Partial Public Class OpenXmlExcelOpsTest
         Assert.That(ex.InnerException, [Is].Not.Null)
     End Sub
 
+    <TestCase(True)>
+    <TestCase(False)>
+    Public Sub SelectsVisibleWorksheetInSavedCopy(byName As Boolean)
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "selected.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            Dim part = document.WorkbookPart
+            Dim inputs = DirectCast(part.GetPartById("rId1"), WorksheetPart)
+            Dim notes = DirectCast(part.GetPartById("rId2"), WorksheetPart)
+            Dim chart = part.AddNewPart(Of ChartsheetPart)("rIdChart")
+            chart.Chartsheet = New Chartsheet(New ChartSheetViews(New ChartSheetView With {.WorkbookViewId = 0UI, .TabSelected = True}))
+            part.Workbook.Sheets.PrependChild(New Sheet With {.Id = "rIdChart", .Name = "Chart", .SheetId = 4UI})
+            Dim view = part.Workbook.BookViews.GetFirstChild(Of WorkbookView)()
+            view.ActiveTab = 2UI
+            view.FirstSheet = 2UI
+            Dim inputView = inputs.Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            inputView.TabSelected = Nothing
+            inputView.ZoomScale = 85UI
+            inputView.AppendChild(New Selection With {.ActiveCell = "B2"})
+            notes.Worksheet.SheetViews.GetFirstChild(Of SheetView)().TabSelected = True
+        End Using
+        Dim original = HashFile(template)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Notes"))
+            Assert.Throws(Of ArgumentNullException)(Sub() workbook.SelectSheet(DirectCast(Nothing, String)))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.SelectSheet("Missing"))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.SelectSheet(-1))
+            Assert.Throws(Of ArgumentOutOfRangeException)(Sub() workbook.SelectSheet(3))
+            Assert.Throws(Of ArgumentException)(Sub() workbook.SelectSheet("Chart"))
+            Assert.Throws(Of InvalidOperationException)(Sub() workbook.SelectSheet(2))
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Notes"))
+            If byName Then
+                workbook.SelectSheet("inputs")
+            Else
+                workbook.SelectSheet(0)
+            End If
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Inputs"))
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+
+        Using workbook As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(workbook.SelectedSheetName(), [Is].EqualTo("Inputs"))
+            Assert.That(workbook.IsHiddenSheet("Hidden"), [Is].True)
+        End Using
+        Using package = SpreadsheetDocument.Open(output, False)
+            Dim part = package.WorkbookPart
+            Dim view = part.Workbook.BookViews.GetFirstChild(Of WorkbookView)()
+            Dim inputView = DirectCast(part.GetPartById("rId1"), WorksheetPart).Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            Dim noteView = DirectCast(part.GetPartById("rId2"), WorksheetPart).Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            Dim chartView = DirectCast(part.GetPartById("rIdChart"), ChartsheetPart).Chartsheet.Descendants(Of ChartSheetView)().Single()
+            Assert.That(view.ActiveTab.Value, [Is].EqualTo(1UI))
+            Assert.That(view.FirstSheet.Value, [Is].EqualTo(1UI))
+            Assert.That(inputView.TabSelected.Value, [Is].True)
+            Assert.That(inputView.ZoomScale.Value, [Is].EqualTo(85UI))
+            Assert.That(inputView.ShowGridLines.Value, [Is].False)
+            Assert.That(inputView.GetFirstChild(Of Selection)().ActiveCell.Value, [Is].EqualTo("B2"))
+            Assert.That(noteView.TabSelected.Value, [Is].False)
+            Assert.That(chartView.TabSelected.Value, [Is].False)
+            Assert.That(part.CalculationChainPart, [Is].Not.Null)
+        End Using
+        Assert.That(HashFile(template), [Is].EqualTo(original))
+    End Sub
+
+    <Test>
+    Public Sub CreatesMissingViewsForNewWorksheetSelection()
+        Dim template = Path.Combine(_directory, "template.xlsx")
+        Dim output = Path.Combine(_directory, "selected.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            document.WorkbookPart.Workbook.BookViews.Remove()
+            DirectCast(document.WorkbookPart.GetPartById("rId2"), WorksheetPart).Worksheet.SheetViews.Remove()
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly)
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            workbook.SelectSheet("Notes")
+            workbook.SaveCopyAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim part = document.WorkbookPart
+            Assert.That(part.Workbook.BookViews.GetFirstChild(Of WorkbookView)().ActiveTab.Value, [Is].EqualTo(1UI))
+            Dim view = DirectCast(part.GetPartById("rId2"), WorksheetPart).Worksheet.SheetViews.GetFirstChild(Of SheetView)()
+            Assert.That(view.WorkbookViewId.Value, [Is].EqualTo(0UI))
+            Assert.That(view.TabSelected.Value, [Is].True)
+        End Using
+    End Sub
+
+
+    <Test>
+    Public Sub RecalculatesSharedFormulaFollowersWithoutChangingTheirStoredGroups()
+        Dim template = Path.Combine(_directory, "shared.xlsx")
+        Dim output = Path.Combine(_directory, "calculated.xlsx")
+        CreateTemplate(template)
+        Using document = SpreadsheetDocument.Open(template, True)
+            Dim source = DirectCast(document.WorkbookPart.GetPartById("rId1"), WorksheetPart).Worksheet
+            Dim sheetData = source.GetFirstChild(Of SheetData)()
+            Dim first = sheetData.GetFirstChild(Of Row)().Elements(Of Cell)().Last()
+            first.CellFormula = New CellFormula("B1+$B$1") With {
+                .FormulaType = CellFormulaValues.Shared, .SharedIndex = 0UI, .Reference = "C1:C3"
+            }
+            Dim second = New Cell With {
+                .CellReference = "C2", .CellFormula = New CellFormula With {.FormulaType = CellFormulaValues.Shared, .SharedIndex = 0UI}
+            }
+            sheetData.Append(New Row(New Cell With {.CellReference = "B2", .CellValue = New CellValue("7")}, second) With {.RowIndex = 2UI})
+            sheetData.Append(New Row(New Cell With {.CellReference = "C3", .CellValue = New CellValue("100")}) With {.RowIndex = 3UI})
+            source.SheetDimension.Reference = "A1:C3"
+            Dim other = DirectCast(document.WorkbookPart.GetPartById("rId2"), WorksheetPart).Worksheet.GetFirstChild(Of SheetData)()
+            other.Append(New Row(New Cell With {.CellReference = "A1", .CellFormula = New CellFormula("SUM(Inputs!C1:C3)")}) With {.RowIndex = 1UI})
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(template, OpenMode.OpenExistingFile, options)
+            workbook.RecalculateAll()
+            Assert.That(workbook.LookupCellValue(Of Double)("Inputs", 1, 2, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(9.0))
+            Assert.That(workbook.LookupCellValue(Of Double)("Notes", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(113.0))
+            workbook.SaveCopyAs(output, recalculateWorkbook:=False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim worksheet = DirectCast(document.WorkbookPart.GetPartById("rId1"), WorksheetPart).Worksheet
+            Dim formulas = worksheet.Descendants(Of CellFormula)().ToArray()
+            Assert.That(formulas.Select(Function(formula) formula.FormulaType.Value), [Is].All.EqualTo(CellFormulaValues.Shared))
+            Assert.That(formulas.Select(Function(formula) formula.SharedIndex.Value), [Is].All.EqualTo(0UI))
+            Assert.That(formulas(0).Reference.Value, [Is].EqualTo("C1:C3"))
+            Assert.That(formulas(1).Text, [Is].Empty)
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub CalculatesADeepFormulaChainWithoutExhaustingTheThreadStack()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Dim depthPath = Path.Combine(_directory, "depth.xlsx")
+        Using document = SpreadsheetDocument.Create(depthPath, SpreadsheetDocumentType.Workbook)
+            Dim part = document.AddWorkbookPart()
+            Dim sheet = part.AddNewPart(Of WorksheetPart)("rId1")
+            part.Workbook = New Workbook(New Sheets(New Sheet With {.Id = "rId1", .Name = "Depth", .SheetId = 1UI}))
+            Dim data As New SheetData()
+            For rowIndex = 1 To 600
+                Dim nextCell = "A" & (rowIndex + 1).ToString(CultureInfo.InvariantCulture)
+                Dim formula = New CellFormula("IF(" & nextCell & "=0,1," & nextCell & "+1)")
+                data.Append(New Row(New Cell With {.CellReference = "A" & rowIndex.ToString(CultureInfo.InvariantCulture), .CellFormula = formula}) With {.RowIndex = CUInt(rowIndex)})
+            Next
+            sheet.Worksheet = New Worksheet(data)
+        End Using
+        Using workbook As New OpenXmlExcelDataOperations(depthPath, OpenMode.OpenExistingFile, options)
+            workbook.RecalculateCell("Depth", 0, 0, throwExceptionOnCalculationError:=False)
+            Const cached As FormulaCalculationMode = FormulaCalculationMode.UseCachedValueOnly
+            Assert.That(workbook.LookupCellValue(Of Double)("Depth", 0, 0, cached), [Is].EqualTo(600.0))
+            Assert.That(workbook.LookupCellValue(Of Double)("Depth", 599, 0, cached), [Is].EqualTo(1.0))
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub CalculatesAFormulaWithMoreThanFiveHundredTokens()
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, options)
+            Dim sheet = workbook.SheetNames()(0)
+            Dim formula = "SUM({" & String.Join(",", Enumerable.Repeat("2", 700)) & "})"
+            workbook.WriteCellFormula(sheet, 0, 0, formula, immediatelyCalculateCellValue:=True)
+            Assert.That(workbook.LookupCellValue(Of Integer)(sheet, 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(1400))
+        End Using
+    End Sub
+
     <Test>
     Public Sub WritesFormulaAndSwitchesActiveTabWhenHidingIt()
         Dim template = Path.Combine(_directory, "template.xlsx")
@@ -378,6 +541,31 @@ Partial Public Class OpenXmlExcelOpsTest
         Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
         End Using
     End Sub
+
+    <TestCase(0, 103.06098565131704)>
+    <TestCase(1, 103.04500491892979)>
+    <TestCase(2, 103.0007840871962)>
+    <TestCase(3, 103.03788090276133)>
+    <TestCase(4, 103.06098565131704)>
+    Public Sub MatchesExcelForAnOddFirstCouponSettledAfterTheLastMonthEndBoundary(basis As Integer, excelPrice As Double)
+        Dim input = Path.Combine(_directory, "odd-first-boundary.xlsx")
+        Dim arguments = "DATE(2024,4,1),DATE(2029,9,30),DATE(2024,1,10),DATE(2024,9,30),0.062,"
+        Dim remainder = ",100,2," & basis.ToString(CultureInfo.InvariantCulture)
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(input))
+            Dim sheet = package.Workbook.Worksheets.Add("Boundary")
+            sheet.Cells("A1").Formula = "ODDFPRICE(" & arguments & "0.05" & remainder & ")"
+            sheet.Cells("B1").Formula = "ODDFYIELD(" & arguments & excelPrice.ToString("R", CultureInfo.InvariantCulture) & remainder & ")"
+            package.Save()
+        End Using
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableCalculationEngine = False}
+        Using workbook As New OpenXmlExcelDataOperations(input, OpenMode.OpenExistingFile, options)
+            workbook.RecalculateAll()
+            Const cached As FormulaCalculationMode = FormulaCalculationMode.UseCachedValueOnly
+            Assert.That(workbook.LookupCellValue(Of Double)("Boundary", 0, 0, cached), [Is].EqualTo(excelPrice).Within(1.0E-11))
+            Assert.That(workbook.LookupCellValue(Of Double)("Boundary", 0, 1, cached), [Is].EqualTo(0.05).Within(1.0E-11))
+        End Using
+    End Sub
+
 
     Private Shared Function ReadBytes(stream As Stream) As Byte()
         Using input = stream, result As New MemoryStream()

@@ -7,6 +7,9 @@ Run `pwsh -File tools/update-excel-function-catalog.ps1` to refresh [the catalog
 - `OpenXmlEvaluator` records names routed to the formula evaluator or handled by the formula parser. A function can still have unsupported arguments or result shapes.
 - `ReferenceFormulaCells` counts saved worksheet formulas containing the named function, including nested calls. A cell counts once per function. The catalog records the published index and sample inventory. The Windows Excel reference build determines availability and values for each tested variant.
 
+Run `pwsh -File tools/update-excel-formula-variants.ps1` to regenerate [the observed variants](excel-function-variants.csv) from the reference workbooks and the function catalog. Each row groups calls by argument count, argument kinds, calendar system and, for direct calls, saved result shape and anchor type or error. Small integer literals are recorded so common option values can be located. The example columns identify a workbook, worksheet, cell and, where saved, the array result range. The count records call occurrences, including repeated calls inside a formula.
+
+A nested call has argument information and an example location. Its type and shape depend on the surrounding expression, so the report leaves those columns empty. The report describes the saved fixtures. Engine tests determine which of those formulas and array results recalculate successfully. Use the function catalog to locate functions with no example yet.
 Use Microsoft's argument definitions to design separate cases for defaults, optional modes, input types, errors and result shapes. When a detail is unspecified, keep an Excel-calculated case that records it explicitly. Save cases in `ExcelOpsTest/test_data/FormulaConformance` and synchronize the workbook copies in the Spire test projects. `FormulaConformanceFixtureTest` clears the results and compares the recalculated XLSX cells against saved Excel values. Cases that require unsupported behavior have their own tests for the saved value and the reported limitation.
 
 Run the shared formula coverage report with an exact test filter. Use a test project that contains the engines of interest.
@@ -16,3 +19,16 @@ dotnet test ExcelOpsTest/TestExcelOps.vbproj -f net8.0 --filter 'Name=ReportsFor
 ```
 
 Run the same filter on the FreeSpire and Spire test projects to include those engines. Run the Microsoft Excel comparison on Windows with Microsoft Excel installed. The test uses the German reference culture, clears the caches in temporary workbook copies, and reports differences and totals per engine. It covers the worksheet formula cases in the reference workbooks. External workbook links and the iterative calculation sequences have dedicated tests. The Open XML conformance tests separately assert typed cell results.
+
+## Formula functions supplied by an external environment
+
+| Formula | Excel dependency | Portable conformance case |
+| --- | --- | --- |
+| `CUBEKPIMEMBER`, `CUBEMEMBER`, `CUBEMEMBERPROPERTY`, `CUBERANKEDMEMBER`, `CUBESET`, `CUBESETCOUNT`, `CUBEVALUE` | Named OLAP connection and cube state | Capture a workbook value from a fixed cube snapshot. A .NET registration can supply scalar or text substitutes from the same fixture. |
+| `STOCKHISTORY` | Microsoft 365 financial data service and market history | Capture a dated result and compare its saved spill. A replacement for the full function needs an array result contract. |
+| `TRANSLATE`, `DETECTLANGUAGE` | Microsoft Translation Services, supported languages and service limits | Register a deterministic mapping for fixed test text and verify the expected scalar result. |
+| `WEBSERVICE` | Endpoint, response and network availability | Register a fixed response keyed by the requested URL. |
+| `RTD` | Installed COM server, topic and update state | Register a value from a fixed topic snapshot and request recalculation after updating that snapshot. |
+| `CALL`, `REGISTER.ID`, VBA functions and add-in functions | The host, workbook project or installed add-in that supplies the function | Pass a managed implementation for a known result using an explicit registration. Exercise host-specific execution in the Excel reference environment. |
+
+The Open XML formula session calls registered .NET implementations by their function name. Excel storage prefixes such as `_xlfn.`, `_xlws.` and `_xll.` are accepted for explicit registrations. Registered functions receive scalar Excel arguments and return a scalar `ExcelFormulaValue`. Use saved Excel results when a workbook requires service behavior or an aggregate return shape outside that contract. A calculation request for a function without an implementation reports `FormulaComplexityNotSupportedException`.

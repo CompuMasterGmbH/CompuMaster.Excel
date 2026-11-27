@@ -253,7 +253,7 @@ Namespace ExcelOps
                 cell.CellValue.Text = "#VALUE!"
                 cell.ValueMetaIndex = index
             Next
-            worksheet.Worksheet.Save()
+            SaveWorksheet(worksheet.Worksheet, worksheet)
         End Sub
 
     End Class

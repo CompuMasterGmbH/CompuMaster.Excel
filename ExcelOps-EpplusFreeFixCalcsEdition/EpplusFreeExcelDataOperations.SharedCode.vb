@@ -63,6 +63,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Protected Overrides Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Dim FullPath As New System.IO.FileInfo(fileName)
+            EnsureVisibleSheetForSave()
             If Me.PasswordForOpening <> Nothing Then
                 Me.WorkbookPackage.SaveAs(FullPath, Me.PasswordForOpening)
             Else

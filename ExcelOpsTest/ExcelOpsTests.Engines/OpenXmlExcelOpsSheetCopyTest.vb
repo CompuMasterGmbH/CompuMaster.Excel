@@ -168,4 +168,229 @@ Partial Public Class OpenXmlExcelOpsTest
             Select(Function(formula) formula.Text).ToArray()
     End Function
 
+
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub WorksheetTransfer_OpenXmlRemapsDistinctWorkbookStyleTables(move As Boolean)
+        Dim sourcePath = Path.Combine(_directory, "styled-source.xlsx")
+        Dim targetPath = Path.Combine(_directory, "styled-target.xlsx")
+        Dim output = Path.Combine(_directory, "styled-result.xlsx")
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(sourcePath))
+            package.Workbook.Worksheets.Add("Retained")
+            Dim sheet = package.Workbook.Worksheets.Add("Transfer")
+            sheet.Cells("A1").Value = 1.25
+            sheet.Cells("A1").Style.Numberformat.Format = "0.00 ""source"""
+            sheet.Cells("A1").Style.Font.Bold = True
+            sheet.Cells("A1").Style.Border.Bottom.Style = CompuMaster.Epplus4.Style.ExcelBorderStyle.Thin
+            sheet.Row(2).Style.Numberformat.Format = "0.000 ""row"""
+            sheet.Column(3).Style.Numberformat.Format = "0.0000 ""column"""
+            package.Save()
+        End Using
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(targetPath))
+            Dim sheet = package.Workbook.Worksheets.Add("Original")
+            sheet.Cells("A1").Value = 2.5
+            sheet.Cells("A1").Style.Numberformat.Format = "0.0 ""target"""
+            sheet.Cells("A1").Style.Font.Italic = True
+            package.Save()
+        End Using
+
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              destination As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
+            If move Then
+                source.MoveSheet("Transfer", destination)
+                Assert.That(source.WorkSheetNames(), [Is].EqualTo({"Retained"}))
+            Else
+                source.CopySheet("Transfer", destination)
+                Assert.That(source.WorkSheetNames(), [Is].EqualTo({"Retained", "Transfer"}))
+            End If
+            destination.SaveCopyAs(output, False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using destination As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(destination.LookupCellFormat("Original", 0, 0), [Is].EqualTo("0.0 ""target"""))
+            Assert.That(destination.LookupCellFormat("Transfer", 0, 0), [Is].EqualTo("0.00 ""source"""))
+            Assert.That(destination.LookupCellFormat("Transfer", 1, 1), [Is].EqualTo("0.000 ""row"""))
+            Assert.That(destination.LookupCellFormat("Transfer", 4, 2), [Is].EqualTo("0.0000 ""column"""))
+        End Using
+        Using document = SpreadsheetDocument.Open(output, False)
+            Dim book = document.WorkbookPart
+            Dim styles = book.WorkbookStylesPart.Stylesheet
+            Dim sheet = book.Workbook.Sheets.Elements(Of Sheet)().Single(Function(item) item.Name.Value = "Transfer")
+            Dim cell = DirectCast(book.GetPartById(sheet.Id.Value), WorksheetPart).Worksheet.Descendants(Of Cell)().Single(Function(item) item.CellReference.Value = "A1")
+            Dim format = styles.CellFormats.Elements(Of CellFormat)().ElementAt(CInt(cell.StyleIndex.Value))
+            Assert.That(styles.Fonts.Elements(Of Font)().ElementAt(CInt(format.FontId.Value)).Bold, [Is].Not.Null)
+            Assert.That(styles.Borders.Elements(Of Border)().ElementAt(CInt(format.BorderId.Value)).BottomBorder.Style.Value,
+                        [Is].EqualTo(BorderStyleValues.Thin))
+        End Using
+    End Sub
+
+
+    <TestCase(CopySheetOption.TargetSheetMustExist)>
+    <TestCase(CopySheetOption.TargetSheetMustNotExist)>
+    Public Sub WorksheetTransfer_OpenXmlCopiesLegacyContentWithDistinctSheetNames(copyOption As CopySheetOption)
+        Dim sourcePath = Path.Combine(_directory, "legacy-source.xlsx")
+        Dim targetPath = Path.Combine(_directory, "legacy-target.xlsx")
+        Dim output = Path.Combine(_directory, "legacy-result.xlsx")
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(sourcePath))
+            Dim sheet = package.Workbook.Worksheets.Add("Inputs")
+            sheet.Cells("A1").Value = "Transferred text"
+            sheet.Cells("A1:B1").Merge = True
+            sheet.Cells("A2").Value = 12
+            sheet.Cells("A2").Style.Numberformat.Format = "0.000 ""source"""
+            sheet.Cells("C3").Formula = "A2+1"
+            package.Save()
+        End Using
+        Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(targetPath))
+            Dim unrelated = package.Workbook.Worksheets.Add("Inputs")
+            unrelated.Cells("A1").Value = "Unrelated text"
+            unrelated.Cells("A2").Style.Numberformat.Format = "0.0 ""target"""
+            If copyOption = CopySheetOption.TargetSheetMustExist Then
+                package.Workbook.Worksheets.Add("Result").Cells("F20").Value = "Old content"
+            End If
+            package.Save()
+        End Using
+
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
+            .DisableInitialCalculation = True, .DisableCalculationEngine = False
+        }
+        Const cached As FormulaCalculationMode = FormulaCalculationMode.UseCachedValueOnly
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              destination As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
+            source.CopySheetContent("Inputs", destination, "Result", copyOption)
+            Assert.Throws(Of InvalidOperationException)(Sub() source.CopySheetContent("Inputs", destination, "Result", CopySheetOption.TargetSheetMustNotExist))
+            destination.RecalculateAll()
+            destination.SaveCopyAs(output, False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using destination As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(destination.LookupCellValue(Of String)("Inputs", 0, 0, cached), [Is].EqualTo("Unrelated text"))
+            Assert.That(destination.LookupCellValue(Of String)("Result", 0, 0, cached), [Is].EqualTo("Transferred text"))
+            Assert.That(destination.IsMergedCell("Result", 0, 1), [Is].True)
+            Assert.That(destination.LookupCellFormat("Result", 1, 0), [Is].EqualTo("0.000 ""source"""))
+            Assert.That(destination.LookupCellFormula("Result", 2, 2), [Is].EqualTo("A2+1"))
+            Assert.That(destination.LookupCellValue(Of Integer)("Result", 2, 2, cached), [Is].EqualTo(13))
+            Assert.That(destination.LookupCellValueAsObject("Result", 19, 5, cached), [Is].Null)
+        End Using
+    End Sub
+
+
+    <Test>
+    Public Sub WorksheetTransfer_OpenXmlPreservesThemeColorsAndWorksheetRelatedParts()
+        Dim sourcePath = Path.Combine(_directory, "source-theme.xlsx")
+        Dim targetPath = Path.Combine(_directory, "target-theme.xlsx")
+        Dim output = Path.Combine(_directory, "theme-result.xlsx")
+        Dim themeFixture = TestEnvironment.FullPathOfExistingTestFile("test_data", "HtmlExportThemeExcelOffice.xlsx")
+        Dim settingsBytes As Byte() = {5, 12, 7, 31}
+        For Each item In {(sourcePath, "Imported", "446699"), (targetPath, "Original", "AA2244")}
+            Using package As New CompuMaster.Epplus4.ExcelPackage(New FileInfo(item.Item1))
+                Dim sheet = package.Workbook.Worksheets.Add(item.Item2)
+                sheet.Cells("A1").Value = 9
+                sheet.Cells("A1").Style.Font.Bold = True
+                package.Save()
+            End Using
+            Using template = SpreadsheetDocument.Open(themeFixture, False), doc = SpreadsheetDocument.Open(item.Item1, True)
+                Dim book = doc.WorkbookPart
+                If book.ThemePart IsNot Nothing Then book.DeletePart(book.ThemePart)
+                Dim theme = book.AddPart(template.WorkbookPart.ThemePart).Theme
+                Dim accent = theme.ThemeElements.ColorScheme.Accent1Color
+                accent.RemoveAllChildren()
+                accent.AppendChild(New DocumentFormat.OpenXml.Drawing.RgbColorModelHex() With {.Val = item.Item3})
+                Dim worksheetPart = book.WorksheetParts.Single()
+                Dim cell = worksheetPart.Worksheet.Descendants(Of Cell)().Single()
+                Dim styles = book.WorkbookStylesPart.Stylesheet
+                Dim format = styles.CellFormats.Elements(Of CellFormat)().ElementAt(CInt(cell.StyleIndex.Value))
+                styles.Fonts.Elements(Of Font)().ElementAt(CInt(format.FontId.Value)).Color = New Color() With {.Theme = 4UI}
+                If item.Item2 = "Imported" Then
+                    Dim settings = worksheetPart.AddNewPart(Of SpreadsheetPrinterSettingsPart)()
+                    Using data As New MemoryStream(settingsBytes)
+                        settings.FeedData(data)
+                    End Using
+                    worksheetPart.Worksheet.AddChild(New PageSetup With {.Id = worksheetPart.GetIdOfPart(settings)})
+                    worksheetPart.Worksheet.AddChild(New PhoneticProperties With {.FontId = format.FontId.Value})
+                End If
+            End Using
+        Next
+
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Using source As New OpenXmlExcelDataOperations(sourcePath, OpenMode.OpenExistingFile, options),
+              destination As New OpenXmlExcelDataOperations(targetPath, OpenMode.OpenExistingFile, options)
+            source.CopySheet("Imported", destination)
+            destination.SaveCopyAs(output, False, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using doc = SpreadsheetDocument.Open(output, False)
+            Dim book = doc.WorkbookPart
+            Dim styles = book.WorkbookStylesPart.Stylesheet
+            Dim sheets = book.Workbook.Sheets.Elements(Of Sheet)().ToDictionary(Function(sheet) sheet.Name.Value)
+            Dim copied = DirectCast(book.GetPartById(sheets("Imported").Id.Value), WorksheetPart)
+            Dim original = DirectCast(book.GetPartById(sheets("Original").Id.Value), WorksheetPart)
+            Dim format = styles.CellFormats.Elements(Of CellFormat)().ElementAt(CInt(copied.Worksheet.Descendants(Of Cell)().Single().StyleIndex.Value))
+            Dim importedFont = styles.Fonts.Elements(Of Font)().ElementAt(CInt(format.FontId.Value))
+            Assert.That(importedFont.Color.Rgb.Value, [Is].EqualTo("FF446699"))
+            Assert.That(copied.Worksheet.GetFirstChild(Of PhoneticProperties)().FontId.Value, [Is].EqualTo(format.FontId.Value))
+            Dim originalFormat = styles.CellFormats.Elements(Of CellFormat)().ElementAt(CInt(original.Worksheet.Descendants(Of Cell)().Single().StyleIndex.Value))
+            Assert.That(styles.Fonts.Elements(Of Font)().ElementAt(CInt(originalFormat.FontId.Value)).Color.Theme.Value, [Is].EqualTo(4UI))
+            Dim settings = DirectCast(copied.GetPartById(copied.Worksheet.GetFirstChild(Of PageSetup)().Id.Value), SpreadsheetPrinterSettingsPart)
+            Assert.That(ReadBytes(settings.GetStream()), [Is].EqualTo(settingsBytes))
+        End Using
+    End Sub
+
+
+    <TestCase(False)>
+    <TestCase(True)>
+    Public Sub WorksheetTransfer_OpenXmlMovesTheLastVisibleSheetAndKeepsSourceOpen(saveEmptySource As Boolean)
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Using source As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options),
+              destination As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options)
+            Dim sourceSheet = source.WorkSheetNames().Single()
+            Dim targetSheet = destination.WorkSheetNames().Single()
+            source.WriteCellValue(sourceSheet, 0, 0, 42)
+            Dim assigned = source.MoveSheet(sourceSheet, destination)
+            Assert.That(source.IsClosed, [Is].False)
+            Assert.That(source.WorkSheetNames(), [Is].Empty)
+            Assert.That(destination.WorkSheetNames(), [Is].EqualTo({targetSheet, assigned.TargetSheetName}))
+            Assert.That(destination.LookupCellValue(Of Integer)(assigned.TargetSheetName, 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo(42))
+            If saveEmptySource Then
+                Dim output = Path.Combine(_directory, "empty-move-source.xlsx")
+                source.SaveAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+                Using reopened As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+                    Assert.That(reopened.WorkSheetNames(), [Is].EqualTo({"Sheet1"}))
+                    Assert.That(reopened.LookupCellValueAsObject("Sheet1", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].Null)
+                End Using
+            Else
+                source.AddSheet("Replacement")
+                Assert.That(source.SelectedSheetName(), [Is].EqualTo("Replacement"))
+            End If
+        End Using
+    End Sub
+
+    <TestCase("Save")>
+    <TestCase("SaveAs")>
+    <TestCase("SaveCopyAs")>
+    <TestCase("Add")>
+    Public Sub RemovingLastSheetKeepsWorkbookEditableAndSavesValidXlsx(operation As String)
+        ExcelOpsTests.Engines.ExcelOpsTestBase(Of OpenXmlExcelDataOperations).VerifyEmptyWorksheetLifecycle(
+            Function(path, options) New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options), operation)
+    End Sub
+
+
+    <Test>
+    Public Sub SavingWithoutAVisibleSheetPreservesHiddenSheetsAndChoosesAnUnusedName()
+        Dim output = Path.Combine(_directory, "hidden-only.xlsx")
+        Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {.DisableInitialCalculation = True}
+        Using workbook As New OpenXmlExcelDataOperations(Nothing, OpenMode.CreateFile, options)
+            Dim original = workbook.WorkSheetNames().Single()
+            If Not String.Equals(original, "Sheet1", StringComparison.Ordinal) Then workbook.RenameWorksheet(original, "Sheet1", True)
+            workbook.AddSheet("Visible")
+            workbook.HideSheet("Sheet1", stronglyHide:=True)
+            workbook.RemoveSheet("Visible")
+            Assert.That(workbook.SelectedSheetName(), [Is].Null)
+            workbook.SaveAs(output, SaveOptionsForDisabledCalculationEngines.NoReset)
+        End Using
+        Using reopened As New OpenXmlExcelDataOperations(output, OpenMode.OpenExistingFile, options)
+            Assert.That(reopened.SheetNames(), [Is].EqualTo({"Sheet1", "Sheet2"}))
+            Assert.That(reopened.IsHiddenSheet("Sheet1"), [Is].True)
+            Assert.That(reopened.SelectedSheetName(), [Is].EqualTo("Sheet2"))
+        End Using
+    End Sub
+
+
 End Class

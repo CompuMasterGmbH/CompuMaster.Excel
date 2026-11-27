@@ -6,6 +6,8 @@ This package is based on upstream EPPlus 4.5.3.3; CompuMaster NuGet releases use
 
 ### Added Features
 
+* Lets callers replace the last worksheet while keeping the package open.
+
 * Resets internal calculation caches so Microsoft Excel recalculates dependent formulas when reopening a workbook.
 * Exposes embedded workbook theme XML so consumers can resolve design-dependent accent colors without a fixed Office palette.
 * Fixes internal races in cell storage, style updates, and calculation/lifetime coordination; general multithreaded workbook access remains unsupported.

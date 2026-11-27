@@ -730,6 +730,24 @@ Namespace ExcelOps
         ''' <param name="cachedCalculationsOption">Option for handling cached formula results while saving.</param>
         Protected MustOverride Sub SaveAsInternal(fileName As String, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
 
+        ''' <summary>Ensures that a workbook being saved contains a visible worksheet or chart sheet.</summary>
+        ''' <remarks>Call this from the save implementation of an engine that supports editing without visible sheets.</remarks>
+        ''' <param name="requireWorksheet">Requires a visible worksheet even if there is already a visible chart sheet.</param>
+        Protected Sub EnsureVisibleSheetForSave(Optional requireWorksheet As Boolean = False)
+            Dim names = SheetNames()
+            Dim eligibleNames = If(requireWorksheet, WorkSheetNames(), names)
+            If eligibleNames.Any(Function(sheetName) Not IsHiddenSheet(sheetName)) Then Return
+            Dim existing As New HashSet(Of String)(names, StringComparer.OrdinalIgnoreCase)
+            Dim index = 1
+            Dim name As String
+            Do
+                name = "Sheet" & index.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                index += 1
+            Loop While existing.Contains(name)
+            AddSheet(name)
+            SelectSheet(name)
+        End Sub
+
         ''' <summary>Lists worksheet and chart sheet names together in workbook tab order.</summary>
         ''' <returns>The combined list of tab names. Use the list's Count property for the total.</returns>
         Public MustOverride Function SheetNames() As List(Of String)
@@ -1289,6 +1307,7 @@ Namespace ExcelOps
         ''' Removes a sheet.
         ''' </summary>
         ''' <param name="sheetName">Name of the worksheet.</param>
+        ''' <remarks>Engines that support removing the last visible sheet keep the workbook open. Saving such a workbook adds an empty visible worksheet. Microsoft Excel applies its native worksheet deletion rules.</remarks>
         Public MustOverride Sub RemoveSheet(sheetName As String)
 
         ''' <summary>
@@ -2061,6 +2080,7 @@ Namespace ExcelOps
             If sheetName Is Nothing Then Throw New ArgumentNullException(NameOf(sheetName))
             If targetWorkbook Is Nothing Then Throw New ArgumentNullException(NameOf(targetWorkbook))
             If targetWorkbook Is Me Then Throw New ArgumentException("Must be another workbook", NameOf(targetWorkbook))
+            If TryCopySheetContentCore(sheetName, targetWorkbook, targetSheetName, copyOption) Then Return
             Select Case copyOption
                 Case CopySheetOption.TargetSheetMustNotExist
                     If targetWorkbook.SheetNames.Contains(targetSheetName) = True Then Throw New InvalidOperationException("Target workbook must not contain worksheet """ & sheetName & """")
@@ -2078,6 +2098,17 @@ Namespace ExcelOps
             targetWorkbook.ClearSheet(sheetName)
             Me.CopySheetContentInternal(sheetName, targetWorkbook, targetSheetName)
         End Sub
+
+        ''' <summary>Attempts to copy worksheet content using a single engine-specific operation.</summary>
+        ''' <param name="sheetName">The source worksheet.</param>
+        ''' <param name="targetWorkbook">The workbook receiving the content.</param>
+        ''' <param name="targetSheetName">The destination worksheet.</param>
+        ''' <param name="copyOption">Specifies whether the destination worksheet is required or created.</param>
+        ''' <returns>True if the copy completed. False delegates to the existing copy workflow.</returns>
+        Protected Overridable Function TryCopySheetContentCore(sheetName As String, targetWorkbook As ExcelDataOperationsBase,
+                                                              targetSheetName As String, copyOption As CopySheetOption) As Boolean
+            Return False
+        End Function
 
         ''' <summary>
         ''' Gets all formulas of all workbook sheets.

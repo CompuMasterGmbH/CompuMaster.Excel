@@ -61,9 +61,6 @@ Namespace ExcelOps
                 If If(workbook.WorkbookProtection?.LockStructure?.Value, False) Then
                     Throw UnsupportedOperation("Removing sheets from a structure-protected workbook")
                 End If
-                If Not remaining.Any(AddressOf IsVisible) Then
-                    Throw New NotSupportedException("The source workbook must retain at least one visible sheet after the move.")
-                End If
             End If
 
             Dim resolveQualifier As Func(Of String, String, String) =
@@ -83,7 +80,7 @@ Namespace ExcelOps
                 End Function
 
             Dim copiedSheets As New List(Of (Name As String, State As SheetStateValues?, Worksheet As Worksheet,
-                                             ChartSheet As ChartsheetPart, Drawing As DrawingsPart,
+                                             SourceWorksheet As WorksheetPart, ChartSheet As ChartsheetPart, Drawing As DrawingsPart,
                                              Charts As Dictionary(Of String, OpenXmlPartRootElement)))
             For Each name In sheetNames
                 Dim source = FindSheet(name)
@@ -100,14 +97,17 @@ Namespace ExcelOps
                         drawing = Nothing
                     End If
                     Dim charts = If(drawing Is Nothing, Nothing, PrepareDrawingChartCopy(drawing, name, formulaMode, resolveQualifier, move, chartNames:=chartNames))
-                    copiedSheets.Add((assigned(name), source.State?.Value, prepared, Nothing, drawing, charts))
+                    copiedSheets.Add((assigned(name), source.State?.Value, prepared, worksheet, Nothing, drawing, charts))
                 ElseIf chartSheet IsNot Nothing Then
                     Dim charts = PrepareChartSheetCopy(chartSheet, name, formulaMode, resolveQualifier, move, chartNames:=chartNames)
-                    copiedSheets.Add((assigned(name), source.State?.Value, Nothing, chartSheet, chartSheet.DrawingsPart, charts))
+                    copiedSheets.Add((assigned(name), source.State?.Value, Nothing, Nothing, chartSheet, chartSheet.DrawingsPart, charts))
                 Else
                     Throw UnsupportedOperation("Copying this sheet type")
                 End If
             Next
+            If WorksheetThemesDiffer(destination.WorkbookPart) AndAlso copiedSheets.Any(Function(sheet) sheet.Drawing IsNot Nothing OrElse sheet.ChartSheet IsNot Nothing) Then
+                Throw UnsupportedOperation("Transferring chart or drawing parts between workbooks with different themes")
+            End If
             Dim copiedNames = PrepareTransferredNames(names, sheetNames, targetSheetIndex, resolveQualifier, formulaMode, move)
             If copiedNames.Any(Function(item) chartNames.Imported.Any(
                 Function(chartName) String.Equals(item.Name.Value, chartName.Name.Value, StringComparison.OrdinalIgnoreCase))) Then
@@ -117,13 +117,11 @@ Namespace ExcelOps
             Using changes As New StagedWorkbookChanges()
                 changes.Add(destination,
                     Sub(bookPart)
-                        If WorkbookPart.WorkbookStylesPart IsNot Nothing AndAlso bookPart.WorkbookStylesPart Is Nothing Then
-                            bookPart.AddPart(WorkbookPart.WorkbookStylesPart)
-                        End If
+                        TransferWorksheetStyles(bookPart, copiedSheets.Where(Function(sheet) sheet.Worksheet IsNot Nothing).Select(Function(sheet) sheet.Worksheet))
                         If WorkbookPart.ThemePart IsNot Nothing AndAlso bookPart.ThemePart Is Nothing Then
                             bookPart.AddPart(WorkbookPart.ThemePart)
                         End If
-                        If move Then destination.RewriteMoveDependents(bookPart, Nothing,
+                        If move AndAlso oldSourceLinks.Length > 0 Then destination.RewriteMoveDependents(bookPart, Nothing,
                             Function(referencedName, originalQualifier)
                                 If Not referencedName.StartsWith("[", StringComparison.Ordinal) Then Return originalQualifier
                                 Dim external = destination.ReadTransferExternalReference(referencedName)
@@ -144,6 +142,9 @@ Namespace ExcelOps
                             If copied.Worksheet IsNot Nothing Then
                                 Dim worksheetPart = bookPart.AddNewPart(Of WorksheetPart)()
                                 worksheetPart.Worksheet = copied.Worksheet
+                                For Each settings In copied.SourceWorksheet.Parts.Where(Function(item) TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart)
+                                    worksheetPart.AddPart(settings.OpenXmlPart, settings.RelationshipId)
+                                Next
                                 If copied.Drawing IsNot Nothing Then
                                     Dim drawingId = copied.Worksheet.GetFirstChild(Of Drawing)().Id.Value
                                     Dim drawing = worksheetPart.AddPart(copied.Drawing, drawingId)
@@ -155,7 +156,7 @@ Namespace ExcelOps
                                     SaveTransferredCharts(drawing, copied.Charts)
                                     If placement IsNot Nothing Then RemoveDetachedChartParts(drawing, placement)
                                 End If
-                                worksheetPart.Worksheet.Save()
+                                SaveWorksheet(worksheetPart.Worksheet, worksheetPart)
                                 part = worksheetPart
                             Else
                                 Dim chartSheet = bookPart.AddPart(copied.ChartSheet)
@@ -364,20 +365,10 @@ Namespace ExcelOps
             If If(sourceProperties?.Date1904?.Value, False) <> If(targetProperties?.Date1904?.Value, False) Then
                 Throw UnsupportedOperation("Copying between workbooks with different date systems")
             End If
-            Dim sourceStyles = WorkbookPart.WorkbookStylesPart?.Stylesheet
-            Dim targetStyles = destination.WorkbookPart.WorkbookStylesPart?.Stylesheet
-            If sourceStyles IsNot Nothing AndAlso targetStyles IsNot Nothing AndAlso sourceStyles.OuterXml <> targetStyles.OuterXml Then
-                Throw UnsupportedOperation("Copying between workbooks with different style tables")
-            End If
-            Dim sourceTheme = WorkbookPart.ThemePart?.Theme
-            Dim targetTheme = destination.WorkbookPart.ThemePart?.Theme
-            If sourceTheme IsNot Nothing AndAlso targetTheme IsNot Nothing AndAlso sourceTheme.OuterXml <> targetTheme.OuterXml Then
-                Throw UnsupportedOperation("Copying between workbooks with different themes")
-            End If
         End Sub
 
         Private Sub ValidateCopySourceWorksheet(part As WorksheetPart)
-            If part.Parts.Any(Function(item) Not TypeOf item.OpenXmlPart Is DrawingsPart) OrElse
+            If part.Parts.Any(Function(item) Not (TypeOf item.OpenXmlPart Is DrawingsPart OrElse TypeOf item.OpenXmlPart Is SpreadsheetPrinterSettingsPart)) OrElse
                part.ExternalRelationships.Any() OrElse part.HyperlinkRelationships.Any() OrElse
                part.Worksheet.ChildElements.Any(Function(item) Not StandardWorksheetElements.Contains(item.LocalName)) Then
                 Throw UnsupportedOperation("Copying a worksheet with related parts or unsupported worksheet elements")
@@ -438,6 +429,7 @@ Namespace ExcelOps
             _source = snapshot
             _document = document
             _changedSheets.Clear()
+            _changedChartSheets.Clear()
             _changedTables.Clear()
             _changedCharts.Clear()
             _changedExtendedCharts.Clear()

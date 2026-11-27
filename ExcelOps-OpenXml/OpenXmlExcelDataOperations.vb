@@ -16,6 +16,7 @@ Namespace ExcelOps
         Private _document As SpreadsheetDocument
         Private _currentDocumentType As SpreadsheetDocumentType
         Private ReadOnly _changedSheets As New HashSet(Of WorksheetPart)
+        Private ReadOnly _changedChartSheets As New HashSet(Of ChartsheetPart)
         Private _workbookChanged As Boolean
         Private _calculationChainInvalid As Boolean
         Private _recalculateOnOpen As Boolean
@@ -233,6 +234,7 @@ Namespace ExcelOps
                     _source?.Dispose()
                     _source = Nothing
                     _changedSheets.Clear()
+                    _changedChartSheets.Clear()
                     _changedTables.Clear()
                     _changedCharts.Clear()
                     _changedExtendedCharts.Clear()
@@ -300,6 +302,7 @@ Namespace ExcelOps
             Dim clearCache = cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.AlwaysResetCalculatedValuesForForcedCellRecalculation OrElse
                 (cachedCalculationsOption = SaveOptionsForDisabledCalculationEngines.ResetCalculatedValuesForForcedCellRecalculationIfRecalculationRequired AndAlso RecalculationRequired)
 
+            EnsureVisibleSheetForSave()
             Dim temporaryPath = Path.Combine(Path.GetDirectoryName(destination), Path.GetRandomFileName())
             Dim temporaryFile As New FileStream(temporaryPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None)
             Try
@@ -319,6 +322,7 @@ Namespace ExcelOps
         ''' <inheritdoc/>
         Protected Overrides Sub SaveCopyAsCore(filePath As String, recalculateWorkbook As Boolean?, cachedCalculationsOption As SaveOptionsForDisabledCalculationEngines)
             Dim destination = ValidateSaveDestination(filePath)
+            EnsureVisibleSheetForSave()
             If Not recalculateWorkbook.GetValueOrDefault(RecalculationRequired AndAlso Not CalculationModuleDisabled) Then
                 SaveInternal_ApplyCachedCalculationOption(cachedCalculationsOption)
                 SaveAsInternal(destination, cachedCalculationsOption)
@@ -414,7 +418,7 @@ Namespace ExcelOps
             Dim sourceWorkbook = WorkbookPart
             Dim linkedPaths = ResolvedSessionLinks(sourceWorkbook)
             _source.WriteTo(output)
-            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _calculationChainInvalid OrElse
+            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _changedChartSheets.Count > 0 OrElse _calculationChainInvalid OrElse
                     _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache OrElse
                     linkedPaths.Count > 0 OrElse
                     (removeVba AndAlso sourceWorkbook.VbaProjectPart IsNot Nothing) OrElse
@@ -458,18 +462,22 @@ Namespace ExcelOps
             Dim richErrorMetadataIndices As New Dictionary(Of String, UInteger)(StringComparer.Ordinal)
             For Each sourceSheet In _changedSheets
                 Dim targetSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceSheet)), WorksheetPart)
-                Using output = targetSheet.GetStream(FileMode.Create, FileAccess.Write)
-                    sourceSheet.Worksheet.Save(output)
-                End Using
+                SaveWorksheet(sourceSheet.Worksheet, targetSheet)
                 If Not clearCache AndAlso GetSheetData(sourceSheet).Descendants(Of Cell)().Any(AddressOf IsUnencodedRichError) Then
                     SaveRichFormulaErrors(target, targetSheet, richErrorMetadataIndices)
                 End If
+            Next
+            For Each sourceChartSheet In _changedChartSheets
+                Dim targetChartSheet = DirectCast(target.GetPartById(source.GetIdOfPart(sourceChartSheet)), ChartsheetPart)
+                Using output = targetChartSheet.GetStream(FileMode.Create, FileAccess.Write)
+                    sourceChartSheet.Chartsheet.Save(output)
+                End Using
             Next
             SaveChangedTables(source, target)
             SaveChangedCharts(source, target)
             If clearCache Then
                 For Each sheetPart In target.WorksheetParts
-                    If ClearFormulaResults(GetSheetData(sheetPart), target.CellMetadataPart?.Metadata) Then sheetPart.Worksheet.Save()
+                    If ClearFormulaResults(GetSheetData(sheetPart), target.CellMetadataPart?.Metadata) Then SaveWorksheet(sheetPart.Worksheet, sheetPart)
                 Next
             End If
             If (_calculationChainInvalid OrElse clearCache) AndAlso target.CalculationChainPart IsNot Nothing Then
@@ -492,6 +500,42 @@ Namespace ExcelOps
                 End If
                 workbook.Save()
             End If
+        End Sub
+
+        Private Shared Sub SaveWorksheet(worksheet As Worksheet, target As WorksheetPart)
+            ' EPPlus 4 replaces worksheet content with unprefixed elements. Keep that
+            ' content in SpreadsheetML even when the SDK writes an explicit root prefix.
+            Using packaged As New MemoryStream()
+                Using bufferWriter = XmlWriter.Create(packaged)
+                    worksheet.WriteTo(bufferWriter)
+                End Using
+                packaged.Position = 0
+                Using reader = XmlReader.Create(packaged), output = target.GetStream(FileMode.Create, FileAccess.Write)
+                    reader.MoveToContent()
+                    If reader.LookupNamespace(String.Empty) = reader.NamespaceURI Then
+                        packaged.Position = 0
+                        packaged.CopyTo(output)
+                        Return
+                    End If
+
+                    Dim spreadsheetNamespace = reader.NamespaceURI
+                    Using writer = XmlWriter.Create(output)
+                        writer.WriteStartElement(reader.Prefix, reader.LocalName, spreadsheetNamespace)
+                        While reader.MoveToNextAttribute()
+                            If reader.Name <> "xmlns" Then writer.WriteAttributeString(reader.Prefix, reader.LocalName, reader.NamespaceURI, reader.Value)
+                        End While
+                        writer.WriteAttributeString("xmlns", spreadsheetNamespace)
+                        reader.MoveToElement()
+                        If Not reader.IsEmptyElement Then
+                            reader.Read()
+                            While reader.Depth > 0
+                                writer.WriteNode(reader, defattr:=True)
+                            End While
+                        End If
+                        writer.WriteEndElement()
+                    End Using
+                End Using
+            End Using
         End Sub
 
         Private Shared Function CalculationFeatureDisabled() As FeatureDisabledException

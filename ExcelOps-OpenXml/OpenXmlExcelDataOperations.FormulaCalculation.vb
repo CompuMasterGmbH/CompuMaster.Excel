@@ -1,4 +1,5 @@
 ﻿Imports System.Globalization
+Imports System.Runtime.CompilerServices
 Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Spreadsheet
 Imports WorkbookTextVersion = DocumentFormat.OpenXml.Office.SpreadSheetML.Y2024.WorkbookCompatibilityVersion.Version
@@ -46,7 +47,7 @@ Namespace ExcelOps
                     EnsureCalculationEnabled()
                     ValidateCoordinates(rowIndex, columnIndex)
                     Dim formula = GetCell(sheetName, rowIndex, columnIndex)?.CellFormula
-                    If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula) Then Return
+                    If formula Is Nothing AndAlso Not IsGroupedFormulaCell(GetWorksheetPart(sheetName), sheetName, rowIndex, columnIndex, formula, includeShared:=False) Then Return
                     Dim calculation As New FormulaCalculation(Me)
                     calculation.ReadCell(sheetName, rowIndex, columnIndex)
                     calculation.Commit()
@@ -60,6 +61,15 @@ Namespace ExcelOps
         Protected Overrides Sub CalculateMissingFormulaResult(sheetName As String, rowIndex As Integer, columnIndex As Integer)
             RecalculateCell(sheetName, rowIndex, columnIndex, throwExceptionOnCalculationError:=False)
         End Sub
+
+        Private Shared Function HasFormulaStackSpace() As Boolean
+            Try
+                RuntimeHelpers.EnsureSufficientExecutionStack()
+                Return True
+            Catch ex As InsufficientExecutionStackException
+                Return False
+            End Try
+        End Function
 
         Private Shared Sub ThrowIfFormulaError(sheetName As String, rowIndex As Integer, columnIndex As Integer, result As Object)
             If Not TypeOf result Is FormulaError Then Return
@@ -99,6 +109,19 @@ Namespace ExcelOps
                 FirstColumn = Math.Min(first.ColumnIndex, last.ColumnIndex)
                 LastRow = Math.Max(first.RowIndex, last.RowIndex)
                 LastColumn = Math.Max(first.ColumnIndex, last.ColumnIndex)
+            End Sub
+        End Class
+
+
+        Private NotInheritable Class DeferredFormulaPrecedent
+            Inherits Exception
+
+            Friend ReadOnly Location As FormulaLocation
+            Friend ReadOnly Formula As String
+
+            Friend Sub New(location As FormulaLocation, formula As String)
+                Me.Location = location
+                Me.Formula = formula
             End Sub
         End Class
 
@@ -167,8 +190,61 @@ Namespace ExcelOps
                 _worksheets(sheetName).Cells((rowIndex, columnIndex)) = cell
             End Sub
 
+
             Friend Function ReadCell(sheetName As String, rowIndex As Integer, columnIndex As Integer,
                                      Optional trackRead As Boolean = True, Optional calculateIterationMember As Boolean = False) As Object
+                If _run.ResolvingRoot OrElse _run.InOrderedIterationPass OrElse calculateIterationMember Then
+                    Return ReadCellCore(sheetName, rowIndex, columnIndex, trackRead, calculateIterationMember)
+                End If
+                _run.ResolvingRoot = True
+                _run.CalledUserCode = False
+                Try
+                    Return ReadCellCore(sheetName, rowIndex, columnIndex, trackRead, calculateIterationMember)
+                Catch deferred As DeferredFormulaPrecedent
+                    Dim root As New FormulaLocation(_owner, sheetName, rowIndex, columnIndex)
+                    Return ReadAfterDeferredPrecedent(root, deferred)
+                Finally
+                    _run.ResolvingRoot = False
+                End Try
+            End Function
+
+            Private Function ReadAfterDeferredPrecedent(root As FormulaLocation, deferred As DeferredFormulaPrecedent) As Object
+                Dim pending As New Stack(Of FormulaLocation)
+                Dim scheduled As New HashSet(Of FormulaLocation)
+                pending.Push(root)
+                scheduled.Add(root)
+                While pending.Count > 0
+                    If deferred IsNot Nothing Then
+                        If Not scheduled.Add(deferred.Location) Then
+                            Dim address As New ExcelCell(deferred.Location.Sheet, deferred.Location.Row, deferred.Location.Column, ExcelCell.ValueTypes.All)
+                            Throw New CircularReferenceException(address, deferred.Formula)
+                        End If
+                        pending.Push(deferred.Location)
+                        deferred = Nothing
+                    End If
+                    Dim location = pending.Peek()
+                    Try
+                        _run.CalledUserCode = False
+                        Dim result = ForWorkbook(location.Workbook).ReadCellCore(location.Sheet, location.Row, location.Column,
+                                                                                 trackRead:=False, calculateIterationMember:=False)
+                        pending.Pop()
+                        scheduled.Remove(location)
+                        If pending.Count = 0 Then Return result
+                    Catch nextPrecedent As DeferredFormulaPrecedent
+                        deferred = nextPrecedent
+                    End Try
+                End While
+                Throw New InvalidOperationException("The deferred formula calculation did not return a result.")
+            End Function
+
+            Private Function CanDeferFormulaPrecedent() As Boolean
+                ' Resuming an incomplete formula can repeat its early arguments. Application code must never be called twice.
+                Return _run.ResolvingRoot AndAlso Not _run.CalledUserCode AndAlso _run.IterationWorkbook Is Nothing AndAlso
+                    Not IterationSettings(_owner).Enabled AndAlso _run.Active.Count > 1
+            End Function
+
+            Private Function ReadCellCore(sheetName As String, rowIndex As Integer, columnIndex As Integer,
+                                          trackRead As Boolean, calculateIterationMember As Boolean) As Object
                 Dim worksheet As WorksheetSnapshot = Nothing
                 If Not _worksheets.TryGetValue(sheetName, worksheet) Then Return New FormulaError("#REF!")
                 Dim location As New FormulaLocation(_owner, worksheet.Name, rowIndex, columnIndex)
@@ -181,7 +257,7 @@ Namespace ExcelOps
                 End If
                 Dim spill As SpillArea = Nothing
                 If Not worksheet.SpillAnchors.TryGetValue((rowIndex, columnIndex), spill) AndAlso
-                   _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula) Then
+                   _owner.IsGroupedFormulaCell(worksheet.Part, worksheet.Name, rowIndex, columnIndex, cell?.CellFormula, includeShared:=False) Then
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, cell?.CellFormula?.Text, "Grouped, array and data-table formulas are outside the supported calculation scope.")
                 End If
                 If cell?.CellFormula Is Nothing Then
@@ -211,30 +287,52 @@ Namespace ExcelOps
                     End If
                 End If
                 If _run.Active.Contains(cell) Then Return ReadCircularValue(cell, address, formula)
-                If _run.Active.Count >= 256 Then
+                ' Yield before the runtime stack guard so the deferred retry has room on smaller threads.
+                If _run.Active.Count >= 16 AndAlso CanDeferFormulaPrecedent() Then
+                    Throw New DeferredFormulaPrecedent(location, formula)
+                End If
+                If _run.Active.Count >= 256 OrElse Not HasFormulaStackSpace() Then
+                    If CanDeferFormulaPrecedent() Then Throw New DeferredFormulaPrecedent(location, formula)
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The dependency chain exceeds the supported depth.")
                 End If
                 _run.Active.Push(cell)
+                Dim previousLocation = _run.ActiveLocation
+                _run.ActiveLocation = location
                 If _run.TrackDependencies Then _run.Frames.Push(New FormulaDependencies(location))
                 Try
+                    If If(cell.CellFormula.FormulaType?.Value, CellFormulaValues.Normal) = CellFormulaValues.Shared Then
+                        formula = _owner.ResolveSharedFormulaText(cell.CellFormula, worksheet.SharedFormulas.Value, worksheet.Name,
+                                                                  rowIndex, columnIndex, Nothing, allowSpillReferences:=True)
+                    End If
                     Dim expression = FormulaParser.Parse(formula)
                     Dim value = EvaluateExpression(expression, address)
+                    If TypeOf value Is FormulaLambda Then value = New FormulaError(CalcErrorCode)
+                    If value Is MissingLambdaArgument Then value = Nothing
                     Dim result = If(spill Is Nothing, If(Scalar(value), 0.0), StageSpill(worksheet, spill, value))
                     _results.Add(cell, (worksheet.Part, location, result))
                     If _run.TrackDependencies Then _run.Dependencies(location) = _run.Frames.Peek()
                     Return result
                 Catch ex As NotSupportedException When Not TypeOf ex Is FormulaComplexityNotSupportedException
+                    If TypeOf ex.InnerException Is InsufficientExecutionStackException AndAlso CanDeferFormulaPrecedent() Then
+                        Throw New DeferredFormulaPrecedent(location, formula)
+                    End If
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, ex.Message, ex)
                 Catch ex As ArgumentOutOfRangeException
                     Throw UnsupportedFormula(worksheet.Name, rowIndex, columnIndex, formula, "The formula refers to a cell outside the XLSX grid.", ex)
                 Finally
                     If _run.TrackDependencies Then _run.Frames.Pop()
+                    _run.ActiveLocation = previousLocation
                     _run.Active.Pop()
                 End Try
             End Function
 
             Friend Function EvaluateExpression(expression As FormulaExpression, formulaCell As ExcelCell) As Object
-                If _run.ExpressionDepth >= 512 Then Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
+                If _run.ExpressionDepth >= 512 OrElse Not HasFormulaStackSpace() Then
+                    If CanDeferFormulaPrecedent() Then
+                        Throw New DeferredFormulaPrecedent(_run.ActiveLocation, _run.Active.Peek().CellFormula?.Text)
+                    End If
+                    Throw New NotSupportedException("The nested formula expression exceeds the supported evaluation depth.")
+                End If
                 _run.ExpressionDepth += 1
                 Try
                     Return expression(Me, formulaCell)
@@ -282,6 +380,7 @@ Namespace ExcelOps
             End Sub
 
             Private Function Scalar(value As Object) As Object
+                If value Is MissingLambdaArgument Then Return Nothing
                 If TypeOf value Is FormulaReferenceUnion Then Return New FormulaError("#VALUE!")
                 Dim matrix = TryCast(value, FormulaMatrix)
                 If matrix IsNot Nothing Then
@@ -296,7 +395,8 @@ Namespace ExcelOps
                 Return ResolveReference(area).ReadCell(area.Sheet, area.FirstRow, area.FirstColumn)
             End Function
 
-            Private Iterator Function RangeValues(area As FormulaArea) As IEnumerable(Of Object)
+            Private Iterator Function RangeValues(area As FormulaArea,
+                    Optional includeCell As Func(Of WorksheetSnapshot, Integer, Integer, Boolean) = Nothing) As IEnumerable(Of Object)
                 Dim source = ResolveReference(area)
                 RecordPrecedent(New FormulaPrecedent(New FormulaLocation(source._owner, area.Sheet, area.FirstRow, area.FirstColumn), area.LastRow, area.LastColumn))
                 Dim worksheet As WorksheetSnapshot = Nothing
@@ -309,7 +409,8 @@ Namespace ExcelOps
                 If worksheet.SpillChildren.Count > 0 Then addresses = addresses.Concat(worksheet.SpillChildren.Keys).Distinct().ToArray()
                 For Each address In addresses
                     If address.RowIndex >= area.FirstRow AndAlso address.RowIndex <= area.LastRow AndAlso
-                        address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn Then
+                        address.ColumnIndex >= area.FirstColumn AndAlso address.ColumnIndex <= area.LastColumn AndAlso
+                        (includeCell Is Nothing OrElse includeCell(worksheet, address.RowIndex, address.ColumnIndex)) Then
                         Yield source.ReadCell(area.Sheet, address.RowIndex, address.ColumnIndex, trackRead:=False)
                     End If
                 Next
@@ -346,6 +447,9 @@ Namespace ExcelOps
                 Friend ReadOnly CopyWorkbook As OpenXmlExcelDataOperations
                 Friend ReadOnly CopySourcePath As String
                 Friend ExpressionDepth As Integer
+                Friend ActiveLocation As FormulaLocation
+                Friend ResolvingRoot As Boolean
+                Friend CalledUserCode As Boolean
                 Friend ReadOnly LocalTime As Lazy(Of DateTime)
 
                 Friend ReadOnly TrackDependencies As Boolean
@@ -370,6 +474,9 @@ Namespace ExcelOps
                 Friend ReadOnly Name As String
                 Friend ReadOnly Part As WorksheetPart
                 Private ReadOnly _spillAnchors As Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))
+                Friend ReadOnly HasActiveRowFilter As Lazy(Of Boolean)
+                Friend ReadOnly HiddenRows As Lazy(Of HashSet(Of Integer))
+                Friend ReadOnly SharedFormulas As Lazy(Of Dictionary(Of UInteger, SharedFormulaGroup))
                 Friend ReadOnly SpillResults As New Dictionary(Of SpillArea, FormulaMatrix)
                 Friend ReadOnly SpillChildren As New Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
 
@@ -379,9 +486,22 @@ Namespace ExcelOps
                     _cells = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), Cell))(
                         Function() EnumerateWorksheetCells(GetSheetData(part)).ToDictionary(
                             Function(item) (item.RowIndex, item.ColumnIndex), Function(item) item.Value))
+                    SharedFormulas = New Lazy(Of Dictionary(Of UInteger, SharedFormulaGroup))(Function() ReadSharedFormulaGroups(Cells.Values))
+                    HiddenRows = New Lazy(Of HashSet(Of Integer))(
+                        Function() New HashSet(Of Integer)(GetSheetData(part).Elements(Of Row)().
+                            Where(Function(row) row.RowIndex IsNot Nothing AndAlso If(row.Hidden?.Value, False)).
+                            Select(Function(row) CInt(row.RowIndex.Value) - 1)))
+                    HasActiveRowFilter = New Lazy(Of Boolean)(
+                        Function() If(part.Worksheet.SheetProperties?.FilterMode?.Value, False) OrElse
+                            HasRowFilterCriteria(part.Worksheet.GetFirstChild(Of AutoFilter)()) OrElse
+                            part.TableDefinitionParts.Any(Function(tablePart) HasRowFilterCriteria(tablePart.Table?.AutoFilter)))
                     _spillAnchors = New Lazy(Of Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea))(
                         Function() ReadDynamicSpills(metadata, Cells.Values).ToDictionary(Function(item) (item.First.Row, item.First.Column)))
                 End Sub
+
+                Private Shared Function HasRowFilterCriteria(filter As AutoFilter) As Boolean
+                    Return filter IsNot Nothing AndAlso filter.Elements(Of FilterColumn)().Any(Function(column) column.HasChildren)
+                End Function
 
                 Friend ReadOnly Property SpillAnchors As Dictionary(Of (RowIndex As Integer, ColumnIndex As Integer), SpillArea)
                     Get

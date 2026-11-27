@@ -21,7 +21,7 @@ Namespace ExcelOps
                     Return New FormulaError("#VALUE!")
                 End If
 
-                Dim ranges As New List(Of (Values As Object(), Matches As Predicate(Of Object)))
+                Dim ranges As New List(Of (Area As FormulaArea, Matches As Predicate(Of Object)))
                 Dim firstArea As FormulaArea = Nothing
                 For index = 0 To criterionCount - 1
                     Dim argumentIndex = firstCriterion + index * 2
@@ -32,43 +32,48 @@ Namespace ExcelOps
                     If firstArea Is Nothing Then firstArea = area
                     If Not SameSize(firstArea, area) Then Return New FormulaError("#VALUE!")
                     Dim value = Scalar(EvaluateExpression(arguments(argumentIndex + 1), formulaCell))
-                    ranges.Add((MaterializeRange(area), MakeCriterion(value)))
+                    ranges.Add((area, MakeCriterion(value)))
                 Next
 
-                Dim amounts As Object() = Nothing
+                Dim amounts As FormulaArea = Nothing
                 If Not countOnly Then
                     If Not multiple AndAlso arguments.Count = 2 Then
-                        amounts = ranges(0).Values
+                        amounts = firstArea
                     Else
                         Dim input = EvaluateExpression(arguments(If(multiple, 0, 2)), formulaCell)
                         If TypeOf input Is FormulaError Then Return input
-                        Dim area = TryCast(input, FormulaArea)
-                        If area Is Nothing Then Return New FormulaError("#VALUE!")
+                        amounts = TryCast(input, FormulaArea)
+                        If amounts Is Nothing Then Return New FormulaError("#VALUE!")
                         If Not multiple Then
-                            Dim lastRow = area.FirstRow + firstArea.LastRow - firstArea.FirstRow
-                            Dim lastColumn = area.FirstColumn + firstArea.LastColumn - firstArea.FirstColumn
+                            Dim lastRow = amounts.FirstRow + firstArea.LastRow - firstArea.FirstRow
+                            Dim lastColumn = amounts.FirstColumn + firstArea.LastColumn - firstArea.FirstColumn
                             ValidateCoordinates(lastRow, lastColumn)
-                            area = SliceArea(area, 0, 0, lastRow - area.FirstRow, lastColumn - area.FirstColumn)
-                        ElseIf Not SameSize(firstArea, area) Then
+                            amounts = SliceArea(amounts, 0, 0, lastRow - amounts.FirstRow, lastColumn - amounts.FirstColumn)
+                        ElseIf Not SameSize(firstArea, amounts) Then
                             Return New FormulaError("#VALUE!")
                         End If
-                        amounts = MaterializeRange(area)
                     End If
+                End If
+
+                Dim columns = firstArea.LastColumn - firstArea.FirstColumn + 1
+                Dim size = CLng(firstArea.LastRow - firstArea.FirstRow + 1) * columns
+                Dim count As Long
+                Dim matches As IEnumerable(Of Object)
+                If size > MaxMaterializedReferenceCells Then
+                    matches = FindSparseCriteriaMatches(ranges, amounts, columns, size, count)
+                Else
+                    matches = DenseCriteriaMatches(ranges, amounts)
                 End If
 
                 Dim minimum = name = "MINIFS"
                 Dim maximum = name = "MAXIFS"
                 Dim average = name = "AVERAGEIF" OrElse name = "AVERAGEIFS"
-                Dim count As Integer
                 Dim result = If(minimum, Double.PositiveInfinity, If(maximum, Double.NegativeInfinity, 0.0))
-                For index = 0 To ranges(0).Values.Length - 1
-                    Dim itemIndex = index
-                    If Not ranges.All(Function(input) input.Matches(input.Values(itemIndex))) Then Continue For
+                For Each value In matches
                     If countOnly Then
                         count += 1
                         Continue For
                     End If
-                    Dim value = amounts(index)
                     If TypeOf value Is FormulaError Then Return value
                     If Not TypeOf value Is Double Then Continue For
                     count += 1
@@ -89,6 +94,87 @@ Namespace ExcelOps
                 End If
                 Return If(count = 0, 0.0, FiniteNumber(result))
             End Function
+
+            Private Iterator Function DenseCriteriaMatches(ranges As List(Of (Area As FormulaArea, Matches As Predicate(Of Object))),
+                                                           amounts As FormulaArea) As IEnumerable(Of Object)
+                Dim dense = ranges.Select(Function(range) (Values:=MaterializeRange(range.Area), Matches:=range.Matches)).ToArray()
+                Dim output As Object() = Nothing
+                If amounts IsNot Nothing Then
+                    output = If(amounts Is ranges(0).Area, dense(0).Values, MaterializeRange(amounts))
+                End If
+                For index = 0 To dense(0).Values.Length - 1
+                    Dim position = index
+                    If dense.All(Function(input) input.Matches(input.Values(position))) Then Yield If(output Is Nothing, Nothing, output(index))
+                Next
+            End Function
+
+            Private Function FindSparseCriteriaMatches(ranges As List(Of (Area As FormulaArea, Matches As Predicate(Of Object))),
+                                                       amounts As FormulaArea, columns As Integer, size As Long,
+                                                       ByRef blankMatches As Long) As IEnumerable(Of Object)
+                Dim bindings = ranges.Select(Function(range) (Reader:=BindSparseRange(range.Area), Matches:=range.Matches)).ToArray()
+                Dim output = If(amounts Is Nothing, Nothing, BindSparseRange(amounts))
+                Dim locations As New HashSet(Of Long)
+                If output IsNot Nothing Then
+                    output.AddStoredPositions(locations, columns)
+                Else
+                    Dim required = bindings.FirstOrDefault(Function(binding) Not binding.Matches(Nothing)).Reader
+                    If required IsNot Nothing Then
+                        required.AddStoredPositions(locations, columns)
+                    Else
+                        For Each binding In bindings
+                            binding.Reader.AddStoredPositions(locations, columns)
+                        Next
+                        blankMatches = size - locations.Count
+                    End If
+                End If
+                Return SparseCriteriaMatches(bindings, output, locations.OrderBy(Function(index) index), columns)
+            End Function
+
+            Private Iterator Function SparseCriteriaMatches(ranges As (Reader As SparseRangeReader, Matches As Predicate(Of Object))(),
+                                                            amounts As SparseRangeReader, candidates As IEnumerable(Of Long),
+                                                            columns As Integer) As IEnumerable(Of Object)
+                For Each index In candidates
+                    Dim row = CInt(index \ columns)
+                    Dim column = CInt(index Mod columns)
+                    If ranges.All(Function(input) input.Matches(input.Reader.Read(row, column))) Then
+                        Yield If(amounts Is Nothing, Nothing, amounts.Read(row, column))
+                    End If
+                Next
+            End Function
+
+            Private Function BindSparseRange(area As FormulaArea) As SparseRangeReader
+                Dim source = ResolveReference(area)
+                Dim worksheet As WorksheetSnapshot = Nothing
+                If Not source._worksheets.TryGetValue(area.Sheet, worksheet) Then Throw New NotSupportedException("The referenced worksheet is unavailable.")
+                RecordPrecedent(New FormulaPrecedent(New FormulaLocation(source._owner, area.Sheet, area.FirstRow, area.FirstColumn), area.LastRow, area.LastColumn))
+                RecalculateReferencedSpills(source, worksheet, area)
+                Return New SparseRangeReader(source, worksheet, area)
+            End Function
+
+            Private NotInheritable Class SparseRangeReader
+                Private ReadOnly _source As FormulaCalculation
+                Private ReadOnly _worksheet As WorksheetSnapshot
+                Private ReadOnly _area As FormulaArea
+
+                Friend Sub New(source As FormulaCalculation, worksheet As WorksheetSnapshot, area As FormulaArea)
+                    _source = source
+                    _worksheet = worksheet
+                    _area = area
+                End Sub
+
+                Friend Function Read(row As Integer, column As Integer) As Object
+                    Return _source.ReadCell(_area.Sheet, row + _area.FirstRow, column + _area.FirstColumn, trackRead:=False)
+                End Function
+
+                Friend Sub AddStoredPositions(positions As HashSet(Of Long), columns As Integer)
+                    For Each coordinate In _worksheet.Cells.Keys.Concat(_worksheet.SpillChildren.Keys)
+                        If coordinate.RowIndex >= _area.FirstRow AndAlso coordinate.RowIndex <= _area.LastRow AndAlso
+                            coordinate.ColumnIndex >= _area.FirstColumn AndAlso coordinate.ColumnIndex <= _area.LastColumn Then
+                            positions.Add(CLng(coordinate.RowIndex - _area.FirstRow) * columns + coordinate.ColumnIndex - _area.FirstColumn)
+                        End If
+                    Next
+                End Sub
+            End Class
 
             Private Function MaterializeRange(area As FormulaArea) As Object()
                 Dim rows = area.LastRow - area.FirstRow + 1

@@ -68,6 +68,27 @@ Public Class OpenXmlCustomFormulaTest
     End Sub
 
     <Test>
+    Public Sub DoesNotReplayApplicationCallbacksWhenADeepPrecedentIsEncountered()
+        Dim session As New ExcelFormulaSession()
+        Dim calls = 0
+        session.RegisterFunction("APP.CHECK",
+            Function(context, arguments)
+                calls += 1
+                Return ExcelFormulaValue.FromBoolean(True)
+            End Function)
+        Using workbook = CreateWorkbook(session, "Target")
+            workbook.WriteCellFormula("Sheet1", 0, 0, "IF(APP.CHECK(),A2,0)", False)
+            For row = 1 To 599
+                workbook.WriteCellFormula("Sheet1", row, 0, String.Concat("A", row + 2, "+1"), False)
+            Next
+            workbook.WriteCellValue(Cell("A601"), 1)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateCell(Cell("A1")))
+            Assert.That(calls, [Is].EqualTo(1))
+            Assert.That(workbook.HasMissingCachedFormulaResult(Cell("A1")), [Is].True)
+        End Using
+    End Sub
+
+    <Test>
     Public Sub PreservesTypedArgumentsAndDoesNotSerializeCallbacks()
         Dim session As New ExcelFormulaSession()
         session.RegisterFunction("PROFILE",
@@ -88,6 +109,22 @@ Public Class OpenXmlCustomFormulaTest
             Assert.That(first.LookupCellValueAsObject(Cell("A1"), FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo("#DIV/0!"))
             Assert.Throws(Of FormulaComplexityNotSupportedException)(
                 Sub() unrelated.LookupCellValueAsObject(Cell("A1"), FormulaCalculationMode.CalculateIfMissing))
+        End Using
+    End Sub
+
+    <TestCase("_xlfn.TRANSLATE", "TRANSLATE")>
+    <TestCase("_xlfn._xlws.APP.LOOKUP", "APP.LOOKUP")>
+    <TestCase("_xll.APP.RATE", "APP.RATE")>
+    Public Sub ResolvesAnExplicitRegistrationForAnExcelStoredFunctionName(storedName As String, registrationName As String)
+        Dim session As New ExcelFormulaSession()
+        Using workbook = CreateWorkbook(session, "Target")
+            Dim formula = storedName & "(""test"")"
+            workbook.WriteCellFormula("Sheet1", 0, 0, formula, False)
+            Assert.Throws(Of FormulaComplexityNotSupportedException)(Sub() workbook.RecalculateCell(Cell("A1")))
+            session.RegisterFunction(registrationName, Function(context, arguments) ExcelFormulaValue.FromText(CStr(arguments(0).Value) & " result"))
+            workbook.RecalculateCell(Cell("A1"))
+            Assert.That(Cached(workbook, "A1"), [Is].EqualTo("test result"))
+            Assert.That(workbook.LookupCellFormula("Sheet1", 0, 0), [Is].EqualTo(formula))
         End Using
     End Sub
 
