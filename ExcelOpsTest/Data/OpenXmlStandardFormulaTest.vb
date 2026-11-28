@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
@@ -180,6 +181,47 @@ Public Class OpenXmlStandardFormulaTest
             AssertResult(workbook, "CONCATENATE(""a"",TRUE,1.5)", "aWAHR1,5")
             AssertResult(workbook, """a""&FALSE", "aFALSCH")
             AssertResult(workbook, """1,5""+0.5", 2.0)
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub UsesExplicitCultureInEachWorkbookConstructorWithoutChangingCallerOptions()
+        Dim settings = Options()
+        Dim english = CultureInfo.GetCultureInfo("en-US")
+        Dim german = CultureInfo.GetCultureInfo("de-DE")
+        settings.FormulaCulture = english
+
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings, german)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+        Dim bytes = DateWorkbook(False)
+        Using workbook As New OpenXmlExcelDataOperations(bytes, settings, german)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+        Using stream As New MemoryStream(bytes, writable:=False),
+              workbook As New OpenXmlExcelDataOperations(stream, settings, german)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+
+        Assert.That(settings.FormulaCulture, [Is].SameAs(english))
+    End Sub
+
+    <Test>
+    Public Sub UsesSessionCultureUnlessTheWorkbookSuppliesACulture()
+        Dim settings = Options()
+        settings.FormulaSession = New ExcelFormulaSession(CultureInfo.GetCultureInfo("de-DE"))
+        settings.FormulaWorkbookName = "default.xlsx"
+        Using inherited As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            AssertResult(inherited, "TRUE&1.5", "WAHR1,5")
+            settings.FormulaWorkbookName = "override.xlsx"
+            settings.FormulaCulture = CultureInfo.InvariantCulture
+            Using overridden As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+                AssertResult(overridden, "TRUE&1.5", "TRUE1.5")
+                AssertResult(inherited, "TRUE&1.5", "WAHR1,5")
+            End Using
+            Using copy = inherited.Clone()
+                AssertResult(copy, "TRUE&1.5", "WAHR1,5")
+            End Using
         End Using
     End Sub
 

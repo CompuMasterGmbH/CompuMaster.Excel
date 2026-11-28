@@ -112,8 +112,8 @@ Namespace ExcelOps
         Public Property CalculateOnCellEdit As Boolean
 
         ''' <summary>Gets or sets the culture used when formulas convert between numbers and text.</summary>
-        ''' <value>The conversion culture, or Nothing to use invariant conversions.</value>
-        ''' <remarks>Open XML formula syntax and XLSX serialization are always invariant.</remarks>
+        ''' <value>The conversion culture, or Nothing to use the formula session default or invariant conversions.</value>
+        ''' <remarks>Open XML constructor arguments take precedence over this option. Formula syntax and XLSX serialization are always invariant.</remarks>
         Public Property FormulaCulture As CultureInfo
 
         ''' <summary>Gets or sets the clock used for date and time formulas.</summary>

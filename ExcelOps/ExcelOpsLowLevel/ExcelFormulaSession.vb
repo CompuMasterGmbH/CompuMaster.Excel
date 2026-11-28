@@ -1,4 +1,6 @@
-﻿Namespace ExcelOps
+﻿Imports System.Globalization
+
+Namespace ExcelOps
 
     ''' <summary>Stores application-registered custom functions and the workbooks in a calculation session.</summary>
     Public NotInheritable Class ExcelFormulaSession
@@ -9,6 +11,20 @@
         Private _revision As Long
         Private _activeWorkbook As String
         Private _activeCell As ExcelCell
+
+        ''' <summary>Creates a calculation session without a default formula culture.</summary>
+        Public Sub New()
+            Me.New(Nothing)
+        End Sub
+
+        ''' <summary>Creates a calculation session with an application-supplied default formula culture.</summary>
+        ''' <param name="formulaCulture">Default used when an attached Open XML workbook does not specify a culture, or Nothing to leave the default unset.</param>
+        Public Sub New(formulaCulture As CultureInfo)
+            DefaultFormulaCulture = If(formulaCulture Is Nothing, Nothing, CultureInfo.ReadOnly(formulaCulture))
+        End Sub
+
+        ''' <summary>Gets the session's default formula conversion culture, if set.</summary>
+        Public ReadOnly Property DefaultFormulaCulture As CultureInfo
 
         ''' <summary>Registers a custom scalar formula function for this session.</summary>
         ''' <param name="name">The case-insensitive, invariant name used in the formula.</param>

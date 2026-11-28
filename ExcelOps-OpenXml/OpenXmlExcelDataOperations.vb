@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports System.Xml
 Imports DocumentFormat.OpenXml
 Imports DocumentFormat.OpenXml.Packaging
@@ -34,7 +35,13 @@ Namespace ExcelOps
         ''' <param name="mode">Mode used to open or create the workbook.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
-            Me.New(options)
+            Me.New(file, mode, options, formulaCulture:=Nothing)
+        End Sub
+
+        ''' <inheritdoc cref="New(String, OpenMode, ExcelDataOperationsOptions)"/>
+        ''' <param name="formulaCulture">The workbook's formula conversion culture, or Nothing to use the options and session defaults.</param>
+        Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions, formulaCulture As CultureInfo)
+            Me.New(options, formulaCulture)
             Try
                 ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
             Catch
@@ -47,7 +54,13 @@ Namespace ExcelOps
         ''' <param name="data">Open XML package bytes to copy.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
-            Me.New(options)
+            Me.New(data, options, formulaCulture:=Nothing)
+        End Sub
+
+        ''' <inheritdoc cref="New(Byte(), ExcelDataOperationsOptions)"/>
+        ''' <param name="formulaCulture">The workbook's formula conversion culture, or Nothing to use the options and session defaults.</param>
+        Public Sub New(data As Byte(), options As ExcelDataOperationsOptions, formulaCulture As CultureInfo)
+            Me.New(options, formulaCulture)
             Try
                 LoadAndInitializeWorkbookFile(data, LoadOptions)
             Catch
@@ -60,7 +73,13 @@ Namespace ExcelOps
         ''' <param name="data">Stream positioned at the start of the package. The caller retains ownership.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Stream, options As ExcelDataOperationsOptions)
-            Me.New(options)
+            Me.New(data, options, formulaCulture:=Nothing)
+        End Sub
+
+        ''' <inheritdoc cref="New(Stream, ExcelDataOperationsOptions)"/>
+        ''' <param name="formulaCulture">The workbook's formula conversion culture, or Nothing to use the options and session defaults.</param>
+        Public Sub New(data As Stream, options As ExcelDataOperationsOptions, formulaCulture As CultureInfo)
+            Me.New(options, formulaCulture)
             Try
                 LoadAndInitializeWorkbookFile(data, LoadOptions)
             Catch
@@ -69,9 +88,10 @@ Namespace ExcelOps
             End Try
         End Sub
 
-        Private Sub New(options As ExcelDataOperationsOptions)
+        Private Sub New(options As ExcelDataOperationsOptions, Optional formulaCulture As CultureInfo = Nothing)
             MyBase.New(options)
             _formulaSession = LoadOptions.FormulaSession
+            LoadOptions.FormulaCulture = If(formulaCulture, If(LoadOptions.FormulaCulture, _formulaSession?.DefaultFormulaCulture))
             _configuredFormulaName = LoadOptions.FormulaWorkbookName
             If options.DisableAutoCalculationInWorkbook.HasValue Then
                 _initialAutomaticCalculation = Not options.DisableAutoCalculationInWorkbook.Value

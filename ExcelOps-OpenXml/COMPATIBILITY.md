@@ -10,6 +10,29 @@ Use the [worksheet function catalog](../tools/excel-function-catalog.csv) to fin
 - **Pivot tables.** `GETPIVOTDATA("Sales",Report!A3,"Region","East")` reads the saved visible aggregate when `Report!A3` identifies a supported worksheet-based pivot table. If the source data changes, refresh the pivot in Excel before handing it back to Open XML. OLAP pivots, grouped-field lookups, and report-filter fields require a compatible pivot engine. [GETPIVOTDATA](https://support.microsoft.com/en-us/excel/functions/getpivotdata-function)
 - **Linked workbooks.** For a formula such as `'[Rates.xlsx]Sheet1'!A1+1`, open the source and the dependent workbook in the same `ExcelFormulaSession` before recalculation. Open XML resolves the link from the workbooks in that session. A workbook with an unavailable source can still be used with its saved results.
 
+### Choose a formula culture when opening workbooks
+
+Supply a `CultureInfo` to the workbook constructor when an import, template or calculation job requires a specific culture. The overloads accept a file path, byte array or stream. To share a default, pass a culture to the `ExcelFormulaSession` constructor and supply that session in the workbook options. `OpenXmlWorkbookSession.Attach` coordinates structural reference updates between workbooks that are already open.
+
+Open XML checks the workbook constructor argument first, then `ExcelDataOperationsOptions.FormulaCulture`, then `ExcelFormulaSession.DefaultFormulaCulture`. With all three unset, the evaluator uses the invariant culture. Pass `CultureInfo.InvariantCulture` explicitly to select it for a workbook in a localized session.
+
+```csharp
+using System.Globalization;
+using CompuMaster.Excel.ExcelOps;
+
+var session = new ExcelFormulaSession(CultureInfo.GetCultureInfo("de-DE"));
+var options = new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+{
+    DisableCalculationEngine = false,
+    FormulaSession = session
+};
+using var workbook = new OpenXmlExcelDataOperations(
+    "Report.xlsx", ExcelDataOperationsBase.OpenMode.OpenExistingFile, options,
+    formulaCulture: CultureInfo.GetCultureInfo("en-US"));
+```
+
+The example uses US English for this workbook. Omit the final argument to use the German session default. To compare with desktop Excel, select the culture expected by the target deployment. Excel normally uses system separators and also allows application-specific overrides. [Excel separator settings](https://support.microsoft.com/en-gb/excel/change-the-character-used-to-separate-thousands-or-decimals)
+
 ## Workbook operations and output
 
 - **Last worksheet.** Removing the last worksheet from a workbook can leave Open XML with an empty worksheet collection. Add a worksheet before saving if the application needs a specific name or contents. Saving an empty workbook creates a blank worksheet so the file opens again in Excel.
