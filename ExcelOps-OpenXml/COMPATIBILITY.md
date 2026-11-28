@@ -14,7 +14,7 @@ Use the [worksheet function catalog](../tools/excel-function-catalog.csv) to fin
 
 Supply a `CultureInfo` to the workbook constructor when an import, template or calculation job requires a specific culture. The overloads accept a file path, byte array or stream. To share a default, pass a culture to the `ExcelFormulaSession` constructor and supply that session in the workbook options. `OpenXmlWorkbookSession.Attach` coordinates structural reference updates between workbooks that are already open.
 
-Open XML checks the workbook constructor argument first, then `ExcelDataOperationsOptions.FormulaCulture`, then `ExcelFormulaSession.DefaultFormulaCulture`. With all three unset, the evaluator uses the invariant culture. Pass `CultureInfo.InvariantCulture` explicitly to select it for a workbook in a localized session.
+Open XML checks the workbook constructor argument first, then `ExcelDataOperationsOptions.FormulaCulture`, then `ExcelFormulaSession.DefaultFormulaCulture`. With all three unset, Open XML captures `CultureInfo.CurrentCulture` from the opening thread and uses it for that workbook's calculations. Pass `CultureInfo.InvariantCulture` to retain the former default or select it for a workbook in a localized session. For example, `TRUE&1.5` returns `WAHR1,5` when a workbook falls back to a `de-DE` thread and `TRUE1.5` with an explicit invariant culture.
 
 ```csharp
 using System.Globalization;

@@ -92,6 +92,9 @@ Namespace ExcelOps
             MyBase.New(options)
             _formulaSession = LoadOptions.FormulaSession
             LoadOptions.FormulaCulture = If(formulaCulture, If(LoadOptions.FormulaCulture, _formulaSession?.DefaultFormulaCulture))
+            If LoadOptions.FormulaCulture Is Nothing Then
+                LoadOptions.FormulaCulture = CultureInfo.ReadOnly(CultureInfo.CurrentCulture)
+            End If
             _configuredFormulaName = LoadOptions.FormulaWorkbookName
             If options.DisableAutoCalculationInWorkbook.HasValue Then
                 _initialAutomaticCalculation = Not options.DisableAutoCalculationInWorkbook.Value

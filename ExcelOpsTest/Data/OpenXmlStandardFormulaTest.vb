@@ -49,7 +49,8 @@ Public Class OpenXmlStandardFormulaTest
     <TestCase("COUNTA({1;2;3})", 3.0)>
     <TestCase("COUNTBLANK(B1:C2)", 4.0)>
     Public Sub CalculatesStandardScalarFunctions(formula As String, expected As Object)
-        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options(),
+                                                          formulaCulture:=CultureInfo.InvariantCulture)
             AssertResult(workbook, formula, expected)
         End Using
     End Sub
@@ -223,6 +224,28 @@ Public Class OpenXmlStandardFormulaTest
                 AssertResult(copy, "TRUE&1.5", "WAHR1,5")
             End Using
         End Using
+    End Sub
+
+    <Test>
+    Public Sub CapturesTheOpeningThreadCultureForEachWorkbook()
+        Dim originalCulture = CultureInfo.CurrentCulture
+        Dim settings = Options()
+        Try
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE")
+            Using german As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US")
+                Using english As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+                    AssertResult(german, "TRUE&1.5", "WAHR1,5")
+                    AssertResult(english, "TRUE&1.5", "TRUE1.5")
+                End Using
+                Using copy = german.Clone()
+                    AssertResult(copy, "TRUE&1.5", "WAHR1,5")
+                End Using
+            End Using
+            Assert.That(settings.FormulaCulture, [Is].Null)
+        Finally
+            CultureInfo.CurrentCulture = originalCulture
+        End Try
     End Sub
 
     <Test>

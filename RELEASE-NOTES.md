@@ -6,6 +6,7 @@
 
 - BREAKING CHANGE: `CompuMaster.Excel.ExcelOps` adds a strict default for known structural formula and reference update differences in `CompuMaster.Excel.EpplusFreeFixCalcsEdition`, `CompuMaster.Excel.EpplusPolyformEdition`, `CompuMaster.Excel.FreeSpireXls`, and `CompuMaster.Excel.SpireXls`, including whole-row and whole-column edits on worksheets with embedded charts. Affected edits now throw `StructuralReferenceCompatibilityException` before changing the workbook. To retain the previous behavior, set `ExcelDataOperationsOptions.AllowKnownStructuralReferenceDifferences = True` before constructing the engine.
 - BREAKING CHANGE: `CompuMaster.Excel.OpenXml` rejects column edits when retaining a chart's physical dimensions requires width metrics for an unverified Normal font. Set `AllowKnownStructuralReferenceDifferences = True` to permit the width estimate, or use a supported font.
+- BREAKING CHANGE: `CompuMaster.Excel.OpenXml` captures the opening thread's culture for formula evaluation when no workbook or formula session culture is supplied. Locale-sensitive formulas may return different results. Pass `CultureInfo.InvariantCulture` to retain the previous default.
 
 ### Changes
 
