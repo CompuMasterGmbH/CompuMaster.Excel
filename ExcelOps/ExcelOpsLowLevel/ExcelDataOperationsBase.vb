@@ -867,11 +867,8 @@ Namespace ExcelOps
             Return ReadLegacyCellValueAsObject(cell.SheetName, cell.RowIndex, cell.ColumnIndex)
         End Function
 
-        ''' <summary>
-        ''' Reads a cell value.
-        ''' </summary>
-        ''' <param name="cell">Target cell.</param>
-        ''' <returns>The cell formula, or <see langword="Nothing"/> when the cell has no formula.</returns>
+        ''' <inheritdoc cref="LookupCellFormula(String, Integer, Integer)"/>
+        ''' <param name="cell">The address of the target cell.</param>
         Public MustOverride Function LookupCellFormula(cell As ExcelCell) As String
 
         ''' <summary>
@@ -881,6 +878,7 @@ Namespace ExcelOps
         ''' <param name="rowIndex">zero-based row number</param>
         ''' <param name="columnIndex">zero-based column number</param>
         ''' <returns>The cell formula, or <see langword="Nothing"/> when the cell has no formula.</returns>
+        ''' <remarks>Use the cell-value lookup APIs to read the calculated result. In Open XML the worksheet function <c>FORMULATEXT</c> can produce localized formula text as its calculated result.</remarks>
         Public MustOverride Function LookupCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer) As String
 
         ''' <summary>
@@ -923,8 +921,9 @@ Namespace ExcelOps
         ''' <param name="sheetName">Name of the worksheet.</param>
         ''' <param name="rowIndex">zero-based row number</param>
         ''' <param name="columnIndex">zero-based column number</param>
-        ''' <param name="formula">Formula without leading '=' char</param>
+        ''' <param name="formula">The formula without a leading equals sign. For portable formulas, use English function names, a period as the decimal separator and a comma as the argument separator, for example <c>SUM(1.5,2)</c>.</param>
         ''' <param name="immediatelyCalculateCellValue">Whether the formula result is calculated immediately.</param>
+        ''' <remarks>In Open XML, <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/> affects calculation, including the conversion of text inside a formula. The formula itself uses invariant syntax.</remarks>
         Public MustOverride Sub WriteCellFormula(sheetName As String, rowIndex As Integer, columnIndex As Integer, formula As String, immediatelyCalculateCellValue As Boolean)
 
         Private _RecalculationRequired As Boolean?

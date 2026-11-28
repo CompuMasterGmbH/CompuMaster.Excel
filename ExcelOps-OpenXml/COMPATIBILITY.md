@@ -4,17 +4,33 @@ Use the [worksheet function catalog](../tools/excel-function-catalog.csv) to fin
 
 ## Formula syntax and calculation
 
-- **Formula syntax in the API.** Write invariant formula text, for example `SUM(1.5,2)`. A German Excel user can enter `=SUMME(1,5;2)` in the Excel interface. `FormulaCulture` controls text and number conversions during calculation.
 - **Missing and existing results.** Suppose `A1` contains `B1+1`, its saved result is 11, and the application writes 20 to `B1`. In manual mode, `CalculateIfMissing` still reads 11. Use `RecalculateCell("Sheet1", 0, 0)` before reading `A1` to get 21. To calculate after value edits, enable the evaluator and set `CalculateOnCellEdit = True` when opening the workbook in automatic mode.
 - **Known calculation limitations.** `AMORDEGRC(1200,DATE(2008,7,1),DATE(2008,12,31),150,0.25,0.15)` raises `FormulaComplexityNotSupportedException` in Open XML. Use a stored Excel result or perform this calculation in Excel. In another known numerical difference, Excel returns `#NUM!` for `CHISQ.INV(0.95,10000000000)` while Open XML returns an estimated quantile. Use the Excel engine when that error behavior is part of the workbook contract. [AMORDEGRC](https://support.microsoft.com/en-us/excel/functions/amordegrc-function) · [CHISQ.INV](https://support.microsoft.com/en-us/excel/functions/chisq-inv-function)
 - **Pivot tables.** `GETPIVOTDATA("Sales",Report!A3,"Region","East")` reads the saved visible aggregate when `Report!A3` identifies a supported worksheet-based pivot table. If the source data changes, refresh the pivot in Excel before handing it back to Open XML. OLAP pivots, grouped-field lookups, and report-filter fields require a compatible pivot engine. [GETPIVOTDATA](https://support.microsoft.com/en-us/excel/functions/getpivotdata-function)
 - **Linked workbooks.** For a formula such as `'[Rates.xlsx]Sheet1'!A1+1`, open the source and the dependent workbook in the same `ExcelFormulaSession` before recalculation. Open XML resolves the link from the workbooks in that session. A workbook with an unavailable source can still be used with its saved results.
 
-### Choose a formula culture when opening workbooks
+### Choose a formula evaluation culture when opening workbooks
 
-Supply a `CultureInfo` to the workbook constructor when an import, template or calculation job requires a specific culture. The overloads accept a file path, byte array or stream. To share a default, pass a culture to the `ExcelFormulaSession` constructor and supply that session in the workbook options. `OpenXmlWorkbookSession.Attach` coordinates structural reference updates between workbooks that are already open.
+**Formula syntax** defines how you write function names, argument separators and numeric literals. Use invariant formula text such as `SUM(1.5,2)` with `WriteCellFormula`. Open XML stores the formula in invariant syntax. In a German Excel interface with standard German separators, the user enters the same formula as `=SUMME(1,5;2)`. [Excel FormulaLocal reference](https://learn.microsoft.com/en-us/office/vba/api/excel.range.formulalocal)
 
-Open XML checks the workbook constructor argument first, then `ExcelDataOperationsOptions.FormulaCulture`, then `ExcelFormulaSession.DefaultFormulaCulture`. With all three unset, Open XML captures `CultureInfo.CurrentCulture` from the opening thread and uses it for that workbook's calculations. Pass `CultureInfo.InvariantCulture` to retain the former default or select it for a workbook in a localized session. For example, `TRUE&1.5` returns `WAHR1,5` when a workbook falls back to a `de-DE` thread and `TRUE1.5` with an explicit invariant culture.
+**Formula evaluation culture** determines how the evaluator interprets number and date text, formats results, and orders text in functions such as `SORT`. The following examples use identical invariant input syntax.
+
+| Formula passed to the API | Evaluation with `de-DE` |
+| --- | --- |
+| `SUM(1.5,2)` | Returns the numeric value 3.5. The decimal point belongs to the formula syntax. |
+| `"1,5"+0.5` | Returns the numeric value 2. The evaluator reads the quoted value as German number text. |
+| `TRUE&1.5` | Returns `WAHR1,5`. The invariant evaluation culture returns `TRUE1.5`. |
+| `TEXT(DATE(2031,3,9),"MMM")` | Returns `Mrz` as in German Excel. |
+| `FORMULATEXT(A1)`, with `SUM(1.5,2)` in A1 | Returns the localized text `=SUMME(1,5;2)`. `LookupCellFormula` still reads the stored formula `SUM(1.5,2)`. |
+
+Open XML selects the first available evaluation culture in this order.
+
+1. The `formulaEvaluationCulture` argument on the Open XML constructor for a file path, byte array or stream.
+2. `ExcelDataOperationsOptions.FormulaEvaluationCulture`.
+3. `ExcelFormulaSession.DefaultFormulaEvaluationCulture`, supplied through `options.FormulaSession`.
+4. `CultureInfo.CurrentCulture`, captured from the thread that opens the workbook.
+
+The evaluation culture is selected when the workbook opens and applies when formulas run. Recalculate the workbook to refresh saved formula results under the selected culture. The engine does not infer the culture from the file. For jobs that require repeatable locale-sensitive results, set a specific culture such as `de-DE`, or assign `CultureInfo.InvariantCulture` to `FormulaEvaluationCulture` to retain the former default. The old `FormulaCulture` option remains available as an obsolete alias.
 
 ```csharp
 using System.Globalization;
@@ -28,10 +44,10 @@ var options = new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WritePro
 };
 using var workbook = new OpenXmlExcelDataOperations(
     "Report.xlsx", ExcelDataOperationsBase.OpenMode.OpenExistingFile, options,
-    formulaCulture: CultureInfo.GetCultureInfo("en-US"));
+    formulaEvaluationCulture: CultureInfo.GetCultureInfo("en-US"));
 ```
 
-The example uses US English for this workbook. Omit the final argument to use the German session default. To compare with desktop Excel, select the culture expected by the target deployment. Excel normally uses system separators and also allows application-specific overrides. [Excel separator settings](https://support.microsoft.com/en-gb/excel/change-the-character-used-to-separate-thousands-or-decimals)
+The example evaluates `TRUE&1.5` as `TRUE1.5`. Omit the final argument to use the German session default and get `WAHR1,5`. For a comparison with desktop Excel, check the target Excel language and regional settings, including any separator overrides. See the [engine culture comparison](../README.md#formula-syntax-and-evaluation-culture-by-engine). [Excel separator settings](https://support.microsoft.com/en-gb/excel/change-the-character-used-to-separate-thousands-or-decimals)
 
 ## Workbook operations and output
 

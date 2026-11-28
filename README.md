@@ -48,6 +48,18 @@ PLEASE NOTE:
   * Available workaround in MS Excel: enter each single cell manually (and in correct dependency order!) and confirm its formula (and sorry, F9 for full automatic recalculation doesn't work)
   * Available workaround in Epplus 4 special edition (provided within this project, see CompuMaster.Excel.EpplusFreeFixCalcsEdition): Clear all cached values from cells with formulas to enforce MS Excel to recalculate them (without depending of any caches)
 
+#### Formula syntax and evaluation culture by engine
+
+Formula syntax covers function names, argument separators and numeric literals. For portable ExcelOps code, supply invariant formulas such as `SUM(1.5,2)`. The evaluation culture affects operations such as parsing `"1,5"` as a number or formatting a month name. `ExcelDataOperationsOptions.FormulaEvaluationCulture` configures Open XML. The other adapters use their underlying engine's culture behavior.
+
+| Engine | Formula syntax | Locale-sensitive evaluation |
+| --- | --- | --- |
+| Open XML | Invariant API and workbook syntax. | Sets the culture per workbook and falls back to the opening thread's culture. The guide lists precedence and worked examples. [Open XML culture settings](ExcelOps-OpenXml/COMPATIBILITY.md#choose-a-formula-evaluation-culture-when-opening-workbooks) |
+| Microsoft Excel via COM | The adapter writes `Range.Formula`. Excel exposes localized syntax through the separate native `Range.FormulaLocal` property. [Excel FormulaLocal reference](https://learn.microsoft.com/en-us/office/vba/api/excel.range.formulalocal) | Excel uses its language and regional settings. The adapter initializes the decimal and thousands separators from the .NET thread culture at Excel application scope. [Excel regional settings API](https://learn.microsoft.com/en-us/office/vba/api/excel.application.international) / [Adapter source](ExcelOps-MicrosoftExcel/ComWrappers/MsExcelApplicationWrapper.vb) |
+| CompuMaster.EPPlus4 / Free FixCalcs | Invariant formula syntax. | Culture handling varies by function. For example, one argument parser tries invariant numbers and then uses the current .NET culture for dates. `TEXT` reads separators from the current culture. [Argument parser](Epplus-FixCalcsEdition/EPPlus/FormulaParsing/Excel/Functions/DoubleArgumentParser.cs) / [TEXT implementation](Epplus-FixCalcsEdition/EPPlus/FormulaParsing/Excel/Functions/Text/Text.cs) |
+| EPPlus 8.4 | English function names and commas between arguments. [EPPlus formula calculation](https://epplussoftware.com/docs/formulas-and-filters/formula-calculation/) | EPPlus 8.4 exposes no general evaluation culture in `ExcelCalculationOption`. [EPPlus calculation options](https://epplussoftware.com/docs/api/8.0/OfficeOpenXml.FormulaParsing.ExcelCalculationOption/) |
+| Spire.XLS 13.2.4 and FreeSpire.XLS 12.7.0 | Both tested versions evaluated `=SUM(1.5,2)` and returned `#NAME?` for `=SUMME(1,5;2)` with `de-DE`. | Spire has a native `Workbook.CultureInfo` property. In both tested versions, `VALUE("1,5")` returned 15 with `de-DE`. The ExcelOps Spire adapters do not map the common option to the native property. [Spire Workbook.CultureInfo reference](https://www.e-iceblue.com/apireference/net/Spire.XLS/html/d341e801-b15a-f77c-1014-9ec675244cd3.htm) |
+
 ### Common helper libraries
 
   * **CompuMaster.EPPlus4** 

@@ -36,7 +36,7 @@ In following a simplified comparison without any warranties. Subjects might chan
 | Epplus 4 | + Speed | - no export of chart images<br/>- some (seldom-used) calculation functions not implemented<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup>, but workaround AVAILABLE (in this project's fork)<br/>- limited VBA/macro support | * LGPL<br/>* "free license"<br/>* no manufacturer support (end of life) | www.github.com/JanKallman/EPPlus |
 | Spire.Xls | + Speed<br/>+ Charts export (windows platform only) | - calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * commercial licensing available | www.e-iceblue.com |
 | FreeSpire.Xls | + Speed<br/>+ Charts export (windows platform only) | - Limitations by manufacturer due to free edition<br/>- calculation issue when re-opening in MS Excel <sup>2)</sup><br/>- limited VBA/macro support | * "free license"<br/>* no official support by manufacturer | www.e-iceblue.com |
-| Open XML SDK | + Headless XLSX editing on Windows and Linux<br/>+ Preserves embedded images and untouched package parts<br/>+ Structural edits with reference updates | - No formula evaluation<br/>- Unencrypted XLSX only | MIT license | [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) |
+| Open XML SDK | + Headless XLSX editing on Windows and Linux<br/>+ Preserves embedded images and untouched package parts<br/>+ Structural edits with reference updates | - Limited, opt-in formula evaluation<br/>- Unencrypted XLSX only | MIT license | [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) |
 
 PLEASE NOTE:
 
@@ -46,6 +46,10 @@ PLEASE NOTE:
   * This issue applies for all 3rd-party engines (as far as I know)
   * Available workaround in MS Excel: enter each single cell manually (and in correct dependency order!) and confirm its formula (and sorry, F9 for full automatic recalculation doesn't work)
   * Available workaorund in Epplus 4 special edition (provided within this project, see CompuMaster.Excel.EpplusFreeFixCalcsEdition): Clear all cached values from cells with formulas to enforce MS Excel to recalculate them (without depending of any caches)
+
+## Formula syntax and evaluation culture
+
+Use invariant syntax when writing workbook formulas. For rules and examples for locale-sensitive evaluation, see the [engine culture comparison](https://github.com/CompuMasterGmbH/CompuMaster.Excel#formula-syntax-and-evaluation-culture-by-engine) and the [Open XML compatibility guide](https://github.com/CompuMasterGmbH/CompuMaster.Excel/blob/main/ExcelOps-OpenXml/COMPATIBILITY.md#choose-a-formula-evaluation-culture-when-opening-workbooks).
 
 ## Updating references during structural edits
 

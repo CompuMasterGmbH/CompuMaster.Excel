@@ -41,7 +41,7 @@ Public Class OpenXmlFormulaCalculationTest
     <TestCase("=IF(""1"",1,2)", "#VALUE!")>
     Public Sub CalculatesScalarFormulasThroughExplicitLookup(formula As String, expected As Object)
         Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options(),
-                                                          formulaCulture:=CultureInfo.InvariantCulture)
+                                                          formulaEvaluationCulture:=CultureInfo.InvariantCulture)
             workbook.WriteCellFormula(SheetName, 0, 0, formula, immediatelyCalculateCellValue:=False)
             Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 0), [Is].True)
             Assert.That(ReadResult(workbook, "A1", FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(expected))

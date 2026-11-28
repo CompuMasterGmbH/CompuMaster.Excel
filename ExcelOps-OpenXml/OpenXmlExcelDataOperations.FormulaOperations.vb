@@ -383,7 +383,7 @@ Namespace ExcelOps
 
             Private ReadOnly Property ConversionCulture As CultureInfo
                 Get
-                    Return _owner.LoadOptions.FormulaCulture
+                    Return _owner.LoadOptions.FormulaEvaluationCulture
                 End Get
             End Property
 

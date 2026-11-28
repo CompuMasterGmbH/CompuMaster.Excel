@@ -8,7 +8,10 @@ Imports DocumentFormat.OpenXml.Spreadsheet
 Namespace ExcelOps
 
     ''' <summary>Edits Open XML workbooks and templates using the Open XML SDK.</summary>
-    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in formula evaluation and structural reference updates on compatible workbooks.</remarks>
+    ''' <remarks>
+    ''' <para>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in formula evaluation and structural reference updates on compatible workbooks.</para>
+    ''' <para>Write formulas using invariant syntax, for example <c>SUM(1.5,2)</c>. Choose the culture for locale-sensitive calculation when opening the workbook. See <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/> for the default and precedence.</para>
+    ''' </remarks>
     Public NotInheritable Partial Class OpenXmlExcelDataOperations
         Inherits ExcelDataOperationsBase
         Implements IDisposable, ICloneable, IExcelWorksheetFormatting
@@ -35,13 +38,14 @@ Namespace ExcelOps
         ''' <param name="mode">Mode used to open or create the workbook.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
-            Me.New(file, mode, options, formulaCulture:=Nothing)
+            Me.New(file, mode, options, formulaEvaluationCulture:=Nothing)
         End Sub
 
         ''' <inheritdoc cref="New(String, OpenMode, ExcelDataOperationsOptions)"/>
-        ''' <param name="formulaCulture">The workbook's formula conversion culture, or Nothing to use the options and session defaults.</param>
-        Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions, formulaCulture As CultureInfo)
-            Me.New(options, formulaCulture)
+        ''' <param name="formulaEvaluationCulture">The workbook's evaluation culture, or <see langword="Nothing"/> to resolve it as described in <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/>.</param>
+        ''' <example>Pass <c>CultureInfo.GetCultureInfo("de-DE")</c> to evaluate <c>TRUE&amp;1.5</c> as <c>WAHR1,5</c>.</example>
+        Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions, formulaEvaluationCulture As CultureInfo)
+            Me.New(options, formulaEvaluationCulture)
             Try
                 ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
             Catch
@@ -54,13 +58,13 @@ Namespace ExcelOps
         ''' <param name="data">Open XML package bytes to copy.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
-            Me.New(data, options, formulaCulture:=Nothing)
+            Me.New(data, options, formulaEvaluationCulture:=Nothing)
         End Sub
 
         ''' <inheritdoc cref="New(Byte(), ExcelDataOperationsOptions)"/>
-        ''' <param name="formulaCulture">The workbook's formula conversion culture, or Nothing to use the options and session defaults.</param>
-        Public Sub New(data As Byte(), options As ExcelDataOperationsOptions, formulaCulture As CultureInfo)
-            Me.New(options, formulaCulture)
+        ''' <param name="formulaEvaluationCulture">The workbook's evaluation culture, or <see langword="Nothing"/> to resolve it as described in <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/>.</param>
+        Public Sub New(data As Byte(), options As ExcelDataOperationsOptions, formulaEvaluationCulture As CultureInfo)
+            Me.New(options, formulaEvaluationCulture)
             Try
                 LoadAndInitializeWorkbookFile(data, LoadOptions)
             Catch
@@ -73,13 +77,13 @@ Namespace ExcelOps
         ''' <param name="data">Stream positioned at the start of the package. The caller retains ownership.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Stream, options As ExcelDataOperationsOptions)
-            Me.New(data, options, formulaCulture:=Nothing)
+            Me.New(data, options, formulaEvaluationCulture:=Nothing)
         End Sub
 
         ''' <inheritdoc cref="New(Stream, ExcelDataOperationsOptions)"/>
-        ''' <param name="formulaCulture">The workbook's formula conversion culture, or Nothing to use the options and session defaults.</param>
-        Public Sub New(data As Stream, options As ExcelDataOperationsOptions, formulaCulture As CultureInfo)
-            Me.New(options, formulaCulture)
+        ''' <param name="formulaEvaluationCulture">The workbook's evaluation culture, or <see langword="Nothing"/> to resolve it as described in <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/>.</param>
+        Public Sub New(data As Stream, options As ExcelDataOperationsOptions, formulaEvaluationCulture As CultureInfo)
+            Me.New(options, formulaEvaluationCulture)
             Try
                 LoadAndInitializeWorkbookFile(data, LoadOptions)
             Catch
@@ -88,12 +92,12 @@ Namespace ExcelOps
             End Try
         End Sub
 
-        Private Sub New(options As ExcelDataOperationsOptions, Optional formulaCulture As CultureInfo = Nothing)
+        Private Sub New(options As ExcelDataOperationsOptions, Optional formulaEvaluationCulture As CultureInfo = Nothing)
             MyBase.New(options)
             _formulaSession = LoadOptions.FormulaSession
-            LoadOptions.FormulaCulture = If(formulaCulture, If(LoadOptions.FormulaCulture, _formulaSession?.DefaultFormulaCulture))
-            If LoadOptions.FormulaCulture Is Nothing Then
-                LoadOptions.FormulaCulture = CultureInfo.ReadOnly(CultureInfo.CurrentCulture)
+            LoadOptions.FormulaEvaluationCulture = If(formulaEvaluationCulture, If(LoadOptions.FormulaEvaluationCulture, _formulaSession?.DefaultFormulaEvaluationCulture))
+            If LoadOptions.FormulaEvaluationCulture Is Nothing Then
+                LoadOptions.FormulaEvaluationCulture = CultureInfo.ReadOnly(CultureInfo.CurrentCulture)
             End If
             _configuredFormulaName = LoadOptions.FormulaWorkbookName
             If options.DisableAutoCalculationInWorkbook.HasValue Then
@@ -416,7 +420,7 @@ Namespace ExcelOps
             SyncLock WorkbookSaveLock
                 Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite,
                     Nothing, disableInitialCalculation:=True, disableAutoCalculation:=Nothing, disableCalculationEngine:=CalculationModuleDisabled) With {
-                        .FormulaCulture = LoadOptions.FormulaCulture, .FormulaLocalClock = LoadOptions.FormulaLocalClock,
+                        .FormulaEvaluationCulture = LoadOptions.FormulaEvaluationCulture, .FormulaLocalClock = LoadOptions.FormulaLocalClock,
                         .CalculateOnCellEdit = LoadOptions.CalculateOnCellEdit,
                         .AllowedNativeRtdProgIds = LoadOptions.AllowedNativeRtdProgIds?.ToArray(),
                         .AllowKnownStructuralReferenceDifferences = LoadOptions.AllowKnownStructuralReferenceDifferences
