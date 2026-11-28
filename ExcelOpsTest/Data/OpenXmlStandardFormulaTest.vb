@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
@@ -48,7 +49,8 @@ Public Class OpenXmlStandardFormulaTest
     <TestCase("COUNTA({1;2;3})", 3.0)>
     <TestCase("COUNTBLANK(B1:C2)", 4.0)>
     Public Sub CalculatesStandardScalarFunctions(formula As String, expected As Object)
-        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options())
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, Options(),
+                                                          formulaEvaluationCulture:=CultureInfo.InvariantCulture)
             AssertResult(workbook, formula, expected)
         End Using
     End Sub
@@ -175,11 +177,106 @@ Public Class OpenXmlStandardFormulaTest
     <Test>
     Public Sub UsesExplicitGermanCultureForConversionsButKeepsFormulaSyntaxInvariant()
         Dim settings = Options()
-        settings.FormulaCulture = Globalization.CultureInfo.GetCultureInfo("de-DE")
+        settings.FormulaEvaluationCulture = Globalization.CultureInfo.GetCultureInfo("de-DE")
         Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            AssertResult(workbook, "SUM(1.5,2)", 3.5)
+            workbook.WriteCellFormula("Sheet1", 0, 1, "FORMULATEXT(A1)", False)
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 1, FormulaCalculationMode.CalculateIfMissing),
+                        [Is].EqualTo("=SUMME(1,5;2)"))
+            Assert.That(workbook.LookupCellFormula("Sheet1", 0, 0), [Is].EqualTo("SUM(1.5,2)"))
             AssertResult(workbook, "CONCATENATE(""a"",TRUE,1.5)", "aWAHR1,5")
             AssertResult(workbook, """a""&FALSE", "aFALSCH")
             AssertResult(workbook, """1,5""+0.5", 2.0)
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub LegacyFormulaCulturePropertyUsesTheSameEvaluationSetting()
+        Dim settings = Options()
+        Dim legacy = GetType(ExcelDataOperationsOptions).GetProperty("FormulaCulture")
+        legacy.SetValue(settings, CultureInfo.GetCultureInfo("de-DE"))
+
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+
+        settings.FormulaEvaluationCulture = CultureInfo.InvariantCulture
+        Assert.That(legacy.GetValue(settings), [Is].SameAs(CultureInfo.InvariantCulture))
+    End Sub
+
+    <Test>
+    Public Sub UsesExplicitCultureInEachWorkbookConstructorWithoutChangingCallerOptions()
+        Dim settings = Options()
+        Dim english = CultureInfo.GetCultureInfo("en-US")
+        Dim german = CultureInfo.GetCultureInfo("de-DE")
+        settings.FormulaEvaluationCulture = english
+
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings, german)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+        Dim bytes = DateWorkbook(False)
+        Using workbook As New OpenXmlExcelDataOperations(bytes, settings, german)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+        Using stream As New MemoryStream(bytes, writable:=False),
+              workbook As New OpenXmlExcelDataOperations(stream, settings, german)
+            AssertResult(workbook, "TRUE&1.5", "WAHR1,5")
+        End Using
+
+        Assert.That(settings.FormulaEvaluationCulture, [Is].SameAs(english))
+    End Sub
+
+    <Test>
+    Public Sub UsesSessionCultureUnlessTheWorkbookSuppliesACulture()
+        Dim settings = Options()
+        settings.FormulaSession = New ExcelFormulaSession(CultureInfo.GetCultureInfo("de-DE"))
+        settings.FormulaWorkbookName = "default.xlsx"
+        Using inherited As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            AssertResult(inherited, "TRUE&1.5", "WAHR1,5")
+            settings.FormulaWorkbookName = "override.xlsx"
+            settings.FormulaEvaluationCulture = CultureInfo.InvariantCulture
+            Using overridden As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+                AssertResult(overridden, "TRUE&1.5", "TRUE1.5")
+                AssertResult(inherited, "TRUE&1.5", "WAHR1,5")
+            End Using
+            Using copy = inherited.Clone()
+                AssertResult(copy, "TRUE&1.5", "WAHR1,5")
+            End Using
+        End Using
+    End Sub
+
+    <Test>
+    Public Sub CapturesTheOpeningThreadCultureForEachWorkbook()
+        Dim originalCulture = CultureInfo.CurrentCulture
+        Dim settings = Options()
+        Try
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE")
+            Using german As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US")
+                Using english As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+                    AssertResult(german, "TRUE&1.5", "WAHR1,5")
+                    AssertResult(english, "TRUE&1.5", "TRUE1.5")
+                End Using
+                Using copy = german.Clone()
+                    AssertResult(copy, "TRUE&1.5", "WAHR1,5")
+                End Using
+            End Using
+            Assert.That(settings.FormulaEvaluationCulture, [Is].Null)
+        Finally
+            CultureInfo.CurrentCulture = originalCulture
+        End Try
+    End Sub
+
+    <Test>
+    Public Sub FormatsGermanMarchAsExcelAndRecalculatesDependentText()
+        Dim settings = Options()
+        settings.FormulaEvaluationCulture = Globalization.CultureInfo.GetCultureInfo("de-DE")
+        Using workbook As New OpenXmlExcelDataOperations(DirectCast(Nothing, String), OpenMode.CreateFile, settings)
+            workbook.WriteCellFormula("Sheet1", 0, 0, "TEXT(DATE(2031,3,9),""MMM"")", False)
+            workbook.WriteCellFormula("Sheet1", 0, 1, "A1&"" ""&TEXT(DATE(2031,3,9),""MMMM"")", False)
+            workbook.RecalculateAll()
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 0, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("Mrz"))
+            Assert.That(workbook.LookupCellValue(Of String)("Sheet1", 0, 1, FormulaCalculationMode.UseCachedValueOnly), [Is].EqualTo("Mrz M" & ChrW(&HE4) & "rz"))
         End Using
     End Sub
 

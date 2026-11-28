@@ -51,7 +51,7 @@ Namespace ExcelOps
 
             Dim rows = cells.ToLookup(Function(c) c.RowIndex)
             Dim rowsByIndex = EnumerateWorksheetRows(data).ToDictionary(Function(item) item.Index, Function(item) item.Value)
-            Dim stylesheet = WorkbookPart.WorkbookStylesPart?.Stylesheet
+            Dim stylesheet = CurrentStyles
             Dim palette = GetThemePalette()
             Dim styleCache As New Dictionary(Of UInteger, String)
             Dim formatCache As New Dictionary(Of UInteger, NumberFormat)
@@ -226,7 +226,7 @@ Namespace ExcelOps
             Dim part = GetWorksheetPart(sheetName)
             Dim row = FindRow(GetSheetData(part), rowIndex, False)
             Dim cell = FindCell(row, rowIndex, columnIndex, False)
-            Return NumberFormatCode(WorkbookPart.WorkbookStylesPart?.Stylesheet, WorksheetCellStyleIndex(part.Worksheet, row, cell, columnIndex))
+            Return NumberFormatCode(CurrentStyles, WorksheetCellStyleIndex(part.Worksheet, row, cell, columnIndex))
         End Function
 
         ''' <inheritdoc/>

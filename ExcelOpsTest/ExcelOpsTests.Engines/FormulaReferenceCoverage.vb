@@ -26,7 +26,7 @@ Namespace ExcelOpsTests.Engines
                 For Each sourceFile In Directory.EnumerateFiles(folder, "*.xlsx").OrderBy(Function(item) item, StringComparer.Ordinal)
                     If Path.GetFileName(sourceFile).StartsWith("FormulaReferenceIteration", StringComparison.Ordinal) Then Continue For
                     Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly) With {
-                        .DisableInitialCalculation = True, .DisableCalculationEngine = False, .FormulaCulture = referenceCulture
+                        .DisableInitialCalculation = True, .DisableCalculationEngine = False, .FormulaEvaluationCulture = referenceCulture
                     }
                     Dim working = Path.Combine(temporary, Path.GetFileName(sourceFile))
                     Try

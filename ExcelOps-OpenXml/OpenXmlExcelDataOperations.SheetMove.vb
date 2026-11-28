@@ -20,7 +20,8 @@ Namespace ExcelOps
         Private Sub RewriteMoveDependents(book As WorkbookPart, excluded As Dictionary(Of String, String),
                                           rewriteQualifier As Func(Of String, String, String),
                                           Optional formulaWorkbook As WorkbookPart = Nothing,
-                                          Optional observeName As Action(Of String, String) = Nothing)
+                                          Optional observeName As Action(Of String, String) = Nothing,
+                                          Optional allowConditionalFormatting As Boolean = False)
             For Each sheet In book.Workbook.Sheets.Elements(Of Sheet)()
                 Dim name = sheet.Name.Value
                 If excluded IsNot Nothing AndAlso excluded.ContainsKey(name) Then Continue For
@@ -30,7 +31,7 @@ Namespace ExcelOps
                     If worksheet.TableDefinitionParts.Any() Then
                         Throw UnsupportedOperation("Updating move references in a workbook with tables")
                     End If
-                    ValidateWorksheetStructure(worksheet, Nothing)
+                    ValidateWorksheetStructure(worksheet, Nothing, allowConditionalFormatting:=allowConditionalFormatting)
                     Dim original = GetSheetData(worksheet)
                     Dim data = ExpandSharedFormulas(original, name, Nothing)
                     Dim changed = data IsNot original
@@ -43,6 +44,16 @@ Namespace ExcelOps
                             changed = True
                         End If
                     Next
+                    If allowConditionalFormatting Then
+                        For Each formula In WorksheetConditionalFormulas(worksheet.Worksheet)
+                            Dim revised = RewriteFormula(formula.Text, name, name, Nothing, Nothing, False,
+                                                         rewriteSheetQualifier:=rewriteQualifier, formulaWorkbook:=formulaWorkbook, observeName:=observeName)
+                            If revised <> formula.Text Then
+                                formula.Text = revised
+                                changed = True
+                            End If
+                        Next
+                    End If
                     If changed Then SaveWorksheet(worksheet.Worksheet, worksheet)
                     Dim drawing = worksheet.DrawingsPart
                     If drawing IsNot Nothing Then

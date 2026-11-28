@@ -40,14 +40,6 @@ Namespace ExcelOps
                 Dim data = GetSheetData(part)
                 Dim columns = part.Worksheet.Elements(Of Columns)().SelectMany(Function(group) group.Elements(Of Column)()).ToArray()
                 Dim rows = EnumerateWorksheetRows(data).ToArray()
-                If range IsNot Nothing AndAlso (
-                    columns.Any(Function(column) If(column.Style?.Value, 0UI) > 0 AndAlso
-                        column.Max.Value > range.AddressStart.ColumnIndex AndAlso column.Min.Value <= range.AddressEnd.ColumnIndex + 1) OrElse
-                    rows.Any(Function(row) If(row.Value.CustomFormat?.Value, False) AndAlso If(row.Value.StyleIndex?.Value, 0UI) > 0 AndAlso
-                        row.Index >= range.AddressStart.RowIndex AndAlso row.Index <= range.AddressEnd.RowIndex)) Then
-                    Throw UnsupportedOperation("Clearing part of a worksheet with inherited row or column formatting")
-                End If
-
                 For Each merge In selectedMerges
                     merge.Remove()
                 Next
@@ -71,6 +63,8 @@ Namespace ExcelOps
                         column.Style = Nothing
                     Next
                     If part.Worksheet.SheetDimension IsNot Nothing Then part.Worksheet.SheetDimension.Reference = "A1"
+                Else
+                    ClearInheritedCellStyles(part, range, rows, columns)
                 End If
                 FinishCellLayoutEdit(part)
             End SyncLock
@@ -140,6 +134,38 @@ Namespace ExcelOps
                 range.AddressStart.SheetName, table.Table.Reference.Value))) Then
                 Throw UnsupportedOperation(operation & " inside an Excel table")
             End If
+        End Sub
+
+        Private Shared Sub ClearInheritedCellStyles(part As WorksheetPart, range As ExcelRange,
+                                                    rows As (Index As Integer, Value As Row)(), columns As Column())
+            Dim first = range.AddressStart
+            Dim last = range.AddressEnd
+            Dim inherited = columns.Where(Function(column) If(column.Style?.Value, 0UI) <> 0UI AndAlso
+                column.Max.Value > first.ColumnIndex AndAlso column.Min.Value <= last.ColumnIndex + 1).
+                SelectMany(Function(column)
+                    Dim low = Math.Max(first.ColumnIndex, CInt(column.Min.Value) - 1)
+                    Dim high = Math.Min(last.ColumnIndex, CInt(column.Max.Value) - 1)
+                    Return Enumerable.Range(low, high - low + 1)
+                End Function).Distinct().OrderBy(Function(column) column).ToArray()
+            Dim rowIndexMap = rows.ToDictionary(Function(row) row.Index, Function(row) row.Value)
+            Dim data = GetSheetData(part)
+            Dim entireWidth = Enumerable.Range(first.ColumnIndex, last.ColumnIndex - first.ColumnIndex + 1)
+            Dim selectedRows As IEnumerable(Of Integer) = If(inherited.Length = 0,
+                rows.Where(Function(row) row.Index >= first.RowIndex AndAlso row.Index <= last.RowIndex AndAlso
+                    If(row.Value.CustomFormat?.Value, False) AndAlso If(row.Value.StyleIndex?.Value, 0UI) <> 0UI).
+                    Select(Function(row) row.Index),
+                Enumerable.Range(first.RowIndex, last.RowIndex - first.RowIndex + 1))
+            For Each rowIndex In selectedRows
+                Dim row As Row = Nothing
+                rowIndexMap.TryGetValue(rowIndex, row)
+                Dim rowOverride = If(If(row?.CustomFormat?.Value, False), row?.StyleIndex?.Value, Nothing)
+                Dim columnsToReset = If(rowOverride.HasValue, If(rowOverride.Value = 0UI, Enumerable.Empty(Of Integer)(), entireWidth), inherited)
+                For Each columnIndex In columnsToReset
+                    row = If(row, FindRow(data, rowIndex, True))
+                    FindCell(row, rowIndex, columnIndex, True).StyleIndex = 0UI
+                    UpdateDimension(part.Worksheet, first.SheetName, rowIndex, columnIndex)
+                Next
+            Next
         End Sub
 
         Private Sub CheckFormulaGroups(part As WorksheetPart, sheetName As String, range As ExcelRange, allowEntireGroup As Boolean)

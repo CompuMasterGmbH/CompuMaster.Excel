@@ -1,4 +1,6 @@
-﻿Namespace ExcelOps
+﻿Imports System.Globalization
+
+Namespace ExcelOps
 
     ''' <summary>Stores application-registered custom functions and the workbooks in a calculation session.</summary>
     Public NotInheritable Class ExcelFormulaSession
@@ -9,6 +11,23 @@
         Private _revision As Long
         Private _activeWorkbook As String
         Private _activeCell As ExcelCell
+
+        ''' <summary>Creates a calculation session without a default formula evaluation culture.</summary>
+        Public Sub New()
+            Me.New(Nothing)
+        End Sub
+
+        ''' <summary>Creates a calculation session with a default formula evaluation culture.</summary>
+        ''' <param name="formulaEvaluationCulture">The default evaluation culture, or <see langword="Nothing"/> to leave the default unset.</param>
+        ''' <remarks>Supply the session in the options when opening an Open XML workbook. The default applies to evaluation and the workbook uses invariant formula syntax.</remarks>
+        Public Sub New(formulaEvaluationCulture As CultureInfo)
+            DefaultFormulaEvaluationCulture = If(formulaEvaluationCulture Is Nothing, Nothing, CultureInfo.ReadOnly(formulaEvaluationCulture))
+        End Sub
+
+        ''' <summary>Gets the session's default formula evaluation culture.</summary>
+        ''' <value>The read-only culture, or <see langword="Nothing"/> when the session has no default.</value>
+        ''' <remarks>Open XML uses this default when opening a workbook if the constructor argument and <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/> are unset. If the session has no default, the engine captures <see cref="CultureInfo.CurrentCulture"/> from the opening thread.</remarks>
+        Public ReadOnly Property DefaultFormulaEvaluationCulture As CultureInfo
 
         ''' <summary>Registers a custom scalar formula function for this session.</summary>
         ''' <param name="name">The case-insensitive, invariant name used in the formula.</param>

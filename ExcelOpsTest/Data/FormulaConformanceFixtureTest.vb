@@ -487,7 +487,7 @@ Public Class FormulaConformanceFixtureTest
 
     Private Shared Function OpenForCalculation(path As String) As OpenXmlExcelDataOperations
         Dim options As New ExcelDataOperationsOptions(WriteProtectionMode.ReadOnly) With {
-            .DisableCalculationEngine = False, .FormulaCulture = CultureInfo.GetCultureInfo("de-DE")
+            .DisableCalculationEngine = False, .FormulaEvaluationCulture = CultureInfo.GetCultureInfo("de-DE")
         }
         If IO.Path.GetFileName(path) = "FormulaReferenceMetadata1900.xlsx" Then
             Return New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)

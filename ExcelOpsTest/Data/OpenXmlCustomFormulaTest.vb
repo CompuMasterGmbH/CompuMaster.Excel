@@ -113,6 +113,29 @@ Public Class OpenXmlCustomFormulaTest
         End Using
     End Sub
 
+    <TestCase("FORECAST.ETS", "_xlfn.FORECAST.ETS(4,A2:A4,B2:B4)")>
+    <TestCase("FORECAST.ETS.CONFINT", "_xlfn.FORECAST.ETS.CONFINT(4,A2:A4,B2:B4)")>
+    <TestCase("FORECAST.ETS.SEASONALITY", "_xlfn.FORECAST.ETS.SEASONALITY(A2:A4,B2:B4)")>
+    <TestCase("FORECAST.ETS.STAT", "_xlfn.FORECAST.ETS.STAT(A2:A4,B2:B4,1)")>
+    <TestCase("TRANSLATE", "_xlfn.translate(""Hola"",""es"",""en"")")>
+    <TestCase("DETECTLANGUAGE", "_xlfn.DETECTLANGUAGE(""Hola"")")>
+    <TestCase("STOCKHISTORY", "_xlfn.STOCKHISTORY(""MSFT"",DATE(2025,1,2))")>
+    <TestCase("CALL", "CALL(B2,C2)")>
+    <TestCase("REGISTER.ID", "REGISTER.ID(""Example.xll"",""Rebate"",""BB"")")>
+    Public Sub ExplainsThatDeferredBuiltInFunctionsAreNotImplemented(name As String, formula As String)
+        Using workbook = CreateWorkbook(Nothing, Nothing)
+            workbook.WriteCellFormula("Sheet1", 0, 0, formula, False)
+
+            Dim failure = Assert.Throws(Of FormulaComplexityNotSupportedException)(
+                Sub() workbook.LookupCellValueAsObject(Cell("A1"), FormulaCalculationMode.CalculateIfMissing))
+
+            Assert.That(failure.Message, Does.Contain(name & " is not yet implemented"))
+            Assert.That(failure.Cell.Address, [Is].EqualTo("A1"))
+            Assert.That(failure.Formula, [Is].EqualTo(formula))
+            Assert.That(workbook.HasMissingCachedFormulaResult(Cell("A1")), [Is].True)
+        End Using
+    End Sub
+
     <TestCase("_xlfn.TRANSLATE", "TRANSLATE")>
     <TestCase("_xlfn._xlws.APP.LOOKUP", "APP.LOOKUP")>
     <TestCase("_xll.APP.RATE", "APP.RATE")>

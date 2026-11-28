@@ -59,7 +59,7 @@ Public Class OpenXmlAutomaticFormulaTest
         Dim options = MakeOptions()
         Dim clock As New DateTime(2026, 11, 25, 11, 0, 0)
         options.FormulaLocalClock = Function() clock
-        options.FormulaCulture = System.Globalization.CultureInfo.GetCultureInfo("de-DE")
+        options.FormulaEvaluationCulture = System.Globalization.CultureInfo.GetCultureInfo("de-DE")
         Const row As Integer = 49
         Using workbook As New OpenXmlExcelDataOperations(path, OpenMode.OpenExistingFile, options)
             workbook.WriteCellFormula("Standard", row, 1, "A50+NOW()", False)

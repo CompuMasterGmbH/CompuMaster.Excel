@@ -111,10 +111,25 @@ Namespace ExcelOps
         ''' <remarks>Supported by the Open XML engine. Formula writes use their explicit calculation argument.</remarks>
         Public Property CalculateOnCellEdit As Boolean
 
-        ''' <summary>Gets or sets the culture used when formulas convert between numbers and text.</summary>
-        ''' <value>The conversion culture, or Nothing to use invariant conversions.</value>
-        ''' <remarks>Open XML formula syntax and XLSX serialization are always invariant.</remarks>
+        ''' <summary>Gets or sets the culture used to evaluate locale-sensitive formulas.</summary>
+        ''' <value>The evaluation culture, or <see langword="Nothing"/> to use the session default or the opening thread's culture.</value>
+        ''' <remarks>
+        ''' <para>The Open XML engine uses this option when it interprets number or date text, produces localized text, or sorts text. It first considers the workbook constructor argument, then this option, then <see cref="ExcelFormulaSession.DefaultFormulaEvaluationCulture"/>. If none is set, it captures <see cref="CultureInfo.CurrentCulture"/> when opening the workbook. Use <see cref="CultureInfo.InvariantCulture"/> to select invariant evaluation explicitly.</para>
+        ''' <para>Formula syntax covers function names, argument separators and numeric literals. Supply invariant formula syntax such as <c>SUM(1.5,2)</c> when writing formulas. Open XML also stores formulas in invariant syntax. The Microsoft Excel, EPPlus and Spire adapters use their own calculation settings.</para>
+        ''' </remarks>
+        ''' <example><c>TRUE&amp;1.5</c> returns <c>WAHR1,5</c> with <c>de-DE</c> and <c>TRUE1.5</c> with the invariant culture.</example>
+        Public Property FormulaEvaluationCulture As CultureInfo
+
+        ''' <inheritdoc cref="FormulaEvaluationCulture"/>
+        <Obsolete("Use FormulaEvaluationCulture to set the culture for locale-sensitive formula evaluation.")>
         Public Property FormulaCulture As CultureInfo
+            Get
+                Return FormulaEvaluationCulture
+            End Get
+            Set(value As CultureInfo)
+                FormulaEvaluationCulture = value
+            End Set
+        End Property
 
         ''' <summary>Gets or sets the clock used for date and time formulas.</summary>
         ''' <value>A provider of local wall-clock time, or Nothing to use the system clock.</value>
@@ -158,7 +173,7 @@ Namespace ExcelOps
             Return New ExcelDataOperationsOptions(PasswordForOpening, DisableInitialCalculation, DisableAutoCalculationInWorkbook, DisableCalculationEngine) With {
                 .FileWriteProtection = Me.FileWriteProtection,
                 .CalculateOnCellEdit = Me.CalculateOnCellEdit,
-                .FormulaCulture = Me.FormulaCulture,
+                .FormulaEvaluationCulture = Me.FormulaEvaluationCulture,
                 .FormulaLocalClock = Me.FormulaLocalClock,
                 .FormulaSession = Me.FormulaSession,
                 .AllowedNativeRtdProgIds = Me.AllowedNativeRtdProgIds?.ToArray(),

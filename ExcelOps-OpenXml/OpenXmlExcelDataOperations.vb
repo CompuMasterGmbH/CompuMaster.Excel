@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports System.Xml
 Imports DocumentFormat.OpenXml
 Imports DocumentFormat.OpenXml.Packaging
@@ -7,10 +8,13 @@ Imports DocumentFormat.OpenXml.Spreadsheet
 Namespace ExcelOps
 
     ''' <summary>Edits Open XML workbooks and templates using the Open XML SDK.</summary>
-    ''' <remarks>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in formula evaluation and structural reference updates on compatible workbooks.</remarks>
+    ''' <remarks>
+    ''' <para>The engine edits a private package snapshot. It preserves untouched package parts and supports opt-in formula evaluation and structural reference updates on compatible workbooks.</para>
+    ''' <para>Write formulas using invariant syntax, for example <c>SUM(1.5,2)</c>. Choose the culture for locale-sensitive calculation when opening the workbook. See <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/> for the default and precedence.</para>
+    ''' </remarks>
     Public NotInheritable Partial Class OpenXmlExcelDataOperations
         Inherits ExcelDataOperationsBase
-        Implements IDisposable, ICloneable
+        Implements IDisposable, ICloneable, IExcelWorksheetFormatting
 
         Private _source As MemoryStream
         Private _document As SpreadsheetDocument
@@ -18,6 +22,7 @@ Namespace ExcelOps
         Private ReadOnly _changedSheets As New HashSet(Of WorksheetPart)
         Private ReadOnly _changedChartSheets As New HashSet(Of ChartsheetPart)
         Private _workbookChanged As Boolean
+        Private _editedStyles As Stylesheet
         Private _calculationChainInvalid As Boolean
         Private _recalculateOnOpen As Boolean
         Private _initialAutomaticCalculation As Boolean?
@@ -33,7 +38,14 @@ Namespace ExcelOps
         ''' <param name="mode">Mode used to open or create the workbook.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions)
-            Me.New(options)
+            Me.New(file, mode, options, formulaEvaluationCulture:=Nothing)
+        End Sub
+
+        ''' <inheritdoc cref="New(String, OpenMode, ExcelDataOperationsOptions)"/>
+        ''' <param name="formulaEvaluationCulture">The workbook's evaluation culture, or <see langword="Nothing"/> to resolve it as described in <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/>.</param>
+        ''' <example>Pass <c>CultureInfo.GetCultureInfo("de-DE")</c> to evaluate <c>TRUE&amp;1.5</c> as <c>WAHR1,5</c>.</example>
+        Public Sub New(file As String, mode As OpenMode, options As ExcelDataOperationsOptions, formulaEvaluationCulture As CultureInfo)
+            Me.New(options, formulaEvaluationCulture)
             Try
                 ExecuteOpenModeActions(If(String.IsNullOrEmpty(file), Nothing, Path.GetFullPath(file)), mode, LoadOptions)
             Catch
@@ -46,7 +58,13 @@ Namespace ExcelOps
         ''' <param name="data">Open XML package bytes to copy.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Byte(), options As ExcelDataOperationsOptions)
-            Me.New(options)
+            Me.New(data, options, formulaEvaluationCulture:=Nothing)
+        End Sub
+
+        ''' <inheritdoc cref="New(Byte(), ExcelDataOperationsOptions)"/>
+        ''' <param name="formulaEvaluationCulture">The workbook's evaluation culture, or <see langword="Nothing"/> to resolve it as described in <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/>.</param>
+        Public Sub New(data As Byte(), options As ExcelDataOperationsOptions, formulaEvaluationCulture As CultureInfo)
+            Me.New(options, formulaEvaluationCulture)
             Try
                 LoadAndInitializeWorkbookFile(data, LoadOptions)
             Catch
@@ -59,7 +77,13 @@ Namespace ExcelOps
         ''' <param name="data">Stream positioned at the start of the package. The caller retains ownership.</param>
         ''' <param name="options">File and engine options.</param>
         Public Sub New(data As Stream, options As ExcelDataOperationsOptions)
-            Me.New(options)
+            Me.New(data, options, formulaEvaluationCulture:=Nothing)
+        End Sub
+
+        ''' <inheritdoc cref="New(Stream, ExcelDataOperationsOptions)"/>
+        ''' <param name="formulaEvaluationCulture">The workbook's evaluation culture, or <see langword="Nothing"/> to resolve it as described in <see cref="ExcelDataOperationsOptions.FormulaEvaluationCulture"/>.</param>
+        Public Sub New(data As Stream, options As ExcelDataOperationsOptions, formulaEvaluationCulture As CultureInfo)
+            Me.New(options, formulaEvaluationCulture)
             Try
                 LoadAndInitializeWorkbookFile(data, LoadOptions)
             Catch
@@ -68,9 +92,13 @@ Namespace ExcelOps
             End Try
         End Sub
 
-        Private Sub New(options As ExcelDataOperationsOptions)
+        Private Sub New(options As ExcelDataOperationsOptions, Optional formulaEvaluationCulture As CultureInfo = Nothing)
             MyBase.New(options)
             _formulaSession = LoadOptions.FormulaSession
+            LoadOptions.FormulaEvaluationCulture = If(formulaEvaluationCulture, If(LoadOptions.FormulaEvaluationCulture, _formulaSession?.DefaultFormulaEvaluationCulture))
+            If LoadOptions.FormulaEvaluationCulture Is Nothing Then
+                LoadOptions.FormulaEvaluationCulture = CultureInfo.ReadOnly(CultureInfo.CurrentCulture)
+            End If
             _configuredFormulaName = LoadOptions.FormulaWorkbookName
             If options.DisableAutoCalculationInWorkbook.HasValue Then
                 _initialAutomaticCalculation = Not options.DisableAutoCalculationInWorkbook.Value
@@ -245,6 +273,7 @@ Namespace ExcelOps
                     _completeDependencyRevision = Nothing
                     _formulaRanges.Clear()
                     _authoredDynamicMetadata = Nothing
+                    _editedStyles = Nothing
                     _workbookChanged = False
                     _calculationChainInvalid = False
                     _recalculateOnOpen = False
@@ -391,7 +420,7 @@ Namespace ExcelOps
             SyncLock WorkbookSaveLock
                 Dim options As New ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadWrite,
                     Nothing, disableInitialCalculation:=True, disableAutoCalculation:=Nothing, disableCalculationEngine:=CalculationModuleDisabled) With {
-                        .FormulaCulture = LoadOptions.FormulaCulture, .FormulaLocalClock = LoadOptions.FormulaLocalClock,
+                        .FormulaEvaluationCulture = LoadOptions.FormulaEvaluationCulture, .FormulaLocalClock = LoadOptions.FormulaLocalClock,
                         .CalculateOnCellEdit = LoadOptions.CalculateOnCellEdit,
                         .AllowedNativeRtdProgIds = LoadOptions.AllowedNativeRtdProgIds?.ToArray(),
                         .AllowKnownStructuralReferenceDifferences = LoadOptions.AllowKnownStructuralReferenceDifferences
@@ -420,7 +449,7 @@ Namespace ExcelOps
             Dim sourceWorkbook = WorkbookPart
             Dim linkedPaths = ResolvedSessionLinks(sourceWorkbook)
             _source.WriteTo(output)
-            If Not (_workbookChanged OrElse _changedSheets.Count > 0 OrElse _changedChartSheets.Count > 0 OrElse _calculationChainInvalid OrElse
+            If Not (_workbookChanged OrElse _editedStyles IsNot Nothing OrElse _changedSheets.Count > 0 OrElse _changedChartSheets.Count > 0 OrElse _calculationChainInvalid OrElse
                     _automaticCalculation.HasValue OrElse _recalculateOnOpen OrElse clearCache OrElse
                     linkedPaths.Count > 0 OrElse
                     (removeVba AndAlso sourceWorkbook.VbaProjectPart IsNot Nothing) OrElse
@@ -453,6 +482,12 @@ Namespace ExcelOps
             If _workbookChanged Then
                 Using output = target.GetStream(FileMode.Create, FileAccess.Write)
                     source.Workbook.Save(output)
+                End Using
+            End If
+            If _editedStyles IsNot Nothing Then
+                Dim stylePart = If(target.WorkbookStylesPart, target.AddNewPart(Of WorkbookStylesPart)())
+                Using output = stylePart.GetStream(FileMode.Create, FileAccess.Write)
+                    _editedStyles.Save(output)
                 End Using
             End If
             If _authoredDynamicMetadata IsNot Nothing Then

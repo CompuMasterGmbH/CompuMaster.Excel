@@ -4,11 +4,50 @@ Use the [worksheet function catalog](../tools/excel-function-catalog.csv) to fin
 
 ## Formula syntax and calculation
 
-- **Formula syntax in the API.** Write invariant formula text, for example `SUM(1.5,2)`. A German Excel user can enter `=SUMME(1,5;2)` in the Excel interface. `FormulaCulture` controls text and number conversions during calculation.
 - **Missing and existing results.** Suppose `A1` contains `B1+1`, its saved result is 11, and the application writes 20 to `B1`. In manual mode, `CalculateIfMissing` still reads 11. Use `RecalculateCell("Sheet1", 0, 0)` before reading `A1` to get 21. To calculate after value edits, enable the evaluator and set `CalculateOnCellEdit = True` when opening the workbook in automatic mode.
 - **Known calculation limitations.** `AMORDEGRC(1200,DATE(2008,7,1),DATE(2008,12,31),150,0.25,0.15)` raises `FormulaComplexityNotSupportedException` in Open XML. Use a stored Excel result or perform this calculation in Excel. In another known numerical difference, Excel returns `#NUM!` for `CHISQ.INV(0.95,10000000000)` while Open XML returns an estimated quantile. Use the Excel engine when that error behavior is part of the workbook contract. [AMORDEGRC](https://support.microsoft.com/en-us/excel/functions/amordegrc-function) · [CHISQ.INV](https://support.microsoft.com/en-us/excel/functions/chisq-inv-function)
 - **Pivot tables.** `GETPIVOTDATA("Sales",Report!A3,"Region","East")` reads the saved visible aggregate when `Report!A3` identifies a supported worksheet-based pivot table. If the source data changes, refresh the pivot in Excel before handing it back to Open XML. OLAP pivots, grouped-field lookups, and report-filter fields require a compatible pivot engine. [GETPIVOTDATA](https://support.microsoft.com/en-us/excel/functions/getpivotdata-function)
 - **Linked workbooks.** For a formula such as `'[Rates.xlsx]Sheet1'!A1+1`, open the source and the dependent workbook in the same `ExcelFormulaSession` before recalculation. Open XML resolves the link from the workbooks in that session. A workbook with an unavailable source can still be used with its saved results.
+
+### Choose a formula evaluation culture when opening workbooks
+
+**Formula syntax** defines how you write function names, argument separators and numeric literals. Use invariant formula text such as `SUM(1.5,2)` with `WriteCellFormula`. Open XML stores the formula in invariant syntax. In a German Excel interface with standard German separators, the user enters the same formula as `=SUMME(1,5;2)`. [Excel FormulaLocal reference](https://learn.microsoft.com/en-us/office/vba/api/excel.range.formulalocal)
+
+**Formula evaluation culture** determines how the evaluator interprets number and date text, formats results, and orders text in functions such as `SORT`. The following examples use identical invariant input syntax.
+
+| Formula passed to the API | Evaluation with `de-DE` |
+| --- | --- |
+| `SUM(1.5,2)` | Returns the numeric value 3.5. The decimal point belongs to the formula syntax. |
+| `"1,5"+0.5` | Returns the numeric value 2. The evaluator reads the quoted value as German number text. |
+| `TRUE&1.5` | Returns `WAHR1,5`. The invariant evaluation culture returns `TRUE1.5`. |
+| `TEXT(DATE(2031,3,9),"MMM")` | Returns `Mrz` as in German Excel. |
+| `FORMULATEXT(A1)`, with `SUM(1.5,2)` in A1 | Returns the localized text `=SUMME(1,5;2)`. `LookupCellFormula` still reads the stored formula `SUM(1.5,2)`. |
+
+Open XML selects the first available evaluation culture in this order.
+
+1. The `formulaEvaluationCulture` argument on the Open XML constructor for a file path, byte array or stream.
+2. `ExcelDataOperationsOptions.FormulaEvaluationCulture`.
+3. `ExcelFormulaSession.DefaultFormulaEvaluationCulture`, supplied through `options.FormulaSession`.
+4. `CultureInfo.CurrentCulture`, captured from the thread that opens the workbook.
+
+The evaluation culture is selected when the workbook opens and applies when formulas run. Recalculate the workbook to refresh saved formula results under the selected culture. The engine does not infer the culture from the file. For jobs that require repeatable locale-sensitive results, set a specific culture such as `de-DE`, or assign `CultureInfo.InvariantCulture` to `FormulaEvaluationCulture` to retain the former default. The old `FormulaCulture` option remains available as an obsolete alias.
+
+```csharp
+using System.Globalization;
+using CompuMaster.Excel.ExcelOps;
+
+var session = new ExcelFormulaSession(CultureInfo.GetCultureInfo("de-DE"));
+var options = new ExcelDataOperationsOptions(ExcelDataOperationsOptions.WriteProtectionMode.ReadOnly)
+{
+    DisableCalculationEngine = false,
+    FormulaSession = session
+};
+using var workbook = new OpenXmlExcelDataOperations(
+    "Report.xlsx", ExcelDataOperationsBase.OpenMode.OpenExistingFile, options,
+    formulaEvaluationCulture: CultureInfo.GetCultureInfo("en-US"));
+```
+
+The example evaluates `TRUE&1.5` as `TRUE1.5`. Omit the final argument to use the German session default and get `WAHR1,5`. For a comparison with desktop Excel, check the target Excel language and regional settings, including any separator overrides. See the [engine culture comparison](../README.md#formula-syntax-and-evaluation-culture-by-engine). [Excel separator settings](https://support.microsoft.com/en-gb/excel/change-the-character-used-to-separate-thousands-or-decimals)
 
 ## Workbook operations and output
 
@@ -162,9 +201,36 @@ The callback receives the `ProgID`, server argument and all topics in formula or
 
 Open XML checks `RegisterRtdProvider` for the specific `ProgID` first, the existing session-wide `RegisterFunction("RTD", …)` second, and the allowed native Windows server third. If an existing session-wide function should yield to native providers, migrate it to one registration per `ProgID`. Use `RemoveRtdProvider` to remove a specific application registration.
 
+## Format worksheet cells and layout
+
+Use the optional `IExcelWorksheetFormatting` interface to format a range, including blank cells. The supplied properties modify the existing style and leave the cell values and formulas in place. Number format strings use Excel file syntax.
+
+```csharp
+using System.Drawing;
+using CompuMaster.Excel.ExcelOps;
+
+IExcelWorksheetFormatting formatting = workbook;
+formatting.ApplyCellFormatting(new ExcelRange("Sheet1", "A1:D1"), new ExcelCellFormatting
+{
+    Bold = true,
+    FillColor = Color.LightSteelBlue,
+    OutsideBorder = new ExcelCellBorder(ExcelBorderLineStyle.Thin)
+});
+formatting.ApplyCellFormatting(new ExcelRange("Sheet1", "D2:D25"), new ExcelCellFormatting
+{
+    NumberFormat = "0.00"
+});
+formatting.SetColumnWidth("Sheet1", 3, 14);
+formatting.SetRowHeight("Sheet1", 0, 24);
+```
+
+The formatting applies to the XLSX output. The HTML exporter displays the style properties listed in the [engine guide](README.md).
+
 ## Functions that require other engines or data sources
 
 The [function catalog](../tools/excel-function-catalog.csv) tracks evaluator support. The examples below show how to handle formulas that fall outside the current Open XML evaluator. When a workbook already contains the Excel result, a cached-only read or export can use it. A missing cached result requires a calculation engine or an application-supplied result. Open XML reports an unsupported fresh calculation through `FormulaComplexityNotSupportedException`. The EPPlus 4 formula compiler can return the worksheet error `#NAME?` for an unknown function.
+
+When Open XML needs to calculate one of the four `FORECAST.ETS` functions, `TRANSLATE`, `DETECTLANGUAGE`, `STOCKHISTORY`, `CALL`, or `REGISTER.ID`, the exception names the function and states that it is not yet implemented. A registered .NET implementation can still handle that function. See [the implementation follow-up](https://github.com/CompuMasterGmbH/CompuMaster.Excel/issues/66).
 
 | Formula or feature | Current behavior and application alternatives |
 | --- | --- |

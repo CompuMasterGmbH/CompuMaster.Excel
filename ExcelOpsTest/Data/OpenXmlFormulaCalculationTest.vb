@@ -1,4 +1,5 @@
-﻿Imports System.IO
+﻿Imports System.Globalization
+Imports System.IO
 Imports CompuMaster.Excel.ExcelOps
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsBase
 Imports CompuMaster.Excel.ExcelOps.ExcelDataOperationsOptions
@@ -39,7 +40,8 @@ Public Class OpenXmlFormulaCalculationTest
     <TestCase("=0^0", "#NUM!")>
     <TestCase("=IF(""1"",1,2)", "#VALUE!")>
     Public Sub CalculatesScalarFormulasThroughExplicitLookup(formula As String, expected As Object)
-        Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options())
+        Using workbook As New OpenXmlExcelDataOperations(CreateWorkbook(), Options(),
+                                                          formulaEvaluationCulture:=CultureInfo.InvariantCulture)
             workbook.WriteCellFormula(SheetName, 0, 0, formula, immediatelyCalculateCellValue:=False)
             Assert.That(workbook.HasMissingCachedFormulaResult(SheetName, 0, 0), [Is].True)
             Assert.That(ReadResult(workbook, "A1", FormulaCalculationMode.CalculateIfMissing), [Is].EqualTo(expected))

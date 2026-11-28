@@ -41,7 +41,7 @@ Namespace ExcelOps
                 If columns.Length > 1 Then Throw UnsupportedOperation("Fitting worksheets with multiple column layout groups")
                 Dim original = columns.FirstOrDefault()
                 Dim layouts = ReadColumnLayouts(original)
-                Dim styles = WorkbookPart.WorkbookStylesPart?.Stylesheet
+                Dim styles = CurrentStyles
                 Dim fonts = If(styles?.Fonts?.Elements(Of Font)().ToArray(), Array.Empty(Of Font)())
                 Dim normalStyle = GetCellFormat(styles, 0UI)
                 Dim normalSize = If(fonts.ElementAtOrDefault(CInt(If(normalStyle?.FontId?.Value, 0UI)))?.FontSize?.Val?.Value, 11.0)

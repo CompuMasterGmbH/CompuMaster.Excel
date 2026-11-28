@@ -381,7 +381,8 @@ Namespace ExcelOps
 
         Private Shared ReadOnly StandardWorksheetElements As New HashSet(Of String)(StringComparer.Ordinal) From {
             "sheetPr", "dimension", "sheetViews", "sheetFormatPr", "cols", "sheetData", "sheetProtection",
-            "printOptions", "pageMargins", "pageSetup", "headerFooter", "drawing", "mergeCells", "tableParts", "phoneticPr"
+            "printOptions", "pageMargins", "pageSetup", "headerFooter", "drawing", "mergeCells", "tableParts", "phoneticPr",
+            "legacyDrawing", "legacyDrawingHF"
         }
 
         Private Shared ReadOnly LocalWorksheetReferences As New HashSet(Of String)(StringComparer.Ordinal) From {
@@ -448,15 +449,18 @@ Namespace ExcelOps
             Next
         End Sub
 
-        Private Sub ValidateWorksheetStructure(part As WorksheetPart, shift As StructuralShift, Optional allowSpills As Boolean = False)
+        Private Sub ValidateWorksheetStructure(part As WorksheetPart, shift As StructuralShift, Optional allowSpills As Boolean = False,
+                                               Optional allowConditionalFormatting As Boolean = False)
             Dim worksheet = part.Worksheet
             For Each child In worksheet.ChildElements
+                If allowConditionalFormatting AndAlso IsSupportedWorksheetConditionalFormatting(child) Then Continue For
                 If TypeOf child Is OpenXmlUnknownElement OrElse
                    Not (StandardWorksheetElements.Contains(child.LocalName) OrElse
                         (shift Is Nothing AndAlso LocalWorksheetReferences.Contains(child.LocalName))) Then
                     Throw UnsupportedOperation("Updating references in a worksheet with " & child.LocalName)
                 End If
             Next
+            ValidateLegacyWorksheetDrawings(part, shift IsNot Nothing)
             If shift IsNot Nothing Then
                 If If(worksheet.GetFirstChild(Of SheetProtection)()?.Sheet?.Value, False) Then
                     Throw UnsupportedOperation("Shifting cells in a protected worksheet")
@@ -466,7 +470,7 @@ Namespace ExcelOps
             For Each relationship In part.Parts
                 If TypeOf relationship.OpenXmlPart Is SpreadsheetPrinterSettingsPart OrElse
                    TypeOf relationship.OpenXmlPart Is TableDefinitionPart Then Continue For
-                If TypeOf relationship.OpenXmlPart Is DrawingsPart Then Continue For
+                If TypeOf relationship.OpenXmlPart Is DrawingsPart OrElse IsSupportedLegacyWorksheetPart(part, relationship) Then Continue For
                 Throw UnsupportedOperation("Updating references in a worksheet with " & relationship.OpenXmlPart.GetType().Name)
             Next
             For Each rowElement In GetSheetData(part).ChildElements

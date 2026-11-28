@@ -136,6 +136,8 @@ Namespace ExcelOps
                 Return result
             End Function
 
+            Private _excelDateTextCulture As CultureInfo
+
             Private Function FormatWorksheetText(arguments As Object()) As Object
                 Dim german = ConversionCulture.TwoLetterISOLanguageName = "de"
                 Dim pattern = TextValue(arguments(1))
@@ -174,10 +176,27 @@ Namespace ExcelOps
                     Return 0.0.ToString(pattern, ConversionCulture)
                 End If
                 Try
-                    Return CheckedWorksheetText(format.Format(value, ConversionCulture, Uses1904Dates))
+                    Dim culture = If(format.IsDateTimeFormat, ExcelDateTextCulture(), ConversionCulture)
+                    Return CheckedWorksheetText(format.Format(value, culture, Uses1904Dates))
                 Catch ex As ArgumentException
                     Return New FormulaError("#VALUE!")
                 End Try
+            End Function
+
+            Private Function ExcelDateTextCulture() As CultureInfo
+                If _excelDateTextCulture IsNot Nothing Then Return _excelDateTextCulture
+                Dim culture = ConversionCulture
+                If String.Equals(culture.Name, "de-DE", StringComparison.OrdinalIgnoreCase) Then
+                    Dim months = culture.DateTimeFormat.AbbreviatedMonthNames
+                    If Not String.Equals(months(2), "Mrz", StringComparison.Ordinal) Then
+                        culture = DirectCast(culture.Clone(), CultureInfo)
+                        ' Excel's German MMM token abbreviates March as Mrz.
+                        months(2) = "Mrz"
+                        culture.DateTimeFormat.AbbreviatedMonthNames = months
+                    End If
+                End If
+                _excelDateTextCulture = culture
+                Return culture
             End Function
 
             Private Shared Function InvariantGermanNumberFormat(format As String, serial As Double) As String
